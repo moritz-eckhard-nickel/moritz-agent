@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 """Command line entry point: ``moritz-agent [run|check-config|--version]``."""
 
 from __future__ import annotations

@@ -22,7 +22,7 @@
 | T6 | Prompt-Injection aus Webseiten/Suchergebnissen | Telefonprofil hat keine gefährlichen Tools; Suchergebnisse werden als **Daten** markiert (`<search_results>`-Block, Hinweis im Systemprompt); spätere Tools mit Bestätigungsmodell; Sandbox ohne Zugriff auf interne Netze | PHONE-45, SBX-03 |
 | T7 | Caller-ID-Spoofing → Admin-Aktionen | Rufnummer ist nie Berechtigung; Admin-Aktionen per Telefon nur mit zusätzlicher Authentisierung (frühestens Part 7, eigener Plan) | PHONE-46, SBX-05 |
 | T8 | Web-UI-Bruteforce / Mitlesen im LAN | scrypt-Hash, Rate-Limit, LAN-Bindung (Port 3501) nur mit Login, HTTPS mit eigenem Zertifikat (ADR-022) | API-02, API-05 |
-| T15 | Antworttexte verlassen das Haus (Polly „Hans“) | nur Antworttexte, nie Anrufer-Audio; opt-in; Piper als lokale Alternative | ADR-008 |
+| T15 | Antworttexte verlassen das Haus (Polly „Hans“, Standard) | nur Antworttexte, nie Anrufer-Audio; IAM-Benutzer nur mit `polly:SynthesizeSpeech`; Budget-Alarm; Piper als lokale Alternative | ADR-008 |
 | T16 | Manipulierte Fremdkomponenten im Repo | Herkunft + Commit in `third_party/VENDORED.md`, PyPI-Pakete nur mit `--require-hashes` | ADR-021 |
 | T9 | Interne Dienste aus LAN erreichbar | KoboldCPP/SearXNG/interne API nur auf 127.0.0.1, Per-Start-Token | NFR-07, ADR-004 |
 | T10 | Supply-Chain (Modelle, pip, pjproject, SearXNG) | SHA-256 für alle Downloads, `--require-hashes`, gepinnte Commits/Tags, keine `curl \| bash` | INST-03, ADR-019 |
@@ -44,7 +44,10 @@ Logs würde Logs unbrauchbar machen. Daher:
 3. Tests prüfen, dass `str()`, `repr()`, `format()` und JSON-Serialisierung eines `Secret`
    den Wert nie preisgeben.
 
-## 4. Lizenzpflichten (AGPL-3.0)
+## 4. Lizenzpflichten (siehe auch `LICENSING.md`, ADR-023)
+
+- Eigener Code: MSOL 1.1 (keine Namensnennungspflicht); Scribbles/Logo: alle Rechte vorbehalten.
+- Die folgenden AGPL-/GPL-Pflichten gelten für die Fremdteile:
 
 - Das Gesamtwerk enthält AGPL-3.0-Code (KoboldCPP, KoboldAI Lite) und nutzt SearXNG (AGPL-3.0)
   und pjproject (GPL-2.0+). Wird moritz-agent **über ein Netzwerk für andere Nutzer**

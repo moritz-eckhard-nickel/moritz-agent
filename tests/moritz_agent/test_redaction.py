@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 from __future__ import annotations
 
 from moritz_agent.redaction import REDACTED, redact

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 """Consistency checks for versioned templates and plan-relevant files."""
 
 from __future__ import annotations
@@ -167,3 +168,46 @@ def test_koboldcpp_web_uis_removed():
         "kcpp_docs.embd",
     ):
         assert not (REPO_ROOT / "embd_res" / name).exists()
+
+
+def test_msol_license_text_present():
+    text = (REPO_ROOT / "LICENSE-MSOL.md").read_text(encoding="utf-8")
+    assert text.startswith("MORITZSOFT OPEN LICENSE (MSOL)\nVersion 1.1, March 17, 2026")
+    assert "END OF TERMS AND CONDITIONS" in text
+    assert (REPO_ROOT / "LICENSE.md").is_file()  # upstream AGPL stays untouched
+
+
+def own_source_files() -> list[Path]:
+    files = [
+        p
+        for folder in ("moritz_agent", "tests/moritz_agent", "scripts")
+        for p in (REPO_ROOT / folder).rglob("*.py")
+    ]
+    files += [
+        REPO_ROOT / name
+        for name in (
+            "moritz-agent",
+            "install.sh",
+            "update.sh",
+            "moritz-install.sh",
+            "moritz-update.sh",
+        )
+    ]
+    return files
+
+
+def test_own_sources_carry_msol_spdx_header():
+    missing = [
+        str(p.relative_to(REPO_ROOT))
+        for p in own_source_files()
+        if "SPDX-License-Identifier: LicenseRef-MSOL-1.1"
+        not in "".join(p.read_text(encoding="utf-8").splitlines(keepends=True)[:2])
+    ]
+    assert not missing, missing
+
+
+def test_phone_defaults_hans_and_hessen():
+    config = load_toml("config/moritz-agent.example.toml")
+    assert config["phone"]["tts"]["engine"] == "polly"
+    assert config["phone"]["tts"]["fallback_engine"] == "piper"
+    assert config["fastpaths"]["state"] == "HE"

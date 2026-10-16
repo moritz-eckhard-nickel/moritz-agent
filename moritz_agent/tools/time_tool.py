@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 """Clock tool: current time and date from the system clock (PHONE-23, PHONE-24, ADR-017).
 
 The time is always read from the system clock in the configured zone (default

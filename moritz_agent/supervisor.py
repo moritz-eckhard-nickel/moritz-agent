@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 """Supervisor: startup order, child processes, health and restart backoff (P1-04).
 
 Startup order (docs/plan/02-architektur.md, section 4):

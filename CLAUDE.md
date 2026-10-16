@@ -18,6 +18,9 @@ Der vollständige Plan steht in `docs/plan/` – **vor jeder Aufgabe** das passe
   `tests/test_*.py`, …). KoboldCpp wird nur als Child-Prozess über HTTP genutzt (ADR-003).
   Unvermeidbare Patches: minimal, Kommentar `# moritz-agent:`, im Plan dokumentieren.
 - `LICENSE.md`, `MIT_LICENSE_GGML_SDCPP_LLAMACPP_ONLY.md` und Copyright-Header nie entfernen.
+- **Lizenzen (ADR-023, `LICENSING.md`):** eigener Code = MSOL 1.1. Jede neue eigene
+  Quelltext-/Skript-/Config-Datei beginnt mit `SPDX-License-Identifier: LicenseRef-MSOL-1.1`
+  (nach einer Shebang-Zeile). Fremdcode behält seine Lizenz. Scribbles/Logo: alle Rechte vorbehalten.
 - `third_party/` (SearXNG, pjproject) und `assets/models/` sind **mitgelieferte
   Fremdkomponenten**: nicht verändern, nur nach `third_party/VENDORED.md` aktualisieren
   (`git add -f third_party`). `third_party/pjproject/CLAUDE.md` gehört zu PJSIP, nicht zu uns.

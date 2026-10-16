@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 # moritz-agent – pinned external components (read by installer and updater)
 # Format: TOML. See docs/plan/07-installation-update.md §5 and ADR-021.
 # "vendored" = lives in this repository; no download needed.

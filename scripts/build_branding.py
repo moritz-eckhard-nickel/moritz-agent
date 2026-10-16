@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 """Rebuild all m-agent branding assets from the original Scribbles drawing (PRD-08).
 
 Input:  assets/branding/scribbles/scribbles-original.png (white strokes on transparency)

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 # SearXNG settings for the internal moritz-agent search worker (ADR-007, ADR-020).
 # Source: vendored checkout in third_party/searxng (see third_party/VENDORED.md).
 # secret_key is generated at install time and passed via SEARXNG_SECRET – never commit it.

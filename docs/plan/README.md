@@ -19,6 +19,8 @@ Stand: 16.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, 
 | [11-suchoptionen.md](11-suchoptionen.md) | Suchoptionen und Fallback-Kette (R4) |
 | [12-fast-paths.md](12-fast-paths.md) | Vordefinierte Antworten für einfache Infos (F-13) |
 | [../asterisk-konfiguration.md](../asterisk-konfiguration.md) | Komplette Asterisk-Konfiguration für Nebenstelle 999 / Konto `agent` |
+| [../stimme-hans.md](../stimme-hans.md) | Stimme „Hans“ (Amazon Polly) einrichten |
+| [../../LICENSING.md](../../LICENSING.md) | Welche Lizenz gilt wofür (MSOL 1.1, AGPL, GPL, MIT, Scribbles) |
 
 ## Kurzfassung
 

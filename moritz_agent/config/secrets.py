@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 """Loader for passwords.txt, the single source of credentials (CFG-01 ... CFG-04, ADR-012).
 
 The file is parsed strictly as data with configparser (no interpolation, no shell

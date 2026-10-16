@@ -46,7 +46,7 @@ Anforderungen: INST-01…11, UPD-01…07, CFG-01…10.
   `data/ssh/id_ed25519` erzeugen und Public Key anzeigen), optionale Passphrase; Host-Key per
   `ssh-keyscan` holen, **Fingerprint anzeigen und bestätigen lassen**, in TXT speichern,
   Testverbindung `ssh -o StrictHostKeyChecking=yes … true`. Bei 2: `enabled = false`.
-- **Polly („Hans“, optional):** `[1] Hans über Amazon Polly (Internet + AWS-Konto)  [2] lokal (Piper)`.
+- **Stimme Hans (Standard):** `[1] Hans über Amazon Polly – Schlüssel jetzt eingeben (Standard)  [2] später / lokal (Piper)`, Anleitung `docs/stimme-hans.md`.
   Bei 1: Access-Key-ID, Secret (ohne Echo), Region (Default `eu-central-1`) → `passwords.txt`
   `[optional_services]`; Testsynthese „Hallo Moritz“. Fehlschlag → Hinweis, Piper bleibt aktiv.
 - **SIP:** keine Abfrage bei Ersteinrichtung (Startwerte aus Vorlage). Warnung bei

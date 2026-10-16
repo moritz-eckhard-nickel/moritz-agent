@@ -211,7 +211,7 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
   über das echte Telefon aufgenommen **oder** synthetisch + G.711-Codec-Simulation),
   misst Whisper small (int8, 8 Threads; Vergleich `base`) WER + Latenz + RAM und je
   TTS-Engine (Piper thorsten-medium, Polly Hans) Time-to-first-audio + Real-Time-Factor.
-  Hörtest Piper-Stimmen vs. Hans mit Moritz.
+  Hans (Polly) ist Standard, Piper Fallback (PHONE-37).
 - **Komponenten-Teil:** `moritz_agent/phone/audio/{resample.py,vad.py,stt.py,tts.py,buffers.py}`
   mit Interfaces `SpeechToText.transcribe(pcm16_16k) -> Transcript(text, avg_logprob, no_speech_prob)`,
   `TextToSpeech.synthesize(text) -> Iterator[pcm16_16k_chunk]` (satzweise),

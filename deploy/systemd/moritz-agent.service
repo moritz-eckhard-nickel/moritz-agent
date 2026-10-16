@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 # systemd unit for moritz-agent (ticket P1-17). Installed by moritz-install.sh.
 [Unit]
 Description=moritz-agent – local AI agent with internal telephony

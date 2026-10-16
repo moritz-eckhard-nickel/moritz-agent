@@ -22,7 +22,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PRD-03 | KoboldCPP ist die Inference-Komponente, nicht das Produkt. Der Nutzer muss nicht wissen, dass KoboldCPP darunter läuft. | SOLL | 2 |
 | PRD-04 | Der interne Telefon-Agent ist die **höchste Priorität** und Bestandteil von Part 1 – kein späteres Zusatzfeature. | MUSS | 1 |
 | PRD-05 | Part 1 ist erst abgeschlossen, wenn ein **echter Anruf** mit Begrüßung, Zuhören, Uhrzeitantwort und einfacher Websuche funktioniert. | MUSS | 1 |
-| PRD-06 | Lizenzen (AGPL-3.0 KoboldCPP/SearXNG, MIT llama.cpp/ggml, PJSIP GPL-2.0+) werden eingehalten; Copyright-Hinweise bleiben erhalten. | MUSS | 1 |
+| PRD-06 | Lizenzen: eigener Code **MSOL 1.1**, Scribbles/Logo alle Rechte vorbehalten, Fremdcode behält seine Lizenz (AGPL-3.0 KoboldCpp/SearXNG, MIT llama.cpp/ggml, GPL-2.0+ PJSIP); Copyright-Hinweise der Fremdteile bleiben erhalten (ADR-023, `LICENSING.md`). | MUSS | 1 |
 | PRD-07 | ~~Windows-Start (`moritz-agent.exe`)~~ – **entfällt** (Moritz, F-12: „niemals“). Zielplattform ist ausschließlich Linux (Ubuntu) im LXC. | – | – |
 | PRD-08 | Einheitliches Branding „moritz-agent“ / „m-agent“ mit monochromem Logo (**M + Scribbles**) überall, wo Nutzer etwas sehen (README, WebUI, Favicon, Icons, Metadaten). **Scribbles**, das LayerNX-Maskottchen, ist das Maskottchen von moritz-agent und erscheint überall, wo eine Figur sinnvoll ist ([Branding-Regeln](../../assets/branding/README.md)). KoboldCpp-Oberflächen sind entfernt (F-11). | MUSS | 1 |
 | PRD-09 | Alle Programmbestandteile liegen **im Repository** und laufen als Teil des einen Programms: SearXNG (fertig gebaut), pjproject, VAD-Modell (ADR-021). Aus dem Netz kommen nur Abhängigkeiten (PyPI-Pakete mit Hashes, CUDA-Build-Toolchain, Systempakete) und die Hugging-Face-Modelle. | MUSS | 1 |
@@ -65,7 +65,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PHONE-34 | Sind STT oder TTS nicht bereit, wird kein normaler Gesprächsbetrieb vorgetäuscht Anruf annehmen → vorbereitete Störungsansage → auflegen. Fehlt der Ansagen-Cache selbst, registriert sich der Agent nicht (ADR-011). | MUSS | 1 |
 | PHONE-35 | Dauert die Antwort länger als `thinking_prompt_after_s` (Start: 2,5 s), wird eine vorbereitete Zwischenansage gespielt („Moment, ich schaue nach.“). | SOLL | 1 |
 | PHONE-36 | Optionaler Abschied per Sprache („Tschüss“, „Danke, das war’s“) → Verabschiedung und Auflegen. | SOLL | 1 |
-| PHONE-37 | Stimme: Moritz wünscht die Stimme **„Hans“** (Amazon Polly). Unterstützt als optionale Cloud-Engine; lokale Piper-Stimme ist Standard und automatischer Fallback (ADR-008). | SOLL | 1 |
+| PHONE-37 | Stimme: **„Hans“** (Amazon Polly) ist die Standardstimme; ohne AWS-Schlüssel, Internet oder bei Fehlern spricht automatisch die lokale Piper-Stimme (ADR-008, [`docs/stimme-hans.md`](../stimme-hans.md)). | MUSS | 1 |
 
 ### 2.3 Ressourcen, Parallelität, Datenschutz
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 # moritz-agent – nicht geheime Konfiguration
 #
 # Vorlage für config/moritz-agent.toml (lokal, nicht versioniert).
@@ -90,8 +91,8 @@ no_speech_threshold = 0.6
 min_avg_logprob = -1.0
 
 [phone.tts]
-engine = "piper"                  # "polly" = Stimme Hans (Amazon Polly, Cloud) | "piper" = lokal (ADR-008)
-fallback_engine = "piper"         # bei Polly-Fehler/Timeout/offline
+engine = "polly"                  # Wunschstimme Hans (Amazon Polly, docs/stimme-hans.md) | "piper" = lokal (ADR-008)
+fallback_engine = "piper"         # bei fehlenden AWS-Schlüsseln, Polly-Fehler, Timeout, offline
 cpu_threads = 4
 
 [phone.tts.piper]
@@ -120,7 +121,7 @@ transcript_retention_hours = 24   # … aber nur 24 Stunden
 
 [fastpaths]
 enabled = true                    # F-13, Katalog docs/plan/12-fast-paths.md
-state = ""                        # Bundesland für Feiertage (leer = nur bundesweit, F-15)
+state = "HE"                      # Bundesland für Feiertage: Hessen (F-15)
 
 [sandbox]
 # Verbindungsdaten in passwords.txt [sandbox_ssh]; Nutzung ab Part 4.

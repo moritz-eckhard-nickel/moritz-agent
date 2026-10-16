@@ -118,25 +118,22 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   (Ablauf in `third_party/VENDORED.md`).
 - **Status:** beschlossen.
 
-## ADR-008 – TTS: Wunschstimme „Hans“ (Amazon Polly) optional, Piper lokal als Standard
+## ADR-008 – TTS: Stimme „Hans“ (Amazon Polly) als Standard, Piper lokal als Fallback
 
-- **Kontext (F-08):** Moritz wünscht „diese simple TTS-Stimme namens Hans“. „Hans“ ist die
-  männliche deutsche **Standard-Stimme von Amazon Polly** (Cloud-Dienst von AWS). Eine lokale
-  Stimme dieses Namens gibt es nicht.
-- **Entscheidung:** TTS-Schnittstelle mit zwei Engines:
-  1. `piper` (lokal, CPU, Standard und Fallback): Stimme `de_DE-thorsten-medium`
-     (männlich, neutral, CC0, 63 MB), Alternativen `de_DE-karlsson-low`, `de_DE-pavoque-low`.
-  2. `polly` (optional, Cloud): Stimme **Hans**, `Engine=standard`,
-     `OutputFormat=pcm`, `SampleRate=16000` (passt direkt zum Telefon-Audio, kein Resampling).
-     Zugangsdaten in `passwords.txt` `[optional_services]`
-     (`aws_polly_access_key_id`, `aws_polly_secret_access_key`, `aws_polly_region`).
-     Bei Fehler/Timeout (1,5 s) oder fehlender Internetverbindung → sofort Piper.
-- **Ansagen:** werden mit der jeweils aktiven Engine vorgerendert und gecacht → Begrüßung
-  funktioniert immer offline.
-- **Datenschutz:** Mit `polly` gehen die **Antworttexte** (nicht das Audio des Anrufers) an AWS.
-  Kosten: Polly Standard ist pro Million Zeichen abgerechnet und für diesen Umfang
-  vernachlässigbar (aktuelle Preise bei AWS prüfen).
-- **Status:** beschlossen; Bestätigung „Hans = Amazon Polly?“ und AWS-Konto offen (F-08b).
+- **Kontext (F-08, F-08b):** Moritz will die Stimme **Hans**. Hans ist die männliche deutsche
+  Standard-Stimme von **Amazon Polly** (Cloud-Sprachausgabe von AWS); lokal gibt es sie nicht.
+- **Entscheidung:** TTS-Schnittstelle mit zwei Engines, **Standard = `polly`**:
+  1. `polly`: Stimme **Hans**, `Engine=standard`, `OutputFormat=pcm`, `SampleRate=16000`
+     (direkt im Telefonformat). Zugangsschlüssel in `passwords.txt` `[optional_services]`
+     (`aws_polly_access_key_id`, `aws_polly_secret_access_key`, `aws_polly_region`),
+     IAM-Benutzer nur mit `polly:SynthesizeSpeech`. Anleitung für Moritz:
+     [`docs/stimme-hans.md`](../stimme-hans.md).
+  2. `piper` (lokal, CPU): `de_DE-thorsten-medium`. Springt automatisch ein bei fehlenden
+     Schlüsseln, Fehler, Timeout (1,5 s) oder ohne Internet – der Anruf bricht nie ab.
+- **Ansagen:** werden beim Einrichten mit Hans vorgerendert und gecacht → Begrüßung klingt
+  auch offline nach Hans; ohne AWS-Schlüssel mit Piper.
+- **Datenschutz:** Nur Antworttexte gehen an AWS, nie Audio des Anrufers.
+- **Status:** beschlossen. Offen ist nur, ob Moritz das AWS-Konto anlegt (bis dahin Piper).
 
 ## ADR-009 – VAD: Silero VAD (ONNX)
 
@@ -287,17 +284,22 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   nicht angeboten (`server.tls = false` nur für Tests).
 - **Status:** beschlossen.
 
-## ADR-023 – Lizenz
+## ADR-023 – Lizenzen: eigener Code MSOL 1.1, Fremdcode behält seine Lizenz
 
-- **Entscheidung (R12):** Jede Komponente behält ihre Lizenz: KoboldCpp und KoboldAI-Reste
-  AGPL-3.0, ggml/llama.cpp MIT, SearXNG AGPL-3.0, pjproject GPL-2.0+, Piper GPL-3.0,
-  Silero MIT. Für den **eigenen Code** wünscht Moritz eine eigene Lizenz („msol 1.1“).
-  Diese Lizenz ist nicht eindeutig identifizierbar (offene Frage F-14). Bis zur Klärung
-  steht der eigene Code wie das Gesamtwerk unter **AGPL-3.0**.
-- **Hinweis zur Wahl:** Der Phone-Worker bindet PJSUA2 (GPL) und Piper (GPL) im selben
-  Prozess ein → eine Lizenz für den eigenen Code muss **GPL-kompatibel** sein (z. B. MIT,
-  Apache-2.0, MPL-2.0, GPL/AGPL). MPL **1.1** wäre z. B. nicht GPL-kompatibel.
-- **Status:** offen (F-14).
+- **Entscheidung (R12, F-14, F-17):**
+  - Eigener Code und eigene Doku von moritz-agent: **Moritzsoft Open License (MSOL) 1.1**
+    ([`LICENSE-MSOL.md`](../../LICENSE-MSOL.md)), moritz-agent ist ein *Public Release*.
+    Quelltexte tragen `SPDX-License-Identifier: LicenseRef-MSOL-1.1`.
+  - Scribbles und das m-agent-Logo: **© LayerNX / Moritz Eckhard Nickel, alle Rechte
+    vorbehalten** – weder MSOL noch AGPL.
+  - KoboldCpp und Upstream-Dateien AGPL-3.0, ggml/llama.cpp MIT, SearXNG AGPL-3.0,
+    pjproject GPL-2.0+, Piper GPL-3.0, Silero MIT – unverändert.
+  - Zuordnung je Pfad: [`LICENSING.md`](../../LICENSING.md).
+- **Verträglichkeit:** MSOL 1.1 ist freizügig (inkl. Unterlizenzierung, keine Zusatzpflichten
+  außer §6 Namensrecht und dem Gewährleistungsausschluss) und lässt sich daher mit dem
+  AGPL-/GPL-Code kombinieren. Für das Gesamtpaket gelten zusätzlich die AGPL-/GPL-Pflichten
+  der Fremdteile (Quellcode anbieten, deren Hinweise behalten). Keine Rechtsberatung.
+- **Status:** beschlossen.
 
 ## ADR-024 – Zielsystem Ubuntu 26.04 / 25.10, System-Python
 

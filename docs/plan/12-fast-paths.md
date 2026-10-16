@@ -27,7 +27,7 @@ Agent-Loop (AGENT-06, AGENT-10, ADR-025).
 | `calendar_week` | „Welche Kalenderwoche haben wir?“, „Welche KW?“ | „Wir haben Kalenderwoche 42.“ | ISO-8601-Woche |
 | `tomorrow` / `yesterday` | „Welcher Tag ist morgen?“ | „Morgen ist Samstag, der 17. Oktober.“ | Systemuhr |
 | `days_until` | „Wie viele Tage bis Weihnachten / Silvester / Neujahr / Wochenende?“ | „Noch 69 Tage bis Heiligabend.“ | Kalender (feste + bewegliche Feiertage, Ostern per Gauß) |
-| `holiday_next` | „Wann ist der nächste Feiertag?“ | „Der nächste bundesweite Feiertag ist …“ | bundesweite Feiertage; Bundesland konfigurierbar (`fastpaths.state`, offene Frage F-15) |
+| `holiday_next` | „Wann ist der nächste Feiertag?“, „Ist morgen ein Feiertag?“ | „Der nächste Feiertag in Hessen ist Weihnachten, am Freitag, 25. Dezember.“ | Feiertage **Hessen** (`fastpaths.state = "HE"`, F-15), siehe §4 |
 | `daylight_saving` | „Wann wird die Uhr umgestellt?“ | „Die Uhr wird am Sonntag, 25. Oktober, um 3 Uhr auf 2 Uhr zurückgestellt.“ | zoneinfo |
 | `calculator` | „Was ist 17 mal 23?“, „Wurzel aus 144“, „20 Prozent von 80“ | „17 mal 23 ist 391.“ | sicherer Ausdrucks-Parser (kein `eval`) |
 | `identity` | „Wer bist du?“, „Wie heißt du?“ | „Ich bin Agent, Moritz’ Telefonassistent.“ | fest |
@@ -41,3 +41,27 @@ Agent-Loop (AGENT-06, AGENT-10, ADR-025).
 - Wetter, Nachrichten, Preise, Sportergebnisse → `web_search` (aktuelle Daten nötig).
 - Sonnenauf-/-untergang → erst mit konfiguriertem Standort (`fastpaths.location`, Part 7).
 - Alles mit Seiteneffekten (Licht, Geräte, Anrufe) → nie per Fast-Path (PHONE-46).
+
+## 4. Feiertage Hessen (F-15)
+
+Gesetzliche Feiertage nach dem Hessischen Feiertagsgesetz, berechnet je Jahr (Ostern nach der
+Gaußschen Osterformel):
+
+| Feiertag | Datum |
+| --- | --- |
+| Neujahr | 1. Januar |
+| Karfreitag | Ostersonntag − 2 Tage |
+| Ostersonntag | beweglich (fällt immer auf einen Sonntag) |
+| Ostermontag | Ostersonntag + 1 |
+| Tag der Arbeit | 1. Mai |
+| Christi Himmelfahrt | Ostersonntag + 39 |
+| Pfingstsonntag | Ostersonntag + 49 (Sonntag) |
+| Pfingstmontag | Ostersonntag + 50 |
+| Fronleichnam | Ostersonntag + 60 (in Hessen gesetzlicher Feiertag) |
+| Tag der Deutschen Einheit | 3. Oktober |
+| 1. Weihnachtstag | 25. Dezember |
+| 2. Weihnachtstag | 26. Dezember |
+
+Heiligabend und Silvester sind keine gesetzlichen Feiertage, werden aber bei `days_until` als
+Ziel erkannt. Die Liste wird in P1-09 mit Tests gegen bekannte Jahre (z. B. 2026, 2027)
+abgesichert; vor Inbetriebnahme gegen den offiziellen Feiertagskalender des Landes Hessen prüfen.

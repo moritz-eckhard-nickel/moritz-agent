@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 # moritz-agent – single start command (PRD-01).
 # Uses the installed virtual environment if present, otherwise the system python3.
 set -Eeuo pipefail

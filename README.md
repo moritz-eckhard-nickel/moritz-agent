@@ -34,7 +34,7 @@ Moritz wählt intern die **999**. Der Agent ist als SIP-Konto `agent` an der Tel
 3. beantwortet einfache Fragen sofort über feste Antwortwege – Uhrzeit, Datum, Kalenderwoche,
    Rechnen, … ([Fast-Paths](docs/plan/12-fast-paths.md)) – die Uhrzeit immer aus der echten Systemuhr (Europe/Berlin),
 4. beantwortet andere Fragen mit dem Sprachmodell und nutzt bei Bedarf die integrierte Websuche,
-5. spricht die Antwort (Wunschstimme „Hans“ oder lokal Piper) und hört wieder zu – mehrere Runden pro Anruf,
+5. spricht die Antwort mit der Stimme **Hans** ([Einrichtung](docs/stimme-hans.md); ohne Internet lokal Piper) und hört wieder zu – mehrere Runden pro Anruf,
 6. räumt beim Auflegen alles sauber auf.
 
 Asterisk-Einrichtung: [`docs/asterisk-konfiguration.md`](docs/asterisk-konfiguration.md)
@@ -134,13 +134,12 @@ moritz-agent ist ein eigenständiges Projekt auf Basis von
 aufbaut. Die ursprüngliche KoboldCpp-Dokumentation ist unter
 [`docs/upstream/KOBOLDCPP_README.md`](docs/upstream/KOBOLDCPP_README.md) archiviert.
 
-Jede Komponente behält ihre Lizenz:
+Jede Komponente behält ihre Lizenz (Übersicht je Pfad: [LICENSING.md](LICENSING.md)):
 
-- KoboldCpp und damit das Gesamtwerk: **GNU AGPL v3.0** ([LICENSE.md](LICENSE.md)), sofern eine Datei nichts anderes angibt.
+- **Eigener Code von moritz-agent: Moritzsoft Open License (MSOL) 1.1** ([LICENSE-MSOL.md](LICENSE-MSOL.md)).
+- KoboldCpp und übrige Upstream-Dateien: **GNU AGPL v3.0** ([LICENSE.md](LICENSE.md)), sofern eine Datei nichts anderes angibt.
 - GGML, llama.cpp und stable-diffusion.cpp: MIT ([MIT_LICENSE_GGML_SDCPP_LLAMACPP_ONLY.md](MIT_LICENSE_GGML_SDCPP_LLAMACPP_ONLY.md)).
 - SearXNG: AGPL-3.0 · PJSIP: GPL-2.0+ · Piper: GPL-3.0 · Silero VAD: MIT – Details in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-- Lizenz für den eigenen moritz-agent-Code: in Klärung (ADR-023), bis dahin AGPL-3.0.
-
-- Scribbles (Maskottchen) © LayerNX – nicht Teil der AGPL-Lizenz.
+- Scribbles und das m-agent-Logo: © LayerNX / Moritz Eckhard Nickel, **alle Rechte vorbehalten**.
 
 Alle ursprünglichen Copyright- und Lizenzhinweise bleiben erhalten.

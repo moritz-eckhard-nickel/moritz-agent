@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 # Ansagenkatalog (PHONE-21, PHONE-30 … PHONE-35, ADR-011).
 # Wird beim Installieren/Update per TTS in assets/audio/cache/<voice>/ vorgerendert (P1-13).
 # `required = true`: ohne diese Datei registriert sich der Agent nicht (ADR-011).

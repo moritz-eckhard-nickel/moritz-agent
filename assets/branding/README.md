@@ -53,5 +53,7 @@ python scripts/build_branding.py
 
 ## Rechte
 
-Scribbles © LayerNX. Die Grafik ist **nicht** Teil der AGPL-Lizenz des Codes; Nutzung in
-moritz-agent mit Erlaubnis von Moritz. Lizenz für Dritte: offene Frage F-17.
+Scribbles und das m-agent-Logo: **© LayerNX / Moritz Eckhard Nickel – alle Rechte vorbehalten.**
+Sie fallen weder unter die MSOL 1.1 (eigener Code) noch unter die AGPL (KoboldCpp). Wer
+moritz-agent abwandelt und weitergibt, ersetzt Logo und Maskottchen durch eigene
+(siehe [`LICENSING.md`](../../LICENSING.md)).

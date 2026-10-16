@@ -1,10 +1,12 @@
 # Third-Party Notices
 
+moritz-agent's own code is licensed under the Moritzsoft Open License (MSOL) 1.1
+([LICENSE-MSOL.md](LICENSE-MSOL.md)); see [LICENSING.md](LICENSING.md) for the per-path overview.
 moritz-agent is based on KoboldCpp and combines several open-source components. The
 original copyright notices and license texts of all components are retained. Where a
 file carries its own license header, that header takes precedence.
 
-The work as a whole is distributed under the **GNU Affero General Public License v3.0**
+The KoboldCpp parts are distributed under the **GNU Affero General Public License v3.0**
 (see [LICENSE.md](LICENSE.md)). If you make a modified version available to users over a
 network, AGPL-3.0 §13 requires offering them the corresponding source code.
 
@@ -38,7 +40,7 @@ Unmodified copies; provenance and versions in [third_party/VENDORED.md](third_pa
 | Python packages (installed from PyPI, pinned in `requirements/*.lock`) | not vendored | per package (FastAPI, Starlette, Pydantic: MIT; Uvicorn, HTTPX, Granian: BSD-3-Clause; faster-whisper, CTranslate2, ONNX Runtime: MIT; NumPy (BSD-3-Clause), PyAV (BSD-3-Clause), Piper (GPL-3.0), python-soxr (LGPL-2.1-or-later), boto3 (Apache-2.0), Flask (BSD-3-Clause), lxml (BSD-3-Clause), …) |
 | Silero VAD v6.2.3 | `assets/models/vad/` | MIT |
 | m-agent logo (M + Scribbles) | `assets/branding/`, `niko.ico`, `nikogreen.ico` | contains the Scribbles artwork, see below |
-| **Scribbles** – mascot of LayerNX and moritz-agent | `assets/branding/scribbles/` (original drawing + traced SVG/PNG) | © LayerNX, provided by Moritz for moritz-agent. Not covered by the AGPL; all rights reserved unless LayerNX states otherwise (open question F-17) |
+| **Scribbles** – mascot of LayerNX and moritz-agent | `assets/branding/scribbles/` (original drawing + traced SVG/PNG) | © LayerNX / Moritz Eckhard Nickel. **All rights reserved.** Not covered by MSOL or AGPL |
 
 ## Downloaded at setup time (not stored in this repository)
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 # moritz-install.sh – installer for moritz-agent (ticket P1-15).
 #
 # Specification: docs/plan/07-installation-update.md §2 (phases, prompts, exit codes).

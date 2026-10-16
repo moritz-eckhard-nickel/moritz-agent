@@ -17,9 +17,9 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | R9 | Upstream-Merges kollidieren | „egal“ | Akzeptiert; Patch-Liste in 02 §12 hilft beim Auflösen | laufend |
 | R10 | Echo/Selbsterkennung | „Lösung steht schon da“ | Klarer Sprecherwechsel (Part 1), AEC in Part 7 | P1-12 |
 | R11 | Conda-CUDA-Build braucht Platz/Zeit | „kp“ | Disk ≥ 80 GB eingeplant (06 §3) | P1-02 |
-| R12 | Lizenzen | „Lizenzen so lassen, dass KoboldCpp und alle anderen ihre behalten; für den Rest ‚msol 1.1‘“ | Jede Komponente behält ihre Lizenz; eigene Lizenz offen (F-14, ADR-023) | – |
+| R12 | Lizenzen | „Lizenzen so lassen, dass KoboldCpp und alle anderen ihre behalten; für den Rest ‚msol 1.1‘“ | **Erledigt:** eigener Code MSOL 1.1, Fremdcode unverändert, Scribbles alle Rechte vorbehalten (ADR-023, `LICENSING.md`) | – |
 | R13 | **Neu:** Repo-Größe durch Fremdkomponenten (≈ +95 MB für SearXNG und pjproject) | – | Python-Pakete bewusst nicht im Repo (Moritz: „requirements egal“); Updates von `third_party/` bündeln (ADR-021) | laufend |
-| R14 | **Neu:** Polly „Hans“ braucht Internet + AWS | – | Piper-Fallback automatisch; Ansagen vorgerendert (ADR-008) | P1-10 |
+| R14 | **Neu:** Polly „Hans“ braucht Internet + AWS-Konto | „will Hans“ | Hans ist Standard; Piper springt automatisch ein; Ansagen vorgerendert; Anleitung `docs/stimme-hans.md` (ADR-008) | P1-10 |
 | R15 | **Neu:** MoE mit CPU-Experten auf Haswell (DDR4) langsamer als erwartet | – | `--moecpu` senken (mehr auf GPU), Q3_K_S, oder dichtes 14B als Fallback (ADR-016) | P1-02 |
 
 ## 2. Offene Fragen – beantwortet
@@ -44,8 +44,8 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 
 | # | Frage | Default bis zur Antwort |
 | --- | --- | --- |
-| F-08b | Ist mit „Hans“ die **Amazon-Polly**-Stimme gemeint? Gibt es ein AWS-Konto (Access-Key mit Recht `polly:SynthesizeSpeech`)? | Polly vorbereitet, aber aus; lokal Piper `de_DE-thorsten-medium` |
-| F-14 | Was ist „msol 1.1“? (Keine Lizenz dieses Namens auffindbar; gemeint vielleicht MPL – dann bitte **2.0**, weil 1.1 nicht GPL-kompatibel ist – oder MIT/Apache-2.0?) | eigener Code bleibt AGPL-3.0 |
-| F-15 | Bundesland für Feiertags-Fast-Path? | nur bundesweite Feiertage |
+| F-08b | ~~Hans = Amazon Polly? AWS-Konto?~~ | **beantwortet:** Moritz will Hans. Hans = Amazon Polly → Standard-Engine `polly`; AWS-Konto nach [`docs/stimme-hans.md`](../stimme-hans.md) anlegen, bis dahin spricht Piper |
+| F-14 | ~~„msol 1.1“?~~ | **beantwortet:** Moritzsoft Open License 1.1 für allen eigenen Code ([`LICENSE-MSOL.md`](../../LICENSE-MSOL.md), [`LICENSING.md`](../../LICENSING.md), ADR-023) |
+| F-15 | ~~Bundesland?~~ | **beantwortet:** Hessen (`fastpaths.state = "HE"`, [12-fast-paths.md](12-fast-paths.md) §4) |
 | F-16 | ~~HF-Modelle ins Repo?~~ | **beantwortet:** nein, HF-Modelle lädt der Installer; alles andere ins Repo, Python-Requirements dürfen aus dem Netz kommen |
-| F-17 | Lizenz der Scribbles-Grafik (LayerNX)? Darf sie unter einer freien Lizenz (z. B. CC BY 4.0) im öffentlichen Repo stehen, oder „alle Rechte vorbehalten“? | © LayerNX, alle Rechte vorbehalten, Nutzung in moritz-agent erlaubt |
+| F-17 | ~~Lizenz Scribbles?~~ | **beantwortet:** alle Rechte vorbehalten (© LayerNX) |
