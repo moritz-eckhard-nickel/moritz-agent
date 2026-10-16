@@ -8,11 +8,11 @@ Begründungen der hier getroffenen Entscheidungen stehen in
 ```text
  Internes Telefon ──SIP/RTP──► Asterisk 192.168.1.176 ──SIP 5060/udp + RTP──┐
                                                                              │
- Browser / später Android-WebView ──HTTP(S) :5001──┐                         │
+ Browser / später Android-WebView ──HTTPS :3501───┐                         │
                                                    ▼                         ▼
 ┌──────────────────────────── Agent-LXC auf Sophie-1 ───────────────────────────────┐
 │  moritz-agent (Supervisor, Hauptprozess)                                           │
-│  ├─ Backend API + WebUI (FastAPI/uvicorn)        :5001                             │
+│  ├─ Backend API + WebUI (FastAPI/uvicorn)        0.0.0.0:3501 (HTTPS, Login)       │
 │  ├─ Agent Core (Profile, Tool-Router, Context)   in-process                        │
 │  ├─ Inference-Client (Prioritäts-Queue, Abort)   in-process                        │
 │  ├─ Storage (SQLite WAL)                         in-process                        │
@@ -62,13 +62,19 @@ moritz-agent/                      (Repo-Wurzel = Installationsverzeichnis /opt/
 │   └── setup/                     Installer-/Update-Helfer (atomare Writes, TXT-Migration)
 │
 ├── frontend/                      eigene WebUI (Part 1: Statusseite; Part 2: Chat)
+├── third_party/                   ── mitgelieferte Fremdkomponenten (ADR-021), unverändert ──
+│   ├── searxng/                   SearXNG, fertig gebaut (Assets + Daten), läuft direkt aus dem Repo
+│   ├── pjproject/                 PJSIP/PJSUA2 2.17 Quellcode
+│   └── VENDORED.md                Herkunft, Versionen, Lizenzen, Update-Ablauf
 ├── config/
 │   ├── moritz-agent.example.toml  dokumentierte Vorlage (versioniert)
 │   ├── moritz-agent.toml          lokale Konfiguration (NICHT versioniert)
 │   ├── passwords.template.txt     Vorlage für passwords.txt (versioniert)
 │   ├── versions.lock              gepinnte externe Komponenten + SHA-256 (07 §5)
 │   └── searxng/settings.yml       SearXNG-Konfiguration (versioniert, ohne secret_key)
-├── assets/audio/                  vorbereitete Ansagen (generiert, Cache; Manifest versioniert)
+├── assets/audio/                  Ansagenkatalog (versioniert) + generierter Cache (nicht versioniert)
+├── assets/models/                 kleine Modelle im Repo (Silero VAD, ≤ 100 MB je Datei)
+├── assets/branding/              Logo m-agent (M + Scribbles), Branding-Regeln; scribbles/ = Maskottchen
 ├── deploy/systemd/                moritz-agent.service
 ├── scripts/                       Spikes und Benchmarks (sip_spike, bench_audio, bench_llm)
 ├── requirements/                  gepinnte Lock-Dateien mit Hashes (ADR-019)
@@ -78,25 +84,25 @@ moritz-agent/                      (Repo-Wurzel = Installationsverzeichnis /opt/
 │
 ├── passwords.txt                  lokal, 0600, NICHT versioniert
 ├── data/                          SQLite, Logs, Zustände (NICHT versioniert)
-├── models/                        GGUF, STT-, TTS-, VAD-Modelle (NICHT versioniert)
-├── runtime/                       venv, SearXNG-Checkout+venv, PJSIP-Build (NICHT versioniert)
+├── models/                        große Modelle: LLM-GGUF, Whisper small, Piper-Stimme (NICHT versioniert, > 100 MB bzw. HF-Download)
+├── runtime/                       venvs, PJSIP-Build, TLS-Zertifikat (NICHT versioniert)
 ├── backups/                       Update-Sicherungen, 0700 (NICHT versioniert)
 │
 └── koboldcpp.py, kcpp_*, ggml/, src/, otherarch/, tools/, vendor/, Makefile, …
                                    ── KoboldCPP-Upstream, möglichst unverändert ──
 ```
 
-> Hinweis: `vendor/` enthält bereits C/C++-Header-Bibliotheken von llama.cpp. Der im
-> Originalplan skizzierte Ordner `vendor/koboldcpp/` wird deshalb **nicht** angelegt
-> (ADR-001); SearXNG wird zur Installationszeit nach `runtime/searxng/` geholt (ADR-007).
+> Hinweis: `vendor/` enthält bereits C/C++-Header-Bibliotheken von llama.cpp (Upstream).
+> Der im Originalplan skizzierte Ordner `vendor/koboldcpp/` wird deshalb **nicht** angelegt
+> (ADR-001). Eigene mitgelieferte Fremdkomponenten liegen in `third_party/` (ADR-021).
 
 ## 3. Prozessmodell
 
 | Prozess | Start durch | Bindung | Neustart-Policy | Ausfallverhalten |
 | --- | --- | --- | --- | --- |
-| **Supervisor/Main** (`python -m moritz_agent run`) | systemd | `:5001` (Web) + `127.0.0.1:<dyn>` intern | systemd `Restart=on-failure` | Alles stoppt; systemd startet neu |
+| **Supervisor/Main** (`python -m moritz_agent run`) | systemd | `0.0.0.0:3501` (HTTPS) + `127.0.0.1:<dyn>` intern | systemd `Restart=on-failure` | Alles stoppt; systemd startet neu |
 | **Inference-Worker** (`koboldcpp.py --skiplauncher …`) | Supervisor | `127.0.0.1:<dyn>` | Backoff 2 s → 60 s, unbegrenzt | Phone: Fehleransage; API: 503 |
-| **Search-Worker** (SearXNG via `granian`) | Supervisor | `127.0.0.1:<dyn>` | Backoff 2 s → 60 s | `web_search` liefert Fehlerobjekt → ehrliche Ansage |
+| **Search-Worker** (SearXNG aus `third_party/searxng` via `granian`) | Supervisor | `127.0.0.1:<dyn>` | Backoff 2 s → 60 s | Fallback-Kette: KoboldCpp-Websuche → Wikipedia → ehrliche Ansage (ADR-020) |
 | **Phone-Worker** (`python -m moritz_agent.phone.worker`) | Supervisor | SIP `0.0.0.0:5060/udp`, RTP 40000–40199/udp | Backoff 2 s → 60 s; nie während aktivem Anruf neu starten (außer bei Crash) | Kein Anruf möglich; Status „Phone down“ |
 | *(Part 6)* Remote-Browser-Client | Agent bei Bedarf | – | on demand | Tool „unavailable“ |
 
@@ -108,7 +114,7 @@ moritz-agent/                      (Repo-Wurzel = Installationsverzeichnis /opt/
 - Main → Phone-Worker: Steuer-Endpunkte des Workers (`/control/reload`, `/control/status`)
   auf eigenem Loopback-Port, gleiches Token.
 - Main → Inference: OpenAI-kompatibel (`/v1/chat/completions`, Streaming) + KoboldCPP
-  `/api/extra/abort`, `/api/extra/perf`, `/api/v1/model`.
+  `/api/extra/abort`, `/api/extra/perf`, `/api/v1/model`, `/api/extra/websearch` (Such-Fallback).
 - Main → SearXNG: `GET /search?format=json&q=…&language=de-DE`.
 
 Warum HTTP statt `multiprocessing`-Pipes: sprachunabhängig, mit `curl` debugbar, gleiche
@@ -125,12 +131,12 @@ Auth-Mechanik überall, Worker sind auch einzeln startbar (ADR-004).
  6. Search-Worker starten (async)
  7. Sandbox-Konfiguration prüfen (nur Status, keine Verbindung erzwingen)
  8. Agent Runtime initialisieren (Profile, Tool-Registry)
- 9. Web-API + Statusseite starten (:5001)
+ 9. Web-API + Statusseite starten (HTTPS :3501)
 10. Phone-Worker starten:
       a) Ansagen-Cache prüfen/erzeugen, Audio-Komponenten laden (VAD, STT, TTS)
       b) erst wenn der Ansagen-Cache OK ist → SIP-Registrierung (ADR-011)
       c) „Anrufbereit“ melden
-11. Optional Browser öffnen (nur Desktop-Betrieb, im LXC aus)
+11. (kein automatisches Browser-Öffnen – Betrieb im LXC)
 ```
 
 Schritte 5, 6 und 10 laufen parallel. Telefon darf registrieren, **bevor** das LLM fertig
@@ -208,6 +214,19 @@ trägt eine `deadline`. Legt der Anrufer auf, schickt der Worker
 `POST /internal/phone/cancel {call_id}` → Main bricht Agent-Loop und laufende
 Generierung (`/api/extra/abort`) ab.
 
+## 5a. CPU-Threads (E5-2673 v3, max. 18 Threads für den LXC, F-07)
+
+| Verbraucher | Threads | Begründung |
+| --- | ---: | --- |
+| KoboldCpp Generierung (`--threads`) | 12 | MoE-Experten teilweise auf CPU → speicherbandbreitenlimitiert, mehr Threads bringen kaum etwas |
+| KoboldCpp Prompt-Verarbeitung (`--blasthreads`) | 12 | läuft überwiegend auf der GPU |
+| STT faster-whisper (`cpu_threads`) | 8 | läuft **vor** der LLM-Generierung, daher kaum Überlappung |
+| TTS Piper / onnxruntime | 4 | läuft nach der Generierung |
+| VAD, SIP, Main, SearXNG | Rest | leichtgewichtig |
+
+Die Summe übersteigt 18, weil STT, LLM und TTS innerhalb eines Turns **nacheinander**
+laufen; die harte Grenze setzt der LXC (`cores: 18`), nicht die Konfiguration.
+
 ## 6. Inference-Warteschlange
 
 - `asyncio.PriorityQueue` mit Prioritäten `PHONE=0`, `INTERACTIVE=1`, `BACKGROUND=2`.
@@ -230,7 +249,7 @@ Generierung (`/api/extra/abort`) ab.
 | Denkmodus | aus (NoThink-Adapter / `enable_thinking=false`, je nach Modell) |
 | Systemanweisung | `moritz_agent/agent/prompts/phone.de.md` (Entwurf siehe 04, Ticket P1-09) |
 
-**Fast-Path (AGENT-06):** Regex/Keyword-Erkennung für eindeutige Zeit-/Datumsfragen
+**Fast-Paths (AGENT-06, AGENT-10, Katalog [12-fast-paths.md](12-fast-paths.md)):** Muster-Erkennung, u. a. für eindeutige Zeit-/Datumsfragen
 („wie spät“, „wie viel Uhr“, „welche Uhrzeit“, „welcher Tag/Datum ist heute“). Treffer →
 Tool direkt, Antwort per Template, **kein LLM**. Kein Treffer → normaler Agent-Loop.
 **Guard:** Antwort enthält Uhrzeit-Muster (`\b\d{1,2}[:.]\d{2}\b`, „… Uhr …“) ohne
@@ -289,7 +308,7 @@ bei jedem Start neu erzeugt), nicht über das Web-Passwort.
 
 | Dienst | Bindung | Protokoll | Von wo erreichbar |
 | --- | --- | --- | --- |
-| Web-UI/API | `server.host:5001` | TCP | Loopback; LAN nur mit aktivem Login (API-02) |
+| Web-UI/API | `0.0.0.0:3501` | TCP (HTTPS) | LAN, nur mit aktivem Login (API-02, F-04) |
 | Interne API | `127.0.0.1:<dyn>` | TCP | nur lokal |
 | KoboldCPP | `127.0.0.1:<dyn>` | TCP | nur lokal |
 | SearXNG | `127.0.0.1:<dyn>` | TCP | nur lokal |
@@ -319,3 +338,10 @@ bei jedem Start neu erzeugt), nicht über das Web-Passwort.
 | `README.md` | ersetzt durch moritz-agent-README; Original nach `docs/upstream/KOBOLDCPP_README.md` | Branding (ADR-002) | P1-00 |
 | `.gitignore` | Abschnitt „moritz-agent“ angehängt | Secrets/Laufzeitdaten (CFG-07) | P1-00 |
 | `.github/ISSUE_TEMPLATE/create-new-issue.md` | ersetzt durch `bug.md`/`task.md` | Branding | P1-00 |
+| `niko.ico`, `nikogreen.ico` | Inhalt durch m-agent-Logo ersetzt (Dateinamen bleiben, Build-Skripte unverändert) | Branding (PRD-08) | P1-00b |
+| `embd_res/klite.embd`, `kcpp_docs.embd`, `kcpp_sdui.embd`, `lcpp.gz.embd`, `kcpp_musicui.embd` | gelöscht; KoboldCpp startet ohne sie (prüft per `try/except`) | KoboldCpp-Oberflächen entfernt (F-11) | P1-00b |
+| `media/preview*.png` | gelöscht (KoboldCpp-Screenshots) | Branding | P1-00b |
+| `kcpp_src/packaging/version_template.txt` | Produkt-/Firmenname → moritz-agent, Lizenzangabe unverändert | Branding | P1-00b |
+
+Bei Upstream-Merges: gelöschte `embd_res`-UI-Dateien erneut löschen (`git rm`), Icons
+mit `assets/branding/m-agent.ico` überschreiben.

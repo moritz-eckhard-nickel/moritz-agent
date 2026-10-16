@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Internal SearXNG worker (ADR-007), versions follow the vendored checkout
+-r ../third_party/searxng/requirements.txt
+-r ../third_party/searxng/requirements-server.txt

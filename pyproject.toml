@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Local AI agent with internal SIP telephony, web search and tools, built on KoboldCpp."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "AGPL-3.0-only" }
+license = { text = "LicenseRef-MSOL-1.1" }  # own code; see LICENSING.md for bundled components
 # Runtime dependencies are added by the ticket that first uses them (ADR-019),
 # pinned with hashes in requirements/*.lock. Planned groups:
 #   core:  fastapi, uvicorn, pydantic, httpx

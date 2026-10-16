@@ -22,8 +22,10 @@ Der Originalplan bleibt unverändert als Referenz.
 | PRD-03 | KoboldCPP ist die Inference-Komponente, nicht das Produkt. Der Nutzer muss nicht wissen, dass KoboldCPP darunter läuft. | SOLL | 2 |
 | PRD-04 | Der interne Telefon-Agent ist die **höchste Priorität** und Bestandteil von Part 1 – kein späteres Zusatzfeature. | MUSS | 1 |
 | PRD-05 | Part 1 ist erst abgeschlossen, wenn ein **echter Anruf** mit Begrüßung, Zuhören, Uhrzeitantwort und einfacher Websuche funktioniert. | MUSS | 1 |
-| PRD-06 | Lizenzen (AGPL-3.0 KoboldCPP/SearXNG, MIT llama.cpp/ggml, PJSIP GPL-2.0+) werden eingehalten; Copyright-Hinweise bleiben erhalten. | MUSS | 1 |
-| PRD-07 | Windows-Start (`moritz-agent.exe`) ist ein Ziel, aber **nicht Teil von Part 1**. Part 1 zielt ausschließlich auf Linux im LXC. | KANN | ≥1.0 |
+| PRD-06 | Lizenzen: eigener Code **MSOL 1.1**, Scribbles/Logo alle Rechte vorbehalten, Fremdcode behält seine Lizenz (AGPL-3.0 KoboldCpp/SearXNG, MIT llama.cpp/ggml, GPL-2.0+ PJSIP); Copyright-Hinweise der Fremdteile bleiben erhalten (ADR-023, `LICENSING.md`). | MUSS | 1 |
+| PRD-07 | ~~Windows-Start (`moritz-agent.exe`)~~ – **entfällt** (Moritz, F-12: „niemals“). Zielplattform ist ausschließlich Linux (Ubuntu) im LXC. | – | – |
+| PRD-08 | Einheitliches Branding „moritz-agent“ / „m-agent“ mit monochromem Logo (**M + Scribbles**) überall, wo Nutzer etwas sehen (README, WebUI, Favicon, Icons, Metadaten). **Scribbles**, das LayerNX-Maskottchen, ist das Maskottchen von moritz-agent und erscheint überall, wo eine Figur sinnvoll ist ([Branding-Regeln](../../assets/branding/README.md)). KoboldCpp-Oberflächen sind entfernt (F-11). | MUSS | 1 |
+| PRD-09 | Alle Programmbestandteile liegen **im Repository** und laufen als Teil des einen Programms: SearXNG (fertig gebaut), pjproject, VAD-Modell (ADR-021). Aus dem Netz kommen nur Abhängigkeiten (PyPI-Pakete mit Hashes, CUDA-Build-Toolchain, Systempakete) und die Hugging-Face-Modelle. | MUSS | 1 |
 
 ## 2. Telefonie (PHONE)
 
@@ -63,6 +65,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PHONE-34 | Sind STT oder TTS nicht bereit, wird kein normaler Gesprächsbetrieb vorgetäuscht Anruf annehmen → vorbereitete Störungsansage → auflegen. Fehlt der Ansagen-Cache selbst, registriert sich der Agent nicht (ADR-011). | MUSS | 1 |
 | PHONE-35 | Dauert die Antwort länger als `thinking_prompt_after_s` (Start: 2,5 s), wird eine vorbereitete Zwischenansage gespielt („Moment, ich schaue nach.“). | SOLL | 1 |
 | PHONE-36 | Optionaler Abschied per Sprache („Tschüss“, „Danke, das war’s“) → Verabschiedung und Auflegen. | SOLL | 1 |
+| PHONE-37 | Stimme: **„Hans“** (Amazon Polly) ist die Standardstimme; ohne AWS-Schlüssel, Internet oder bei Fehlern spricht automatisch die lokale Piper-Stimme (ADR-008, [`docs/stimme-hans.md`](../stimme-hans.md)). | MUSS | 1 |
 
 ### 2.3 Ressourcen, Parallelität, Datenschutz
 
@@ -70,7 +73,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | --- | --- | --- | --- |
 | PHONE-40 | Genau **ein aktiver Anruf**; ein zweiter erhält „besetzt“ (SIP 486 Busy Here). Keine Vermischung von Gesprächskontexten. | MUSS | 1 |
 | PHONE-41 | Telefonanfragen haben Vorrang vor nicht gestarteten Hintergrundaufgaben; laufende lange Generierungen werden über `/api/extra/abort` kontrolliert abgebrochen, sonst Warteansage mit Timeout. | MUSS | 1 |
-| PHONE-42 | VAD, STT und TTS laufen zunächst auf der **CPU**; die RTX 3070 bleibt dem LLM vorbehalten. | MUSS | 1 |
+| PHONE-42 | VAD, STT (**Whisper small**, entschieden) und TTS laufen auf der **CPU**; die RTX 3070 bleibt dem LLM vorbehalten. | MUSS | 1 |
 | PHONE-43 | Keine dauerhafte Audioaufnahme als Standard; temporäre Audiopuffer werden nach Verwendung verworfen (nur im RAM, kein Disk-Spool). | MUSS | 1 |
 | PHONE-44 | Zugangsdaten gelangen weder in Transkripte noch in LLM-Kontexte oder Logs. | MUSS | 1 |
 | PHONE-45 | Telefon-Tools in Part 1: nur `get_current_time`, `web_search` (+ ggf. `web_fetch` light). Shell/SSH/Sandbox sind für das Telefonprofil **nicht** freigegeben. | MUSS | 1 |
@@ -120,7 +123,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
 | INF-01 | KoboldCPP läuft als isolierter Child-Prozess, nur auf `127.0.0.1` gebunden, interner Port. | MUSS | 1 |
-| INF-02 | Genau **ein** geladenes großes Sprachmodell (7–9B Instruct, GGUF Q4_K_M), Kontext 4.096, möglichst volles GPU-Offload. | MUSS | 1 |
+| INF-02 | Genau **ein** geladenes großes Sprachmodell: **Qwen3-30B-A3B-Instruct-2507 (MoE), GGUF UD-Q3_K_XL, ≈ 13,8 GB**, etwa **halb VRAM / halb RAM** (Moritz, R3; ADR-016). Kontext 4.096. | MUSS | 1 |
 | INF-03 | Eine Generierung gleichzeitig; Prioritäts-Warteschlange (Telefon > interaktiv > Hintergrund). | MUSS | 1 |
 | INF-04 | Kein Draft-/Zweitmodell, kein dauerhaft geladenes Embedding-Modell im Startprofil. | MUSS | 1 |
 | INF-05 | 8.192 Kontext erst nach Messung mit ausreichender Reserve. Swap ist kein Modellspeicher. | MUSS | 1 |
@@ -140,6 +143,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | AGENT-06 | **Uhrzeit-Garantie:** Eindeutige Zeitfragen gehen über einen deterministischen Fast-Path direkt an `get_current_time`. Enthält eine LLM-Antwort eine Uhrzeit ohne vorherigen Tool-Aufruf im selben Turn, wird sie verworfen und über das Tool neu beantwortet. | MUSS | 1 |
 | AGENT-07 | Telefonantworten: max. ~2–3 kurze Sätze, keine Markdown-/Listen-/URL-Ausgabe, Zahlen/Abkürzungen sprechbar. | MUSS | 1 |
 | AGENT-08 | Quellen von Suchergebnissen werden pro Turn protokolliert (Log + DB). | MUSS | 1 |
+| AGENT-10 | Vordefinierte **Fast-Paths** für einfache Infos (Uhrzeit, Datum, Wochentag, KW, Tage bis …, Feiertage, Zeitumstellung, Rechnen, Identität, Hilfe, Status, Abschied, Wiederholen) ohne LLM – Katalog [12-fast-paths.md](12-fast-paths.md). | MUSS | 1 |
 | AGENT-09 | Memory (3 Ebenen), Planner, Multi-Agent – siehe Roadmap. | — | 8/1.1 |
 
 ## 7. Suche & Research (SEARCH)
@@ -147,8 +151,8 @@ Der Originalplan bleibt unverändert als Referenz.
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
 | SEARCH-01 | SearXNG läuft als interner Worker auf `127.0.0.1:<zufälliger Port>`, nie öffentlich. | MUSS | 1 |
-| SEARCH-02 | JSON-API aktiviert, Sprache `de-DE`, Engines konfigurierbar. „Google“ wird nur genannt, wenn die Google-Engine das Ergebnis tatsächlich geliefert hat (Feld `engines` je Treffer). | MUSS | 1 |
-| SEARCH-03 | Fehler/Timeout (Start: 6 s) → strukturiertes Fehlerergebnis an den Agent → ehrliche Ansage. | MUSS | 1 |
+| SEARCH-02 | JSON-API aktiviert, Sprache `de-DE`, **alle** Web-/News-Engines aktiv (F-09), konfigurierbar. „Google“ wird nur genannt, wenn die Google-Engine das Ergebnis tatsächlich geliefert hat (Feld `engines` je Treffer). | MUSS | 1 |
+| SEARCH-03 | Fehler/Timeout (Start: 6 s) → nächste Stufe der Fallback-Kette (SearXNG → KoboldCpp-Websuche → Wikipedia), erst danach strukturiertes Fehlerergebnis → ehrliche Ansage ([11-suchoptionen.md](11-suchoptionen.md), ADR-020). | MUSS | 1 |
 | SEARCH-04 | Einfacher HTTP-Fetcher (Text-Extraktion) im LXC; Chromium **nur** in der Sandbox. | SOLL | 1 / 5 |
 | SEARCH-05 | Deep Research, Quellenvergleich, Berichte – siehe Roadmap. | — | 9 |
 
@@ -156,8 +160,8 @@ Der Originalplan bleibt unverändert als Referenz.
 
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
-| API-01 | Python-Backend, eingebauter Webserver auf `server.host:server.port` (Default `127.0.0.1:5001`). | MUSS | 1 |
-| API-02 | Bindung an Nicht-Loopback-Adresse nur bei aktivem Web-Login; sonst Start verweigern. | MUSS | 1 |
+| API-01 | Python-Backend, eingebauter Webserver, **aus dem LAN erreichbar auf Port 3501** (F-04), HTTPS mit selbst erzeugtem Zertifikat (ADR-022). | MUSS | 1 |
+| API-02 | Bindung an Nicht-Loopback-Adresse nur bei aktivem Web-Login; sonst Start verweigern. KoboldCpp-Oberflächen (KoboldAI Lite, llama.cpp-UI, SD-/Music-UI, API-Doku) sind entfernt und nie erreichbar (F-11). | MUSS | 1 |
 | API-03 | Part-1-Endpunkte: `/api/system/health`, `/api/system/status`, `/api/phone/status`, `/api/system/reload`, `/api/system/activity`, `/api/system/drain`, `/api/chat` (Text-Testpfad). | MUSS | 1 |
 | API-04 | Spätere Endpunkte: `/api/agent`, `/api/research`, `/api/files`, `/api/models`, `/api/tools`, `/api/settings`, `/v1/...`. | — | 2–5 |
 | API-05 | Login: scrypt-Hash, Session-Cookie (`HttpOnly`, `SameSite=Strict`, `Secure` bei TLS), Rate-Limit für Login-Versuche. | MUSS | 1 |
@@ -169,7 +173,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
 | STORE-01 | SQLite (WAL) unter `data/moritz-agent.sqlite3`, versionierte Migrationen. | MUSS | 1 |
-| STORE-02 | Part 1 speichert Anruf-Metadaten, Turns (Transkript-Text gemäß Konfiguration, siehe Offene Frage F-03), Tool-Aufrufe, Latenzen. Kein Audio. | MUSS | 1 |
+| STORE-02 | Part 1 speichert Anruf-Metadaten, Turns, Tool-Aufrufe, Latenzen. **Transkript-Text wird 24 Stunden aufbewahrt** und dann gelöscht (F-03); Metadaten/Latenzen bleiben. Kein Audio. | MUSS | 1 |
 | LOG-01 | Strukturierte Logs mit Kategorie (`[Phone]`, `[Agent]`, `[Search]`, `[LLM]`, `[Tool]`, `[System]`) nach journald + rotierende Datei. | MUSS | 1 |
 | LOG-02 | Secret-Redaction auf Feldebene; PJSIP-Loglevel ≤ 3, SIP-Nachrichten-Logging standardmäßig aus (Authorization-Header). | MUSS | 1 |
 | LOG-03 | Pro Turn gemessen und geloggt: VAD-Ende → STT fertig, STT-Dauer, LLM-Zeit bis erster Token / gesamt, Tool-Dauer, TTS-Anlauf, Gesamtlatenz. | MUSS | 1 |
@@ -183,8 +187,9 @@ Der Originalplan bleibt unverändert als Referenz.
 | NFR-03 | Latenz-**Ziele** (keine Versprechen, werden gemessen): Ende Sprechen → Beginn Antwort ≤ 3 s ohne Suche, ≤ 6 s mit Suche (Zwischenansage ab 2,5 s). | SOLL | 1 |
 | NFR-04 | Stabilität: 30 Anrufe in Folge ohne Neustart; Worker-Absturz wird erkannt und selbst geheilt. | MUSS | 1 |
 | NFR-05 | Telefonie funktioniert ohne Sandbox (Redemption-1 aus). | MUSS | 1 |
-| NFR-06 | Python ≥ 3.11; Zielsystem Debian 12/13 oder Ubuntu 24.04 im unprivilegierten LXC. | MUSS | 1 |
-| NFR-07 | Alle Netzdienste außer Web-UI (Port 5001) und SIP/RTP lauschen nur auf Loopback. | MUSS | 1 |
+| NFR-06 | Zielsystem **Ubuntu 26.04 LTS** (alternativ 25.10) im unprivilegierten LXC; System-Python 3.13/3.14; alle Abhängigkeiten haben Wheels für beide Versionen (geprüft, ADR-024). | MUSS | 1 |
+| NFR-07 | Alle Netzdienste außer Web-UI (Port 3501) und SIP/RTP lauschen nur auf Loopback. | MUSS | 1 |
+| NFR-08 | CPU: Xeon E5-2673 v3 (Haswell, AVX2, kein AVX-512); der LXC nutzt **höchstens 18 Threads**, damit der Host nie überlastet (F-07). Thread-Verteilung in ADR-016. | MUSS | 1 |
 
 ## 11. Sandbox (SBX) – ab Part 4, Daten ab Part 1
 
@@ -192,7 +197,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | --- | --- | --- | --- |
 | SBX-01 | Shell, fremder Code, Compiler, Chromium laufen **nur** in der Sandbox-VM auf Redemption-1, nie im Inference-LXC oder auf dem Host. | MUSS | 4 |
 | SBX-02 | Zugang per SSH mit gepinntem Host-Key; Daten in `passwords.txt` `[sandbox_ssh]`. | MUSS | 1 (Daten) / 4 |
-| SBX-03 | Netzwerk der Sandbox: Internet + Agent-API erlaubt; Proxmox-Management, OPNsense, NAS, andere Server, interne Netze standardmäßig gesperrt. | MUSS | 4 |
+| SBX-03 | Netzwerk der Sandbox: **nur** Internet und Verbindung zu Sophie-1 (Agent-LXC); alles andere gesperrt (F-10, bestätigt). | MUSS | 4 |
 | SBX-04 | Startwerte: 4 GB RAM, 2–4 vCPU; Chromium on demand, max. 2 Seiten. | SOLL | 4/6 |
 | SBX-05 | Administrative Aktionen nie allein über Telefonanruf freischaltbar. | MUSS | 4 |
 
@@ -204,4 +209,4 @@ Der Originalplan bleibt unverändert als Referenz.
 - Shell/SSH/Coding-Tools (Part 4)
 - Persistentes Memory, Retrieval (Part 8)
 - Vollständige Chat-WebUI, Modellverwaltung in der UI (Part 2)
-- Windows-Build, Android-App, Multi-Agent (≥ 1.0)
+- Android-App, Multi-Agent (≥ 1.0); Windows-Build entfällt komplett

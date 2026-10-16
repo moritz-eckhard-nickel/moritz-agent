@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 # moritz-agent – nicht geheime Konfiguration
 #
 # Vorlage für config/moritz-agent.toml (lokal, nicht versioniert).
@@ -12,9 +13,11 @@ models_dir = "models"
 passwords_file = "passwords.txt"
 
 [server]
-host = "127.0.0.1"                # Nicht-Loopback nur mit aktivem Web-Login (API-02)
-port = 5001
-open_browser = false              # im LXC immer false
+host = "0.0.0.0"                  # aus dem LAN erreichbar (F-04); nur mit aktivem Web-Login (API-02)
+port = 3501
+tls = true                        # HTTPS (ADR-022); false nur für lokale Tests
+tls_cert = "runtime/tls/cert.pem" # vom Installer selbst signiert erzeugt, eigenes Zertifikat möglich
+tls_key = "runtime/tls/key.pem"
 session_ttl_hours = 12
 login_max_attempts = 5            # pro IP und Zeitfenster
 login_window_minutes = 5
@@ -28,25 +31,29 @@ pjsip_log_level = 3               # > 3 kann Authorization-Header enthalten (LOG
 
 [inference]
 koboldcpp_script = "koboldcpp.py" # Upstream-Einstieg, als Child-Prozess (ADR-003)
-model = ""                        # Pfad unter models/, festgelegt in P1-02 (ADR-016)
+model = "models/llm/Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"   # ADR-016
 context_size = 4096               # 8192 erst nach Messung (INF-05)
-gpu_layers = -1                   # -1 = Autofit, sonst Anzahl Layer
+gpu_layers = 999                  # alle Schichten auf die GPU …
+moe_cpu_layers = 24               # … aber Experten der ersten N Schichten im RAM (--moecpu), ≈ halb/halb
 use_cuda = true
-flash_attention = true
 jinja = true                      # Chat-Template aus GGUF verwenden
-chat_adapter = ""                 # alternativ Adapter aus kcpp_adapters/, z. B. "ChatML-NoThink.json"
-threads = 0                       # 0 = KoboldCpp-Default
+chat_adapter = ""                 # alternativ Adapter aus kcpp_adapters/
+threads = 12                      # Generierung (E5-2673 v3, LXC max. 18 Threads)
+batch_threads = 12                # Prompt-Verarbeitung
+websearch_fallback = true         # KoboldCpp mit --websearch starten (Such-Fallback, ADR-020)
 startup_timeout_s = 180
 request_timeout_s = 60
 phone_preempt_wait_s = 3          # wie lange PHONE auf INTERACTIVE wartet, bevor abgebrochen wird
 
 [search]
 enabled = true
-timeout_s = 6
+backends = ["searxng", "koboldcpp", "wikipedia"]   # Fallback-Kette in dieser Reihenfolge (ADR-020)
+timeout_s = 6                     # SearXNG
+fallback_timeout_s = 8            # KoboldCpp-Websuche / Wikipedia
 max_results = 5
 language = "de-DE"
-safesearch = 1
-engines = ["google", "bing", "duckduckgo", "brave", "wikipedia", "qwant"]
+safesearch = 0
+# Engines: config/searxng/settings.yml (alle Standard-Engines + google, bing, qwant, …; F-09)
 
 [phone]
 enabled = true
@@ -68,25 +75,37 @@ max_call_duration_s = 1800
 
 [phone.vad]
 engine = "silero"
+model = "assets/models/vad/silero_vad.onnx"   # im Repo
 threshold = 0.5
 min_silence_ms = 700              # Sprachende-Erkennung
 speech_pad_ms = 300
 max_utterance_s = 20
 
 [phone.stt]
-engine = "faster-whisper"         # ADR-006 (vorläufig)
-model = "small"                   # base | small | large-v3-turbo – per Benchmark P1-10
+engine = "faster-whisper"         # ADR-006 (entschieden)
+model = "models/stt/faster-whisper-small"   # Whisper small, CPU
 compute_type = "int8"
 beam_size = 1
-cpu_threads = 0                   # 0 = automatisch
+cpu_threads = 8
 no_speech_threshold = 0.6
 min_avg_logprob = -1.0
 
 [phone.tts]
-engine = "piper"                  # ADR-008 (vorläufig)
-voice = "de_DE-thorsten-medium"   # Hörtest F-08
+engine = "polly"                  # Wunschstimme Hans (Amazon Polly, docs/stimme-hans.md) | "piper" = lokal (ADR-008)
+fallback_engine = "piper"         # bei fehlenden AWS-Schlüsseln, Polly-Fehler, Timeout, offline
+cpu_threads = 4
+
+[phone.tts.piper]
+voice = "models/tts/de_DE-thorsten-medium.onnx"
 length_scale = 1.0                # < 1 schneller, > 1 langsamer
 sentence_silence_s = 0.15
+
+[phone.tts.polly]
+voice = "Hans"                    # Wunschstimme Moritz (F-08)
+engine = "standard"
+sample_rate = 16000               # PCM direkt im Telefonformat
+timeout_s = 1.5
+# Zugangsdaten: passwords.txt [optional_services] aws_polly_access_key_id / aws_polly_secret_access_key / aws_polly_region
 
 [agent.phone]
 max_tool_steps = 3
@@ -97,8 +116,12 @@ system_prompt_file = "moritz_agent/agent/prompts/phone.de.md"
 
 [storage]
 database = "data/moritz-agent.sqlite3"
-store_transcripts = true          # Offene Frage F-03
-transcript_retention_days = 30
+store_transcripts = true          # F-03: Text ja …
+transcript_retention_hours = 24   # … aber nur 24 Stunden
+
+[fastpaths]
+enabled = true                    # F-13, Katalog docs/plan/12-fast-paths.md
+state = "HE"                      # Bundesland für Feiertage: Hessen (F-15)
 
 [sandbox]
 # Verbindungsdaten in passwords.txt [sandbox_ssh]; Nutzung ab Part 4.

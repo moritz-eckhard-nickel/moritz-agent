@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 # moritz-update.sh – updater for moritz-agent (ticket P1-16).
 #
 # Specification: docs/plan/07-installation-update.md §3 (drain, backup, apply, migrate,

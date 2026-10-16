@@ -11,7 +11,7 @@
 | LLM-Benchmark | `scripts/bench_llm.py` | nein | 40 Fragen, Tool-Call-Validität, Latenz |
 | SIP-Spike | `scripts/sip_spike.py` | nein | Registrierung, Audio beidseitig |
 | Abnahme | manuell, Protokoll | nein | §3 |
-| Shell | shellcheck | ja | alle `*.sh` und `moritz-agent` |
+| Shell | shellcheck | ja | `moritz-agent`, `install.sh`, `update.sh`, `moritz-*.sh` |
 | Lint/Format | ruff | ja | `moritz_agent/`, `tests/moritz_agent/`, `scripts/` |
 
 CI-Workflow: `.github/workflows/moritz-ci.yaml` (Python 3.11 und 3.12). Die Upstream-
@@ -33,6 +33,7 @@ Durchführung auf Sophie-1, Ergebnis in `docs/abnahme/part1-<datum>.md`.
 | # | Prüfung | Erwartung | Messwerte | OK |
 | --- | --- | --- | --- | --- |
 | 1 | LXC + CUDA | `nvidia-smi` im LXC, Modell läuft auf GPU | VRAM belegt, Tokens/s | ☐ |
+| 2a | Eigenständigkeit | SearXNG startet aus `third_party/searxng` als Worker von moritz-agent (kein separater Dienst), PJSIP baut aus `third_party/pjproject`; aus dem Netz kommen nur PyPI-Pakete, CUDA-Toolchain, Modelle | – | ☐ |
 | 2 | Installer | Ersteinrichtung mit SIP-Vorgaben, Web-Login, Sandbox „später“; zweiter Lauf erhält angepasste Daten (Diff der TXT leer) | Dauer | ☐ |
 | 3 | SIP + Routing | REGISTER ok **und** Anruf an 999 klingelt beim Agent (REGISTER allein reicht nicht) | Codec | ☐ |
 | 4 | Begrüßung + Audio | Annahme, Begrüßung sofort, Audio beidseitig verständlich | Zeit Abheben → Begrüßung | ☐ |

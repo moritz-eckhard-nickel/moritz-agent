@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Phone worker audio stack (ADR-006, ADR-008, ADR-009). PJSUA2 is built from third_party/pjproject.
+faster-whisper
+piper-tts
+onnxruntime
+soxr
+numpy

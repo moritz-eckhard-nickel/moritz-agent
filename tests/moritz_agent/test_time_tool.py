@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -5,7 +6,13 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from moritz_agent.tools.time_tool import format_date_de, format_time_de, now
+from moritz_agent.tools.time_tool import (
+    format_calendar_week_de,
+    format_date_de,
+    format_time_de,
+    format_weekday_de,
+    now,
+)
 
 BERLIN = ZoneInfo("Europe/Berlin")
 
@@ -46,3 +53,22 @@ def test_now_is_timezone_aware():
     current = now()
     assert current.tzinfo is not None
     assert current.utcoffset() is not None
+
+
+def test_format_weekday_de():
+    assert format_weekday_de(datetime(2026, 10, 18, 9, 0, tzinfo=BERLIN)) == "Heute ist Sonntag."
+
+
+@pytest.mark.parametrize(
+    ("day", "expected"),
+    [
+        (datetime(2026, 10, 16, tzinfo=BERLIN), "Wir haben Kalenderwoche 42."),
+        (
+            datetime(2027, 1, 1, tzinfo=BERLIN),
+            "Wir haben Kalenderwoche 53.",
+        ),  # ISO: belongs to 2026
+        (datetime(2026, 12, 28, tzinfo=BERLIN), "Wir haben Kalenderwoche 53."),
+    ],
+)
+def test_format_calendar_week_de(day, expected):
+    assert format_calendar_week_de(day) == expected

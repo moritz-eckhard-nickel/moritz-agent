@@ -15,12 +15,12 @@ VSVersionInfo(
                 StringTable(
                     u'040904b0',
                     [
-                        StringStruct(u'CompanyName', u'KoboldAI'),
-                        StringStruct(u'FileDescription', u'KoboldCpp'),
-                        StringStruct(u'InternalName', u'KoboldCpp'),
+                        StringStruct(u'CompanyName', u'moritz-agent'),
+                        StringStruct(u'FileDescription', u'moritz-agent inference (based on KoboldCpp)'),
+                        StringStruct(u'InternalName', u'moritz-agent-inference'),
                         StringStruct(u'LegalCopyright', u'AGPLv3'),
                         StringStruct(u'OriginalFilename', u'koboldcpp.exe'),
-                        StringStruct(u'ProductName', u'koboldcpp'),
+                        StringStruct(u'ProductName', u'moritz-agent'),
                         StringStruct(u'ProductVersion', u'MYVER_MAJOR.MYVER_MINOR.0.0'),
                     ]
                 )

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 """Clock tool: current time and date from the system clock (PHONE-23, PHONE-24, ADR-017).
 
 The time is always read from the system clock in the configured zone (default
@@ -46,3 +47,13 @@ def format_date_de(moment: datetime) -> str:
     weekday = WEEKDAYS_DE[moment.weekday()]
     month = MONTHS_DE[moment.month - 1]
     return f"Heute ist {weekday}, der {moment.day}. {month} {moment.year}."
+
+
+def format_weekday_de(moment: datetime) -> str:
+    """Speakable weekday, e.g. 'Heute ist Freitag.'"""
+    return f"Heute ist {WEEKDAYS_DE[moment.weekday()]}."
+
+
+def format_calendar_week_de(moment: datetime) -> str:
+    """ISO 8601 calendar week, e.g. 'Wir haben Kalenderwoche 42.'"""
+    return f"Wir haben Kalenderwoche {moment.isocalendar().week}."

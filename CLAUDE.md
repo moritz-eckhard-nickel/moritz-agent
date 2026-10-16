@@ -10,7 +10,7 @@ Der vollständige Plan steht in `docs/plan/` – **vor jeder Aufgabe** das passe
 ## Repository-Grenzen (ADR-001/002)
 
 - Eigener Code nur in: `moritz_agent/`, `tests/moritz_agent/`, `frontend/`, `config/`,
-  `assets/`, `deploy/`, `scripts/`, `requirements/`, `docs/plan/`, sowie die Wurzeldateien
+  `assets/`, `deploy/`, `scripts/`, `requirements/`, `docs/`, sowie die Wurzeldateien
   `moritz-agent`, `moritz-install.sh`, `moritz-update.sh`, `install.sh`, `update.sh`,
   `pyproject.toml`, `README.md`, `CLAUDE.md`, `THIRD_PARTY_NOTICES.md`.
 - **KoboldCpp-Upstream-Dateien nicht ändern** (`koboldcpp.py`, `kcpp_*`, `ggml/`, `src/`,
@@ -18,6 +18,19 @@ Der vollständige Plan steht in `docs/plan/` – **vor jeder Aufgabe** das passe
   `tests/test_*.py`, …). KoboldCpp wird nur als Child-Prozess über HTTP genutzt (ADR-003).
   Unvermeidbare Patches: minimal, Kommentar `# moritz-agent:`, im Plan dokumentieren.
 - `LICENSE.md`, `MIT_LICENSE_GGML_SDCPP_LLAMACPP_ONLY.md` und Copyright-Header nie entfernen.
+- **Lizenzen (ADR-023, `LICENSING.md`):** eigener Code = MSOL 1.1. Jede neue eigene
+  Quelltext-/Skript-/Config-Datei beginnt mit `SPDX-License-Identifier: LicenseRef-MSOL-1.1`
+  (nach einer Shebang-Zeile). Fremdcode behält seine Lizenz. Scribbles/Logo: alle Rechte vorbehalten.
+- `third_party/` (SearXNG, pjproject) und `assets/models/` sind **mitgelieferte
+  Fremdkomponenten**: nicht verändern, nur nach `third_party/VENDORED.md` aktualisieren
+  (`git add -f third_party`). `third_party/pjproject/CLAUDE.md` gehört zu PJSIP, nicht zu uns.
+- Neue Python-Abhängigkeit: in `requirements/<gruppe>.in` eintragen und Lock mit Hashes neu
+  erzeugen (ADR-019). Python-Pakete kommen von PyPI und werden **nicht** ins Repo gelegt.
+- Branding: nutzer-sichtbar immer „moritz-agent“/„m-agent“ mit Logo aus `assets/branding/`.
+  **Scribbles** (`assets/branding/scribbles/`) ist das Maskottchen und wird überall verwendet,
+  wo die Oberfläche eine Figur zeigt (Leer-, Lade-, Fehlerzustände, Login, Über-Seite, Doku).
+  Regeln: [`assets/branding/README.md`](assets/branding/README.md). Assets nur über
+  `scripts/build_branding.py` neu erzeugen. KoboldCpp-Oberflächen bleiben entfernt (ADR-002).
 
 ## Sprache
 

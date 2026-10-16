@@ -29,18 +29,24 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   bereits vorhandene Fork-History, doppelter Checkout.
 - **Status:** beschlossen.
 
-## ADR-002 – Branding-Grenze
+## ADR-002 – Branding: moritz-agent / m-agent überall
 
-- **Entscheidung:** Rebranding betrifft die **Produktoberfläche**: README, GitHub-Templates,
-  Startbefehl `moritz-agent`, systemd-Unit, eigene WebUI, Logs/Status des Supervisors,
-  Telefon-Ansagen. **Nicht** umbenannt werden KoboldCPP-interne Dateien, Symbole,
-  Binärnamen (`koboldcpp_cublas.so`), die KoboldAI-Lite-UI und die PyInstaller-Metadaten
-  der Inference-Komponente – das würde jeden Upstream-Merge brechen.
-- **Unsichtbarkeit (PRD-03):** Der Nutzer sieht KoboldCPP nicht, weil (1) der Port nur auf
-  Loopback lauscht, (2) die eigene WebUI das einzige Frontend ist, (3) Logs des Children mit
-  Kategorie `[LLM]` statt Rohausgabe erscheinen.
-- **Lizenz:** Copyright-/Lizenzhinweise bleiben vollständig erhalten; README und
-  `THIRD_PARTY_NOTICES.md` nennen KoboldCPP als Basis (AGPL-Pflicht + Fairness).
+- **Entscheidung (aktualisiert nach F-11/PRD-08):** Alles, was Nutzer sehen, ist
+  moritz-agent bzw. m-agent mit dem monochromen Logo (**M + Scribbles**, `assets/branding/`):
+  README, eigene WebUI/Favicon, Icons (`niko.ico`/`nikogreen.ico` enthalten jetzt das
+  m-agent-Logo), PyInstaller-Metadaten, systemd-Unit, Logs, Ansagen.
+- **Maskottchen Scribbles:** Scribbles, das Maskottchen von LayerNX, ist ab sofort das
+  Maskottchen von moritz-agent – im Logo (statt des Roboters) und überall, wo die Oberfläche
+  eine Figur zeigt. Quelle: `assets/branding/scribbles/scribbles-original.png` (Zeichnung von
+  Moritz), daraus per `scripts/build_branding.py` Vektor-SVG, PNGs, Logo und Icons.
+  Regeln: [`assets/branding/README.md`](../../assets/branding/README.md).
+- **KoboldCpp-Oberflächen entfernt:** KoboldAI Lite, llama.cpp-WebUI, SD-UI, Music-UI und
+  die eingebettete API-Doku (`embd_res/*.embd`) sind gelöscht; KoboldCpp startet ohne sie
+  (Ladefehler werden dort abgefangen). Zusätzlich lauscht KoboldCpp nur auf Loopback.
+- **Nicht umbenannt:** interne Dateinamen/Symbole (`koboldcpp.py`, `koboldcpp_cublas.so`,
+  Python-Funktionen), damit Upstream-Merges möglich bleiben. Diese sieht kein Nutzer.
+- **Lizenz:** Copyright-/Lizenzhinweise bleiben vollständig; README und
+  `THIRD_PARTY_NOTICES.md` nennen KoboldCpp als Basis (AGPL-Pflicht).
 - **Status:** beschlossen.
 
 ## ADR-003 – KoboldCPP als Child-Prozess über HTTP, nicht als Python-Import
@@ -64,66 +70,70 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   `multiprocessing`-Pipes (koppelt Lebenszyklen eng), gRPC (zusätzliche Abhängigkeit).
 - **Status:** beschlossen (Unix-Sockets bleiben eine spätere Härtungsoption).
 
-## ADR-005 – SIP-Stack: PJSIP/PJSUA2 (Python-Binding), Version gepinnt
+## ADR-005 – SIP-Stack: PJSIP/PJSUA2 2.17 (im Repo), Python-Binding
 
-- **Entscheidung:** pjproject aus Quellcode bauen (Release-Tag gepinnt, Kandidat aktuelle
-  2.15.x/2.16.x; im Spike P1-11 festlegen), SWIG-Python-Binding `pjsua2`. Konfiguration:
-  `audDevManager().setNullDev()`, Conference-Bridge 16 kHz, eigene `AudioMediaPort`-Klasse für
-  Frame-Ein-/Ausgabe, Codec-Prioritäten G722=255, PCMA=254, PCMU=253, Rest deaktiviert,
-  `ep_cfg.uaConfig.threadCnt = 0` + eigener Poll-Thread **oder** `threadCnt=1` mit strikter
-  Thread-Registrierung (`libRegisterThread`) – im Spike entscheiden.
-- **Build:** `./configure --enable-shared --disable-video --disable-sound` (kein ALSA nötig),
-  `CFLAGS=-fPIC`, dann `make dep && make && make install` in `runtime/pjsip/`, danach
-  `pjsip-apps/src/swig/python` bauen und ins venv installieren. Build-Log und -Hash werden
-  im Installer gecacht (Neubau nur bei Versionswechsel).
-- **Alternativen:**
-  - *pyVoIP* (pure Python): einfach, aber nur G.711, fragile RTP-Behandlung, wenig gepflegt.
-  - *baresip* + ctrl_tcp: robust, aber Audio-Anbindung über Module/Pipes umständlich.
-  - *Asterisk AudioSocket/ARI externalMedia*: elegant, erfordert aber Änderungen an der
-    Telefonanlage (Plan: Agent registriert sich als normaler Teilnehmer, Dialplan nur prüfen).
-    → **Fallback**, falls PJSUA2 im Spike scheitert; nur nach Rücksprache mit Moritz.
-- **Lizenz:** pjproject GPL-2.0-or-later → kompatibel zur AGPL-3.0 des Gesamtwerks.
-- **Status:** vorläufig (bis Spike P1-11 erfolgreich).
+- **Entscheidung:** pjproject **2.17** (Commit `5a457451`) liegt unverändert in
+  `third_party/pjproject/` (ADR-021) und wird vom Installer gebaut:
+  `./configure --enable-shared --disable-video --disable-sound --disable-libyuv --disable-libwebrtc CFLAGS=-fPIC`,
+  `make dep && make && make install` nach `runtime/pjsip/`, danach SWIG-Binding
+  `pjsip-apps/src/swig/python` ins venv. Konfiguration: `audDevManager().setNullDev()`,
+  Conference-Bridge 16 kHz, eigene `AudioMediaPort`-Klasse, Codec-Prioritäten
+  G722 > PCMA > PCMU, Rest deaktiviert. Thread-Modell im Spike P1-11 festlegen.
+- **R1 („versuch’s trotzdem oder mach’s besser“):** PJSUA2 bleibt Plan A, weil es als einzige
+  Option normale Registrierung, G.722, RTP/RTCP, Jitterbuffer und Python-Audio-Callbacks in
+  einem gepflegten Paket bietet. Risikominderung: (1) Quellcode im Repo, kein Download;
+  (2) Spike zuerst; (3) Callbacks kopieren nur Frames in Ringpuffer, Verarbeitung in eigenen
+  Threads; (4) definierter Plan B: Asterisk **AudioSocket** (`Dial(AudioSocket/...)`) –
+  Audio als TCP-Strom direkt zum Agent, kein SIP-Stack im Agent nötig; braucht eine Zeile im
+  Dialplan (Doku: [`docs/asterisk-konfiguration.md`](../asterisk-konfiguration.md)).
+- **Lizenz:** GPL-2.0-or-later (Teile in `third_party/pjproject/third_party/` mit eigenen
+  Lizenzen) → kompatibel zur AGPL-3.0.
+- **Status:** beschlossen (Build-Rezept wird im Spike P1-11 bestätigt).
 
-## ADR-006 – STT: faster-whisper auf CPU (int8), Modell per Benchmark
+## ADR-006 – STT: faster-whisper **small** auf CPU (int8)
 
-- **Entscheidung (vorläufig):** `faster-whisper` (CTranslate2, MIT) mit
-  `compute_type="int8"`, `language="de"`, `beam_size=1–3`, `vad_filter=False` (eigene VAD).
-  Kandidaten im Benchmark P1-10: `base`, `small`, `large-v3-turbo` (int8). Startfavorit: `small`.
-- **Kriterien:** Wortfehlerrate auf 30 eigenen Telefon-Testsätzen (8 kHz → 16 kHz),
-  Latenz für 2–6 s Äußerungen bei `cpu_threads` = LXC-Kerne − 2, RAM.
-- **Alternativen:** KoboldCPP-eigenes Whisper (`--whispermodel`): keine zusätzliche
-  Abhängigkeit, aber im selben Prozess wie das LLM, konkurriert um GPU und Request-Lock →
-  bleibt **Fallback B**. Vosk (`vosk-model-de-0.21`): sehr schnell/streamingfähig, schwächere
-  Erkennung → **Fallback C** für schwache CPUs.
-- **Status:** vorläufig.
+- **Entscheidung (R2):** `faster-whisper` 1.2.x mit Modell `Systran/faster-whisper-small`
+  (CTranslate2, 484 MB), `compute_type="int8"`, `language="de"`, `beam_size=1`,
+  `cpu_threads=8`, eigene VAD (`vad_filter=False`). Läuft auf der CPU, die GPU bleibt dem LLM.
+- **Erwartung auf E5-2673 v3 (AVX2):** grob 0,5–1,5 s für eine 2–5 s lange Äußerung –
+  wird im Audio-Spike P1-10 gemessen. Falls zu langsam: `base` als Fallback (gleiche API).
+- **Bezug:** Modelldatei > 100 MB → Download durch den Installer (ADR-021).
+- **Status:** beschlossen.
 
-## ADR-007 – SearXNG: gepinnter Checkout in `runtime/`, eigener venv, granian
+## ADR-007 – SearXNG: im Repo (`third_party/searxng`), eigener venv, granian
 
-- **Entscheidung:** Installer klont `https://github.com/searxng/searxng` auf einen in
-  `config/versions.lock` gepinnten Commit nach `runtime/searxng/`, eigenes venv
-  `runtime/searxng-venv/`, Start über `granian` (WSGI) auf `127.0.0.1:<dyn>`.
-  Settings aus `config/searxng/settings.yml` (versioniert, `use_default_settings: true`,
-  `search.formats: [html, json]`, `server.limiter: false`, `server.secret_key` wird beim
-  Installieren zufällig erzeugt und **lokal** in `data/searxng/settings.local.yml` abgelegt).
-- **Warum nicht ins Repo kopieren:** eigene große Abhängigkeitsbasis, eigener Release-Takt,
-  AGPL-Hinweise bleiben im Original-Checkout intakt; Konflikte mit unserem Code vermieden.
-- **Engines Start:** `google`, `bing`, `duckduckgo`, `brave`, `wikipedia` (de), `qwant`;
-  Engines, die geblockt werden, fallen automatisch weg (SearXNG-Suspend). Ergebnisfeld
-  `engines` wird an den Agent weitergegeben (SEARCH-02).
-- **Status:** beschlossen (Engines-Liste vorläufig).
+- **Entscheidung:** SearXNG-Quellcode liegt unverändert in `third_party/searxng/`
+  (Commit `8252c0bf`, 16.10.2026) – **fertig gebaut**: Frontend-Assets (`searx/static`) und
+  Daten (`searx/data`) sind enthalten, es ist kein Node-/Build-Schritt nötig. SearXNG ist kein
+  eigener Dienst, sondern ein vom Supervisor gestarteter Worker des einen Programms. Der
+  Installer legt `runtime/searxng-venv/` an und installiert die Abhängigkeiten von PyPI
+  (`requirements/searxng.lock` mit Hashes, inkl. `granian`). Geprüft: Start direkt aus dem
+  Repo, `/healthz` = OK, Weboberfläche und JSON-Suche antworten. Start:
+  `granian --interface wsgi searx.webapp:app --host 127.0.0.1 --port <dyn>` mit
+  `SEARXNG_SETTINGS_PATH=config/searxng/settings.yml` und `SEARXNG_SECRET` (beim
+  Installieren zufällig erzeugt, in `data/searxng/secret` 0600).
+- **Engines (F-09 „alle“):** alle Standard-Engines plus google, bing, qwant, qwant news,
+  tagesschau, fireball news. Geprüft: 21 Web-/News-Engines aktiv.
+- **Update:** neuen Commit nach `third_party/searxng/` kopieren, Lock neu erzeugen
+  (Ablauf in `third_party/VENDORED.md`).
+- **Status:** beschlossen.
 
-## ADR-008 – TTS: Piper (deutsche Stimme) auf CPU
+## ADR-008 – TTS: Stimme „Hans“ (Amazon Polly) als Standard, Piper lokal als Fallback
 
-- **Entscheidung (vorläufig):** Piper (`piper-tts`, ONNX, CPU), Stimme Kandidat
-  `de_DE-thorsten-high` bzw. `-medium` (männlich, Datensatz CC0); weibliche Alternativen
-  `de_DE-kerstin-low`, `de_DE-eva_k-x_low` – Auswahl durch Moritz im Hörtest (F-08).
-  Ausgabe 22,05 kHz → Resampling auf 16 kHz (`soxr`).
-- **Begründung:** Kokoro (in KoboldCPP) kann **kein Deutsch**; Qwen3-TTS kann Deutsch, ist
-  aber deutlich schwerer und bevorzugt GPU (kollidiert mit PHONE-42).
-- **Lizenz:** Piper wird seit 2025 als `OHF-Voice/piper1-gpl` (GPL-3.0) weitergeführt →
-  kompatibel mit AGPL-3.0; Stimmenlizenzen einzeln in `THIRD_PARTY_NOTICES.md` aufführen.
-- **Status:** vorläufig (Benchmark/Hörtest in P1-10).
+- **Kontext (F-08, F-08b):** Moritz will die Stimme **Hans**. Hans ist die männliche deutsche
+  Standard-Stimme von **Amazon Polly** (Cloud-Sprachausgabe von AWS); lokal gibt es sie nicht.
+- **Entscheidung:** TTS-Schnittstelle mit zwei Engines, **Standard = `polly`**:
+  1. `polly`: Stimme **Hans**, `Engine=standard`, `OutputFormat=pcm`, `SampleRate=16000`
+     (direkt im Telefonformat). Zugangsschlüssel in `passwords.txt` `[optional_services]`
+     (`aws_polly_access_key_id`, `aws_polly_secret_access_key`, `aws_polly_region`),
+     IAM-Benutzer nur mit `polly:SynthesizeSpeech`. Anleitung für Moritz:
+     [`docs/stimme-hans.md`](../stimme-hans.md).
+  2. `piper` (lokal, CPU): `de_DE-thorsten-medium`. Springt automatisch ein bei fehlenden
+     Schlüsseln, Fehler, Timeout (1,5 s) oder ohne Internet – der Anruf bricht nie ab.
+- **Ansagen:** werden beim Einrichten mit Hans vorgerendert und gecacht → Begrüßung klingt
+  auch offline nach Hans; ohne AWS-Schlüssel mit Piper.
+- **Datenschutz:** Nur Antworttexte gehen an AWS, nie Audio des Anrufers.
+- **Status:** beschlossen. Offen ist nur, ob Moritz das AWS-Konto anlegt (bis dahin Piper).
 
 ## ADR-009 – VAD: Silero VAD (ONNX)
 
@@ -193,16 +203,26 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   Version 1.123.1) mit geprüfter SHA-256 – nur solange keine eigenen C++-Änderungen existieren.
 - **Status:** vorläufig (in P1-02 messen: Build-Dauer, Plattenbedarf ≈ 6–10 GB für die Conda-Umgebung).
 
-## ADR-016 – LLM-Startmodell
+## ADR-016 – LLM: Qwen3-30B-A3B-Instruct-2507, halb VRAM / halb RAM
 
-- **Kriterien:** Deutschqualität (kurze, natürliche Antworten), zuverlässiges Tool-Calling
-  mit JSON-Schema, Chat-Template-Unterstützung in KoboldCPP (Adapter in `kcpp_adapters/`
-  oder `--jinja`), abschaltbares „Thinking“, Lizenz, Größe Q4_K_M ≤ 5,5 GB.
-- **Kandidaten (Benchmark P1-02):** Qwen3-8B (Apache-2.0, `ChatML-NoThink`), Qwen3-VL-8B-
-  Instruct (Upstream-Empfehlung), Llama-3.1-8B-Instruct (Llama-Lizenz), Gemma-Varianten mit
-  passendem Adapter, Granite-4 (Apache-2.0). Der Benchmark enthält 40 deutsche
-  Telefonfragen, davon 15 mit erwartetem Tool-Aufruf.
-- **Status:** offen → Entscheidung in P1-02.
+- **Kontext (R3):** Moritz will ein größeres Modell, aufgeteilt etwa **halb RAM, halb VRAM**.
+  Dichte Modelle (z. B. 14B/24B) werden mit CPU-Anteil auf einem Haswell-Xeon sehr langsam.
+  Ein **Mixture-of-Experts**-Modell aktiviert pro Token nur einen kleinen Teil der Gewichte:
+  Die Experten können im RAM liegen, Attention und gemeinsame Gewichte auf der GPU –
+  genau die gewünschte Aufteilung, bei brauchbarer Geschwindigkeit.
+- **Entscheidung:** `unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF`, Datei
+  `Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf` (13.833.048.480 Byte ≈ 13,8 GB; 30B
+  Parameter gesamt, 3B aktiv; Apache-2.0; Instruct-Variante ohne Thinking → kurze Antworten,
+  gutes Tool-Calling, gutes Deutsch).
+- **Start-Flags (in P1-02 feinjustieren):** `--usecuda --gpulayers 999 --moecpu <N>
+  --contextsize 4096 --threads 12 --blasthreads 12 --jinja --websearch --quiet`.
+  `--moecpu N` hält die Experten der ersten N Schichten im RAM; Startwert N≈24 von 48,
+  Ziel: ≈ 6,5–7 GB VRAM belegt, ≈ 6,5–7 GB RAM. N so wählen, dass ≥ 0,6 GB VRAM frei bleiben.
+- **Speicherbudget:** passt in das LXC-Limit von 16 GB (siehe 06 §2.2). KV-Cache bei 4.096
+  Tokens ≈ 0,4 GB (48 Schichten, 4 KV-Köpfe) → 8.192 ist voraussichtlich möglich (INF-05: messen).
+- **Fallbacks:** `Q3_K_S` (13,3 GB) bei Speicherknappheit; `Q4_K_M` (18,6 GB) nur mit
+  LXC-RAM > 16 GB; dichtes `Qwen3-14B` Q4_K_M als Notlösung bei MoE-Problemen.
+- **Status:** beschlossen (Feinjustierung `--moecpu` in P1-02).
 
 ## ADR-017 – Uhrzeit-Garantie (Fast-Path + Guard)
 
@@ -219,11 +239,77 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   (konsistent mit Upstream). Planung, README, UI-Texte, Ansagen, Systemprompts: Deutsch.
 - **Status:** beschlossen (kann Moritz jederzeit ändern).
 
-## ADR-019 – Python-Abhängigkeitsverwaltung
+## ADR-019 – Python-Abhängigkeiten: Lock-Dateien mit Hashes, Pakete von PyPI
 
-- **Entscheidung:** `pyproject.toml` deklariert Abhängigkeiten in Gruppen (`core`, `phone`,
-  `dev`); exakte Versionen werden in `requirements/*.lock` (pip-compile/uv, mit Hashes)
-  gepinnt und vom Installer mit `pip install --require-hashes` installiert. Das Upstream-
-  `requirements.txt` (KoboldCPP-Konverter) bleibt unberührt.
-- **Status:** beschlossen (Lock-Dateien entstehen mit dem ersten Code-Ticket, das eine
-  Abhängigkeit einführt).
+- **Entscheidung:** Gruppen in `requirements/*.in` (`core`, `phone`, `polly`, `searxng`),
+  daraus mit `uv pip compile --universal --generate-hashes` erzeugte `requirements/*.lock`.
+  Installation von PyPI: `pip install --require-hashes -r requirements/<gruppe>.lock` –
+  exakt reproduzierbar, manipulierte Pakete werden abgelehnt.
+- **Nicht im Repo:** Moritz: „Prerequirements per requirements.txt sind egal.“ Ein zwischen-
+  zeitlich mitgelieferter Wheel-Ordner (≈ 300 MB) wurde deshalb wieder entfernt.
+- Geprüft: Für alle Pakete gibt es Wheels für CPython 3.13 und 3.14 (Linux x86_64).
+- Das Upstream-`requirements.txt` im Wurzelverzeichnis gehört zu KoboldCpp.
+- **Status:** beschlossen.
+
+## ADR-020 – Such-Fallback-Kette (R4)
+
+- **Entscheidung:** `web_search` versucht nacheinander SearXNG → KoboldCpp-Websuche
+  (`/api/extra/websearch`, DuckDuckGo, KoboldCpp mit `--websearch`) → Wikipedia-REST →
+  ehrliche Fehlermeldung. Optionale API-Dienste mit Schlüssel (Brave, Google Programmable
+  Search) werden eingehängt, sobald ein Schlüssel in `passwords.txt` steht. Details:
+  [11-suchoptionen.md](11-suchoptionen.md).
+- **Status:** beschlossen.
+
+## ADR-021 – Programmbestandteile im Repository (`third_party/`)
+
+- **Kontext:** Moritz: SearXNG „und sowas alles“ muss mit rein, damit alles **standalone als
+  ein Programm** läuft; Hugging-Face-Modelle und Requirements dürfen aus dem Netz kommen.
+- **Entscheidung:** Im Repo liegen alle **Programmbestandteile**: `third_party/searxng`
+  (fertig gebaut), `third_party/pjproject` (Quellcode, wird beim Installieren kompiliert),
+  `assets/models/vad/silero_vad.onnx` (2,3 MB). Unverändert übernommen; Herkunft/Version/
+  Lizenz in `third_party/VENDORED.md`. Änderungen daran nur als dokumentierter Patch.
+- **Aus dem Netz (bewusst):** Python-Pakete von PyPI (Hashes, ADR-019), die CUDA-Build-
+  Toolchain für KoboldCpp (`koboldcpp.sh`, Conda), Ubuntu-Systempakete, der NVIDIA-Treiber
+  und die Modelle von Hugging Face (LLM 13,8 GB, Whisper small 484 MB, Piper-Stimme 63 MB;
+  Größenprüfung, SHA-256 per TOFU in `data/state/model-hashes.json`).
+- **Kosten:** ≈ 95 MB zusätzlich im Repo.
+- **Status:** beschlossen.
+
+## ADR-022 – Web-UI im LAN auf Port 3501 mit TLS
+
+- **Entscheidung (F-04):** Bindung `0.0.0.0:3501`, nur mit aktivem Web-Login (API-02).
+  HTTPS mit **selbst signiertem Zertifikat**, das der Installer erzeugt
+  (`runtime/tls/cert.pem`, `key.pem` 0600, 10 Jahre, SAN = LXC-IP + Hostname). Eigenes
+  Zertifikat oder Reverse-Proxy optional (`server.tls_cert`, `server.tls_key`). HTTP wird
+  nicht angeboten (`server.tls = false` nur für Tests).
+- **Status:** beschlossen.
+
+## ADR-023 – Lizenzen: eigener Code MSOL 1.1, Fremdcode behält seine Lizenz
+
+- **Entscheidung (R12, F-14, F-17):**
+  - Eigener Code und eigene Doku von moritz-agent: **Moritzsoft Open License (MSOL) 1.1**
+    ([`LICENSE-MSOL.md`](../../LICENSE-MSOL.md)), moritz-agent ist ein *Public Release*.
+    Quelltexte tragen `SPDX-License-Identifier: LicenseRef-MSOL-1.1`.
+  - Scribbles und das m-agent-Logo: **© LayerNX / Moritz Eckhard Nickel, alle Rechte
+    vorbehalten** – weder MSOL noch AGPL.
+  - KoboldCpp und Upstream-Dateien AGPL-3.0, ggml/llama.cpp MIT, SearXNG AGPL-3.0,
+    pjproject GPL-2.0+, Piper GPL-3.0, Silero MIT – unverändert.
+  - Zuordnung je Pfad: [`LICENSING.md`](../../LICENSING.md).
+- **Verträglichkeit:** MSOL 1.1 ist freizügig (inkl. Unterlizenzierung, keine Zusatzpflichten
+  außer §6 Namensrecht und dem Gewährleistungsausschluss) und lässt sich daher mit dem
+  AGPL-/GPL-Code kombinieren. Für das Gesamtpaket gelten zusätzlich die AGPL-/GPL-Pflichten
+  der Fremdteile (Quellcode anbieten, deren Hinweise behalten). Keine Rechtsberatung.
+- **Status:** beschlossen.
+
+## ADR-024 – Zielsystem Ubuntu 26.04 / 25.10, System-Python
+
+- **Entscheidung (F-05):** Ubuntu 26.04 LTS (bevorzugt) oder 25.10 im LXC. System-Python
+  (3.14 bzw. 3.13) mit venv; alle Abhängigkeiten haben Wheels für beide Versionen (ADR-019).
+  KoboldCpp-Build über `./koboldcpp.sh rebuild` (Conda-Toolchain, ADR-015).
+- **Status:** beschlossen.
+
+## ADR-025 – Fast-Paths für einfache Infos
+
+- **Entscheidung (F-13):** Deterministische Antworten ohne LLM für den Katalog in
+  [12-fast-paths.md](12-fast-paths.md). Erkennung nur bei eindeutigen Mustern; sonst Agent-Loop.
+- **Status:** beschlossen.

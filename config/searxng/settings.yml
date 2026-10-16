@@ -1,9 +1,11 @@
-# SearXNG settings for the internal moritz-agent search worker (ADR-007).
-# secret_key is generated at install time into data/searxng/settings.local.yml – never commit it.
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# SearXNG settings for the internal moritz-agent search worker (ADR-007, ADR-020).
+# Source: vendored checkout in third_party/searxng (see third_party/VENDORED.md).
+# secret_key is generated at install time and passed via SEARXNG_SECRET – never commit it.
 use_default_settings: true
 
 general:
-  instance_name: "moritz-agent-search"
+  instance_name: "m-agent-search"
   enable_metrics: false
 
 server:
@@ -14,7 +16,7 @@ server:
   method: "GET"
 
 search:
-  safe_search: 1
+  safe_search: 0
   default_lang: "de-DE"
   formats:
     - html
@@ -23,17 +25,21 @@ search:
 ui:
   static_use_hash: true
 
-# Engine selection is finalized in P1-08. Engines that get blocked are suspended by SearXNG.
+# F-09: all engines. We keep every engine SearXNG enables by default (duckduckgo, brave,
+# yahoo, wikipedia, wikidata, bing news, google news, reuters, ...) and additionally enable
+# the general web/news engines that are off by default because they tend to rate-limit.
+# Blocked engines are suspended automatically; the agent only names an engine as a source
+# if it actually delivered the result (SEARCH-02).
 engines:
   - name: google
     disabled: false
   - name: bing
     disabled: false
-  - name: duckduckgo
-    disabled: false
-  - name: brave
-    disabled: false
-  - name: wikipedia
-    disabled: false
   - name: qwant
+    disabled: false
+  - name: qwant news
+    disabled: false
+  - name: tagesschau
+    disabled: false
+  - name: fireball news
     disabled: false

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
 """Textual secret redaction for log lines (LOG-02, docs/plan/08-sicherheit.md §3).
 
 This is the secondary safety net. The primary protection is structural: secrets are

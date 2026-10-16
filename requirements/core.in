@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Main process: backend, agent, inference client (ADR-010, ADR-019)
+fastapi
+uvicorn
+httpx
+pydantic
+tzdata
