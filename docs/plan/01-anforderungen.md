@@ -25,6 +25,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PRD-06 | Lizenzen: eigener Code **MSOL 1.1**, Scribbles/Logo alle Rechte vorbehalten, Fremdcode behält seine Lizenz (AGPL-3.0 KoboldCpp/SearXNG, MIT llama.cpp/ggml, GPL-2.0+ PJSIP); Copyright-Hinweise der Fremdteile bleiben erhalten (ADR-023, `LICENSING.md`). | MUSS | 1 |
 | PRD-07 | ~~Windows-Start (`moritz-agent.exe`)~~ – **entfällt** (Moritz, F-12: „niemals“). Zielplattform ist ausschließlich Linux (Ubuntu) im LXC. | – | – |
 | PRD-08 | Einheitliches Branding „moritz-agent“ / „m-agent“ mit monochromem Logo (**M + Scribbles**) überall, wo Nutzer etwas sehen (README, WebUI, Favicon, Icons, Metadaten). **Scribbles**, das LayerNX-Maskottchen, ist das Maskottchen von moritz-agent und erscheint überall, wo eine Figur sinnvoll ist ([Branding-Regeln](../../assets/branding/README.md)). KoboldCpp-Oberflächen sind entfernt (F-11). | MUSS | 1 |
+| PRD-10 | Die Assistentin heißt **Nikita** – in Begrüßung, Systemprompt, Antworten, SIP-Anzeigename und Oberfläche. Technische Namen (Produkt `moritz-agent`, Repo, SIP-Konto `agent`) bleiben (ADR-026). | MUSS | 1 |
 | PRD-09 | Alle Programmbestandteile liegen **im Repository** und laufen als Teil des einen Programms: SearXNG (fertig gebaut), pjproject, VAD-Modell (ADR-021). Aus dem Netz kommen nur Abhängigkeiten (PyPI-Pakete mit Hashes, CUDA-Build-Toolchain, Systempakete) und die Hugging-Face-Modelle. | MUSS | 1 |
 
 ## 2. Telefonie (PHONE)
@@ -49,7 +50,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
 | PHONE-20 | Eingehenden internen Anruf automatisch annehmen. | MUSS | 1 |
-| PHONE-21 | Sofort die vorbereitete Begrüßung abspielen: „Hallo Moritz, hier ist Agent. Was kann ich für dich tun?“ – aus einer zwischengespeicherten Audiodatei, **ohne LLM-Wartezeit**. | MUSS | 1 |
+| PHONE-21 | Sofort die vorbereitete Begrüßung abspielen: „Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?“ (Name geändert, ADR-026) – aus einer zwischengespeicherten Audiodatei, **ohne LLM-Wartezeit**. | MUSS | 1 |
 | PHONE-22 | Nach der Begrüßung zuhören, Sprachende per VAD erkennen, Äußerung auf Deutsch transkribieren. | MUSS | 1 |
 | PHONE-23 | Bei Uhrzeitfragen („Wie viel Uhr haben wir?“) ein **echtes Uhrzeit-Tool** aufrufen und kurz antworten („Es ist 19 Uhr 12.“). | MUSS | 1 |
 | PHONE-24 | Die Uhrzeit wird **unmittelbar vor der Ausgabe** aus der Systemuhr gelesen, Zeitzone `Europe/Berlin`, Sommerzeit automatisch. Keine vom LLM erfundene Uhrzeit (technisch abgesichert, siehe AGENT-06). | MUSS | 1 |
