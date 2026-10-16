@@ -1,0 +1,39 @@
+# moritz-agent – gepinnte externe Komponenten (gelesen von Installer und Updater)
+# Format: TOML. Alle Downloads werden per SHA-256 geprüft (INST-03, 08-sicherheit T10).
+# TODO-Werte werden in den genannten Tickets festgelegt.
+
+[koboldcpp]
+upstream_version = "1.123.1"      # Stand des Forks; Upstream-Sync siehe ADR-001
+build = "source"                  # ADR-015: ./koboldcpp.sh rebuild
+
+[pjproject]
+tag = "TODO"                      # P1-11
+url = "https://github.com/pjsip/pjproject/archive/refs/tags/{tag}.tar.gz"
+sha256 = "TODO"
+
+[searxng]
+repo = "https://github.com/searxng/searxng.git"
+commit = "TODO"                   # P1-08
+
+[models.llm]
+file = "TODO.gguf"                # P1-02 / ADR-016
+url = "TODO"
+sha256 = "TODO"
+size_bytes = 0
+
+[models.stt]
+name = "small"                    # P1-10 / ADR-006
+repo = "Systran/faster-whisper-small"
+revision = "TODO"
+
+[models.tts_voice]
+name = "de_DE-thorsten-medium"    # P1-10 / ADR-008
+onnx_url = "TODO"
+onnx_sha256 = "TODO"
+json_url = "TODO"
+json_sha256 = "TODO"
+
+[models.vad]
+name = "silero_vad"
+url = "TODO"
+sha256 = "TODO"

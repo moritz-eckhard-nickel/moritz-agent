@@ -1,0 +1,105 @@
+# moritz-agent – nicht geheime Konfiguration
+#
+# Vorlage für config/moritz-agent.toml (lokal, nicht versioniert).
+# Zugangsdaten (SIP, Web-Login, SSH) stehen AUSSCHLIESSLICH in passwords.txt.
+# Jeder Schlüssel ist hier mit seinem Default dokumentiert (Anforderung CFG-08).
+
+[general]
+timezone = "Europe/Berlin"        # Zeitzone für get_current_time und Logs
+language = "de"                   # Sprache für STT, TTS, Systemprompts
+data_dir = "data"                 # relativ zum Installationsverzeichnis
+models_dir = "models"
+passwords_file = "passwords.txt"
+
+[server]
+host = "127.0.0.1"                # Nicht-Loopback nur mit aktivem Web-Login (API-02)
+port = 5001
+open_browser = false              # im LXC immer false
+session_ttl_hours = 12
+login_max_attempts = 5            # pro IP und Zeitfenster
+login_window_minutes = 5
+
+[logging]
+level = "INFO"
+file = "data/logs/moritz-agent.log"
+max_bytes = 10_485_760
+backup_count = 10
+pjsip_log_level = 3               # > 3 kann Authorization-Header enthalten (LOG-02)
+
+[inference]
+koboldcpp_script = "koboldcpp.py" # Upstream-Einstieg, als Child-Prozess (ADR-003)
+model = ""                        # Pfad unter models/, festgelegt in P1-02 (ADR-016)
+context_size = 4096               # 8192 erst nach Messung (INF-05)
+gpu_layers = -1                   # -1 = Autofit, sonst Anzahl Layer
+use_cuda = true
+flash_attention = true
+jinja = true                      # Chat-Template aus GGUF verwenden
+chat_adapter = ""                 # alternativ Adapter aus kcpp_adapters/, z. B. "ChatML-NoThink.json"
+threads = 0                       # 0 = KoboldCpp-Default
+startup_timeout_s = 180
+request_timeout_s = 60
+phone_preempt_wait_s = 3          # wie lange PHONE auf INTERACTIVE wartet, bevor abgebrochen wird
+
+[search]
+enabled = true
+timeout_s = 6
+max_results = 5
+language = "de-DE"
+safesearch = 1
+engines = ["google", "bing", "duckduckgo", "brave", "wikipedia", "qwant"]
+
+[phone]
+enabled = true
+greeting_text = "Hallo Moritz, hier ist Agent. Was kann ich für dich tun?"
+local_sip_port = 5060
+rtp_port_start = 40000
+rtp_port_count = 200
+codecs = ["G722/16000", "PCMA/8000", "PCMU/8000"]   # Reihenfolge = Priorität
+allowed_source_ips = ["192.168.1.176"]                # INVITEs nur von hier (PHONE-09)
+max_concurrent_calls = 1                              # zweiter Anruf → 486 Busy Here
+register_retry_min_s = 5
+register_retry_max_s = 300
+silence_prompt_s = 10             # dann „Bist du noch da?“ (PHONE-31)
+silence_hangup_s = 10             # weitere Stille danach → Abschied + Auflegen
+thinking_prompt_after_s = 2.5     # Zwischenansage (PHONE-35)
+turn_deadline_s = 15              # Gesamtzeit je Antwort (AGENT-04)
+max_reprompts = 2                 # unverständliche Eingaben in Folge (PHONE-30)
+max_call_duration_s = 1800
+
+[phone.vad]
+engine = "silero"
+threshold = 0.5
+min_silence_ms = 700              # Sprachende-Erkennung
+speech_pad_ms = 300
+max_utterance_s = 20
+
+[phone.stt]
+engine = "faster-whisper"         # ADR-006 (vorläufig)
+model = "small"                   # base | small | large-v3-turbo – per Benchmark P1-10
+compute_type = "int8"
+beam_size = 1
+cpu_threads = 0                   # 0 = automatisch
+no_speech_threshold = 0.6
+min_avg_logprob = -1.0
+
+[phone.tts]
+engine = "piper"                  # ADR-008 (vorläufig)
+voice = "de_DE-thorsten-medium"   # Hörtest F-08
+length_scale = 1.0                # < 1 schneller, > 1 langsamer
+sentence_silence_s = 0.15
+
+[agent.phone]
+max_tool_steps = 3
+max_answer_tokens = 160
+temperature = 0.3
+tools = ["get_current_time", "web_search"]   # PHONE-45: keine Shell/SSH
+system_prompt_file = "moritz_agent/agent/prompts/phone.de.md"
+
+[storage]
+database = "data/moritz-agent.sqlite3"
+store_transcripts = true          # Offene Frage F-03
+transcript_retention_days = 30
+
+[sandbox]
+# Verbindungsdaten in passwords.txt [sandbox_ssh]; Nutzung ab Part 4.
+connect_timeout_s = 10
