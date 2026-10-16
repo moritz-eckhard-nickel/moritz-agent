@@ -25,7 +25,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PRD-06 | Lizenzen: eigener Code **MSOL 1.1**, Scribbles/Logo alle Rechte vorbehalten, Fremdcode behält seine Lizenz (AGPL-3.0 KoboldCpp/SearXNG, MIT llama.cpp/ggml, GPL-2.0+ PJSIP); Copyright-Hinweise der Fremdteile bleiben erhalten (ADR-023, `LICENSING.md`). | MUSS | 1 |
 | PRD-07 | ~~Windows-Start (`moritz-agent.exe`)~~ – **entfällt** (Moritz, F-12: „niemals“). Zielplattform ist ausschließlich Linux (Ubuntu) im LXC. | – | – |
 | PRD-08 | Einheitliches Branding „moritz-agent“ / „m-agent“ mit monochromem Logo (**M + Scribbles**) überall, wo Nutzer etwas sehen (README, WebUI, Favicon, Icons, Metadaten). **Scribbles**, das LayerNX-Maskottchen, ist das Maskottchen von moritz-agent und erscheint überall, wo eine Figur sinnvoll ist ([Branding-Regeln](../../assets/branding/README.md)). KoboldCpp-Oberflächen sind entfernt (F-11). | MUSS | 1 |
-| PRD-10 | Die Assistentin heißt **Nikita** – in Begrüßung, Systemprompt, Antworten, SIP-Anzeigename und Oberfläche. Technische Namen (Produkt `moritz-agent`, Repo, SIP-Konto `agent`) bleiben (ADR-026). | MUSS | 1 |
+| PRD-10 | Der Assistent heißt **Nikita** (männlich, Stimme Hans) – in Begrüßung, Systemprompt, Antworten, SIP-Anzeigename und Oberfläche. Technische Namen (Produkt `moritz-agent`, Repo, SIP-Konto `agent`) bleiben (ADR-026). | MUSS | 1 |
 | PRD-09 | Alle Programmbestandteile liegen **im Repository** und laufen als Teil des einen Programms: SearXNG (fertig gebaut), pjproject, VAD-Modell (ADR-021). Aus dem Netz kommen nur Abhängigkeiten (PyPI-Pakete mit Hashes, CUDA-Build-Toolchain, Systempakete) und die Hugging-Face-Modelle. | MUSS | 1 |
 
 ## 2. Telefonie (PHONE)

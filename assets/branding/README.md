@@ -9,7 +9,7 @@
 ## Name
 
 - Produktname: **moritz-agent**, Kurzform **m-agent**.
-- Die Assistentin heißt **Nikita**; so stellt sie sich am Telefon und in der Oberfläche vor
+- Der Assistent heißt **Nikita** (männlich, daher die Stimme Hans); so stellt er sich am Telefon und in der Oberfläche vor
   (Begrüßung PHONE-21, ADR-026). Produkt- und Repo-Name bleiben moritz-agent / m-agent.
 
 ## Maskottchen: Scribbles

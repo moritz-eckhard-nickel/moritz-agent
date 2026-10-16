@@ -57,7 +57,7 @@ safesearch = 0
 
 [phone]
 enabled = true
-assistant_name = "Nikita"         # Name, mit dem sich die Assistentin vorstellt (ADR-026)
+assistant_name = "Nikita"         # Name, mit dem sich der Assistent vorstellt (ADR-026)
 greeting_text = "Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?"
 local_sip_port = 5060
 rtp_port_start = 40000

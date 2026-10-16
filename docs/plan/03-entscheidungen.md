@@ -314,9 +314,10 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   [12-fast-paths.md](12-fast-paths.md). Erkennung nur bei eindeutigen Mustern; sonst Agent-Loop.
 - **Status:** beschlossen.
 
-## ADR-026 – Name der Assistentin: Nikita
+## ADR-026 – Name des Assistenten: Nikita
 
-- **Entscheidung (Moritz, 16.10.2026):** Die Assistentin heißt **Nikita**. Sie stellt sich so
+- **Entscheidung (Moritz, 16.10.2026):** Der Assistent heißt **Nikita** – ein Mann, deshalb
+  die männliche Stimme Hans (ADR-008). Er stellt sich so
   vor („Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?“), der Systemprompt und der
   Fast-Path `identity` verwenden den Namen, der SIP-Anzeigename (`display_name`) und die
   Anrufer-ID in Asterisk lauten Nikita, und die Oberfläche spricht von Nikita.

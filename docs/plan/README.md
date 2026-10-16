@@ -1,7 +1,7 @@
 # moritz-agent – Projektplan
 
 Stand: 16.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, RTX 3070 8 GB) ·
-**Höchste Priorität: intern anrufbarer Telefon-Agent ab Part 1.** Die Assistentin heißt **Nikita** (ADR-026).
+**Höchste Priorität: intern anrufbarer Telefon-Agent ab Part 1.** Der Assistent heißt **Nikita** (ADR-026).
 
 | Dokument | Inhalt |
 | --- | --- |
