@@ -26,10 +26,10 @@ Hintergrund, ohne eigene Oberfläche.
 
 ## Part 1: Der Telefon-Agent
 
-Moritz wählt intern die **999**. Der Agent ist als SIP-Konto `agent` an der Telefonanlage
+Moritz wählt intern die **999** und landet bei **Nikita**, dem Assistenten von moritz-agent. Er ist als SIP-Konto `agent` an der Telefonanlage
 `192.168.1.176` registriert und
 
-1. nimmt automatisch ab und begrüßt sofort: „Hallo Moritz, hier ist Agent. Was kann ich für dich tun?“
+1. nimmt automatisch ab und begrüßt sofort: „Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?“
 2. hört zu, erkennt das Sprachende und transkribiert auf Deutsch (Whisper small, CPU),
 3. beantwortet einfache Fragen sofort über feste Antwortwege – Uhrzeit, Datum, Kalenderwoche,
    Rechnen, … ([Fast-Paths](docs/plan/12-fast-paths.md)) – die Uhrzeit immer aus der echten Systemuhr (Europe/Berlin),

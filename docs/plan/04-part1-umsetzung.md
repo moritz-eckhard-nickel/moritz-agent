@@ -190,7 +190,7 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
 - **Systemprompt-Entwurf** (`phone.de.md`):
 
   ```text
-  Du bist „Agent“, der Telefonassistent von Moritz. Du sprichst Deutsch und duzt Moritz.
+  Du bist „Nikita“, der Telefonassistent von Moritz. Du sprichst Deutsch und duzt Moritz.
   Deine Antworten werden vorgelesen: Antworte in höchstens zwei bis drei kurzen Sätzen,
   ohne Aufzählungen, ohne Markdown, ohne Links, ohne Emojis.
   Für die aktuelle Uhrzeit oder das Datum rufst du immer das Werkzeug get_current_time auf.
@@ -312,7 +312,7 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
 
 | ID | Text | Verwendung |
 | --- | --- | --- |
-| `greeting` | Hallo Moritz, hier ist Agent. Was kann ich für dich tun? | Anrufbeginn |
+| `greeting` | Hallo Moritz, hier ist Nikita. Was kann ich für dich tun? | Anrufbeginn |
 | `not_understood` | Entschuldigung, das habe ich nicht verstanden. Kannst du das bitte wiederholen? | Reprompt 1 |
 | `not_understood_again` | Ich verstehe dich leider schlecht. Sag zum Beispiel: Wie viel Uhr ist es? | Reprompt 2 |
 | `still_there` | Bist du noch da? | Stille |

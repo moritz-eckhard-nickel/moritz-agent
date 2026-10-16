@@ -1,14 +1,14 @@
 # moritz-agent – Projektplan
 
 Stand: 16.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, RTX 3070 8 GB) ·
-**Höchste Priorität: intern anrufbarer Telefon-Agent ab Part 1.**
+**Höchste Priorität: intern anrufbarer Telefon-Agent ab Part 1.** Der Assistent heißt **Nikita** (ADR-026).
 
 | Dokument | Inhalt |
 | --- | --- |
 | [00-originalplan.md](00-originalplan.md) | Originalplan von Moritz (unverändert, Referenz) |
 | [01-anforderungen.md](01-anforderungen.md) | Nummerierte, prüfbare Anforderungen (PRD, PHONE, CFG, INST, UPD, INF, AGENT, SEARCH, API, UI, STORE, LOG, NFR, SBX) |
 | [02-architektur.md](02-architektur.md) | Repo-Layout, Prozessmodell, Startablauf, Telefon-Zustandsautomat, Datenmodell, API, Ports, Fehlerisolierung |
-| [03-entscheidungen.md](03-entscheidungen.md) | Architekturentscheidungen (ADR-001 … ADR-025) |
+| [03-entscheidungen.md](03-entscheidungen.md) | Architekturentscheidungen (ADR-001 … ADR-026) |
 | [04-part1-umsetzung.md](04-part1-umsetzung.md) | **Ticketplan Part 1** (P1-00, P1-00b … P1-18), Reihenfolge, DoD, Ansagenkatalog |
 | [05-roadmap.md](05-roadmap.md) | Part 2 – 9, Version 1.0, 1.1+ |
 | [06-infrastruktur.md](06-infrastruktur.md) | Inventar, RAM/VRAM-Budget, LXC, NVIDIA-Treiber am Host, GPU-Zugriff, Firewall, Sandbox-VM |

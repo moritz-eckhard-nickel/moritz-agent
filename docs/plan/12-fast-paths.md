@@ -30,7 +30,7 @@ Agent-Loop (AGENT-06, AGENT-10, ADR-025).
 | `holiday_next` | „Wann ist der nächste Feiertag?“, „Ist morgen ein Feiertag?“ | „Der nächste Feiertag in Hessen ist Weihnachten, am Freitag, 25. Dezember.“ | Feiertage **Hessen** (`fastpaths.state = "HE"`, F-15), siehe §4 |
 | `daylight_saving` | „Wann wird die Uhr umgestellt?“ | „Die Uhr wird am Sonntag, 25. Oktober, um 3 Uhr auf 2 Uhr zurückgestellt.“ | zoneinfo |
 | `calculator` | „Was ist 17 mal 23?“, „Wurzel aus 144“, „20 Prozent von 80“ | „17 mal 23 ist 391.“ | sicherer Ausdrucks-Parser (kein `eval`) |
-| `identity` | „Wer bist du?“, „Wie heißt du?“ | „Ich bin Agent, Moritz’ Telefonassistent.“ | fest |
+| `identity` | „Wer bist du?“, „Wie heißt du?“ | „Ich bin Nikita, Moritz’ Telefonassistent.“ | fest |
 | `capabilities` | „Was kannst du?“, „Hilfe“ | „Ich kann dir die Uhrzeit und das Datum sagen, rechnen und im Internet nachschauen …“ | fest, aus aktivierten Tools generiert |
 | `status` | „Wie geht’s dir?“, „Läufst du?“ | „Mir geht’s gut. Alle Systeme laufen.“ bzw. ehrliche Störung | Komponentenstatus |
 | `goodbye` | „Tschüss“, „Danke, das war’s“, „Auflegen“ | Ansage `goodbye` + Auflegen | PHONE-36 |
