@@ -11,11 +11,11 @@ nutzbar.** Jeder Part endet mit einem Regressionsanruf (09, §3 Punkte 4–7).
 | 4 | 0.4 | Sandbox & Coding-Tools | SSH-Client mit gepinntem Host-Key, Workspaces je Task, Tools `shell`, `python`, `files`, `git`, `download`, `archive`, Test-Runner; Ausgabelimits; Bestätigungsmodell für riskante Aktionen; Telefonprofil weiterhin ohne diese Tools | Abgegrenzte Coding-Aufgabe in Redemption-1-VM; Telefon läuft bei ausgeschalteter Sandbox |
 | 5 | 0.5 | Recherche ausbauen | `web_fetch` mit Extraktion (readability-artig), Quellenverwaltung (`sources`, `research_runs`), mehrseitige Recherche, längere Ergebnisdarstellung in der WebUI | Rechercheauftrag mit ≥ 5 Quellen, alle zitiert |
 | 6 | 0.6 | Browser-Automation | Chromium + Playwright **in der Sandbox**, Remote-Browser-Client, Tools `browser.open/click/type/scroll/screenshot/download`, max. 2 Seiten, Crash-Isolation | Dynamische Seite bedienen, Download in Sandbox |
-| 7 | 0.7 | Telefonkomfort | Barge-in mit Echo-Behandlung (AEC/Ducking), Streaming-TTS satzweise ab erstem Satz, bessere Latenz, konfigurierbare Stimmen, optional DTMF; Weiterleitung/ausgehende Anrufe nur als separat freigeschaltete Erweiterung | Unterbrechen funktioniert ohne Selbsterkennung |
+| 7 | 0.7 | Telefonkomfort | Weitere Stimmen/Engines (Polly Hans ist schon in Part 1 optional), Barge-in mit Echo-Behandlung (AEC/Ducking), Streaming-TTS satzweise ab erstem Satz, bessere Latenz, konfigurierbare Stimmen, optional DTMF; Weiterleitung/ausgehende Anrufe nur als separat freigeschaltete Erweiterung | Unterbrechen funktioniert ohne Selbsterkennung |
 | 8 | 0.8 | Memory | Gesprächszusammenfassungen, persistente Fakten (mit Bestätigung/Löschbarkeit in der UI), Retrieval über SQLite FTS5 (kein Dauer-Embedding-Modell im Startprofil) | Fakt aus Anruf A wird in Anruf B korrekt genutzt |
 | 9 | 0.9 | Deep Research | Rechercheplan, 5–15 Queries, Quellen in kleinen Gruppen, Behauptungs-Extraktion, Widerspruchserkennung, belegter Bericht; am Telefon kurze Statusantwort, Ergebnis in der WebUI | Bericht mit Quellen + Widersprüchen |
 | — | 1.0 | Integriert | Telefon- und General-Agent mit Chat, Suche, Research, Coding, Sandbox, Memory, WebUI | Gesamtabnahme |
-| — | 1.1+ | Erweiterungen | Android-WebView-App, Multi-Agent-Rollen (Supervisor/Research/Coding/Browser/Review – ein Modell, eine Queue), Plugins/MCP, weitere Modelle, Bilder/OCR, Windows-Build | je Feature |
+| — | 1.1+ | Erweiterungen | Android-WebView-App, Multi-Agent-Rollen (Supervisor/Research/Coding/Browser/Review – ein Modell, eine Queue), Plugins/MCP, weitere Modelle, Bilder/OCR (kein Windows-Build, F-12) | je Feature |
 
 ## Querschnittsthemen über alle Parts
 

@@ -1,10 +1,16 @@
 # requirements/
 
-Gepinnte Python-Abhängigkeiten mit Hashes (ADR-019), installiert vom Installer mit
-`pip install --require-hashes`:
+Python-Abhängigkeiten von moritz-agent, exakt gepinnt mit SHA-256 (ADR-019). Die Pakete
+kommen bei der Installation von PyPI (`pip install --require-hashes -r <gruppe>.lock`);
+sie liegen bewusst nicht im Repository.
 
-- `core.lock` – Backend, Agent, Inference-Client (entsteht mit P1-05/P1-14)
-- `phone.lock` – Audio/STT/TTS (entsteht mit P1-10); PJSUA2 wird aus Quellcode gebaut (ADR-005)
+| Gruppe | Inhalt |
+| --- | --- |
+| `core` | Backend, Agent, Inference-Client |
+| `phone` | Audio: faster-whisper, Piper, ONNX Runtime, soxr (PJSUA2 wird aus `third_party/pjproject` gebaut) |
+| `polly` | optional: boto3 für die Stimme „Hans“ (Amazon Polly) |
+| `searxng` | Abhängigkeiten des mitgelieferten SearXNG (`third_party/searxng`) inkl. granian |
 
-Erzeugung z. B. mit `uv pip compile pyproject.toml --extra <gruppe> --generate-hashes`.
+Neu erzeugen: `uv pip compile --universal --python-version 3.13 --generate-hashes --no-header -o <g>.lock <g>.in`
+
 Das Upstream-`requirements.txt` im Wurzelverzeichnis gehört zu KoboldCpp und bleibt unverändert.

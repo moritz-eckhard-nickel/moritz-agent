@@ -60,10 +60,24 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
 - Installer/Updater: Optionen, Phasenliste, `--dry-run`; Phasen selbst brechen mit
   „noch nicht implementiert“ ab (P1-15/P1-16).
 
+## P1-00b – Antworten von Moritz, Branding, Fremdkomponenten im Repo *(PR 2)*
+
+- Antworten auf R1–R12 / F-01–F-13 in alle Plan-Dokumente eingearbeitet (ADR-002, -005,
+  -006, -007, -008, -016, -019 aktualisiert; ADR-020 … -025 neu).
+- Logo m-agent mit **Scribbles** (LayerNX-Maskottchen), Branding-Regeln, Generator
+  `scripts/build_branding.py`; Icons ersetzt, KoboldCpp-Oberflächen und Screenshots entfernt.
+- `third_party/searxng` (fertig gebaut, Start aus dem Repo geprüft), `third_party/pjproject`,
+  Silero VAD im Repo; Python-Abhängigkeiten als Lock-Dateien mit Hashes in `requirements/`.
+- Neue Dokumente: [`docs/asterisk-konfiguration.md`](../asterisk-konfiguration.md),
+  [11-suchoptionen.md](11-suchoptionen.md), [12-fast-paths.md](12-fast-paths.md).
+
 ## P1-01 – Infrastruktur Sophie-1 (manuell, dokumentiert)
 
-- **Ziel:** Agent-LXC mit 16 GB RAM-Limit und funktionierendem CUDA.
-- **Schritte:** exakt nach [`06-infrastruktur.md`](06-infrastruktur.md) Abschnitt 2–4.
+- **Ziel:** Agent-LXC (Ubuntu 26.04, 16 GB RAM-Limit, 18 Kerne) mit funktionierendem CUDA.
+- **Schritte:** exakt nach [`06-infrastruktur.md`](06-infrastruktur.md) Abschnitt 2–4,
+  **inklusive NVIDIA-Treiber-Installation auf dem Proxmox-Host** (noch keiner installiert, F-06).
+- **Asterisk:** Konfiguration nach [`docs/asterisk-konfiguration.md`](../asterisk-konfiguration.md)
+  einrichten (Moritz kennt den Ist-Stand nicht, F-01/R7).
 - **Ergebnis:** ausgefülltes Inventar (`docs/plan/06-infrastruktur.md` → Tabelle
   „Ist-Werte“ ausfüllen, per PR), `nvidia-smi` im LXC, CUDA-Smoke-Test (`llama-bench` oder
   KoboldCPP-Benchmark mit Testmodell).
@@ -74,15 +88,17 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
 
 - **Aufgaben:**
   1. `./koboldcpp.sh rebuild` im LXC ausführen (ADR-015), Dauer/Plattenbedarf messen.
-  2. Kandidatenmodelle (ADR-016) herunterladen, SHA-256 notieren.
+  2. Modell aus ADR-016 (`Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf`) laden, SHA-256
+     notieren; `--moecpu N` so justieren, dass ≈ halb VRAM / halb RAM belegt ist und
+     ≥ 0,6 GB VRAM frei bleiben.
   3. Benchmark-Skript `scripts/bench_llm.py` (neu): 40 deutsche Telefonfragen aus
      `tests/moritz_agent/data/phone_questions.de.jsonl` (neu), misst Zeit bis erster Token,
      Tokens/s, Tool-Call-Validität, Antwortlänge; Ergebnisse als Markdown-Tabelle.
   4. VRAM/RAM je Modell bei Kontext 4096 (und 8192 informativ) messen.
   5. Startflags festlegen (`--gpulayers`, `--contextsize`, `--jinja` / Adapter,
      `--flashattention`, KV-Quantisierung optional).
-- **Ergebnis:** ADR-016 auf `beschlossen` mit Messtabelle; `config/versions.lock` mit Modell-
-  URL + SHA-256.
+- **Ergebnis:** Messtabelle in ADR-016 (Tokens/s, VRAM, RAM, Zeit bis erster Token je N);
+  `config/versions.lock` mit SHA-256 des Modells.
 - **Anforderungen:** INF-01…05, NFR-02.
 
 ## P1-03 – Konfiguration & Zugangsdaten
@@ -153,11 +169,12 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
 
 - **Dateien:** `moritz_agent/research/{searxng_process.py,searxng_client.py}`,
   `config/searxng/settings.yml` (Gerüst vorhanden).
-- **Aufgaben:** Installer-Teil (Checkout gepinnter Commit, venv, `granian`), Start als
+- **Aufgaben:** Installer-Teil (venv mit `requirements/searxng.lock`, Code aus `third_party/searxng`, `granian`), Start als
   `ManagedProcess` mit `SEARXNG_SETTINGS_PATH`, lokaler `secret_key`, Health-Check
   (`/healthz`), Client mit Timeout 6 s, Deduplizierung nach Domain, Sprache `de-DE`,
-  `safesearch=1`.
-- **Tests:** Client gegen Fixture-JSON; Integrationstest optional (markiert `@pytest.mark.network`).
+  `safesearch=0`; Fallback-Kette SearXNG → KoboldCpp-Websuche → Wikipedia (ADR-020,
+  [11-suchoptionen.md](11-suchoptionen.md)).
+- **Tests:** Client gegen Fixture-JSON; Fallback bei Timeout/leerem Ergebnis; Integrationstest optional (markiert `@pytest.mark.network`).
 - **Anforderungen:** SEARCH-01…03, NFR-07.
 
 ## P1-09 – Agent Core (Phone-Profil)
@@ -166,7 +183,8 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
   `moritz_agent/agent/prompts/phone.de.md`.
 - **Aufgaben:** Agent-Loop mit Tool-Calls (max. 3 Schritte, Deadline), Context Manager mit
   Token-Budget (Token-Zählung über `/api/extra/tokencount` oder Heuristik 3,5 Zeichen/Token
-  mit 15 % Reserve), Fast-Path Zeitfragen, Uhrzeit-Guard, `speakable.py` (Markdown/URLs/
+  mit 15 % Reserve), **Fast-Path-Katalog** ([12-fast-paths.md](12-fast-paths.md), AGENT-10),
+  Uhrzeit-Guard, `speakable.py` (Markdown/URLs/
   Emojis entfernen, Abkürzungen, Zahlen/Datum sprechbar, max. 3 Sätze), Abschiedserkennung
   (PHONE-36), Cancellation per `call_id`.
 - **Systemprompt-Entwurf** (`phone.de.md`):
@@ -185,18 +203,21 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
   ```
 - **Tests:** Fast-Path-Erkennung (positive/negative Beispielsätze, inkl. „Um wie viel Uhr
   fährt der Zug?“ = **kein** Fast-Path), Guard, Speakable-Normalisierung, Loop mit Fake-LLM.
-- **Anforderungen:** AGENT-01…08, PHONE-23…27, PHONE-32, PHONE-45.
+- **Anforderungen:** AGENT-01…08, AGENT-10, PHONE-23…27, PHONE-32, PHONE-45.
 
 ## P1-10 – Audio-Spike + Audio-Komponenten (VAD, STT, TTS, Resampling)
 
 - **Spike-Teil (zuerst):** `scripts/bench_audio.py` (neu): 30 deutsche Testsätze (von Moritz
   über das echte Telefon aufgenommen **oder** synthetisch + G.711-Codec-Simulation),
-  misst je STT-Kandidat (ADR-006) WER + Latenz + RAM und je TTS-Stimme (ADR-008)
-  Time-to-first-audio + Real-Time-Factor. Ergebnis → ADR-006/008/009 auf `beschlossen`.
+  misst Whisper small (int8, 8 Threads; Vergleich `base`) WER + Latenz + RAM und je
+  TTS-Engine (Piper thorsten-medium, Polly Hans) Time-to-first-audio + Real-Time-Factor.
+  Hörtest Piper-Stimmen vs. Hans mit Moritz.
 - **Komponenten-Teil:** `moritz_agent/phone/audio/{resample.py,vad.py,stt.py,tts.py,buffers.py}`
   mit Interfaces `SpeechToText.transcribe(pcm16_16k) -> Transcript(text, avg_logprob, no_speech_prob)`,
   `TextToSpeech.synthesize(text) -> Iterator[pcm16_16k_chunk]` (satzweise),
-  `VoiceActivityDetector.feed(frame) -> Event`. Modelle werden einmal geladen, Threads
+  `VoiceActivityDetector.feed(frame) -> Event` (Silero aus `assets/models/vad/`).
+  TTS-Engines `piper` und `polly` (boto3, `Engine=standard`, `VoiceId=Hans`,
+  `OutputFormat=pcm`, `SampleRate=16000`) mit automatischem Fallback auf Piper (PHONE-37). Modelle werden einmal geladen, Threads
   konfigurierbar, Self-Test beim Start (kurzer Satz synthetisieren und zurück-transkribieren).
 - **Unverständlich-Kriterium:** leerer Text, `no_speech_prob > 0.6`, `avg_logprob < -1.0`
   oder < 2 Zeichen (Werte im Spike kalibrieren).
@@ -207,7 +228,8 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
 - **Ziel:** Minimalprogramm `scripts/sip_spike.py`: registriert als `agent`, nimmt Anruf an,
   spielt eine WAV, nimmt 10 s Gegenrichtung als WAV auf (nur Spike, nur lokal, danach
   löschen), legt auf. Kein LLM, kein STT.
-- **Klärt:** pjproject-Version + Build-Rezept (→ Installer), Thread-Modell, `AudioMediaPort`-
+- **Quelle:** `third_party/pjproject` (2.17, im Repo).
+- **Klärt:** Build-Rezept (→ Installer), Thread-Modell, `AudioMediaPort`-
   Callbacks in Python (Frame-Größe, Takt, GIL-Last), ausgehandelter Codec mit der Anlage,
   RTP-Portbereich/Firewall, Verhalten bei zweitem Anruf (486), Re-REGISTER nach
   Passwortänderung, Quell-IP-Filter für INVITEs.
@@ -241,7 +263,8 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
 ## P1-14 – Backend-API, Auth, Statusseite
 
 - **Dateien:** `moritz_agent/api/{app.py,auth.py,routes_system.py,routes_phone.py,routes_chat.py,internal.py}`,
-  `frontend/status/{index.html,status.js,style.css}`.
+  `frontend/status/{index.html,status.js,style.css}`; Favicon und Logo aus `assets/branding/`,
+  Scribbles auf Login-, Lade- und Fehlerseite (PRD-08).
 - **Aufgaben:** Endpunkte gemäß 02 §9; Login (ADR-013), Session-Cookie, Rate-Limit
   (5 Fehlversuche / 5 min / IP), API-02-Startprüfung, Statusseite (UI-01), Text-Testpfad
   `/api/chat` (identische Agent-Pipeline wie Telefon, ohne Audio), Admin-Token-Datei.

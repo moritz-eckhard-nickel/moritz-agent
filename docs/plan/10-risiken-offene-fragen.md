@@ -1,38 +1,51 @@
 # 10 – Risiken und offene Fragen
 
+Stand nach Moritz’ Antworten vom 16.10.2026.
+
 ## 1. Risiken
 
-| # | Risiko | Wahrscheinlichkeit | Auswirkung | Gegenmaßnahme | Ticket |
-| --- | --- | --- | --- | --- | --- |
-| R1 | PJSUA2-Python-Binding schwer zu bauen; `AudioMediaPort`-Callbacks in Python instabil (GIL, Takt) | mittel | hoch | Spike zuerst; Callbacks minimal (nur Ringpuffer kopieren); Fallbacks ADR-005 | P1-11 |
-| R2 | CPU-STT zu langsam für flüssiges Gespräch | mittel | hoch | Benchmark mehrerer Modelle; `base` oder Vosk als Fallback; später STT auf GPU, wenn VRAM reicht | P1-10 |
-| R3 | 8B-Modell ruft Tools unzuverlässig auf / Deutsch holprig | mittel | mittel | Fast-Path für Zeit; Benchmark; Schema-Validierung + Retry; Modellwechsel | P1-02, P1-09 |
-| R4 | Google/Bing blockieren SearXNG (Captcha) | hoch | mittel | Mehrere Engines, Engine-Suspend, ehrliche Fehlermeldung; „Google“ nur nennen, wenn tatsächlich geliefert | P1-08 |
-| R5 | GPU-Treiber-Mismatch Host ↔ LXC nach Host-Update | mittel | hoch | Versionsprüfung im Updater/Status, Doku 06 §4.5 | P1-01, P1-16 |
-| R6 | VRAM durch andere GPU-Nutzer knapp | niedrig–mittel | hoch | Inventar; Startprüfung freier VRAM; Kontext/Layer reduzieren | P1-01 |
-| R7 | Asterisk-Konfiguration passt nicht (Codecs, direct_media, 999-Routing) | mittel | hoch | Checkliste 06 §6 früh mit Moritz klären | P1-01 |
-| R8 | Kurze Secrets (`agent`) nicht textuell redigierbar | sicher | niedrig | Struktureller Schutz (`Secret`-Typ), Doku 08 §3 | P1-03 |
-| R9 | Upstream-Merges kollidieren mit eigenen Änderungen | niedrig | mittel | ADR-001 (keine Upstream-Dateien ändern) | laufend |
-| R10 | Echo/Selbsterkennung ohne Barge-in-Logik | niedrig (Part 1: Eingang beim Sprechen verworfen) | mittel | klarer Sprecherwechsel; AEC erst Part 7 | P1-12 |
-| R11 | Conda-CUDA-Build im LXC braucht viel Platz/Zeit | mittel | niedrig | Plattenbudget 60 GB; Fallback offizielles Binary (ADR-015) | P1-02 |
-| R12 | Piper-Projektwechsel (MIT → GPL, Repo-Umzug) / Paketpflege | niedrig | niedrig | Version pinnen, Lizenz geprüft (AGPL-kompatibel) | P1-10 |
+| # | Risiko | Antwort Moritz | Bewertung / Gegenmaßnahme | Ticket |
+| --- | --- | --- | --- | --- |
+| R1 | PJSUA2-Binding schwer zu bauen; Audio-Callbacks in Python instabil | „versuch’s trotzdem oder mach’s besser“ | Bleibt Plan A, Quellcode 2.17 jetzt im Repo; Spike zuerst; Plan B Asterisk AudioSocket (ADR-005) | P1-11 |
+| R2 | CPU-STT zu langsam | „Whisper small auf CPU“ | Entschieden (ADR-006); Messung im Spike, `base` als Notfall | P1-10 |
+| R3 | 8B-Modell zu schwach | „größeres, halb RAM halb VRAM“ | Qwen3-30B-A3B (MoE) UD-Q3_K_XL, Experten teilweise im RAM (ADR-016) | P1-02 |
+| R4 | Google/Bing blockieren SearXNG | „andere Suchoptionen, evtl. KoboldCpp“ | Fallback-Kette SearXNG → KoboldCpp-Websuche → Wikipedia (ADR-020, [11](11-suchoptionen.md)) | P1-08 |
+| R5 | GPU-Treiber-Mismatch Host ↔ LXC | „kp“ | Bleibt: Versionsprüfung in Status/Updater, Anleitung 06 §4 | P1-01, P1-16 |
+| R6 | VRAM durch andere GPU-Nutzer knapp | „nur Compute, sonst nichts“ | **Entschärft**; Restrisiko nur durch eigenes Modell → `--moecpu` mit Reserve | P1-02 |
+| R7 | Asterisk-Konfiguration passt nicht | „kein Plan, mach eine Asterisk-Config“ | **Erledigt:** [`docs/asterisk-konfiguration.md`](../asterisk-konfiguration.md) | P1-01 |
+| R8 | Kurze Secrets nicht textuell redigierbar | „kp“ | Bleibt: struktureller Schutz über `Secret`-Typ (08 §3) | P1-03 |
+| R9 | Upstream-Merges kollidieren | „egal“ | Akzeptiert; Patch-Liste in 02 §12 hilft beim Auflösen | laufend |
+| R10 | Echo/Selbsterkennung | „Lösung steht schon da“ | Klarer Sprecherwechsel (Part 1), AEC in Part 7 | P1-12 |
+| R11 | Conda-CUDA-Build braucht Platz/Zeit | „kp“ | Disk ≥ 80 GB eingeplant (06 §3) | P1-02 |
+| R12 | Lizenzen | „Lizenzen so lassen, dass KoboldCpp und alle anderen ihre behalten; für den Rest ‚msol 1.1‘“ | Jede Komponente behält ihre Lizenz; eigene Lizenz offen (F-14, ADR-023) | – |
+| R13 | **Neu:** Repo-Größe durch Fremdkomponenten (≈ +95 MB für SearXNG und pjproject) | – | Python-Pakete bewusst nicht im Repo (Moritz: „requirements egal“); Updates von `third_party/` bündeln (ADR-021) | laufend |
+| R14 | **Neu:** Polly „Hans“ braucht Internet + AWS | – | Piper-Fallback automatisch; Ansagen vorgerendert (ADR-008) | P1-10 |
+| R15 | **Neu:** MoE mit CPU-Experten auf Haswell (DDR4) langsamer als erwartet | – | `--moecpu` senken (mehr auf GPU), Q3_K_S, oder dichtes 14B als Fallback (ADR-016) | P1-02 |
 
-## 2. Offene Fragen an Moritz
+## 2. Offene Fragen – beantwortet
 
-Bis zur Antwort gilt jeweils der genannte **Default**.
+| # | Frage | Antwort | Umgesetzt in |
+| --- | --- | --- | --- |
+| F-01 | Asterisk-Details | „kein Plan“ | Komplette Anleitung [`docs/asterisk-konfiguration.md`](../asterisk-konfiguration.md) |
+| F-02 | Repo öffentlich? SIP-Startwerte in der Vorlage? | öffentlich; SIP-Server nur lokal, daher egal | Vorlage behält `agent/agent`; ACL + Kontext ohne Wählrechte in Asterisk |
+| F-03 | Transkripte speichern? | Text, 24 Stunden | STORE-02, `storage.transcript_retention_hours = 24` |
+| F-04 | Web-UI im LAN? | ja, Port 3501, TLS ok | API-01, ADR-022 |
+| F-05 | Distribution | Ubuntu 26.04 oder 25.10 | NFR-06, ADR-024, 06 §3 |
+| F-06 | NVIDIA-Treiber am Host? Andere GPU-Nutzer? | Treiber nein, Gast nein | 06 §4.1 Host-Treiber-Anleitung |
+| F-07 | CPU / Kerne | E5-2673 v3, bis zu 18 Threads, Host darf nie überlasten | NFR-08, 02 §5a, 06 §3 |
+| F-08 | Stimme | „Hans“ | ADR-008: Polly Hans optional, Piper lokal |
+| F-09 | Suchmaschinen | alle | `config/searxng/settings.yml`, ADR-007 |
+| F-10 | Sandbox-Netz | nur Sophie-1 + Internet | SBX-03, 06 §7 |
+| F-11 | KoboldCpp-Oberflächen behalten? | nein, alles weg | ADR-002, Dateien entfernt |
+| F-12 | Windows? | niemals | PRD-07 gestrichen |
+| F-13 | Fast-Paths für einfache Infos? | ja, alle | AGENT-10, [12-fast-paths.md](12-fast-paths.md) |
+
+## 3. Offene Fragen – neu
 
 | # | Frage | Default bis zur Antwort |
 | --- | --- | --- |
-| F-01 | Asterisk: chan_pjsip oder chan_sip? Welche Codecs sind für `agent` erlaubt, ist `direct_media` aus, ist 999 bereits auf `agent` geroutet? (Checkliste 06 §6) | Annahme chan_pjsip, G.711 alaw; wird im Spike geprüft |
-| F-02 | Ist das GitHub-Repo öffentlich oder privat? (Bestimmt, ob die SIP-Startwerte in `config/passwords.template.txt` bleiben dürfen – Originalplan: öffentlich nur bereinigte Vorlage.) | Vorlage enthält die Startwerte (internes LAN-Konto). Wird das Repo öffentlich: Passwort aus Vorlage entfernen **und** in Asterisk ändern |
-| F-03 | Sollen Gesprächstranskripte (Text) gespeichert werden, und wie lange? | Ja, 30 Tage, abschaltbar (`storage.store_transcripts`) |
-| F-04 | Soll die Web-UI im LAN erreichbar sein (welche IP/Hostname) oder nur lokal/per SSH-Tunnel? TLS über vorhandenen Reverse-Proxy? | nur `127.0.0.1`; LAN-Bindung im Installer wählbar |
-| F-05 | Distribution für den LXC? | Debian 12 |
-| F-06 | Proxmox-Version, NVIDIA-Treiber am Host bereits installiert? Nutzt ein anderer Gast die GPU? | wird im Inventar (P1-01) erfasst |
-| F-07 | CPU-Modell von Sophie-1 und wie viele Kerne darf der LXC nutzen? | Kerne − 2 |
-| F-08 | Stimme: männlich (Thorsten) oder weiblich (Kerstin/Eva)? Name „Agent“ in der Begrüßung bleibt? | Thorsten, „Agent“ |
-| F-09 | Welche Suchmaschinen sind gewünscht/akzeptabel, wenn Google blockiert? | google, bing, duckduckgo, brave, wikipedia, qwant |
-| F-10 | Zeitplan/Ressourcen für Redemption-1-Sandbox und VLAN/OPNsense-Regeln? | Part 4; Installer erlaubt „später“ |
-| F-11 | Sollen die alten KoboldCPP-Oberflächen (KoboldAI Lite, `/lcpp`) für Admin-Zwecke erreichbar bleiben? | nur über Loopback/SSH-Tunnel |
-| F-12 | Windows-Unterstützung: wann relevant? | nach 1.0 |
-| F-13 | Soll der Agent auch Datum/Wochentag, Wetter etc. als feste Fast-Paths bekommen? | Datum ja (gleiches Tool), Wetter über Suche |
+| F-08b | Ist mit „Hans“ die **Amazon-Polly**-Stimme gemeint? Gibt es ein AWS-Konto (Access-Key mit Recht `polly:SynthesizeSpeech`)? | Polly vorbereitet, aber aus; lokal Piper `de_DE-thorsten-medium` |
+| F-14 | Was ist „msol 1.1“? (Keine Lizenz dieses Namens auffindbar; gemeint vielleicht MPL – dann bitte **2.0**, weil 1.1 nicht GPL-kompatibel ist – oder MIT/Apache-2.0?) | eigener Code bleibt AGPL-3.0 |
+| F-15 | Bundesland für Feiertags-Fast-Path? | nur bundesweite Feiertage |
+| F-16 | ~~HF-Modelle ins Repo?~~ | **beantwortet:** nein, HF-Modelle lädt der Installer; alles andere ins Repo, Python-Requirements dürfen aus dem Netz kommen |
+| F-17 | Lizenz der Scribbles-Grafik (LayerNX)? Darf sie unter einer freien Lizenz (z. B. CC BY 4.0) im öffentlichen Repo stehen, oder „alle Rechte vorbehalten“? | © LayerNX, alle Rechte vorbehalten, Nutzung in moritz-agent erlaubt |

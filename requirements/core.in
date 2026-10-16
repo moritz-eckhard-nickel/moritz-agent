@@ -1,0 +1,6 @@
+# Main process: backend, agent, inference client (ADR-010, ADR-019)
+fastapi
+uvicorn
+httpx
+pydantic
+tzdata

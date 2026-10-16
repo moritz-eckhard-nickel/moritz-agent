@@ -1,39 +1,62 @@
-# moritz-agent – gepinnte externe Komponenten (gelesen von Installer und Updater)
-# Format: TOML. Alle Downloads werden per SHA-256 geprüft (INST-03, 08-sicherheit T10).
-# TODO-Werte werden in den genannten Tickets festgelegt.
+# moritz-agent – pinned external components (read by installer and updater)
+# Format: TOML. See docs/plan/07-installation-update.md §5 and ADR-021.
+# "vendored" = lives in this repository; no download needed.
+# sha256 = "tofu" → computed on first download, stored in data/state/model-hashes.json and
+# enforced on every later download (huggingface.co was not reachable when this PR was built).
 
 [koboldcpp]
-upstream_version = "1.123.1"      # Stand des Forks; Upstream-Sync siehe ADR-001
+upstream_version = "1.123.1"
 build = "source"                  # ADR-015: ./koboldcpp.sh rebuild
 
 [pjproject]
-tag = "TODO"                      # P1-11
-url = "https://github.com/pjsip/pjproject/archive/refs/tags/{tag}.tar.gz"
-sha256 = "TODO"
+version = "2.17"
+commit = "5a457451fa2712ba18e12b01738e8ff3af2b26fd"
+vendored = "third_party/pjproject"
 
 [searxng]
-repo = "https://github.com/searxng/searxng.git"
-commit = "TODO"                   # P1-08
+commit = "8252c0bf6d5d97e833868099272eed0bb75828b2"   # 2026-10-16
+vendored = "third_party/searxng"
 
-[models.llm]
-file = "TODO.gguf"                # P1-02 / ADR-016
-url = "TODO"
-sha256 = "TODO"
-size_bytes = 0
-
-[models.stt]
-name = "small"                    # P1-10 / ADR-006
-repo = "Systran/faster-whisper-small"
-revision = "TODO"
-
-[models.tts_voice]
-name = "de_DE-thorsten-medium"    # P1-10 / ADR-008
-onnx_url = "TODO"
-onnx_sha256 = "TODO"
-json_url = "TODO"
-json_sha256 = "TODO"
+[python]
+# Python packages come from PyPI at install time, pinned with SHA-256 hashes (ADR-019).
+locks = ["requirements/core.lock", "requirements/phone.lock", "requirements/polly.lock", "requirements/searxng.lock"]
 
 [models.vad]
 name = "silero_vad"
-url = "TODO"
-sha256 = "TODO"
+version = "v6.2.3"
+vendored = "assets/models/vad/silero_vad.onnx"
+sha256 = "1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3"
+size_bytes = 2327524
+
+[models.llm]
+repo = "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF"
+file = "Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"
+url = "https://huggingface.co/unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF/resolve/main/Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"
+target = "models/llm/Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"
+size_bytes = 13833048480
+sha256 = "tofu"
+license = "Apache-2.0"
+
+[models.stt]
+repo = "Systran/faster-whisper-small"
+target_dir = "models/stt/faster-whisper-small"
+files = [
+    { name = "model.bin", size_bytes = 483546902 },
+    { name = "config.json", size_bytes = 2370 },
+    { name = "tokenizer.json", size_bytes = 2203239 },
+    { name = "vocabulary.txt", size_bytes = 459861 },
+]
+url_template = "https://huggingface.co/Systran/faster-whisper-small/resolve/main/{name}"
+sha256 = "tofu"
+license = "MIT"
+
+[models.tts_voice]
+name = "de_DE-thorsten-medium"
+target_dir = "models/tts"
+files = [
+    { name = "de_DE-thorsten-medium.onnx", size_bytes = 63201294 },
+    { name = "de_DE-thorsten-medium.onnx.json", size_bytes = 4819 },
+]
+url_template = "https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/medium/{name}"
+sha256 = "tofu"
+license = "CC0-1.0 (dataset Thorsten-Voice)"

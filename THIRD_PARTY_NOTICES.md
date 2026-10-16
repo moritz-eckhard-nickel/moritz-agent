@@ -13,7 +13,7 @@ network, AGPL-3.0 §13 requires offering them the corresponding source code.
 | Component | Location | License |
 | --- | --- | --- |
 | KoboldCpp (Concedo / LostRuins) | `koboldcpp.py`, `kcpp_*`, `kcpp_src/`, `otherarch/` (unless noted) | AGPL-3.0 |
-| KoboldAI Lite | embedded UI (`embd_res/klite.embd`) | AGPL-3.0 |
+| KoboldAI Lite | formerly `embd_res/klite.embd` – **removed** by moritz-agent (ADR-002) | AGPL-3.0 |
 | GGML, llama.cpp | `ggml/`, `src/`, `common/`, `include/`, `tools/`, `gguf-py/`, `convert_*.py` | MIT ([MIT_LICENSE_GGML_SDCPP_LLAMACPP_ONLY.md](MIT_LICENSE_GGML_SDCPP_LLAMACPP_ONLY.md)) |
 | stable-diffusion.cpp | `otherarch/sdcpp/` | MIT |
 | whisper.cpp | `otherarch/whispercpp/` | MIT |
@@ -27,22 +27,29 @@ network, AGPL-3.0 §13 requires offering them the corresponding source code.
 | subprocess.h (sheredom) | `vendor/sheredom/` | Unlicense |
 | hash helpers (sha1, sha256, xxhash) | `vendor/hash/` | see file headers |
 
-## Installed at setup time (planned for Part 1, not stored in this repository)
+## Vendored in this repository by moritz-agent (`third_party/`, `assets/`)
 
-Versions are pinned in `config/versions.lock`. This table is updated **before** a
-component is bundled or installed.
+Unmodified copies; provenance and versions in [third_party/VENDORED.md](third_party/VENDORED.md).
+
+| Component | Location | License |
+| --- | --- | --- |
+| SearXNG (commit 8252c0bf) | `third_party/searxng/` | AGPL-3.0 |
+| pjproject / PJSIP 2.17 | `third_party/pjproject/` | GPL-2.0-or-later; bundled sub-components in `third_party/pjproject/third_party/` keep their own licenses |
+| Python packages (installed from PyPI, pinned in `requirements/*.lock`) | not vendored | per package (FastAPI, Starlette, Pydantic: MIT; Uvicorn, HTTPX, Granian: BSD-3-Clause; faster-whisper, CTranslate2, ONNX Runtime: MIT; NumPy (BSD-3-Clause), PyAV (BSD-3-Clause), Piper (GPL-3.0), python-soxr (LGPL-2.1-or-later), boto3 (Apache-2.0), Flask (BSD-3-Clause), lxml (BSD-3-Clause), …) |
+| Silero VAD v6.2.3 | `assets/models/vad/` | MIT |
+| m-agent logo (M + Scribbles) | `assets/branding/`, `niko.ico`, `nikogreen.ico` | contains the Scribbles artwork, see below |
+| **Scribbles** – mascot of LayerNX and moritz-agent | `assets/branding/scribbles/` (original drawing + traced SVG/PNG) | © LayerNX, provided by Moritz for moritz-agent. Not covered by the AGPL; all rights reserved unless LayerNX states otherwise (open question F-17) |
+
+## Downloaded at setup time (not stored in this repository)
 
 | Component | Purpose | License |
 | --- | --- | --- |
-| SearXNG | internal metasearch worker | AGPL-3.0 |
-| pjproject (PJSIP / PJSUA2) | SIP stack and RTP media | GPL-2.0-or-later |
-| faster-whisper, CTranslate2 | speech-to-text | MIT |
-| OpenAI Whisper model weights | speech-to-text model | MIT |
-| Piper (OHF-Voice/piper1-gpl) | text-to-speech | GPL-3.0 |
-| Piper voice `de_DE-thorsten-*` (candidate) | German voice | CC0 (dataset) – verify per voice model card |
-| Silero VAD | voice activity detection | MIT |
-| ONNX Runtime | model runtime for VAD/TTS | MIT |
-| FastAPI, Starlette, Pydantic | backend | MIT |
-| Uvicorn, HTTPX, Granian | ASGI server, HTTP client, WSGI server | BSD-3-Clause |
-| python-soxr / libsoxr | resampling | LGPL-2.1-or-later |
-| LLM weights (selected in P1-02) | inference model | per model card (e.g. Apache-2.0 for Qwen3) |
+| Qwen3-30B-A3B-Instruct-2507 GGUF (unsloth) | LLM | Apache-2.0 |
+| OpenAI Whisper small (faster-whisper conversion by Systran) | speech-to-text | MIT |
+| Piper voice `de_DE-thorsten-medium` | German voice | CC0 (Thorsten-Voice dataset) – verify per model card |
+
+## External service (optional, opt-in)
+
+| Service | Purpose | Terms |
+| --- | --- | --- |
+| Amazon Polly, voice "Hans" | cloud text-to-speech | AWS Service Terms; only answer texts are sent |

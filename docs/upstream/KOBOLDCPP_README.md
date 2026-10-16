@@ -12,12 +12,12 @@ One executable file, no installation required. Ready-to-run downloads are availa
 
 **[Download KoboldCpp](https://github.com/LostRuins/koboldcpp/releases/latest) | [Quick Start](#quick-start) |  [Official Resources](#official-resources)**
 
-![Integrated Web UI](../../media/preview.png)
-![Roleplay Chat Mode](../../media/preview2.png)
-![GUI Launcher](../../media/preview3.png)
-![Messenger Chat Mode](../../media/preview4.png)
-![Image Generation UI](../../media/preview5.png)
-![Assistant UI](../../media/preview6.png)
+![Integrated Web UI](https://raw.githubusercontent.com/LostRuins/koboldcpp/concedo/media/preview.png)
+![Roleplay Chat Mode](https://raw.githubusercontent.com/LostRuins/koboldcpp/concedo/media/preview2.png)
+![GUI Launcher](https://raw.githubusercontent.com/LostRuins/koboldcpp/concedo/media/preview3.png)
+![Messenger Chat Mode](https://raw.githubusercontent.com/LostRuins/koboldcpp/concedo/media/preview4.png)
+![Image Generation UI](https://raw.githubusercontent.com/LostRuins/koboldcpp/concedo/media/preview5.png)
+![Assistant UI](https://raw.githubusercontent.com/LostRuins/koboldcpp/concedo/media/preview6.png)
 
 ## Features
 - **Local text generation:** Run any GGUF language model to generate text in chat, adventure, instruct, or story writing modes. Compatible vision models also support image understanding.

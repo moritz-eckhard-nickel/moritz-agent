@@ -20,20 +20,21 @@ Anforderungen: INST-01…11, UPD-01…07, CFG-01…10.
 
 | # | Phase | Details | Abbruch wenn |
 | --- | --- | --- | --- |
-| 1 | `preflight` | root? Distribution (Debian 12/13, Ubuntu 24.04), Python ≥ 3.11, RAM-Limit (`/sys/fs/cgroup/memory.max`), CPU-Kerne, freier Speicher ≥ 40 GB, `nvidia-smi` (Warnung wenn fehlt → CPU-Modus nur für Tests), Zeitzone, Ports 5001/5060/RTP frei | Pflicht verletzt |
-| 2 | `packages` | `apt-get install` (ohne Upgrade des Systems): `git curl ca-certificates build-essential python3-venv python3-dev swig libssl-dev libopus-dev pkg-config libsndfile1 sox tzdata nftables`(optional) | apt-Fehler |
+| 1 | `preflight` | root? Ubuntu 26.04/25.10, Python 3.13/3.14, RAM-Limit (`/sys/fs/cgroup/memory.max`), CPU-Threads (≤ 18 erwartet), freier Speicher ≥ 60 GB, `nvidia-smi` + Treiberversion (Warnung wenn fehlt → CPU-Modus nur für Tests), Zeitzone, Ports 3501/5060/RTP frei | Pflicht verletzt |
+| 2 | `packages` | `apt-get install` (ohne System-Upgrade): `build-essential python3-venv python3-dev swig libssl-dev libopus-dev pkg-config libsndfile1 tzdata openssl git curl ca-certificates` | apt-Fehler |
 | 3 | `user_dirs` | Systembenutzer `moritz-agent` (`--system --home /opt/moritz-agent --shell /usr/sbin/nologin`), Gruppen `video`/`render`, Verzeichnisse `data/ models/ runtime/ backups/` (0750/0700) | – |
-| 4 | `python_env` | `runtime/venv` + `pip install --require-hashes -r requirements/core.lock -r requirements/phone.lock` + `pip install -e .` | pip-Fehler |
-| 5 | `pjsip` | pjproject-Tag aus `config/versions.lock` laden, SHA-256 prüfen, bauen (ADR-005), SWIG-Binding ins venv; Cache über Versions-Hash | Build-Fehler |
-| 6 | `koboldcpp` | `./koboldcpp.sh rebuild` als Dienstbenutzer (ADR-015); Cache über Hash der nativen Quellen | Build-Fehler |
-| 7 | `searxng` | Checkout gepinnter Commit nach `runtime/searxng`, venv, `granian`, lokaler `secret_key` | – |
-| 8 | `models` | Liste aus `config/versions.lock` (LLM, STT, TTS-Stimme, VAD) mit Größe anzeigen, Summe + freier Platz, Bestätigung, Download (resume), **SHA-256-Prüfung**, falsche Datei → löschen + Fehler | Prüfsumme falsch |
-| 9 | `secrets` | `passwords.txt` existiert? → **unverändert lassen**, nur fehlende Felder ergänzen (CFG-09). Sonst aus `config/passwords.template.txt` erzeugen (SIP-Startwerte, 0600). Danach Web-Login und Sandbox abfragen (s. §2.1) | ungültige Eingabe 3× |
-| 10 | `config` | `config/moritz-agent.toml` aus Example erzeugen, falls fehlt; Fragen: Web-Bindung (127.0.0.1 / LAN-IP), RTP-Portbereich, Stimme; Zeitzone `Europe/Berlin` | – |
-| 11 | `prompts` | Ansagen-Cache erzeugen (P1-13) | TTS-Fehler |
-| 12 | `service` | systemd-Unit installieren, `daemon-reload`, `enable --now` | Start schlägt fehl |
-| 13 | `verify` | einzeln melden: Dienst läuft · LLM geladen · SearXNG antwortet · STT/TTS Self-Test · SIP registriert · Web-UI erreichbar | – (nur Bericht) |
-| 14 | `testcall` | Checkliste ausgeben und interaktiv abfragen: „Ruf jetzt 999 an“ → Begrüßung gehört? Audio beidseitig? Uhrzeit korrekt? Folgefrage? Websuche? → Ergebnis ins Log. Hinweis: Dialplan wird nur geprüft, nicht geändert | – |
+| 4 | `python_env` | `runtime/venv`; von PyPI, exakt gepinnt: `pip install --require-hashes -r requirements/core.lock -r requirements/phone.lock` (+ `polly.lock`, falls Polly gewählt) + `pip install --no-deps -e .` | pip-Fehler |
+| 5 | `pjsip` | Build aus `third_party/pjproject` (2.17) nach `runtime/pjsip` (ADR-005), SWIG-Binding ins venv; Neubau nur bei geändertem Quell-Hash | Build-Fehler |
+| 6 | `koboldcpp` | `./koboldcpp.sh rebuild` als Dienstbenutzer (ADR-015); Neubau nur bei geändertem Hash der nativen Quellen | Build-Fehler |
+| 7 | `searxng` | `runtime/searxng-venv` mit `pip install --require-hashes -r requirements/searxng.lock`, Code fertig gebaut aus `third_party/searxng` (kein Build, kein Clone), Secret erzeugen (`data/searxng/secret`, 0600) | – |
+| 8 | `models` | Aus `config/versions.lock`: LLM (13,8 GB), Whisper small (0,5 GB), Piper-Stimme (63 MB) mit Größe anzeigen, freien Platz prüfen, bestätigen, Download mit Resume von Hugging Face, Größenprüfung; SHA-256 gegen `versions.lock` bzw. TOFU (ADR-021). VAD liegt im Repo. | Größe/Prüfsumme falsch |
+| 9 | `secrets` | `passwords.txt` existiert? → **unverändert lassen**, nur fehlende Felder ergänzen (CFG-09). Sonst aus `config/passwords.template.txt` erzeugen (SIP-Startwerte, 0600). Danach Web-Login, Sandbox und optional Polly abfragen (§2.1) | ungültige Eingabe 3× |
+| 10 | `config` | `config/moritz-agent.toml` aus Example erzeugen, falls fehlt; Fragen: LXC-IP für Zertifikat, RTP-Portbereich, TTS-Engine (`polly`/Hans oder `piper`); Zeitzone `Europe/Berlin` | – |
+| 11 | `tls` | Selbst signiertes Zertifikat nach `runtime/tls/` (`openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -days 3650`, SAN = IP + Hostname), Fingerprint anzeigen (ADR-022) | – |
+| 12 | `prompts` | Ansagen-Cache erzeugen (P1-13) | TTS-Fehler |
+| 13 | `service` | systemd-Unit installieren, `daemon-reload`, `enable --now` | Start schlägt fehl |
+| 14 | `verify` | einzeln melden: Dienst läuft · LLM geladen (VRAM/RAM-Anteil) · SearXNG antwortet · STT/TTS Self-Test · SIP registriert · Web-UI `https://<IP>:3501` erreichbar | – (nur Bericht) |
+| 15 | `testcall` | Checkliste: „Ruf jetzt 999 an“ → Begrüßung? Audio beidseitig? Uhrzeit? Folgefrage? Websuche? → Ergebnis ins Log. Bei Problemen Verweis auf [`docs/asterisk-konfiguration.md`](../asterisk-konfiguration.md) | – |
 
 ### 2.1 Interaktive Abfragen
 
@@ -45,6 +46,9 @@ Anforderungen: INST-01…11, UPD-01…07, CFG-01…10.
   `data/ssh/id_ed25519` erzeugen und Public Key anzeigen), optionale Passphrase; Host-Key per
   `ssh-keyscan` holen, **Fingerprint anzeigen und bestätigen lassen**, in TXT speichern,
   Testverbindung `ssh -o StrictHostKeyChecking=yes … true`. Bei 2: `enabled = false`.
+- **Polly („Hans“, optional):** `[1] Hans über Amazon Polly (Internet + AWS-Konto)  [2] lokal (Piper)`.
+  Bei 1: Access-Key-ID, Secret (ohne Echo), Region (Default `eu-central-1`) → `passwords.txt`
+  `[optional_services]`; Testsynthese „Hallo Moritz“. Fehlschlag → Hinweis, Piper bleibt aktiv.
 - **SIP:** keine Abfrage bei Ersteinrichtung (Startwerte aus Vorlage). Warnung bei
   `password = agent`. Option `--reconfigure-sip` für spätere interaktive Änderung.
 
@@ -79,7 +83,7 @@ Anforderungen: INST-01…11, UPD-01…07, CFG-01…10.
 
 ## 5. Gepinnte Versionen (`config/versions.lock`)
 
-Eine Datei, eine Wahrheit – vom Installer/Updater gelesen. Einträge: `pjproject`
-(Tag + SHA-256 des Tarballs), `searxng` (Commit), `llm` (URL, Dateiname, SHA-256, Größe),
-`stt` (Modellname + Revision), `tts_voice` (URL Onnx + JSON, SHA-256), `vad` (URL, SHA-256).
-Gerüst mit `TODO`-Werten liegt bei; Werte werden in P1-02/P1-10/P1-11 festgelegt.
+Eine Datei, eine Wahrheit – vom Installer/Updater gelesen: `koboldcpp` (Upstream-Version),
+`pjproject` (Tag + Commit, im Repo), `searxng` (Commit, im Repo), `python` (Lock-Dateien mit Hashes),
+`models.vad` (im Repo, SHA-256), `models.llm`/`models.stt`/`models.tts_voice` (Hugging-Face-
+URL, Größe in Byte, SHA-256 bzw. `tofu`).

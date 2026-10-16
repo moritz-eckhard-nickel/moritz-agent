@@ -23,8 +23,12 @@ def load_toml(relative: str) -> dict:
 def test_example_config_contains_plan_defaults():
     config = load_toml("config/moritz-agent.example.toml")
     assert config["general"]["timezone"] == "Europe/Berlin"
-    assert config["server"]["host"] == "127.0.0.1"
-    assert config["server"]["port"] == 5001
+    assert config["server"]["host"] == "0.0.0.0"
+    assert config["server"]["port"] == 3501
+    assert config["server"]["tls"] is True
+    assert config["storage"]["transcript_retention_hours"] == 24
+    assert config["phone"]["tts"]["polly"]["voice"] == "Hans"
+    assert config["search"]["backends"][0] == "searxng"
     assert config["inference"]["context_size"] == 4096
     assert config["phone"]["greeting_text"] == (
         "Hallo Moritz, hier ist Agent. Was kann ich für dich tun?"
@@ -96,3 +100,70 @@ def test_cli_check_config_does_not_print_secrets():
     assert result.returncode == 0, result.stderr
     assert "OK" in result.stdout
     assert "password" not in result.stdout.lower().replace("passwords.txt", "")
+
+
+def test_vendored_vad_model_matches_lock():
+    import hashlib
+
+    lock = load_toml("config/versions.lock")["models"]["vad"]
+    data = (REPO_ROOT / lock["vendored"]).read_bytes()
+    assert len(data) == lock["size_bytes"]
+    assert hashlib.sha256(data).hexdigest() == lock["sha256"]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "third_party/searxng/searx/webapp.py",
+        "third_party/pjproject/pjsip-apps/src/swig/python/Makefile",
+        "third_party/VENDORED.md",
+        "assets/branding/m-agent-logo.svg",
+    ],
+)
+def test_vendored_components_present(path):
+    assert (REPO_ROOT / path).is_file()
+
+
+def test_all_locks_are_hash_pinned():
+    """Python dependencies come from PyPI, but only with exact versions and hashes (ADR-019)."""
+    for lock in sorted((REPO_ROOT / "requirements").glob("*.lock")):
+        text = lock.read_text(encoding="utf-8")
+        pins = [line for line in text.splitlines() if "==" in line and not line.startswith(" ")]
+        assert pins, lock.name
+        assert text.count("--hash=sha256:") >= len(pins), lock.name
+
+
+def test_python_packages_are_not_vendored():
+    assert not (REPO_ROOT / "third_party/wheels").exists()
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "assets/branding/scribbles/scribbles-original.png",
+        "assets/branding/scribbles/scribbles-black.svg",
+        "assets/branding/scribbles/scribbles-white.svg",
+        "assets/branding/README.md",
+    ],
+)
+def test_scribbles_mascot_assets_present(path):
+    assert (REPO_ROOT / path).is_file()
+
+
+def test_logo_contains_scribbles_and_icons_match():
+    logo = (REPO_ROOT / "assets/branding/m-agent-logo.svg").read_text(encoding="utf-8")
+    assert "Scribbles" in logo
+    icon = (REPO_ROOT / "assets/branding/m-agent.ico").read_bytes()
+    assert (REPO_ROOT / "niko.ico").read_bytes() == icon
+    assert (REPO_ROOT / "nikogreen.ico").read_bytes() == icon
+
+
+def test_koboldcpp_web_uis_removed():
+    for name in (
+        "klite.embd",
+        "kcpp_sdui.embd",
+        "lcpp.gz.embd",
+        "kcpp_musicui.embd",
+        "kcpp_docs.embd",
+    ):
+        assert not (REPO_ROOT / "embd_res" / name).exists()
