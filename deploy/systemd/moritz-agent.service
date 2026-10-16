@@ -1,0 +1,36 @@
+# systemd unit for moritz-agent (ticket P1-17). Installed by moritz-install.sh.
+[Unit]
+Description=moritz-agent – local AI agent with internal telephony
+Documentation=file:///opt/moritz-agent/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=moritz-agent
+Group=moritz-agent
+SupplementaryGroups=video render
+WorkingDirectory=/opt/moritz-agent
+ExecStart=/opt/moritz-agent/moritz-agent run
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillMode=mixed
+Environment=PYTHONUNBUFFERED=1
+Environment=TZ=Europe/Berlin
+
+# Hardening (refined in P1-17)
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/moritz-agent/data /opt/moritz-agent/models /opt/moritz-agent/runtime /opt/moritz-agent/assets/audio/cache /opt/moritz-agent/passwords.txt /opt/moritz-agent/config
+DevicePolicy=closed
+DeviceAllow=/dev/nvidia0 rw
+DeviceAllow=/dev/nvidiactl rw
+DeviceAllow=/dev/nvidia-uvm rw
+DeviceAllow=/dev/nvidia-uvm-tools rw
+
+[Install]
+WantedBy=multi-user.target

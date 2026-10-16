@@ -162,3 +162,21 @@ conda/
 
 # Jetbrains idea folder
 .idea/
+
+# ---- moritz-agent: secrets and local runtime state (never commit) ----
+/passwords.txt
+/passwords.txt.*
+passwords.txt.bak*
+/backups/
+/data/
+/runtime/
+/config/moritz-agent.toml
+/config/*.local.*
+/assets/audio/cache/
+*.pem
+*.key
+id_ed25519*
+id_rsa*
+.pytest_cache/
+.ruff_cache/
+*.egg-info/

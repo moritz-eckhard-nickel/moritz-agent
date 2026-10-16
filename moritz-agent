@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# moritz-agent – single start command (PRD-01).
+# Uses the installed virtual environment if present, otherwise the system python3.
+set -Eeuo pipefail
+APP_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON="${APP_DIR}/runtime/venv/bin/python"
+if [[ ! -x "${PYTHON}" ]]; then
+	PYTHON="$(command -v python3)"
+fi
+cd "${APP_DIR}"
+if [[ $# -eq 0 ]]; then
+	set -- run
+fi
+exec "${PYTHON}" -m moritz_agent "$@"

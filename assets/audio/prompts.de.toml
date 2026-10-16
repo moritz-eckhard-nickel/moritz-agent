@@ -1,0 +1,44 @@
+# Ansagenkatalog (PHONE-21, PHONE-30 … PHONE-35, ADR-011).
+# Wird beim Installieren/Update per TTS in assets/audio/cache/<voice>/ vorgerendert (P1-13).
+# `required = true`: ohne diese Datei registriert sich der Agent nicht (ADR-011).
+# Der Begrüßungstext kommt aus config: phone.greeting_text.
+
+[greeting]
+text = "{greeting_text}"
+required = true
+
+[not_understood]
+text = "Entschuldigung, das habe ich nicht verstanden. Kannst du das bitte wiederholen?"
+required = true
+
+[not_understood_again]
+text = "Ich verstehe dich leider schlecht. Sag zum Beispiel: Wie viel Uhr ist es?"
+required = true
+
+[still_there]
+text = "Bist du noch da?"
+required = true
+
+[goodbye]
+text = "Alles klar, bis bald!"
+required = true
+
+[thinking]
+text = "Moment, ich schaue nach."
+required = true
+
+[error_generic]
+text = "Ich habe gerade eine technische Störung. Bitte versuch es später noch einmal."
+required = true
+
+[starting_up]
+text = "Ich starte gerade noch. Bitte ruf in einer Minute noch einmal an."
+required = true
+
+[search_failed]
+text = "Die Websuche ist gerade nicht erreichbar, deshalb kann ich das nicht nachschlagen."
+required = false
+
+[timeout]
+text = "Das dauert leider zu lange. Frag mich gern noch einmal."
+required = true
