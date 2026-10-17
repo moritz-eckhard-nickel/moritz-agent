@@ -7,12 +7,13 @@ name = "moritz-agent"
 dynamic = ["version"]
 description = "Local AI agent with internal SIP telephony, web search and tools, built on KoboldCpp."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = { text = "LicenseRef-MSOL-1.1" }  # own code; see LICENSING.md for bundled components
 # Runtime dependencies are added by the ticket that first uses them (ADR-019),
 # pinned with hashes in requirements/*.lock. Planned groups:
 #   core:  fastapi, uvicorn, pydantic, httpx
 #   phone: faster-whisper, piper-tts, onnxruntime, soxr, numpy (+ pjsua2, built from source)
+#   tts:   CosyVoice worker environment (runtime/venv-tts), see requirements/tts.in
 dependencies = [
     "tzdata>=2024.1",  # zoneinfo data for Europe/Berlin even without system tzdata
 ]

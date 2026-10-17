@@ -25,7 +25,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PRD-06 | Lizenzen: eigener Code **MSOL 1.1**, Scribbles/Logo alle Rechte vorbehalten, Fremdcode behält seine Lizenz (AGPL-3.0 KoboldCpp/SearXNG, MIT llama.cpp/ggml, GPL-2.0+ PJSIP); Copyright-Hinweise der Fremdteile bleiben erhalten (ADR-023, `LICENSING.md`). | MUSS | 1 |
 | PRD-07 | ~~Windows-Start (`moritz-agent.exe`)~~ – **entfällt** (Moritz, F-12: „niemals“). Zielplattform ist ausschließlich Linux (Ubuntu) im LXC. | – | – |
 | PRD-08 | Einheitliches Branding „moritz-agent“ / „m-agent“ mit monochromem Logo (**M + Scribbles**) überall, wo Nutzer etwas sehen (README, WebUI, Favicon, Icons, Metadaten). **Scribbles**, das LayerNX-Maskottchen, ist das Maskottchen von moritz-agent und erscheint überall, wo eine Figur sinnvoll ist ([Branding-Regeln](../../assets/branding/README.md)). KoboldCpp-Oberflächen sind entfernt (F-11). | MUSS | 1 |
-| PRD-10 | Der Assistent heißt **Nikita** (männlich, Stimme Hans) – in Begrüßung, Systemprompt, Antworten, SIP-Anzeigename und Oberfläche. Technische Namen (Produkt `moritz-agent`, Repo, SIP-Konto `agent`) bleiben (ADR-026). | MUSS | 1 |
+| PRD-10 | Der Assistent heißt **Nikita** (männlich, Stimme Thorsten-Voice Hessisch) – in Begrüßung, Systemprompt, Antworten, SIP-Anzeigename und Oberfläche. Technische Namen (Produkt `moritz-agent`, Repo, SIP-Konto `agent`) bleiben (ADR-026). | MUSS | 1 |
 | PRD-09 | Alle Programmbestandteile liegen **im Repository** und laufen als Teil des einen Programms: SearXNG (fertig gebaut), pjproject, VAD-Modell (ADR-021). Aus dem Netz kommen nur Abhängigkeiten (PyPI-Pakete mit Hashes, CUDA-Build-Toolchain, Systempakete) und die Hugging-Face-Modelle. | MUSS | 1 |
 
 ## 2. Telefonie (PHONE)
@@ -66,7 +66,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PHONE-34 | Sind STT oder TTS nicht bereit, wird kein normaler Gesprächsbetrieb vorgetäuscht Anruf annehmen → vorbereitete Störungsansage → auflegen. Fehlt der Ansagen-Cache selbst, registriert sich der Agent nicht (ADR-011). | MUSS | 1 |
 | PHONE-35 | Dauert die Antwort länger als `thinking_prompt_after_s` (Start: 2,5 s), wird eine vorbereitete Zwischenansage gespielt („Moment, ich schaue nach.“). | SOLL | 1 |
 | PHONE-36 | Optionaler Abschied per Sprache („Tschüss“, „Danke, das war’s“) → Verabschiedung und Auflegen. | SOLL | 1 |
-| PHONE-37 | Stimme: **„Hans“** (Amazon Polly) ist die Standardstimme; ohne AWS-Schlüssel, Internet oder bei Fehlern spricht automatisch die lokale Piper-Stimme (ADR-008, [`docs/stimme-hans.md`](../stimme-hans.md)). | MUSS | 1 |
+| PHONE-37 | Stimme: **Thorsten-Voice CosyVoice3 Hessisch** (lokal auf der CPU, Sprecher `thorsten_hessisch`) ist Nikitas Stimme. Fehlt das Modell, ist es zu langsam oder fällt es aus, spricht die lokale Rückfallkette Piper (Thorsten) → espeak-ng; der Anruf bricht nie wegen der Stimme ab (ADR-027). | MUSS | 1 |
 
 ### 2.3 Ressourcen, Parallelität, Datenschutz
 
@@ -80,6 +80,10 @@ Der Originalplan bleibt unverändert als Referenz.
 | PHONE-45 | Telefon-Tools in Part 1: nur `get_current_time`, `web_search` (+ ggf. `web_fetch` light). Shell/SSH/Sandbox sind für das Telefonprofil **nicht** freigegeben. | MUSS | 1 |
 | PHONE-46 | Eine angezeigte Rufnummer (Caller-ID) ist **keine** Berechtigung für administrative Aktionen – auch nicht in späteren Parts ohne zusätzliche Authentisierung. | MUSS | 1 |
 | PHONE-47 | Speicherverbrauch von SIP/VAD/STT/TTS wird unter Telefonlast gemessen und dokumentiert. | MUSS | 1 |
+| PHONE-48 | Feste Ansagen (Begrüßung, Fehler-, Zwischenansagen, Uhrzeiten) werden **vorgerendert und gecacht** (`assets/audio/cache/`, Schlüssel aus Text+Stimme); das Telefon registriert sich erst, wenn alle nötigen Ansagen sprechbar sind. | MUSS | 1 |
+| PHONE-49 | Live-Antworten werden satzweise gesprochen (erster Satz läuft, während der Rest entsteht); die Stimme für Live-Sätze wird nach gemessener Geschwindigkeit gewählt (`live_engine = auto`). Gerenderte Live-Sätze liegen nie auf der Platte. | MUSS | 1 |
+| PHONE-50 | Antworttexte werden vor der Sprachausgabe in ausgeschriebene deutsche Wörter normalisiert (Zahlen, Datum, Uhrzeit, Euro, Einheiten, Abkürzungen; kein Markdown/Emoji). | MUSS | 1 |
+| PHONE-51 | Das Telefon ist ohne Systeminstallation ausprobierbar (`./test-1.sh`: Einrichtung unter `runtime/`, Selbsttest, Testanruf gegen sich selbst, Anmeldung an der Telefonanlage). | SOLL | 1 |
 
 ## 3. Konfiguration & Zugangsdaten (CFG)
 

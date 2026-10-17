@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-"""Command line entry point: ``moritz-agent [run|check-config|--version]``."""
+"""Command line entry point: ``moritz-agent [run|check-config|phone|--version]``."""
 
 from __future__ import annotations
 
@@ -43,10 +43,22 @@ def build_parser() -> argparse.ArgumentParser:
     check = sub.add_parser("check-config", help="Konfiguration prüfen, ohne Werte auszugeben")
     check.add_argument("--passwords", default="passwords.txt", help="Pfad zu passwords.txt")
     check.set_defaults(func=_check_config)
+
+    # Handled in main() before parsing: everything after "phone" belongs to moritz_agent.phone.
+    sub.add_parser(
+        "phone",
+        help="Telefon- und Stimmenteil: run, check, speak, prompts, bench (siehe ./test-1.sh)",
+        add_help=False,
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "phone":
+        from moritz_agent.phone.__main__ import main as phone_main
+
+        return phone_main(argv[1:])
     args = build_parser().parse_args(argv)
     func = getattr(args, "func", _run)
     return func(args)

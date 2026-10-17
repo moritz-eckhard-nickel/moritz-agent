@@ -71,14 +71,18 @@ silence_prompt_s = 10             # dann „Bist du noch da?“ (PHONE-31)
 silence_hangup_s = 10             # weitere Stille danach → Abschied + Auflegen
 thinking_prompt_after_s = 2.5     # Zwischenansage (PHONE-35)
 turn_deadline_s = 15              # Gesamtzeit je Antwort (AGENT-04)
-max_reprompts = 2                 # unverständliche Eingaben in Folge (PHONE-30)
+max_reprompts = 2                 # danach Hilfe-Hinweis statt einfacher Rückfrage (PHONE-30)
+max_unclear_hangup = 4            # so viele unverständliche Eingaben in Folge → verabschieden und auflegen
 max_call_duration_s = 1800
+playback_tail_guard_ms = 300      # nach unserer Ansage kurz warten, bevor wir wieder zuhören (kein Selbsthören)
+media_dead_timeout_s = 20         # keine Audiopakete mehr empfangen → Anruf beenden
 
 [phone.vad]
 engine = "silero"
 model = "assets/models/vad/silero_vad.onnx"   # im Repo
 threshold = 0.5
 min_silence_ms = 700              # Sprachende-Erkennung
+min_speech_ms = 250               # kürzere Geräusche werden ignoriert (Husten, Klicken)
 speech_pad_ms = 300
 max_utterance_s = 20
 
@@ -90,23 +94,35 @@ beam_size = 1
 cpu_threads = 8
 no_speech_threshold = 0.6
 min_avg_logprob = -1.0
+initial_prompt = "Nikita, Moritz, Hessen, Frankfurt."   # hilft bei Namen und Orten
 
 [phone.tts]
-engine = "polly"                  # Wunschstimme Hans (Amazon Polly, docs/stimme-hans.md) | "piper" = lokal (ADR-008)
-fallback_engine = "piper"         # bei fehlenden AWS-Schlüsseln, Polly-Fehler, Timeout, offline
-cpu_threads = 4
+# Nikitas Stimme: Thorsten-Voice CosyVoice3 „Hessisch“ (Apache-2.0), läuft auf der CPU (ADR-027).
+engine = "cosyvoice"              # Hauptstimme für Ansagen (gecacht) und Antworten
+fallback_engines = ["piper", "espeak"]   # schnelle Ersatzstimmen (Piper = gleicher Sprecher, hochdeutsch)
+live_engine = "auto"              # "auto" = Hauptstimme, solange der erste Satz ≤ live_budget_s braucht; sonst Fallback
+live_budget_s = 6.0               # Wartezeit bis zum ersten gesprochenen Satz, die wir uns leisten
+cpu_threads = 16                  # Threads für CosyVoice/Piper (LXC max. 18)
+loudness_target_dbfs = -20.0      # Zielpegel fürs Telefon (RMS), Spitzen werden auf -1.5 dBFS begrenzt
+cache_dir = "assets/audio/cache"  # vorgerenderte Ansagen und feste Antworten (16 kHz, WAV)
+live_cache_entries = 64           # zuletzt gesprochene Antworten im Arbeitsspeicher (nie auf Platte)
+
+[phone.tts.cosyvoice]
+python = ""                       # Interpreter des TTS-Venv; leer = runtime/venv-tts/bin/python
+model_dir = "models/tts/cosyvoice3-hessisch"
+speaker = "thorsten_hessisch"     # Schlüssel in spk2info.pt
+speed = 1.0
+seed = 42                         # fester Startwert = reproduzierbare Aussprache
+startup_timeout_s = 600           # Modell laden (≈ 5 GB) dauert auf der CPU
+request_timeout_s = 180           # einzelner Satz
 
 [phone.tts.piper]
-voice = "models/tts/de_DE-thorsten-medium.onnx"
+voice = "models/tts/piper/de_DE-thorsten-medium.onnx"   # gleicher Sprecher, hochdeutsch
 length_scale = 1.0                # < 1 schneller, > 1 langsamer
-sentence_silence_s = 0.15
 
-[phone.tts.polly]
-voice = "Hans"                    # Wunschstimme Moritz (F-08)
-engine = "standard"
-sample_rate = 16000               # PCM direkt im Telefonformat
-timeout_s = 1.5
-# Zugangsdaten: passwords.txt [optional_services] aws_polly_access_key_id / aws_polly_secret_access_key / aws_polly_region
+[phone.tts.espeak]
+voice = "de"                      # Notstimme (apt: espeak-ng); roboterhaft, aber immer verfügbar
+speed_wpm = 150
 
 [agent.phone]
 max_tool_steps = 3

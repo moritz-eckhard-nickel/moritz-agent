@@ -11,6 +11,8 @@ moritz-agent besteht aus eigenem Code von Moritzsoft und aus Komponenten anderer
 | GGML, llama.cpp, stable-diffusion.cpp | MIT | [MIT_LICENSE_GGML_SDCPP_LLAMACPP_ONLY.md](MIT_LICENSE_GGML_SDCPP_LLAMACPP_ONLY.md) |
 | `third_party/searxng/` | AGPL-3.0 | `third_party/searxng/LICENSE` |
 | `third_party/pjproject/` | GPL-2.0-or-later (Unterkomponenten eigene Lizenzen) | `third_party/pjproject/COPYING` |
+| `third_party/cosyvoice/` (CosyVoice) | Apache-2.0 | `third_party/cosyvoice/LICENSE` |
+| `third_party/Matcha-TTS/` | MIT | `third_party/Matcha-TTS/LICENSE` |
 | `assets/models/vad/` (Silero VAD) | MIT | `assets/models/vad/LICENSE.silero-vad` |
 | `docs/upstream/KOBOLDCPP_README.md` | AGPL-3.0 (Text von KoboldCpp) | [LICENSE.md](LICENSE.md) |
 | Python-Pakete, Modelle (werden installiert, nicht mitgeliefert) | je Paket/Modell | [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) |
