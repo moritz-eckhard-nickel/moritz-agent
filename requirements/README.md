@@ -8,7 +8,7 @@ sie liegen bewusst nicht im Repository.
 | --- | --- |
 | `core` | Backend, Agent, Inference-Client |
 | `phone` | Audio: faster-whisper, Piper, ONNX Runtime, soxr (PJSUA2 wird aus `third_party/pjproject` gebaut) |
-| `polly` | optional: boto3 für die Stimme „Hans“ (Amazon Polly) |
+| `tts` | Umgebung `runtime/venv-tts` für Nikitas Stimme (CosyVoice3-Hessisch): exakte Versionen in `tts.txt`, **ohne** torch – das kommt per `scripts/setup-tts-venv.sh` vom PyTorch-CPU-Index (ADR-027) |
 | `searxng` | Abhängigkeiten des mitgelieferten SearXNG (`third_party/searxng`) inkl. granian |
 
 Neu erzeugen: `uv pip compile --universal --python-version 3.13 --generate-hashes --no-header -o <g>.lock <g>.in`

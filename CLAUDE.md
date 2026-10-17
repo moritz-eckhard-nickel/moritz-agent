@@ -11,7 +11,7 @@ Der vollständige Plan steht in `docs/plan/` – **vor jeder Aufgabe** das passe
 
 - Eigener Code nur in: `moritz_agent/`, `tests/moritz_agent/`, `frontend/`, `config/`,
   `assets/`, `deploy/`, `scripts/`, `requirements/`, `docs/`, sowie die Wurzeldateien
-  `moritz-agent`, `moritz-install.sh`, `moritz-update.sh`, `install.sh`, `update.sh`,
+  `moritz-agent`, `moritz-install.sh`, `moritz-update.sh`, `install.sh`, `update.sh`, `test-1.sh`,
   `pyproject.toml`, `README.md`, `CLAUDE.md`, `THIRD_PARTY_NOTICES.md`.
 - **KoboldCpp-Upstream-Dateien nicht ändern** (`koboldcpp.py`, `kcpp_*`, `ggml/`, `src/`,
   `otherarch/`, `tools/`, `vendor/`, `Makefile`, `CMakeLists.txt`, `.github/workflows/kcpp-*`,
@@ -21,7 +21,7 @@ Der vollständige Plan steht in `docs/plan/` – **vor jeder Aufgabe** das passe
 - **Lizenzen (ADR-023, `LICENSING.md`):** eigener Code = MSOL 1.1. Jede neue eigene
   Quelltext-/Skript-/Config-Datei beginnt mit `SPDX-License-Identifier: LicenseRef-MSOL-1.1`
   (nach einer Shebang-Zeile). Fremdcode behält seine Lizenz. Scribbles/Logo: alle Rechte vorbehalten.
-- `third_party/` (SearXNG, pjproject) und `assets/models/` sind **mitgelieferte
+- `third_party/` (SearXNG, pjproject, cosyvoice, Matcha-TTS) und `assets/models/` sind **mitgelieferte
   Fremdkomponenten**: nicht verändern, nur nach `third_party/VENDORED.md` aktualisieren
   (`git add -f third_party`). `third_party/pjproject/CLAUDE.md` gehört zu PJSIP, nicht zu uns.
 - Neue Python-Abhängigkeit: in `requirements/<gruppe>.in` eintragen und Lock mit Hashes neu
@@ -52,13 +52,14 @@ pip install -e ".[dev]"                       # Entwicklungsumgebung
 ruff check moritz_agent tests/moritz_agent scripts
 ruff format --check moritz_agent tests/moritz_agent scripts
 pytest                                        # testpaths = tests/moritz_agent
-shellcheck moritz-agent install.sh update.sh moritz-install.sh moritz-update.sh
+shellcheck moritz-agent install.sh update.sh moritz-install.sh moritz-update.sh test-1.sh scripts/*.sh
+./test-1.sh setup|check|speak|call|run        # Telefon + Stimme ohne Systeminstallation (runtime/)
 python -m moritz_agent --version
 ```
 
 ## Konventionen
 
-- Python ≥ 3.11, Typannotationen überall, `from __future__ import annotations`.
+- Python ≥ 3.12 (die Lock-Dateien sind für 3.12–3.13 aufgelöst), Typannotationen überall, `from __future__ import annotations`.
 - Async (asyncio) im Main-Prozess; blockierende Arbeit (STT/TTS) in Threads/Executor.
 - Neue Konfigurationsschlüssel immer in `config/moritz-agent.example.toml` dokumentieren.
 - Neue Abhängigkeiten: in `pyproject.toml` + Lock-Datei, Lizenz in `THIRD_PARTY_NOTICES.md`.

@@ -19,8 +19,11 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | R11 | Conda-CUDA-Build braucht Platz/Zeit | „kp“ | Disk ≥ 80 GB eingeplant (06 §3) | P1-02 |
 | R12 | Lizenzen | „Lizenzen so lassen, dass KoboldCpp und alle anderen ihre behalten; für den Rest ‚msol 1.1‘“ | **Erledigt:** eigener Code MSOL 1.1, Fremdcode unverändert, Scribbles alle Rechte vorbehalten (ADR-023, `LICENSING.md`) | – |
 | R13 | **Neu:** Repo-Größe durch Fremdkomponenten (≈ +95 MB für SearXNG und pjproject) | – | Python-Pakete bewusst nicht im Repo (Moritz: „requirements egal“); Updates von `third_party/` bündeln (ADR-021) | laufend |
-| R14 | **Neu:** Polly „Hans“ braucht Internet + AWS-Konto | „will Hans“ | Hans ist Standard; Piper springt automatisch ein; Ansagen vorgerendert; Anleitung `docs/stimme-hans.md` (ADR-008) | P1-10 |
+| R14 | ~~Polly „Hans“ braucht Internet + AWS-Konto~~ – entfallen (ADR-027) | – | Stimme läuft lokal; Rückfallkette Piper/espeak | P1-10 |
 | R15 | **Neu:** MoE mit CPU-Experten auf Haswell (DDR4) langsamer als erwartet | – | `--moecpu` senken (mehr auf GPU), Q3_K_S, oder dichtes 14B als Fallback (ADR-016) | P1-02 |
+| R16 | **Neu:** CosyVoice3 auf dem E5-2673 v3 (AVX2, kein AVX-512/bf16, fp32) ist vermutlich deutlich langsamer als Echtzeit | „auf CPU sollte machbar sein“ | Ansagen vorgerendert und gecacht (PHONE-48); Live-Sätze wählen die Stimme nach gemessener Geschwindigkeit (`live_engine = auto`, PHONE-49), sonst Piper; `./test-1.sh bench` misst es; Threads `phone.tts.cpu_threads` anpassen; als Ausweg `live_engine = "piper"` | P1-10 |
+| R17 | **Neu:** CosyVoice braucht ≈ 4,5–5 GB RAM zusätzlich | – | LXC-Limit 18–20 GB (06 §2); `--no-cosyvoice` für kleine Systeme; Worker lädt erst beim Start und wird bei Absturz mit Backoff neu gestartet | P1-10 |
+| R18 | **Neu:** PyTorch-CPU-Wheels kommen nicht von PyPI, die torch-Umgebung hat keine Hashes | – | torch/torchaudio exakt auf 2.10.0 gepinnt, Index per `MORITZ_TORCH_INDEX` änderbar; alle übrigen Pakete exakt gepinnt (`requirements/tts.txt`); Worker läuft isoliert, nur auf 127.0.0.1 | P1-10 |
 
 ## 2. Offene Fragen – beantwortet
 
@@ -33,7 +36,7 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | F-05 | Distribution | Ubuntu 26.04 oder 25.10 | NFR-06, ADR-024, 06 §3 |
 | F-06 | NVIDIA-Treiber am Host? Andere GPU-Nutzer? | Treiber nein, Gast nein | 06 §4.1 Host-Treiber-Anleitung |
 | F-07 | CPU / Kerne | E5-2673 v3, bis zu 18 Threads, Host darf nie überlasten | NFR-08, 02 §5a, 06 §3 |
-| F-08 | Stimme | „Hans“ | ADR-008: Polly Hans optional, Piper lokal |
+| F-08 | Stimme | „Hans“, ab 17.10.2026 „Thorsten-Voice Hessisch“ | ADR-027: CosyVoice3-Hessisch auf der CPU, Piper/espeak als Rückfall |
 | F-09 | Suchmaschinen | alle | `config/searxng/settings.yml`, ADR-007 |
 | F-10 | Sandbox-Netz | nur Sophie-1 + Internet | SBX-03, 06 §7 |
 | F-11 | KoboldCpp-Oberflächen behalten? | nein, alles weg | ADR-002, Dateien entfernt |
@@ -44,7 +47,7 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 
 | # | Frage | Default bis zur Antwort |
 | --- | --- | --- |
-| F-08b | ~~Hans = Amazon Polly? AWS-Konto?~~ | **beantwortet:** Moritz will Hans. Hans = Amazon Polly → Standard-Engine `polly`; AWS-Konto nach [`docs/stimme-hans.md`](../stimme-hans.md) anlegen, bis dahin spricht Piper |
+| F-08b | ~~Hans = Amazon Polly? AWS-Konto?~~ | **erledigt/ersetzt:** Moritz nimmt statt Hans die Thorsten-Voice-Hessisch-Stimme (lokal, ADR-027). Polly ist entfernt (Git-Historie `cbb5520`). | ADR-027 |
 | F-14 | ~~„msol 1.1“?~~ | **beantwortet:** Moritzsoft Open License 1.1 für allen eigenen Code ([`LICENSE-MSOL.md`](../../LICENSE-MSOL.md), [`LICENSING.md`](../../LICENSING.md), ADR-023) |
 | F-15 | ~~Bundesland?~~ | **beantwortet:** Hessen (`fastpaths.state = "HE"`, [12-fast-paths.md](12-fast-paths.md) §4) |
 | F-16 | ~~HF-Modelle ins Repo?~~ | **beantwortet:** nein, HF-Modelle lädt der Installer; alles andere ins Repo, Python-Requirements dürfen aus dem Netz kommen |

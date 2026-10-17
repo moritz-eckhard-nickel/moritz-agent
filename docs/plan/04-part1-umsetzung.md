@@ -210,15 +210,25 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
 - **Spike-Teil (zuerst):** `scripts/bench_audio.py` (neu): 30 deutsche Testsätze (von Moritz
   über das echte Telefon aufgenommen **oder** synthetisch + G.711-Codec-Simulation),
   misst Whisper small (int8, 8 Threads; Vergleich `base`) WER + Latenz + RAM und je
-  TTS-Engine (Piper thorsten-medium, Polly Hans) Time-to-first-audio + Real-Time-Factor.
-  Hans (Polly) ist Standard, Piper Fallback (PHONE-37).
+  TTS-Engine (CosyVoice-Hessisch, Piper thorsten-medium, espeak-ng) Time-to-first-audio +
+  Real-Time-Factor. CosyVoice ist Hauptstimme, Piper/espeak Rückfall (PHONE-37, ADR-027).
+  **Umgesetzt als** `./test-1.sh bench` (`python -m moritz_agent.phone bench`) – misst auf dem
+  Zielrechner Whisper und jede Stimme mit vier Beispielsätzen.
 - **Komponenten-Teil:** `moritz_agent/phone/audio/{resample.py,vad.py,stt.py,tts.py,buffers.py}`
   mit Interfaces `SpeechToText.transcribe(pcm16_16k) -> Transcript(text, avg_logprob, no_speech_prob)`,
   `TextToSpeech.synthesize(text) -> Iterator[pcm16_16k_chunk]` (satzweise),
   `VoiceActivityDetector.feed(frame) -> Event` (Silero aus `assets/models/vad/`).
-  TTS-Engines `piper` und `polly` (boto3, `Engine=standard`, `VoiceId=Hans`,
-  `OutputFormat=pcm`, `SampleRate=16000`) mit automatischem Fallback auf Piper (PHONE-37). Modelle werden einmal geladen, Threads
-  konfigurierbar, Self-Test beim Start (kurzer Satz synthetisieren und zurück-transkribieren).
+  TTS-Engines `cosyvoice` (eigener Worker-Prozess in `runtime/venv-tts`), `piper` und `espeak`
+  mit Rückfallkette (PHONE-37). Modelle werden einmal geladen, Threads konfigurierbar,
+  Self-Test beim Start (`./test-1.sh check`).
+- **Stand 17.10.2026 – umgesetzt (ADR-027):** `moritz_agent/phone/audio/` mit `pcm.py`
+  (Resampling/Lautheit/WAV), `vad.py` (Silero, 512er Fenster), `stt.py` (faster-whisper small
+  int8 + Halluzinationsfilter), `textnorm.py` (Zahlen/Datum/Uhrzeit → deutsche Wörter),
+  `tts.py` (`TtsService`: Engine-Kette, Platten-Cache für Ansagen, RAM-Cache für Live-Sätze,
+  Live-Richtlinie `auto`), `tts_cosyvoice.py` + `cosyvoice_worker.py` (Kindprozess, HTTP,
+  Token, Abbruch), `tts_piper.py`, `tts_espeak.py`, `models.py` (Modell-Manifest/Download mit
+  SHA-256-Prüfung), `factory.py`. Test mit Fake-Engines in `tests/moritz_agent/`.
+  **Offen:** WER-/Latenzmessung mit echten Modellen auf dem Zielrechner (R16).
 - **Unverständlich-Kriterium:** leerer Text, `no_speech_prob > 0.6`, `avg_logprob < -1.0`
   oder < 2 Zeichen (Werte im Spike kalibrieren).
 - **Anforderungen:** PHONE-05, PHONE-22, PHONE-30, PHONE-42, PHONE-43, PHONE-47.
@@ -235,6 +245,17 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
   Passwortänderung, Quell-IP-Filter für INVITEs.
 - **Ergebnis:** ADR-005 auf `beschlossen`, Build-Rezept in `07-installation-update.md`,
   Testprotokoll inkl. ausgehandeltem Codec.
+- **Stand 17.10.2026 – umgesetzt statt Spike:** `scripts/build-pjsip.sh` baut `third_party/pjproject`
+  außerhalb des Baums (Kopie unter `runtime/pjsip-build/`) und installiert das Python-Binding
+  in die Umgebung; `moritz_agent/phone/sip.py` ist der vollständige Adapter (ein
+  Polling-Thread mit `threadCnt=0`, 16-kHz-Konferenzbrücke ohne Soundgerät, G.722 > PCMA >
+  PCMU, Registrierung mit exponentiellem Backoff, Quell-IP-Filter 403, zweiter Anruf 486,
+  nie ausgehende Anrufe, Medien-Watchdog über RTP-Paketzähler, Neuanmeldung nur ohne Anruf).
+  `scripts/sip_testcall.py` ist ein skriptgesteuerter Anrufer (Direktanruf oder über die
+  Telefonanlage). **Getestet** per echtem SIP/RTP-Anruf gegen sich selbst (Begrüßung, drei
+  Runden, Verabschiedung, 486, 403, Auflegen während der Begrüßung, sauberes Beenden).
+  **Offen:** Test gegen die echte Asterisk-Anlage von Moritz (`docs/asterisk-konfiguration.md`
+  ist nicht gegen eine laufende Anlage geprüft).
 - **Abbruchkriterium:** Funktionieren Audio-Callbacks nach 3 Arbeitstagen nicht stabil →
   Fallback-Optionen aus ADR-005 mit Moritz besprechen.
 - **Anforderungen:** PHONE-01…07, PHONE-09, PHONE-40.
@@ -249,6 +270,15 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
   `sip_changed` nur im Zustand IDLE, Metriken je Turn (LOG-03).
 - **Tests:** Zustandsautomat vollständig per Unit-Test (inkl. Auflegen in jedem Zustand,
   Stille, 2× unverständlich, Timeout LLM, Suche fehlgeschlagen, zweiter Anruf).
+- **Stand 17.10.2026 – umgesetzt:** `state_machine.py` (rein: Ereignisse rein, Aktionen raus),
+  `dialogue.py` (`CallSession`, asyncio; Halbduplex mit Schutzzeit, Stille-Erinnerung und
+  -Auflegen, „unverständlich“-Zähler, Medien-Watchdog, Latenzlog je Runde, Störungsansage bei
+  fehlender Spracherkennung), `worker.py` (Startreihenfolge: Komponenten → Ansagen → SIP;
+  SIGHUP-Reload), `responder.py` (Schnittstelle zum späteren Agenten, `TestResponder`),
+  `moritz_agent/agent/fastpath.py` (Uhrzeit/Datum/Wochentag/KW …, ADR-025),
+  `phone/__main__.py` (`run`, `check`, `speak`, `prompts`, `bench`). Der LLM-Agent selbst
+  (P1-06…P1-09) ist nicht Teil davon: der `TestResponder` antwortet mit Fast-Paths und
+  „Ich habe verstanden: …“. Tests: `test_state_machine.py`, `test_dialogue.py`.
 - **Anforderungen:** PHONE-20…36, PHONE-40, PHONE-41, PHONE-43, PHONE-44, LOG-03.
 
 ## P1-13 – Vorbereitete Ansagen
@@ -258,6 +288,11 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
   änderung), Cache `assets/audio/cache/<voice>/<id>-<hash>.wav` (16 kHz mono), Manifest mit
   Hash von Text+Stimme+TTS-Version; Self-Test „alle Pflichtansagen vorhanden“ (ADR-011).
   Begrüßungstext aus `phone.greeting_text` (Default exakt PHONE-21).
+- **Stand 17.10.2026 – umgesetzt (PHONE-48):** `announcements.py` (`AnnouncementStore`:
+  Pflichtansagen prüfen/rendern, vorläufig mit der besten verfügbaren Stimme, später
+  Aufwertung auf die Hauptstimme im Hintergrund außerhalb von Anrufen; Viertelstunden-Uhrzeiten
+  optional mit `prompts --warm-times`). Cache: `assets/audio/cache/<hash>.wav`, Schlüssel =
+  sha256(Version | Engine | Stimme | Lautheit | Satz). Katalog: `assets/audio/prompts.de.toml`.
 - **Anforderungen:** PHONE-21, PHONE-30…35, ADR-011.
 
 ## P1-14 – Backend-API, Auth, Statusseite

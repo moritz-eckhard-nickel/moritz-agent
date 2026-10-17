@@ -14,7 +14,7 @@
 | Shell | shellcheck | ja | `moritz-agent`, `install.sh`, `update.sh`, `moritz-*.sh` |
 | Lint/Format | ruff | ja | `moritz_agent/`, `tests/moritz_agent/`, `scripts/` |
 
-CI-Workflow: `.github/workflows/moritz-ci.yaml` (Python 3.11 und 3.12). Die Upstream-
+CI-Workflow: `.github/workflows/moritz-ci.yaml` (Python 3.12 und 3.13). Die Upstream-
 KoboldCPP-Workflows bleiben `workflow_dispatch`-only und laufen nicht automatisch.
 
 ## 2. Testdaten

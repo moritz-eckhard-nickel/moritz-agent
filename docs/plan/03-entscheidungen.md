@@ -118,22 +118,14 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   (Ablauf in `third_party/VENDORED.md`).
 - **Status:** beschlossen.
 
-## ADR-008 – TTS: Stimme „Hans“ (Amazon Polly) als Standard, Piper lokal als Fallback
+## ADR-008 – TTS: Stimme „Hans“ (Amazon Polly) – **ersetzt durch ADR-027**
 
-- **Kontext (F-08, F-08b):** Moritz will die Stimme **Hans**. Hans ist die männliche deutsche
-  Standard-Stimme von **Amazon Polly** (Cloud-Sprachausgabe von AWS); lokal gibt es sie nicht.
-- **Entscheidung:** TTS-Schnittstelle mit zwei Engines, **Standard = `polly`**:
-  1. `polly`: Stimme **Hans**, `Engine=standard`, `OutputFormat=pcm`, `SampleRate=16000`
-     (direkt im Telefonformat). Zugangsschlüssel in `passwords.txt` `[optional_services]`
-     (`aws_polly_access_key_id`, `aws_polly_secret_access_key`, `aws_polly_region`),
-     IAM-Benutzer nur mit `polly:SynthesizeSpeech`. Anleitung für Moritz:
-     [`docs/stimme-hans.md`](../stimme-hans.md).
-  2. `piper` (lokal, CPU): `de_DE-thorsten-medium`. Springt automatisch ein bei fehlenden
-     Schlüsseln, Fehler, Timeout (1,5 s) oder ohne Internet – der Anruf bricht nie ab.
-- **Ansagen:** werden beim Einrichten mit Hans vorgerendert und gecacht → Begrüßung klingt
-  auch offline nach Hans; ohne AWS-Schlüssel mit Piper.
-- **Datenschutz:** Nur Antworttexte gehen an AWS, nie Audio des Anrufers.
-- **Status:** beschlossen. Offen ist nur, ob Moritz das AWS-Konto anlegt (bis dahin Piper).
+- **Kontext (F-08, F-08b):** Moritz wollte zunächst die Stimme **Hans** (Amazon Polly, Cloud).
+- **Entscheidung (16.10.2026):** Engine `polly` als Standard, `piper` lokal als Fallback.
+- **Status:** **abgelöst am 17.10.2026** durch ADR-027 (Moritz: „wir nehmen ab jetzt als Stimme
+  diese hier für Nikita“ – Thorsten-Voice CosyVoice3 Hessisch, lokal auf der CPU). Polly, die
+  AWS-Zugangsdaten und `docs/stimme-hans.md` sind entfernt; sie bleiben in der Git-Historie
+  (Commit `cbb5520`) und lassen sich bei Bedarf als zusätzliche Engine wiederherstellen.
 
 ## ADR-009 – VAD: Silero VAD (ONNX)
 
@@ -241,7 +233,7 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 
 ## ADR-019 – Python-Abhängigkeiten: Lock-Dateien mit Hashes, Pakete von PyPI
 
-- **Entscheidung:** Gruppen in `requirements/*.in` (`core`, `phone`, `polly`, `searxng`),
+- **Entscheidung:** Gruppen in `requirements/*.in` (`core`, `phone`, `tts`, `searxng`),
   daraus mit `uv pip compile --universal --generate-hashes` erzeugte `requirements/*.lock`.
   Installation von PyPI: `pip install --require-hashes -r requirements/<gruppe>.lock` –
   exakt reproduzierbar, manipulierte Pakete werden abgelehnt.
@@ -317,7 +309,7 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 ## ADR-026 – Name des Assistenten: Nikita
 
 - **Entscheidung (Moritz, 16.10.2026):** Der Assistent heißt **Nikita** – ein Mann, deshalb
-  die männliche Stimme Hans (ADR-008). Er stellt sich so
+  die männliche Stimme Thorsten-Voice (ADR-027). Er stellt sich so
   vor („Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?“), der Systemprompt und der
   Fast-Path `identity` verwenden den Namen, der SIP-Anzeigename (`display_name`) und die
   Anrufer-ID in Asterisk lauten Nikita, und die Oberfläche spricht von Nikita.
@@ -326,3 +318,49 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   `moritz_agent`, SIP-Konto `agent` (Benutzername/Passwort in Asterisk und `passwords.txt`),
   Maskottchen Scribbles. Der Originalplan (`00-originalplan.md`) bleibt als Referenz unverändert.
 - **Status:** beschlossen.
+
+## ADR-027 – Stimme: Thorsten-Voice CosyVoice3 Hessisch auf der CPU, Piper/espeak als Rückfall
+
+- **Kontext (Moritz, 17.10.2026):** „Wir nehmen ab jetzt als Stimme diese hier für Nikita –
+  auch die hessische Variante, mach das auf CPU, sollte eigentlich machbar sein. Die
+  vorgefertigten Sachen natürlich cachen.“ ([Space](https://huggingface.co/spaces/Thorsten-Voice/CosyVoice-Hessisch)).
+  Ersetzt ADR-008 (Polly „Hans“): keine Cloud, keine Zugangsdaten, nichts verlässt das Haus.
+- **Entscheidung – Stimmenkette** (`phone.tts.engine` + `fallback_engines`):
+  1. **`cosyvoice`** (Hauptstimme): `FunAudioLLM/Fun-CosyVoice3-0.5B-2512` (Apache-2.0) mit dem
+     Finetune `Thorsten-Voice/CosyVoice3-Hessisch` (`llm.pt`, `flow.pt`, `spk2info.pt`, Sprecher
+     `thorsten_hessisch`, Apache-2.0, Datensatz CC0), Inferenz `inference_sft`. Läuft **nur auf
+     der CPU** (PyTorch-CPU-Wheel, `CUDA_VISIBLE_DEVICES=""`) in einer eigenen Umgebung
+     `runtime/venv-tts` als Kindprozess (HTTP auf 127.0.0.1 mit Token, `/health`, `/synthesize`,
+     `/cancel`) – so bleibt torch aus dem Hauptprozess heraus, und ein Absturz reißt das
+     Telefon nicht mit. Quellcode (Apache-2.0) unverändert in `third_party/cosyvoice` und
+     `third_party/Matcha-TTS`; Modelle (≈ 4,4 GB) lädt der Installer von Hugging Face.
+  2. **`piper`** (Thorsten medium, hochdeutsch, schnell): Rückfall und Live-Stimme, wenn
+     CosyVoice zu langsam ist.
+  3. **`espeak`** (espeak-ng): letzte Notstimme und für Tests.
+- **Cache der vorgefertigten Ansagen:** Feste Texte (Begrüßung, Fehler- und Zwischenansagen,
+  Uhrzeiten in Viertelstunden …, Katalog `assets/audio/prompts.de.toml`) werden einmal gerendert
+  und als 16-kHz-WAV in `assets/audio/cache/` abgelegt. Schlüssel =
+  `sha256(Version | Engine | Stimme | Lautheit | Satz)` – ändert sich Text oder Stimme, wird neu
+  gerendert. Beim ersten Start wird **vorläufig mit der besten sofort verfügbaren Stimme**
+  gerendert, damit das Telefon gleich antwortet; sobald CosyVoice geladen ist, ersetzt es die
+  Ansagen im Hintergrund – nie während eines Anrufs. Das Telefon startet nie ohne sprechbare Ansagen (ADR-011).
+- **Live-Antworten:** satzweise, damit der erste Satz schon läuft, während der Rest entsteht.
+  `phone.tts.live_engine = "auto"`: Die Hauptstimme wird nur genommen, solange der gleitende
+  Echtzeitfaktor einen Satz in `live_budget_s` (Start: 6 s) schafft; sonst spricht die Rückfallstimme.
+  Gerenderte Live-Sätze liegen nur in einem Arbeitsspeicher-Cache (LRU, `live_cache_entries`) –
+  **nie auf der Platte** (PHONE-43). `live_engine = "cosyvoice"` / `"piper"` erzwingt eine Stimme.
+- **Text → Sprache:** CosyVoices Text-Frontend kennt nur Chinesisch und Englisch; deshalb
+  wandelt `moritz_agent/phone/audio/textnorm.py` Zahlen, Datum, Uhrzeit, Euro, Einheiten,
+  Abkürzungen, Markdown und Emojis vorher in ausgeschriebene deutsche Wörter (`text_frontend=False`).
+  Lautheit aller Stimmen auf −20 dBFS normiert, Spitzen ≤ −1,5 dBFS.
+- **Folgen:**
+  - RAM: CosyVoice braucht **≈ 4,5–5 GB** (statt 0,3 GB für Piper) → LXC-Budget ≈ 14–15 von 16 GB
+    ([06](06-infrastruktur.md) angepasst); Platte +≈ 6 GB (Modelle + torch-Umgebung).
+  - Geschwindigkeit auf dem E5-2673 v3 (AVX2, kein AVX-512/bf16) ist **ungemessen**; erwartet
+    wird deutlich langsamer als Echtzeit (mehrere Sekunden bis > 10 s je Satz). Deshalb sind
+    Ansagen gecacht und Live-Antworten laufen über die `auto`-Richtlinie. `./test-1.sh bench`
+    misst es; ist es zu langsam: `live_engine = "piper"`.
+  - Lizenzen: CosyVoice-Code Apache-2.0, Matcha-TTS MIT, beide Modelle Apache-2.0, Piper-Code
+    GPL (nur als Programm/Bibliothek aus PyPI genutzt), espeak-ng GPL (Systempaket, optional).
+  - Eigene Prozesse/Venvs: `runtime/venv` (Telefon, Hauptprozess) und `runtime/venv-tts` (CosyVoice).
+- **Status:** beschlossen und gebaut (Ticket P1-10…P1-13); Messwerte stehen aus (R16).
