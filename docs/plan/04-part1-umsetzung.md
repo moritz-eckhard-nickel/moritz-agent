@@ -246,7 +246,7 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
   Polling-Thread mit `threadCnt=0`, 16-kHz-Konferenzbrücke ohne Soundgerät, G.722 > PCMA >
   PCMU, Registrierung mit exponentiellem Backoff, Quell-IP-Filter 403, zweiter Anruf 486,
   nie ausgehende Anrufe, Medien-Watchdog über RTP-Paketzähler, Neuanmeldung nur ohne Anruf;
-  Klingeln vor dem Abnehmen: 180 Ringing, nach `phone.ring_seconds` 200 OK, Auflegen während des
+  Klingeln vor dem Abnehmen: 180 Ringing, nach 4–8 s (`phone.ring_seconds_min/max`, zufällig) 200 OK, Auflegen während des
   Klingelns wird sauber abgefangen).
   `scripts/sip_testcall.py` ist ein skriptgesteuerter Anrufer (Direktanruf oder über die
   Telefonanlage). **Getestet** per echtem SIP/RTP-Anruf gegen sich selbst (Begrüßung, drei

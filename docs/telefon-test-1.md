@@ -19,7 +19,7 @@ LXC samt Dienst legt `./install.sh` auf dem Proxmox-Host an
 | Sprachende-Erkennung (Silero VAD, echtes Modell getestet), Spracherkennung (Whisper small, CPU) | ✅ gebaut; Whisper-Modell selbst noch nicht gelaufen (siehe Ende) |
 | Stimme Nikita: Thorsten-Voice **„Hessisch“** als Piper-Modell (CPU), Notstimme espeak-ng | ✅ gebaut und mit Test-Engines geprüft; das echte Modell ist noch nicht gelaufen (siehe Ende) |
 | Vorgefertigte Ansagen gerendert und gecacht | ✅ |
-| Gesprächsablauf: kurzes Klingeln (`phone.ring_seconds`, Standard 3 s), Begrüßung, mehrere Runden, Stille-Erinnerung, Auflegen, Störungsansagen | ✅ |
+| Gesprächsablauf: Klingeln (zufällig 4–8 s, `phone.ring_seconds_min/max`), Begrüßung, mehrere Runden, Stille-Erinnerung, Auflegen, Störungsansagen | ✅ |
 | Sofort-Antworten (Uhrzeit, Datum, Wochentag, Kalenderwoche, Name, Verabschiedung) | ✅ (Fast-Paths) |
 | Sprachmodell, Websuche, Web-UI | ❌ kommen mit den nächsten Tickets – Nikita antwortet hier auf alles andere mit „Ich habe verstanden: …“ |
 

@@ -49,7 +49,7 @@ Der Originalplan bleibt unverändert als Referenz.
 
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
-| PHONE-20 | Eingehenden internen Anruf automatisch annehmen – nach kurzem Klingeln (`phone.ring_seconds`, Standard 3 s, 0 = sofort; der Anrufer hört den Freiton, 180 Ringing). Legt der Anrufer währenddessen auf, passiert nichts weiter. | MUSS | 1 |
+| PHONE-20 | Eingehenden internen Anruf automatisch annehmen – nach Klingeln (zufällig `phone.ring_seconds_min` … `ring_seconds_max`, Standard 4–8 s, beide 0 = sofort; der Anrufer hört den Freiton, 180 Ringing). Legt der Anrufer währenddessen auf, passiert nichts weiter. | MUSS | 1 |
 | PHONE-21 | Nach dem Abnehmen sofort die vorbereitete Begrüßung abspielen: „Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?“ (Name geändert, ADR-026) – aus einer zwischengespeicherten Audiodatei, **ohne LLM-Wartezeit**. | MUSS | 1 |
 | PHONE-22 | Nach der Begrüßung zuhören, Sprachende per VAD erkennen, Äußerung auf Deutsch transkribieren. | MUSS | 1 |
 | PHONE-23 | Bei Uhrzeitfragen („Wie viel Uhr haben wir?“) ein **echtes Uhrzeit-Tool** aufrufen und kurz antworten („Es ist 19 Uhr 12.“). | MUSS | 1 |

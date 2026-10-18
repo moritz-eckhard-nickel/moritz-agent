@@ -12,7 +12,7 @@ import tomllib
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 LOCAL_CONFIG_NAME = "moritz-agent.toml"
@@ -133,7 +133,8 @@ class Phone(_Section):
     codecs: list[str] = ["G722/16000", "PCMA/8000", "PCMU/8000"]
     allowed_source_ips: list[str] = ["192.168.1.176"]
     max_concurrent_calls: Literal[1] = 1
-    ring_seconds: float = Field(3.0, ge=0, le=30)
+    ring_seconds_min: float = Field(4.0, ge=0, le=30)
+    ring_seconds_max: float = Field(8.0, ge=0, le=30)
     register_retry_min_s: int = Field(5, ge=1)
     register_retry_max_s: int = Field(300, ge=1)
     silence_prompt_s: float = Field(10, gt=0)
@@ -148,6 +149,12 @@ class Phone(_Section):
     vad: Vad = Vad()
     stt: Stt = Stt()
     tts: Tts = Tts()
+
+    @model_validator(mode="after")
+    def _ring_range(self) -> Phone:
+        if self.ring_seconds_max < self.ring_seconds_min:
+            raise ValueError("ring_seconds_max darf nicht kleiner sein als ring_seconds_min")
+        return self
 
     @field_validator("codecs")
     @classmethod

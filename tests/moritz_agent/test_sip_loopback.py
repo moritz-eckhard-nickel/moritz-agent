@@ -32,12 +32,13 @@ def free_udp_port() -> int:
 
 
 class Worker:
-    def __init__(self, tmp_path: Path, ring_seconds: float) -> None:
+    def __init__(self, tmp_path: Path, ring_min: float, ring_max: float) -> None:
         self.tmp = tmp_path
         self.tmp.mkdir(parents=True, exist_ok=True)
         self.port = free_udp_port()
         example = (REPO_ROOT / "config" / "moritz-agent.example.toml").read_text(encoding="utf-8")
-        config = re.sub(r"(?m)^ring_seconds = .*$", f"ring_seconds = {ring_seconds}", example)
+        config = re.sub(r"(?m)^ring_seconds_min = .*$", f"ring_seconds_min = {ring_min}", example)
+        config = re.sub(r"(?m)^ring_seconds_max = .*$", f"ring_seconds_max = {ring_max}", config)
         self.config = tmp_path / "moritz-agent.toml"
         self.config.write_text(config, encoding="utf-8")
         self.passwords = tmp_path / "passwords.txt"
@@ -90,8 +91,10 @@ class Worker:
 def worker_factory(tmp_path):
     workers: list[Worker] = []
 
-    def make(ring_seconds: float) -> Worker:
-        worker = Worker(tmp_path / f"w{len(workers)}", ring_seconds)
+    def make(ring_min: float, ring_max: float | None = None) -> Worker:
+        worker = Worker(
+            tmp_path / f"w{len(workers)}", ring_min, ring_min if ring_max is None else ring_max
+        )
         worker.start()
         workers.append(worker)
         return worker
@@ -108,22 +111,34 @@ def greeting_delay(output: str) -> float:
 
 
 def test_nikita_lets_it_ring_before_picking_up(worker_factory):
-    worker = worker_factory(ring_seconds=2.0)
+    worker = worker_factory(2.0)
     result = worker.call("--hangup-after-greeting")
     assert result.returncode == 0, result.stdout + result.stderr
     assert 2.0 <= greeting_delay(result.stdout) < 5.5  # ringing time plus a moment for the greeting
     assert "klingelt 2.0 s" in worker.text()
 
 
+def test_ring_time_varies_within_the_configured_range(worker_factory):
+    worker = worker_factory(1.0, 3.0)
+    delays = []
+    for _ in range(3):
+        result = worker.call("--hangup-after-greeting")
+        assert result.returncode == 0, result.stdout + result.stderr
+        delays.append(greeting_delay(result.stdout))
+    assert all(1.0 <= delay < 6.0 for delay in delays), delays
+    rung = [float(m) for m in re.findall(r"klingelt ([0-9.]+) s", worker.text())]
+    assert len(rung) == 3 and all(1.0 <= value <= 3.0 for value in rung), rung
+
+
 def test_no_ringing_when_configured_to_zero(worker_factory):
-    worker = worker_factory(ring_seconds=0)
+    worker = worker_factory(0)
     result = worker.call("--hangup-after-greeting")
     assert result.returncode == 0, result.stdout + result.stderr
     assert greeting_delay(result.stdout) < 1.5
 
 
 def test_caller_who_gives_up_while_it_rings_leaves_nothing_behind(worker_factory):
-    worker = worker_factory(ring_seconds=3.0)
+    worker = worker_factory(3.0)
     cancelled = worker.call("--cancel-after", "1")
     assert cancelled.returncode == 0, cancelled.stdout + cancelled.stderr
     time.sleep(3.5)  # the answer timer fires after the caller left: it must do nothing
@@ -134,7 +149,7 @@ def test_caller_who_gives_up_while_it_rings_leaves_nothing_behind(worker_factory
 
 
 def test_a_second_caller_hears_busy_while_the_first_one_rings(worker_factory):
-    worker = worker_factory(ring_seconds=4.0)
+    worker = worker_factory(4.0)
     first = subprocess.Popen(
         [sys.executable, str(CALLER), "--to", f"sip:agent@127.0.0.1:{worker.port}", "--local-port", str(free_udp_port()),
          "--out", str(worker.tmp / "first.wav"), "--hangup-after-greeting"],

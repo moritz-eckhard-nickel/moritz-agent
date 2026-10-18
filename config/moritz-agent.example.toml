@@ -65,7 +65,8 @@ rtp_port_count = 200
 codecs = ["G722/16000", "PCMA/8000", "PCMU/8000"]   # Reihenfolge = Priorität
 allowed_source_ips = ["192.168.1.176"]                # INVITEs nur von hier (PHONE-09)
 max_concurrent_calls = 1                              # zweiter Anruf → 486 Busy Here
-ring_seconds = 3.0                # so lange klingeln lassen, bevor Nikita abnimmt (0 = sofort)
+ring_seconds_min = 4.0            # Nikita lässt es zufällig zwischen min und max Sekunden klingeln, bevor er abnimmt
+ring_seconds_max = 8.0            # (beide 0 = sofort abnehmen; Dial-Timeout der Telefonanlage größer wählen)
 register_retry_min_s = 5
 register_retry_max_s = 300
 silence_prompt_s = 10             # dann „Bist du noch da?“ (PHONE-31)
