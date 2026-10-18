@@ -133,6 +133,7 @@ class Phone(_Section):
     codecs: list[str] = ["G722/16000", "PCMA/8000", "PCMU/8000"]
     allowed_source_ips: list[str] = ["192.168.1.176"]
     max_concurrent_calls: Literal[1] = 1
+    ring_seconds: float = Field(3.0, ge=0, le=30)
     register_retry_min_s: int = Field(5, ge=1)
     register_retry_max_s: int = Field(300, ge=1)
     silence_prompt_s: float = Field(10, gt=0)

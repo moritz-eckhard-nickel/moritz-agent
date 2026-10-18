@@ -493,8 +493,26 @@ class SipPhone:
         self._active = call
         self._active_media = None
         self.calls_total += 1
-        op.statusCode = pjsua.PJSIP_SC_OK
-        call.answer(op)
+        ring = self.phone.ring_seconds
+        if ring > 0:
+            # 180 Ringing: the caller hears the ringback tone; Nikita picks up after ``ring`` seconds
+            log.info("Anruf von %s: klingelt %.1f s", source, ring)
+            op.statusCode = pjsua.PJSIP_SC_RINGING
+            call.answer(op)
+            self._schedule(ring, lambda: self._answer(call))
+        else:
+            self._answer(call)
+
+    def _answer(self, call) -> None:
+        """Pick up (200 OK) – unless the caller gave up while the phone was ringing."""
+        if call is not self._active:
+            return
+        op = pj.CallOpParam(True)
+        op.statusCode = pj.PJSIP_SC_OK
+        try:
+            call.answer(op)
+        except Exception:
+            log.debug("Annehmen fehlgeschlagen (Anrufer hat aufgelegt?)", exc_info=True)
 
     def _on_media_state(self, call) -> None:
         pjsua = pj
