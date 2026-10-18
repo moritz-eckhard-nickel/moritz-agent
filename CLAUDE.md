@@ -21,7 +21,7 @@ Der vollständige Plan steht in `docs/plan/` – **vor jeder Aufgabe** das passe
 - **Lizenzen (ADR-023, `LICENSING.md`):** eigener Code = MSOL 1.1. Jede neue eigene
   Quelltext-/Skript-/Config-Datei beginnt mit `SPDX-License-Identifier: LicenseRef-MSOL-1.1`
   (nach einer Shebang-Zeile). Fremdcode behält seine Lizenz. Scribbles/Logo: alle Rechte vorbehalten.
-- `third_party/` (SearXNG, pjproject, cosyvoice, Matcha-TTS) und `assets/models/` sind **mitgelieferte
+- `third_party/` (SearXNG, pjproject) und `assets/models/` sind **mitgelieferte
   Fremdkomponenten**: nicht verändern, nur nach `third_party/VENDORED.md` aktualisieren
   (`git add -f third_party`). `third_party/pjproject/CLAUDE.md` gehört zu PJSIP, nicht zu uns.
 - Neue Python-Abhängigkeit: in `requirements/<gruppe>.in` eintragen und Lock mit Hashes neu
@@ -52,8 +52,9 @@ pip install -e ".[dev]"                       # Entwicklungsumgebung
 ruff check moritz_agent tests/moritz_agent scripts
 ruff format --check moritz_agent tests/moritz_agent scripts
 pytest                                        # testpaths = tests/moritz_agent
-shellcheck moritz-agent install.sh update.sh moritz-install.sh moritz-update.sh test-1.sh scripts/*.sh
-./test-1.sh setup|check|speak|call|run        # Telefon + Stimme ohne Systeminstallation (runtime/)
+shellcheck -x moritz-agent install.sh update.sh moritz-install.sh moritz-update.sh test-1.sh scripts/*.sh deploy/lib/*.sh
+./test-1.sh setup|check|speak|call|run        # Telefon + Stimme ohne Systeminstallation (läuft überall, kein LXC nötig)
+sudo ./install.sh | sudo ./update.sh          # auf dem Proxmox-Host: LXC anlegen/aktualisieren (oder --remote user@host)
 python -m moritz_agent --version
 ```
 

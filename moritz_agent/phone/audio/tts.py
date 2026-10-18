@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
 """Text-to-speech service: engine choice, sentence streaming and caching (ADR-027).
 
-Nikita's voice is Thorsten-Voice CosyVoice3 "Hessisch" on the CPU. Pre-recorded announcements
-and fixed phrases are rendered once and cached on disk, so they play instantly and never depend
-on the model being ready. For live answers the service measures the real-time factor of the main
-voice; if the first sentence would take longer than ``live_budget_s`` it uses a faster fallback
-(Piper "Thorsten", same speaker in standard German; espeak-ng as the last resort).
+Nikita's voice is Thorsten-Voice "Hessisch" as a Piper model on the CPU (espeak-ng is the
+last-resort voice). Pre-recorded announcements and fixed phrases are rendered once and cached on
+disk, so they play instantly; live answers are spoken sentence by sentence, so the first sentence
+is audible while the rest is still being synthesized.
 
 All audio leaving this module is normalized 16 kHz mono PCM16, ready for the phone line.
 """
@@ -31,7 +30,6 @@ from moritz_agent.phone.audio.textnorm import normalize_for_tts, split_sentences
 
 log = get_logger("tts")
 CACHE_VERSION = "1"
-CHARS_PER_SECOND = 14.0  # German speech rate, to estimate audio length from text
 
 
 class TtsError(RuntimeError):
@@ -106,8 +104,6 @@ class TtsService:
         primary: str,
         fallbacks: list[str],
         cache_dir: Path,
-        live_policy: str = "auto",
-        live_budget_s: float = 6.0,
         target_dbfs: float = -20.0,
         live_cache_entries: int = 64,
     ) -> None:
@@ -115,8 +111,6 @@ class TtsService:
         self.primary = primary
         self.order = [primary, *[name for name in fallbacks if name != primary]]
         self.cache_dir = cache_dir
-        self.live_policy = live_policy
-        self.live_budget_s = live_budget_s
         self.target_dbfs = target_dbfs
         self.stats = {name: EngineStats() for name in engines}
         self._lru = _Lru(live_cache_entries)
@@ -132,28 +126,6 @@ class TtsService:
     def best_available(self) -> str | None:
         ready = self.ready_engines()
         return ready[0] if ready else None
-
-    def pick_live(self, first_sentence: str) -> str | None:
-        """Engine for a live answer, honouring the latency budget."""
-        ready = self.ready_engines()
-        if not ready:
-            return None
-        if self.live_policy == "primary" or ready[0] != self.primary:
-            return ready[0]
-        if self.live_policy == "fallback" and len(ready) > 1:
-            return ready[1]
-        rtf = self.stats[self.primary].rtf
-        if rtf is not None:
-            estimate = rtf * max(len(first_sentence), 8) / CHARS_PER_SECOND
-            if estimate > self.live_budget_s and len(ready) > 1:
-                log.info(
-                    "Hauptstimme zu langsam für Live-Antworten (RTF %.1f, ~%.0f s bis zum ersten Satz) – nutze %s",
-                    rtf,
-                    estimate,
-                    ready[1],
-                )
-                return ready[1]
-        return ready[0]
 
     # -- cache -------------------------------------------------------------------------
     def _key(self, engine: TtsEngine, sentence: str) -> str:
@@ -230,15 +202,12 @@ class TtsService:
             return b""
         return b"".join(self._render_sentence(engine, s, persist) for s in sentences)
 
-    async def stream(
-        self, text: str, *, live: bool = True, persist: bool = False
-    ) -> AsyncIterator[bytes]:
+    async def stream(self, text: str, *, persist: bool = False) -> AsyncIterator[bytes]:
         """Yield normalized PCM16 16 kHz audio sentence by sentence (first audio as early as possible)."""
         sentences = split_sentences(normalize_for_tts(text))
         if not sentences:
             return
-        name = self.pick_live(sentences[0]) if live else self.best_available()
-        engine = self.engines.get(name or "")
+        engine = self.engines.get(self.best_available() or "")
         if engine is None:
             raise TtsUnavailable("keine Stimme bereit")
         self._cancelled.clear()

@@ -7,21 +7,23 @@
 # Needs: gcc/g++/make, swig >= 4.0, pkg-config, Python headers for the target python
 # (Ubuntu: apt install build-essential swig python3-dev pkg-config libssl-dev).
 #
-# Usage: scripts/build-pjsip.sh --python runtime/venv/bin/python [--jobs N] [--force]
+# Usage: scripts/build-pjsip.sh --python runtime/venv/bin/python [--jobs N] [--force] [--build-root DIR]
 set -Eeuo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON=""
 JOBS="$(nproc 2>/dev/null || echo 2)"
 FORCE=0
+BUILD_ROOT=""
 
 usage() {
 	cat <<USAGE
-Usage: $(basename "$0") --python PYTHON [--jobs N] [--force]
+Usage: $(basename "$0") --python PYTHON [--jobs N] [--force] [--build-root DIR]
 
   --python PYTHON   interpreter of the virtual environment that receives pjsua2
   --jobs N          parallel make jobs (default: number of CPUs)
   --force           rebuild even if an up-to-date build exists
+  --build-root DIR  where the build tree and stamp live (default: runtime/pjsip-build)
 USAGE
 }
 
@@ -46,6 +48,11 @@ while [[ $# -gt 0 ]]; do
 	--force)
 		FORCE=1
 		shift
+		;;
+	--build-root)
+		[[ $# -ge 2 ]] || die "--build-root braucht ein Verzeichnis"
+		BUILD_ROOT="$2"
+		shift 2
 		;;
 	-h | --help)
 		usage
@@ -76,7 +83,7 @@ py_include="$("${PYTHON}" -c 'import sysconfig; print(sysconfig.get_paths()["inc
 [[ -f "${py_include}/Python.h" ]] || die "Python.h fehlt in ${py_include} – Ubuntu: sudo apt install python3-dev"
 
 SRC="${ROOT}/third_party/pjproject"
-BUILD_ROOT="${ROOT}/runtime/pjsip-build"
+BUILD_ROOT="${BUILD_ROOT:-${ROOT}/runtime/pjsip-build}"
 BUILD="${BUILD_ROOT}/pjproject"
 py_tag="$("${PYTHON}" -c 'import sys; print("cp%d%d" % sys.version_info[:2])')"
 version="$(sed -n 's/^export PJ_VERSION_MAJOR[[:space:]]*:\?=[[:space:]]*//p' "${SRC}/version.mak" | head -1).$(sed -n 's/^export PJ_VERSION_MINOR[[:space:]]*:\?=[[:space:]]*//p' "${SRC}/version.mak" | head -1)"

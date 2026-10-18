@@ -59,17 +59,6 @@ def _tts_for_cli(settings: Settings, args) -> TtsService:
     return build_tts(settings, REPO_ROOT)
 
 
-def _wait_for(tts: TtsService, name: str, seconds: float) -> bool:
-    engine = tts.engines.get(name)
-    if engine is None:
-        return False
-    wait = getattr(engine, "wait_ready", None)
-    if wait is None:
-        return engine.available()
-    print(f"  warte auf {name} (Modell laden, bis zu {seconds:.0f} s) …", flush=True)
-    return bool(wait(seconds))
-
-
 # -- run -------------------------------------------------------------------------------------
 def cmd_run(args) -> int:
     from moritz_agent.phone.worker import PhoneWorker, WorkerOptions
@@ -82,7 +71,6 @@ def cmd_run(args) -> int:
         register=not args.no_register,
         allow=args.allow,
         tts_engines=[e.strip() for e in args.engines.split(",")] if args.engines else None,
-        no_cosyvoice=args.no_cosyvoice,
         force_start=args.force,
         sip_port=args.sip_port,
     )
@@ -107,13 +95,12 @@ def cmd_speak(args) -> int:
     tts = _tts_for_cli(settings, args)
     name = args.engine or settings.phone.tts.engine
     try:
-        if args.engine and args.engine != settings.phone.tts.engine:
-            tts.order = [name]
-        if not _wait_for(tts, name, args.wait):
+        engine = tts.engines.get(name)
+        if engine is None or not engine.available():
             print(f"Stimme '{name}' ist nicht bereit.", file=sys.stderr)
-            engine = tts.engines.get(name)
-            if engine is not None and getattr(engine, "last_error", ""):
-                print(f"  Grund: {engine.last_error}", file=sys.stderr)
+            reason = getattr(engine, "_error", "") if engine is not None else "nicht konfiguriert"
+            if reason:
+                print(f"  Grund: {reason}", file=sys.stderr)
             return 1
         started = time.monotonic()
         data = tts.render_blocking(args.text, engine_name=name)
@@ -147,16 +134,15 @@ def cmd_prompts(args) -> int:
     settings, _ = _load(args)
     tts = _tts_for_cli(settings, args)
     try:
-        main = settings.phone.tts.engine
-        if not _wait_for(tts, main, args.wait):
-            print(
-                f"Hauptstimme '{main}' ist nicht bereit – Ansagen werden mit der Ersatzstimme erzeugt.",
-                file=sys.stderr,
-            )
-            main = tts.best_available() or ""
+        main = tts.best_available() or ""
         if not main:
             print("Keine Stimme verfügbar.", file=sys.stderr)
             return 1
+        if main != settings.phone.tts.engine:
+            print(
+                f"Hauptstimme '{settings.phone.tts.engine}' ist nicht bereit – Ansagen werden mit '{main}' erzeugt.",
+                file=sys.stderr,
+            )
         catalog = load_catalog(
             REPO_ROOT / PROMPT_CATALOG,
             {
@@ -198,7 +184,8 @@ def cmd_bench(args) -> int:
         )
         print("Sprachausgabe (Faktor = Rechenzeit / Audiolänge; < 1 = schneller als Echtzeit):")
         for name in dict.fromkeys(names):
-            if not _wait_for(tts, name, args.wait):
+            engine = tts.engines.get(name)
+            if engine is None or not engine.available():
                 print(f"  {name:10s} nicht verfügbar")
                 continue
             total_work = total_audio = 0.0
@@ -215,11 +202,13 @@ def cmd_bench(args) -> int:
                 )
             rtf = total_work / max(total_audio, 0.01)
             verdict = (
-                "taugt für Live-Antworten"
-                if rtf * 3.5 < settings.phone.tts.live_budget_s
-                else "zu langsam für Live-Antworten → nur für gecachte Ansagen"
+                "schneller als Echtzeit – gut fürs Telefon"
+                if rtf < 0.7
+                else "knapp/zu langsam – phone.tts.cpu_threads erhöhen oder kleinere Stimme wählen"
             )
-            print(f"  {name:10s} Durchschnitt Faktor {rtf:.2f}  ({verdict})")
+            print(
+                f"  {name:10s} Durchschnitt Faktor {rtf:.2f}, erster Satz nach {first:.1f} s ({verdict})"
+            )
         print()
         code |= _bench_stt(settings, args)
     finally:
@@ -322,7 +311,10 @@ def cmd_check(args) -> int:
         endpoint.libDestroy()
         report.ok("SIP-Stack (PJSIP)", version)
     except Exception as exc:
-        report.fail("SIP-Stack (PJSIP)", f"{type(exc).__name__}: {exc} – ./test-1.sh setup")
+        report.fail(
+            "SIP-Stack (PJSIP)",
+            f"{type(exc).__name__}: {exc} – scripts/build-pjsip.sh (./test-1.sh setup)",
+        )
 
     try:
         from moritz_agent.phone.audio.factory import build_vad
@@ -347,7 +339,10 @@ def cmd_check(args) -> int:
 
     absent = models.missing(["stt"])
     if absent:
-        report.fail("Spracherkennung (Whisper)", "Modell fehlt – ./test-1.sh setup")
+        report.fail(
+            "Spracherkennung (Whisper)",
+            "Modell fehlt – python -m moritz_agent.phone.audio.models fetch (./test-1.sh models fetch)",
+        )
     else:
         try:
             from moritz_agent.phone.audio.factory import build_stt
@@ -372,11 +367,9 @@ def cmd_check(args) -> int:
     try:
         main = settings.phone.tts.engine
         for name in dict.fromkeys([main, *settings.phone.tts.fallback_engines]):
-            if name == "cosyvoice" and not args.no_wait:
-                _wait_for(tts, name, args.wait)
             engine = tts.engines.get(name)
             if engine is None or not engine.available():
-                detail = getattr(engine, "last_error", "") or "nicht bereit"
+                detail = getattr(engine, "_error", "") or "nicht bereit"
                 (report.fail if name == main and not args.fallback_ok else report.warn)(
                     f"Stimme {name}", detail
                 )
@@ -404,10 +397,7 @@ def cmd_check(args) -> int:
         if missing:
             report.fail("Ansagen", f"fehlen: {', '.join(missing)}")
         else:
-            report.ok(
-                "Ansagen",
-                f"{info['loaded']} bereit, davon {len(info['provisional'])} mit Ersatzstimme",
-            )
+            report.ok("Ansagen", f"{info['loaded']} bereit (Stimme: {info['voice']})")
     finally:
         tts.close()
 
@@ -496,12 +486,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="erlaubte Absenderadresse(n) statt phone.allowed_source_ips",
     )
     run.add_argument(
-        "--engines", help="Stimmen in dieser Reihenfolge, z. B. espeak oder cosyvoice,piper,espeak"
-    )
-    run.add_argument(
-        "--no-cosyvoice",
-        action="store_true",
-        help="CosyVoice nicht starten (schneller Start zum Testen)",
+        "--engines", help="Stimmen in dieser Reihenfolge, z. B. espeak oder piper,espeak"
     )
     run.add_argument("--sip-port", type=int, help="lokaler SIP-Port statt phone.local_sip_port")
     run.add_argument(
@@ -515,10 +500,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     check.add_argument("--sip-wait", type=float, default=15.0)
     check.add_argument(
-        "--wait", type=float, default=600.0, help="Sekunden auf CosyVoice warten (Modell laden)"
-    )
-    check.add_argument("--no-wait", action="store_true", help="nicht auf CosyVoice warten")
-    check.add_argument(
         "--fallback-ok", action="store_true", help="fehlende Hauptstimme nur als Warnung werten"
     )
     check.add_argument("--engines", help="Stimmen überschreiben, z. B. espeak")
@@ -527,14 +508,12 @@ def build_parser() -> argparse.ArgumentParser:
     speak = sub.add_parser("speak", help="Satz in WAV-Datei sprechen")
     speak.add_argument("text")
     speak.add_argument("--out", default="nikita.wav")
-    speak.add_argument("--engine", help="cosyvoice, piper oder espeak (Standard: Hauptstimme)")
-    speak.add_argument("--wait", type=float, default=600.0)
+    speak.add_argument("--engine", help="piper oder espeak (Standard: Hauptstimme)")
     speak.add_argument("--play", action="store_true")
     speak.add_argument("--engines", help=argparse.SUPPRESS)
     speak.set_defaults(func=cmd_speak)
 
     prompts = sub.add_parser("prompts", help="Ansagen vorrendern")
-    prompts.add_argument("--wait", type=float, default=900.0)
     prompts.add_argument(
         "--warm-times",
         action="store_true",
@@ -545,7 +524,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     bench = sub.add_parser("bench", help="Geschwindigkeit messen")
     bench.add_argument("--engine", help="Komma-getrennt, Standard: alle konfigurierten")
-    bench.add_argument("--wait", type=float, default=900.0)
     bench.add_argument("--engines", help=argparse.SUPPRESS)
     bench.set_defaults(func=cmd_bench)
     return parser

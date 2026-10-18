@@ -17,6 +17,8 @@
 CI-Workflow: `.github/workflows/moritz-ci.yaml` (Python 3.12 und 3.13). Die Upstream-
 KoboldCPP-Workflows bleiben `workflow_dispatch`-only und laufen nicht automatisch.
 
+Skripte (`install.sh`, `update.sh`, `moritz-install.sh`, `moritz-update.sh`, `test-1.sh`, `scripts/*.sh`, `deploy/lib/*.sh`) sind `shellcheck`-sauber; ihr Verhalten prüfen `tests/moritz_agent/test_installers.py` (echte Läufe gegen einen Fake-Baum mit aufzeichnenden Systembefehlen) und `tests/moritz_agent/test_host_scripts.py` (simulierter Proxmox-Host, siehe `fake_proxmox.py`).
+
 ## 2. Testdaten
 
 - `tests/moritz_agent/data/phone_questions.de.jsonl` – Telefonfragen mit erwartetem Pfad

@@ -82,7 +82,9 @@ class FasterWhisperStt:
         from faster_whisper import WhisperModel
 
         if not (model_dir / "model.bin").is_file():
-            raise FileNotFoundError(f"Whisper-Modell fehlt: {model_dir} (./test-1.sh setup)")
+            raise FileNotFoundError(
+                f"Whisper-Modell fehlt: {model_dir} (laden: python -m moritz_agent.phone.audio.models fetch)"
+            )
         started = time.monotonic()
         self._model = WhisperModel(
             str(model_dir),

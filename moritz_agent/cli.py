@@ -28,8 +28,10 @@ def _check_config(args: argparse.Namespace) -> int:
 
 
 def _run(_args: argparse.Namespace) -> int:
-    print("moritz-agent: Laufzeit noch nicht implementiert (Ticket P1-04).", file=sys.stderr)
-    return 2
+    """Start the service. Until the supervisor (P1-04) exists, that is the phone worker."""
+    from moritz_agent.phone.__main__ import main as phone_main
+
+    return phone_main(["run"])
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -123,7 +123,7 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 - **Kontext (F-08, F-08b):** Moritz wollte zunächst die Stimme **Hans** (Amazon Polly, Cloud).
 - **Entscheidung (16.10.2026):** Engine `polly` als Standard, `piper` lokal als Fallback.
 - **Status:** **abgelöst am 17.10.2026** durch ADR-027 (Moritz: „wir nehmen ab jetzt als Stimme
-  diese hier für Nikita“ – Thorsten-Voice CosyVoice3 Hessisch, lokal auf der CPU). Polly, die
+  diese hier für Nikita“ – Thorsten-Voice Hessisch, lokal auf der CPU). Polly, die
   AWS-Zugangsdaten und `docs/stimme-hans.md` sind entfernt; sie bleiben in der Git-Historie
   (Commit `cbb5520`) und lassen sich bei Bedarf als zusätzliche Engine wiederherstellen.
 
@@ -319,48 +319,91 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   Maskottchen Scribbles. Der Originalplan (`00-originalplan.md`) bleibt als Referenz unverändert.
 - **Status:** beschlossen.
 
-## ADR-027 – Stimme: Thorsten-Voice CosyVoice3 Hessisch auf der CPU, Piper/espeak als Rückfall
+## ADR-027 – Stimme: Thorsten-Voice „Hessisch“ als Piper-Modell auf der CPU
 
-- **Kontext (Moritz, 17.10.2026):** „Wir nehmen ab jetzt als Stimme diese hier für Nikita –
-  auch die hessische Variante, mach das auf CPU, sollte eigentlich machbar sein. Die
-  vorgefertigten Sachen natürlich cachen.“ ([Space](https://huggingface.co/spaces/Thorsten-Voice/CosyVoice-Hessisch)).
-  Ersetzt ADR-008 (Polly „Hans“): keine Cloud, keine Zugangsdaten, nichts verlässt das Haus.
+- **Kontext (Moritz, 17./18.10.2026):** Nikita bekommt die Stimme von Thorsten-Voice, **auch die
+  hessische Variante**, lokal auf der CPU, vorgefertigte Ansagen gecacht. Zuerst wurde
+  CosyVoice3-Hessisch gebaut (17.10.), am 18.10.2026 ersetzt: „nimm nur Piper – das müsste das
+  Hessische ja auch können und ist leichter“. Das stimmt: `Thorsten-Voice/Hessisch` enthält ein
+  fertiges **Piper-Modell** (`Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx`, 114 MB, Einzelsprecher,
+  22,05 kHz, Lizenz CC0). Ersetzt ADR-008 (Polly „Hans“): keine Cloud, keine Zugangsdaten,
+  nichts verlässt das Haus.
 - **Entscheidung – Stimmenkette** (`phone.tts.engine` + `fallback_engines`):
-  1. **`cosyvoice`** (Hauptstimme): `FunAudioLLM/Fun-CosyVoice3-0.5B-2512` (Apache-2.0) mit dem
-     Finetune `Thorsten-Voice/CosyVoice3-Hessisch` (`llm.pt`, `flow.pt`, `spk2info.pt`, Sprecher
-     `thorsten_hessisch`, Apache-2.0, Datensatz CC0), Inferenz `inference_sft`. Läuft **nur auf
-     der CPU** (PyTorch-CPU-Wheel, `CUDA_VISIBLE_DEVICES=""`) in einer eigenen Umgebung
-     `runtime/venv-tts` als Kindprozess (HTTP auf 127.0.0.1 mit Token, `/health`, `/synthesize`,
-     `/cancel`) – so bleibt torch aus dem Hauptprozess heraus, und ein Absturz reißt das
-     Telefon nicht mit. Quellcode (Apache-2.0) unverändert in `third_party/cosyvoice` und
-     `third_party/Matcha-TTS`; Modelle (≈ 4,4 GB) lädt der Installer von Hugging Face.
-  2. **`piper`** (Thorsten medium, hochdeutsch, schnell): Rückfall und Live-Stimme, wenn
-     CosyVoice zu langsam ist.
-  3. **`espeak`** (espeak-ng): letzte Notstimme und für Tests.
+  1. **`piper`** (Hauptstimme): das Hessisch-Modell, in-process über `piper-tts`/onnxruntime auf der
+     CPU (`phone.tts.cpu_threads`, Start 4). Kein zweiter Prozess, keine zusätzliche Python-Umgebung,
+     kein PyTorch. Modell lädt `models.py` von Hugging Face (Größe geprüft, SHA-256 beim ersten Mal
+     gemerkt). Jede andere Piper-Stimme lässt sich über `phone.tts.piper.voice` eintragen
+     (z. B. `de_DE-thorsten-medium` für Hochdeutsch).
+  2. **`espeak`** (espeak-ng, Systempaket): Notstimme, falls das Piper-Modell fehlt oder defekt ist,
+     und für den Selbsttest. Roboterhaft, aber das Telefon bleibt benutzbar.
 - **Cache der vorgefertigten Ansagen:** Feste Texte (Begrüßung, Fehler- und Zwischenansagen,
-  Uhrzeiten in Viertelstunden …, Katalog `assets/audio/prompts.de.toml`) werden einmal gerendert
-  und als 16-kHz-WAV in `assets/audio/cache/` abgelegt. Schlüssel =
-  `sha256(Version | Engine | Stimme | Lautheit | Satz)` – ändert sich Text oder Stimme, wird neu
-  gerendert. Beim ersten Start wird **vorläufig mit der besten sofort verfügbaren Stimme**
-  gerendert, damit das Telefon gleich antwortet; sobald CosyVoice geladen ist, ersetzt es die
-  Ansagen im Hintergrund – nie während eines Anrufs. Das Telefon startet nie ohne sprechbare Ansagen (ADR-011).
-- **Live-Antworten:** satzweise, damit der erste Satz schon läuft, während der Rest entsteht.
-  `phone.tts.live_engine = "auto"`: Die Hauptstimme wird nur genommen, solange der gleitende
-  Echtzeitfaktor einen Satz in `live_budget_s` (Start: 6 s) schafft; sonst spricht die Rückfallstimme.
-  Gerenderte Live-Sätze liegen nur in einem Arbeitsspeicher-Cache (LRU, `live_cache_entries`) –
-  **nie auf der Platte** (PHONE-43). `live_engine = "cosyvoice"` / `"piper"` erzwingt eine Stimme.
-- **Text → Sprache:** CosyVoices Text-Frontend kennt nur Chinesisch und Englisch; deshalb
-  wandelt `moritz_agent/phone/audio/textnorm.py` Zahlen, Datum, Uhrzeit, Euro, Einheiten,
-  Abkürzungen, Markdown und Emojis vorher in ausgeschriebene deutsche Wörter (`text_frontend=False`).
-  Lautheit aller Stimmen auf −20 dBFS normiert, Spitzen ≤ −1,5 dBFS.
-- **Folgen:**
-  - RAM: CosyVoice braucht **≈ 4,5–5 GB** (statt 0,3 GB für Piper) → LXC-Budget ≈ 14–15 von 16 GB
-    ([06](06-infrastruktur.md) angepasst); Platte +≈ 6 GB (Modelle + torch-Umgebung).
-  - Geschwindigkeit auf dem E5-2673 v3 (AVX2, kein AVX-512/bf16) ist **ungemessen**; erwartet
-    wird deutlich langsamer als Echtzeit (mehrere Sekunden bis > 10 s je Satz). Deshalb sind
-    Ansagen gecacht und Live-Antworten laufen über die `auto`-Richtlinie. `./test-1.sh bench`
-    misst es; ist es zu langsam: `live_engine = "piper"`.
-  - Lizenzen: CosyVoice-Code Apache-2.0, Matcha-TTS MIT, beide Modelle Apache-2.0, Piper-Code
-    GPL (nur als Programm/Bibliothek aus PyPI genutzt), espeak-ng GPL (Systempaket, optional).
-  - Eigene Prozesse/Venvs: `runtime/venv` (Telefon, Hauptprozess) und `runtime/venv-tts` (CosyVoice).
-- **Status:** beschlossen und gebaut (Ticket P1-10…P1-13); Messwerte stehen aus (R16).
+  Katalog `assets/audio/prompts.de.toml`) werden einmal gerendert und als 16-kHz-WAV in
+  `assets/audio/cache/` abgelegt. Schlüssel = `sha256(Version | Engine | Stimme+Modellgröße |
+  Lautheit | Satz)`: Ein anderes Modell oder anderer Text rendert neu, alles andere kommt sofort
+  aus dem Cache. Das Telefon startet nie ohne sprechbare Ansagen (ADR-011). Live-Sätze liegen nur
+  in einem Arbeitsspeicher-Cache (LRU, `live_cache_entries`) – **nie auf der Platte** (PHONE-43).
+- **Live-Antworten** werden satzweise gesprochen, damit der erste Satz schon läuft, während der
+  Rest entsteht; fällt die Hauptstimme mitten im Satz aus, übernimmt die Notstimme.
+- **Text → Sprache:** `moritz_agent/phone/audio/textnorm.py` schreibt Zahlen, Datum, Uhrzeit, Euro,
+  Einheiten und Abkürzungen als deutsche Wörter aus, entfernt Markdown und Emojis; Lautheit aller
+  Stimmen −20 dBFS, Spitzen ≤ −1,5 dBFS.
+- **Folgen:** RAM der Stimme ≈ 0,3–0,6 GB (statt ≈ 5 GB bei CosyVoice) – das 16-GB-Budget aus
+  [06](06-infrastruktur.md) bleibt; nur ≈ 0,6 GB Download für Whisper + Stimme. Lizenzen: Modell
+  CC0, `piper-tts` GPL-3.0 (als PyPI-Paket genutzt), espeak-ng GPL (Systempaket).
+- **Verworfen:** CosyVoice3-Hessisch (4,4 GB Download, ≈ 5 GB RAM, eigene torch-Umgebung, auf der
+  CPU voraussichtlich langsamer als Echtzeit). Code und Plan stehen in der Git-Historie
+  (Commit `2f308a3`), falls je eine ausdrucksstärkere Stimme gewünscht ist.
+- **Offen:** Klang und Geschwindigkeit des Modells auf dem Zielrechner sind noch nicht gehört bzw.
+  gemessen (R16, R17); `./test-1.sh speak` / `bench` zeigen es.
+- **Status:** beschlossen und gebaut (Ticket P1-10…P1-13).
+
+## ADR-028 – Installation vom Proxmox-Host aus: `install.sh` legt den LXC an, `update.sh` aktualisiert ihn
+
+- **Kontext (Moritz, 18.10.2026):** „Baue in setup.sh und install.sh und sowas, dass es den LXC und
+  alles vom Proxmox-Host aus als sudo automatisch aufsetzt oder updated. Geht ja per scp und allem
+  drum und dran in einer Konsole von Sophie-1 oder dem Proxmox-Host aus.“ Außerdem: der Test
+  (`./test-1.sh`) soll **nicht** von einem LXC-Setup ausgehen.
+- **Entscheidung – drei voneinander unabhängige Ebenen:**
+  1. **Host** (`install.sh`, `update.sh`, Bibliothek `deploy/lib/host.sh`): benutzt nur `pct`,
+     `pveam`, `pvesm`. Legt den Container an (unprivilegiert, `nesting=1`, `onboot`, Ubuntu 26.04 →
+     25.10 → 24.04, 18 Kerne mit `cpuunits 512`, 16 GB RAM-Limit, 80 GB Platte, feste Werte aus
+     [06 §3](06-infrastruktur.md)), startet ihn, reicht optional die NVIDIA-Geräte durch
+     (Proxmox ≥ 8.1, `devN`-Einträge mit `gid`), kopiert das Programm hinein und startet dort
+     `moritz-install.sh`. Existiert der Container schon (Name `moritz-agent` oder `--ctid`), ist
+     derselbe Aufruf ein Update bzw. setzt eine abgebrochene Installation fort. Läuft als root auf
+     dem Host **oder** mit `--remote [user@]host` von einem anderen Rechner: das Programm (ca. 14 MB,
+     `deploy/payload.txt`) wird per `scp` kopiert und per `ssh -t` mit `sudo` ausgeführt.
+  2. **Container** (`moritz-install.sh`, `moritz-update.sh`): läuft im LXC (oder auf jedem
+     Ubuntu/Debian), vom Host in ein Staging-Verzeichnis kopiert und **von dort** gestartet – ein
+     neuer Updater aktualisiert also immer eine ältere Installation. Installation: Pakete,
+     Dienstbenutzer, Programmdateien, Python-Umgebung, PJSIP, Modelle, `passwords.txt` und
+     `config/moritz-agent.toml` (nur wenn sie fehlen), Ansagen, systemd-Dienst, Prüfung. Update:
+     Wartungsmodus (laufendes Gespräch abwarten, sonst Exit 75), Sicherung, neue venv bei geänderten
+     Paketen, Stopp, Austausch, Start + Prüfung, **Rollback** bei Fehler (Exit 70/71).
+  3. **`./test-1.sh`** (ADR-027): ohne root, ohne LXC, ohne Proxmox – gleicher Code, anderer Rahmen.
+- **Programm-Transport statt Git im Container:** Der Container braucht keinen GitHub-Zugang; installiert
+  wird exakt der Stand des Ordners, aus dem das Skript läuft (geprüft, getestet, notfalls
+  ausgecheckter Tag). Die Liste der Programmteile steht in `deploy/payload.txt`; Benutzerdaten
+  (`passwords.txt`, `config/moritz-agent.toml`, `models/`, `data/`, `runtime/`, Ansagen-Cache) sind
+  nie Teil davon und werden nie überschrieben oder gelöscht. Dateien, die eine neue Version nicht
+  mehr mitbringt, werden anhand der Dateiliste der alten Version entfernt.
+- **Wartungsmodus ohne Web-API:** Der Dienst schreibt jede Sekunde `data/run/phone-status.json`; der
+  Updater legt `data/run/drain` an – neue Anrufe bekommen SIP 486, das laufende Gespräch läuft zu Ende.
+- **Sicherheitsnetze beim Update:** Proxmox-Snapshot `moritz-pre-update-<Zeit>` des Containers (die
+  letzten 3 bleiben; `--no-snapshot`/`--require-snapshot`), Sicherung im Container (`backups/<Zeit>/`
+  mit `passwords.txt`, Konfiguration, Zustand und dem alten Programmcode, die letzten 5), alte venv
+  als `venv.prev`.
+- **Was am Proxmox-Host geändert wird (ändert INST-02):** nur eine fehlende Ubuntu-Vorlage laden,
+  **einen** neuen Container anlegen bzw. dessen `dev`-Einträge ergänzen, Snapshots dieses Containers.
+  Keine Host-Pakete, Treiber, Netzwerk-/Firewall-/Speicherkonfiguration, keine anderen Gäste.
+  Der Container bekommt **kein** Root-Passwort (Zugang per `pct enter`; optional `--ssh-key`); es werden
+  nie Passwörter als Argumente oder Umgebungsvariablen übergeben.
+- **Nicht Teil davon (bewusst):** NVIDIA-Treiber am Host und im Container (Plan 06 §4 – erst fürs
+  Sprachmodell nötig; das Skript nennt die Host-Treiberversion), nftables-Firewall im Container
+  (06 §5), Asterisk-Konfiguration (INST-09), KoboldCpp-/SearXNG-/TLS-Phasen (kommen mit P1-02, P1-08, P1-14).
+- **Verworfen:** Docker/Compose (Plan: LXC), Ansible (zusätzliche Abhängigkeit für ein
+  Einzelsystem), Git-Pull im Container.
+- **Status:** beschlossen und gebaut (P1-15, P1-16); Teststand siehe
+  [`docs/proxmox-installation.md`](../proxmox-installation.md) – gegen einen echten Proxmox-Host noch
+  nicht gelaufen.
+

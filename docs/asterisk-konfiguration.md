@@ -11,7 +11,7 @@ macht der Admin der Anlage einmalig von Hand.
 | SIP-Passwort | `agent` (Startwert) | `passwords.txt` → `[sip] password` |
 | Registrar | `192.168.1.176`, UDP 5060 | `passwords.txt` → `[sip] registrar`, `port`, `transport` |
 | Nebenstelle zum Anrufen | `999` | `passwords.txt` → `[sip] extension` |
-| IP des Agent-LXC | `<AGENT_IP>` (feste IP, im Folgenden einsetzen) | Proxmox-LXC-Konfiguration |
+| IP des Agent-LXC | `<AGENT_IP>` (feste IP, im Folgenden einsetzen) | Proxmox-LXC-Konfiguration; `install.sh` nennt sie am Ende, feste Adresse per `--ip 192.168.1.50/24 --gateway …` ([proxmox-installation.md](proxmox-installation.md)) |
 | RTP-Ports Agent | UDP 40000–40199 | `config/moritz-agent.toml` → `[phone] rtp_port_*` |
 
 > Die Platzhalter `<AGENT_IP>` und `<INTERN_CONTEXT>` (der Dialplan-Kontext, in dem eure

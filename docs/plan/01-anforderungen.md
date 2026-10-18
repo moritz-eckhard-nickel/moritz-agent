@@ -66,7 +66,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PHONE-34 | Sind STT oder TTS nicht bereit, wird kein normaler Gesprächsbetrieb vorgetäuscht Anruf annehmen → vorbereitete Störungsansage → auflegen. Fehlt der Ansagen-Cache selbst, registriert sich der Agent nicht (ADR-011). | MUSS | 1 |
 | PHONE-35 | Dauert die Antwort länger als `thinking_prompt_after_s` (Start: 2,5 s), wird eine vorbereitete Zwischenansage gespielt („Moment, ich schaue nach.“). | SOLL | 1 |
 | PHONE-36 | Optionaler Abschied per Sprache („Tschüss“, „Danke, das war’s“) → Verabschiedung und Auflegen. | SOLL | 1 |
-| PHONE-37 | Stimme: **Thorsten-Voice CosyVoice3 Hessisch** (lokal auf der CPU, Sprecher `thorsten_hessisch`) ist Nikitas Stimme. Fehlt das Modell, ist es zu langsam oder fällt es aus, spricht die lokale Rückfallkette Piper (Thorsten) → espeak-ng; der Anruf bricht nie wegen der Stimme ab (ADR-027). | MUSS | 1 |
+| PHONE-37 | Stimme: **Thorsten-Voice „Hessisch“** (Piper-Modell, lokal auf der CPU) ist Nikitas Stimme. Fehlt das Modell oder fällt es aus, spricht die lokale Notstimme espeak-ng; der Anruf bricht nie wegen der Stimme ab (ADR-027). | MUSS | 1 |
 
 ### 2.3 Ressourcen, Parallelität, Datenschutz
 
@@ -81,7 +81,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PHONE-46 | Eine angezeigte Rufnummer (Caller-ID) ist **keine** Berechtigung für administrative Aktionen – auch nicht in späteren Parts ohne zusätzliche Authentisierung. | MUSS | 1 |
 | PHONE-47 | Speicherverbrauch von SIP/VAD/STT/TTS wird unter Telefonlast gemessen und dokumentiert. | MUSS | 1 |
 | PHONE-48 | Feste Ansagen (Begrüßung, Fehler-, Zwischenansagen, Uhrzeiten) werden **vorgerendert und gecacht** (`assets/audio/cache/`, Schlüssel aus Text+Stimme); das Telefon registriert sich erst, wenn alle nötigen Ansagen sprechbar sind. | MUSS | 1 |
-| PHONE-49 | Live-Antworten werden satzweise gesprochen (erster Satz läuft, während der Rest entsteht); die Stimme für Live-Sätze wird nach gemessener Geschwindigkeit gewählt (`live_engine = auto`). Gerenderte Live-Sätze liegen nie auf der Platte. | MUSS | 1 |
+| PHONE-49 | Antworten werden satzweise gesprochen (erster Satz läuft, während der Rest entsteht). Gerenderte Live-Sätze liegen nie auf der Platte. | MUSS | 1 |
 | PHONE-50 | Antworttexte werden vor der Sprachausgabe in ausgeschriebene deutsche Wörter normalisiert (Zahlen, Datum, Uhrzeit, Euro, Einheiten, Abkürzungen; kein Markdown/Emoji). | MUSS | 1 |
 | PHONE-51 | Das Telefon ist ohne Systeminstallation ausprobierbar (`./test-1.sh`: Einrichtung unter `runtime/`, Selbsttest, Testanruf gegen sich selbst, Anmeldung an der Telefonanlage). | SOLL | 1 |
 
@@ -104,8 +104,8 @@ Der Originalplan bleibt unverändert als Referenz.
 
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
-| INST-01 | Projektskripte `moritz-install.sh` und `moritz-update.sh`; `install.sh`/`update.sh` sind dünne Wrapper. | MUSS | 1 |
-| INST-02 | Prüft Distribution, RAM-Limit, CPU, freien Speicher, GPU (`nvidia-smi`) und Systempakete. Ändert **nichts am Proxmox-Host**. | MUSS | 1 |
+| INST-01 | Skripte auf zwei Ebenen (ADR-028): `install.sh`/`update.sh` laufen auf dem Proxmox-Host (oder per `--remote`) und legen den LXC an bzw. aktualisieren ihn; `moritz-install.sh`/`moritz-update.sh` laufen im LXC. `./test-1.sh` ist davon unabhängig (kein LXC, kein root). | MUSS | 1 |
+| INST-02 | Prüft Distribution, RAM-Limit, CPU, freien Speicher, GPU (`nvidia-smi`) und Systempakete. Am **Proxmox-Host** ändert nur `install.sh` etwas, und nur: fehlende Ubuntu-Vorlage laden, **einen** neuen Container anlegen (bzw. dessen GPU-`dev`-Einträge), Snapshots dieses Containers – keine Host-Pakete, Treiber, Netzwerk-, Firewall- oder Speicherkonfiguration, keine anderen Gäste. | MUSS | 1 |
 | INST-03 | Legt Dienstbenutzer, Verzeichnisse, venv, Python-/Native-Abhängigkeiten, PJSIP, Modellpfade und Audio-Ressourcen an. Modelle/Stimmen mit **geprüften Prüfsummen**; Speicherbedarf wird vorher angezeigt. | MUSS | 1 |
 | INST-04 | Vorhandene `passwords.txt` wird **nie** überschrieben. SIP-Startwerte nur bei Ersteinrichtung. | MUSS | 1 |
 | INST-05 | Web-Benutzer/Passwort interaktiv, Passwort ohne Echo; in TXT schreiben, scrypt-Hash für Login-Prüfung ableiten. Keine Passwörter in Kommandozeilen, Prozesslisten oder Installationslogs. | MUSS | 1 |
@@ -115,6 +115,10 @@ Der Originalplan bleibt unverändert als Referenz.
 | INST-09 | Fordert zum manuellen Testanruf an 999 auf (Checkliste: Begrüßung, Audio beidseitig, Uhrzeit, Folgefrage, Websuche). Dialplan wird nur geprüft, nie verändert. | MUSS | 1 |
 | INST-10 | Idempotent: erneutes Ausführen erhält angepasste Daten. | MUSS | 1 |
 | INST-11 | `--non-interactive` Modus: bricht kontrolliert mit eindeutigem Exit-Code ab, wenn Pflichtangaben fehlen. | MUSS | 1 |
+| INST-12 | `install.sh` legt den LXC an (unprivilegiert, Ressourcen und Netzwerk per Optionen, Ubuntu 26.04 → 25.10 → 24.04), startet ihn, kopiert das Programm hinein und führt `moritz-install.sh` aus; existiert der Container, wird stattdessen aktualisiert bzw. die Installation fortgesetzt. | MUSS | 1 |
+| INST-13 | Beide Host-Skripte laufen als root auf dem Proxmox-Host **oder** mit `--remote [user@]host` von einem anderen Rechner (scp + ssh, `sudo` auf dem Host). Keine Passwörter als Argumente oder Umgebungsvariablen; der Container bekommt kein Root-Passwort. | MUSS | 1 |
+| INST-14 | `update.sh` legt vorher einen Snapshot des Containers an, kopiert die aktuelle Programmversion hinein und führt `moritz-update.sh` aus; Exit-Codes 70/71/75 werden durchgereicht. Programmdateien werden ersetzt, Benutzerdaten (`passwords.txt`, Konfiguration, Modelle, Daten, Cache) nie. | MUSS | 1 |
+| INST-15 | Alle vier Skripte kennen `--dry-run` (zeigt nur an, was getan würde) und sind per Test gegen einen simulierten Proxmox-Host bzw. ein Fake-System geprüft. | MUSS | 1 |
 | UPD-01 | Aktive Anrufe auslaufen lassen (Drain); nach Timeout Update **verschieben**, nicht abbrechen. | MUSS | 1 |
 | UPD-02 | Konfiguration, TXT und Datenbank vor Migration geschützt sichern (`0700`/`0600`). | MUSS | 1 |
 | UPD-03 | Anwendung und Abhängigkeiten aktualisieren; Werte, Modelle, Gesprächsdaten bleiben erhalten. | MUSS | 1 |

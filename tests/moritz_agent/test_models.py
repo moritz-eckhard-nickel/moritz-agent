@@ -6,28 +6,26 @@ import json
 import pytest
 
 from moritz_agent.phone.audio import models
-from moritz_agent.phone.audio.tts_cosyvoice import MODEL_FILES
 
 
-def test_groups_cover_every_voice_and_recognizer():
-    assert set(models.GROUPS) == {"stt", "piper", "cosyvoice"}
+def test_groups_cover_voice_and_recognizer():
+    assert set(models.GROUPS) == {"stt", "piper"}
 
 
-def test_cosyvoice_manifest_uses_the_hessisch_overlay_for_the_finetuned_weights():
-    by_target = {f.target.rsplit("/", 1)[-1]: f for f in models.GROUPS["cosyvoice"]}
-    for name in ("llm.pt", "flow.pt", "spk2info.pt"):
-        assert by_target[name].repo == models.HESSISCH
-    for name in ("hift.pt", "campplus.onnx", "cosyvoice3.yaml"):
-        assert by_target[name].repo == models.BASE
-    assert sum(f.size for f in models.GROUPS["cosyvoice"]) > 4_000_000_000
+def test_piper_manifest_is_the_hessisch_voice():
+    files = {f.path: f for f in models.GROUPS["piper"]}
+    model = files["Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx"]
+    assert model.repo == "Thorsten-Voice/Hessisch"
+    assert model.size == 113_800_453
+    config = files["Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx.json"]
+    assert config.target == model.target + ".json"  # Piper looks for <model>.json next to the model
 
 
-def test_engine_preflight_files_are_all_in_the_manifest():
-    targets = {
-        f.target.split("tts/cosyvoice3-hessisch/", 1)[-1] for f in models.GROUPS["cosyvoice"]
-    }
-    needed = {name for name in MODEL_FILES if name != "speech_tokenizer_v3.onnx"}
-    assert needed <= targets, needed - targets
+def test_default_piper_voice_setting_points_into_the_manifest():
+    from moritz_agent.config.settings import PiperSettings
+
+    targets = {f"models/{f.target}" for f in models.GROUPS["piper"]}
+    assert PiperSettings().voice in targets
 
 
 def test_missing_and_verify_with_trust_on_first_use(tmp_path):

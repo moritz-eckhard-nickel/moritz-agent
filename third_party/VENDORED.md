@@ -9,8 +9,6 @@ dokumentierter Patch (Abschnitt „Patches“).
 | --- | --- | --- | --- | --- |
 | `searxng/` | SearXNG (Metasuche), **fertig gebaut**: Frontend-Assets in `searx/static`, Daten in `searx/data` | Commit `8252c0bf6d5d97e833868099272eed0bb75828b2` (16.10.2026) | https://github.com/searxng/searxng | AGPL-3.0 (`searxng/LICENSE`) |
 | `pjproject/` | PJSIP / PJSUA2 (Quellcode, wird vom Installer kompiliert) | 2.17, Commit `5a457451fa2712ba18e12b01738e8ff3af2b26fd` | https://github.com/pjsip/pjproject | GPL-2.0-or-later (`pjproject/COPYING`), Unterkomponenten in `pjproject/third_party/` mit eigenen Lizenzen |
-| `cosyvoice/` | CosyVoice – Python-Paket `cosyvoice` (nur Quellcode + LICENSE; Nikitas Stimme, läuft im TTS-Worker, ADR-027) | Commit `074ca6dc9e80a2f424f1f74b48bdd7d3fea531cc` (26.05.2026) | https://github.com/FunAudioLLM/CosyVoice | Apache-2.0 (`cosyvoice/LICENSE`) |
-| `Matcha-TTS/` | Matcha-TTS – Python-Paket `matcha` (Abhängigkeit von CosyVoice; nur Quellcode + LICENSE) | Commit `dd9105b34bf2be2230f4aa1e4769fb586a3c824e` (27.02.2024) | https://github.com/shivammehta25/Matcha-TTS | MIT (`Matcha-TTS/LICENSE`) |
 | `../assets/models/vad/silero_vad.onnx` | Silero VAD | v6.2.3, SHA-256 `1a153a22…88e3` | https://github.com/snakers4/silero-vad | MIT (`LICENSE.silero-vad`) |
 
 Hinweis: `pjproject/` enthält eine eigene `CLAUDE.md` des PJSIP-Projekts. Sie gilt nur für
@@ -32,9 +30,9 @@ Geprüft am 16.10.2026: `/healthz` → `OK`, Startseite HTTP 200, `/search?forma
 
 | Was | Warum | Bezug |
 | --- | --- | --- |
-| Python-Pakete | Moritz: „Requirements sind egal“ | PyPI, exakt gepinnt mit Hashes in `requirements/*.lock` (CosyVoice-Umgebung: `requirements/tts.txt`, torch vom PyTorch-CPU-Index) |
+| Python-Pakete | Moritz: „Requirements sind egal“ | PyPI, exakt gepinnt mit Hashes in `requirements/*.lock` |
 | CUDA-Build-Toolchain für KoboldCpp | Abhängigkeit, nicht Programmbestandteil (≈ 1,4 GB) | `./koboldcpp.sh rebuild` (Conda) |
-| Modelle: LLM (13,8 GB), Whisper small (484 MB), Piper-Stimme (63 MB), CosyVoice3-Hessisch (4,4 GB) | Hugging-Face-Downloads (Moritz: „HF-Modelle natürlich nicht“) | Installer, `config/versions.lock` |
+| Modelle: LLM (13,8 GB), Whisper small (484 MB), Piper-Stimme „Hessisch“ (114 MB) | Hugging-Face-Downloads (Moritz: „HF-Modelle natürlich nicht“) | Installer, `config/versions.lock` |
 | NVIDIA-Treiber, Ubuntu-Systempakete | Systemebene | `docs/plan/06-infrastruktur.md` |
 
 ## Aktualisieren

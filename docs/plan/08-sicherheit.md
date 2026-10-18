@@ -29,7 +29,9 @@
 | T11 | Agent zerstört Host / LXC | Keine Shell im LXC, alle Ausführungstools nur in der Sandbox-VM, Dienstbenutzer ohne sudo, systemd-Härtung | SBX-01, P1-17 |
 | T12 | Kompromittierte Sandbox greift Agent-LXC an | Sandbox darf nur Internet + Sophie-1 (F-10), Agent-API nur authentisiert, kein SSH zurück; SSH geht nur LXC → Sandbox | SBX-03 |
 | T13 | Audio-/Transkript-Leck | Kein Audio auf Disk; Transkripte konfigurierbar + Retention; DB 0600 | PHONE-43, STORE-02 |
-| T14 | Update bricht Telefonie | Drain, Backup, Health-Check, Rollback | UPD-01, UPD-07 |
+| T14 | Update bricht Telefonie | Drain, Backup, Health-Check, Rollback; zusätzlich Proxmox-Snapshot des Containers vor jedem Update | UPD-01, UPD-07, INST-14 |
+| T17 | Das Host-Skript verändert versehentlich den Proxmox-Host oder fremde Gäste | arbeitet nur mit `pct`/`pveam`/`pvesm` auf **einem** Container (Name/ID, Markierung in der Beschreibung; fremde Container nur nach Rückfrage); `--dry-run`; Tests gegen simulierten Host; keine Host-Pakete, -Treiber, -Netzwerk- oder -Firewall-Änderung | INST-02, INST-12, INST-15 |
+| T18 | Zugangsdaten beim Kopieren/Installieren | `passwords.txt` ist nie Teil des Programmpakets und wird nie überschrieben; keine Passwörter als Argumente/Umgebungsvariablen; Container ohne Root-Passwort; Installationsprotokolle (0600) enthalten keine Eingaben | INST-04, INST-13 |
 
 ## 3. Redaction – Sonderfall kurze Secrets
 

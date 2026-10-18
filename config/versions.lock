@@ -9,12 +9,6 @@
 upstream_version = "1.123.1"
 build = "source"                  # ADR-015: ./koboldcpp.sh rebuild
 
-[cosyvoice]
-commit = "074ca6dc9e80a2f424f1f74b48bdd7d3fea531cc"   # 2026-05-26
-vendored = "third_party/cosyvoice"
-matcha_tts_commit = "dd9105b34bf2be2230f4aa1e4769fb586a3c824e"
-matcha_tts_vendored = "third_party/Matcha-TTS"
-
 [pjproject]
 version = "2.17"
 commit = "5a457451fa2712ba18e12b01738e8ff3af2b26fd"
@@ -27,10 +21,6 @@ vendored = "third_party/searxng"
 [python]
 # Python packages come from PyPI at install time, pinned with SHA-256 hashes (ADR-019).
 locks = ["requirements/core.lock", "requirements/phone.lock", "requirements/searxng.lock"]
-# CosyVoice environment (runtime/venv-tts, ADR-027): torch/torchaudio from the PyTorch CPU index, rest exact pins
-tts_environment = "requirements/tts.txt"
-torch_cpu_index = "https://download.pytorch.org/whl/cpu"
-torch_version = "2.10.0"
 
 [models.vad]
 name = "silero_vad"
@@ -62,24 +52,14 @@ sha256 = "tofu"
 license = "MIT"
 
 [models.tts_voice]
-name = "de_DE-thorsten-medium"
-target_dir = "models/tts"
+# Nikita's voice (ADR-027): Thorsten-Voice "Hessisch" as Piper model (high quality, single speaker,
+# 22.05 kHz). File list and sizes are also kept in moritz_agent/phone/audio/models.py (tests compare).
+name = "Thorsten-Voice_Hessisch_Piper_high-Oct2023"
+target_dir = "models/tts/piper"
 files = [
-    { name = "de_DE-thorsten-medium.onnx", size_bytes = 63201294 },
-    { name = "de_DE-thorsten-medium.onnx.json", size_bytes = 4819 },
+    { name = "Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx", size_bytes = 113800453 },
+    { name = "Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx.json", size_bytes = 6856 },
 ]
-url_template = "https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/medium/{name}"
+url_template = "https://huggingface.co/Thorsten-Voice/Hessisch/resolve/main/{name}"
 sha256 = "tofu"
-license = "CC0-1.0 (dataset Thorsten-Voice)"
-
-[models.tts_cosyvoice]
-# Nikita's main voice (ADR-027): base model + Hessisch fine-tune overlay. File list, sizes and the
-# download logic live in moritz_agent/phone/audio/models.py (python -m moritz_agent.phone.audio.models).
-base_repo = "FunAudioLLM/Fun-CosyVoice3-0.5B-2512"
-overlay_repo = "Thorsten-Voice/CosyVoice3-Hessisch"
-target_dir = "models/tts/cosyvoice3-hessisch"
-speaker = "thorsten_hessisch"
-size_bytes = 4400000000
-sha256 = "tofu"
-license = "Apache-2.0"
-
+license = "CC0-1.0"

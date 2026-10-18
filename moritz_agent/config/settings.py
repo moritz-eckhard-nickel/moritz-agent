@@ -102,18 +102,8 @@ class Stt(_Section):
     initial_prompt: str = "Nikita, Moritz, Hessen, Frankfurt."
 
 
-class CosyVoiceSettings(_Section):
-    python: str = ""
-    model_dir: str = "models/tts/cosyvoice3-hessisch"
-    speaker: str = "thorsten_hessisch"
-    speed: float = Field(1.0, gt=0.3, lt=3)
-    seed: int = 42
-    startup_timeout_s: int = Field(600, ge=10)
-    request_timeout_s: int = Field(180, ge=5)
-
-
 class PiperSettings(_Section):
-    voice: str = "models/tts/piper/de_DE-thorsten-medium.onnx"
+    voice: str = "models/tts/piper/Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx"
     length_scale: float = Field(1.0, gt=0.3, lt=3)
 
 
@@ -123,15 +113,12 @@ class EspeakSettings(_Section):
 
 
 class Tts(_Section):
-    engine: Literal["cosyvoice", "piper", "espeak"] = "cosyvoice"
-    fallback_engines: list[Literal["cosyvoice", "piper", "espeak"]] = ["piper", "espeak"]
-    live_engine: Literal["auto", "primary", "fallback"] = "auto"
-    live_budget_s: float = Field(6.0, gt=0)
-    cpu_threads: int = Field(16, ge=1)
+    engine: Literal["piper", "espeak"] = "piper"
+    fallback_engines: list[Literal["piper", "espeak"]] = ["espeak"]
+    cpu_threads: int = Field(4, ge=1)
     loudness_target_dbfs: float = Field(-20.0, le=-6, ge=-40)
     cache_dir: str = "assets/audio/cache"
     live_cache_entries: int = Field(64, ge=0)
-    cosyvoice: CosyVoiceSettings = CosyVoiceSettings()
     piper: PiperSettings = PiperSettings()
     espeak: EspeakSettings = EspeakSettings()
 

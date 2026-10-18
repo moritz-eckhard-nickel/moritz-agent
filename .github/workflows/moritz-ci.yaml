@@ -40,4 +40,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Shellcheck
-        run: shellcheck moritz-agent install.sh update.sh moritz-install.sh moritz-update.sh test-1.sh scripts/*.sh
+        run: shellcheck -x moritz-agent install.sh update.sh moritz-install.sh moritz-update.sh test-1.sh scripts/*.sh deploy/lib/*.sh
