@@ -142,7 +142,7 @@ ensure_template() {
 
 next_ctid() {
 	local id
-	if id="$(pvesh get /cluster/nextid 2>/dev/null)" && [[ "${id}" =~ ^[0-9]+$ ]]; then
+	if id="$(pvesh get /cluster/nextid 2>/dev/null)" && id="${id//\"/}" && [[ "${id}" =~ ^[0-9]+$ ]]; then
 		printf '%s\n' "${id}"
 		return 0
 	fi
