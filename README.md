@@ -103,20 +103,26 @@ sudo apt install build-essential python3-venv python3-dev swig pkg-config espeak
 ./test-1.sh run            # an der Telefonanlage anmelden und 999 anrufen
 ```
 
-## Installation (Zielbild – noch nicht implementiert)
+## Installation auf Proxmox: `install.sh` / `update.sh`
+
+Auf dem Proxmox-Host (als root bzw. mit `sudo`) – legt den LXC an, kopiert das Programm hinein und
+installiert alles darin; derselbe Aufruf aktualisiert einen vorhandenen Container:
 
 ```bash
-git clone https://github.com/moritz-eckhard-nickel/moritz-agent.git /opt/moritz-agent
-cd /opt/moritz-agent
-sudo ./install.sh          # → moritz-install.sh
-sudo ./update.sh           # → moritz-update.sh
-./moritz-agent             # Start (normalerweise über systemd)
+git clone https://github.com/moritz-eckhard-nickel/moritz-agent.git && cd moritz-agent
+sudo ./install.sh                            # LXC anlegen + installieren (fragt vorher nach, --dry-run zeigt nur)
+sudo ./update.sh                             # später: Snapshot, laufendes Gespräch abwarten, Update, bei Fehler Rollback
+./install.sh --remote root@proxmox           # oder von Sophie-1s Konsole / einem anderen Rechner (scp + ssh)
 ```
 
-Der Installer richtet Dienstbenutzer, Python-Umgebung (gepinnte PyPI-Pakete), PJSIP aus dem Repo,
-KoboldCpp-Build, SearXNG, Modelle, `passwords.txt` (mit vorbelegten SIP-Werten), Web-Login,
-TLS-Zertifikat und optional Sandbox ein und fordert am Ende zu einem Testanruf an
-999 auf. Spezifikation: [docs/plan/07-installation-update.md](docs/plan/07-installation-update.md)
+Der Container wird unprivilegiert mit den Werten aus dem Plan angelegt (Ubuntu 26.04/25.10/24.04, 18 Kerne,
+16 GB RAM, 80 GB, optional GPU-Durchreichung). Darin richtet `moritz-install.sh` Dienstbenutzer,
+Python-Umgebung (gepinnte PyPI-Pakete), PJSIP aus dem Repo, Modelle, `passwords.txt` (mit vorbelegten
+SIP-Werten), die Ansagen und den systemd-Dienst ein. `passwords.txt`, Konfiguration, Modelle und Daten
+bleiben bei Updates immer erhalten. Optionen, Ablauf und Fehlersuche:
+[docs/proxmox-installation.md](docs/proxmox-installation.md); Spezifikation:
+[docs/plan/07-installation-update.md](docs/plan/07-installation-update.md). KoboldCpp, SearXNG und
+Web-Login folgen mit ihren Tickets.
 
 ## Zugangsdaten: `passwords.txt`
 

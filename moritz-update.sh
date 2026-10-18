@@ -117,15 +117,6 @@ service_active() {
 	[[ ${NO_SERVICE} -eq 0 ]] && command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet moritz-agent.service
 }
 
-env_hash() {
-	# everything that decides whether the virtual environment / PJSIP build must be redone
-	{
-		cat "$1/requirements/core.lock" "$1/requirements/phone.lock" \
-			"$1/third_party/pjproject/version.mak" "$1/scripts/build-pjsip.sh"
-		python3 --version
-	} | sha256sum | cut -d' ' -f1
-}
-
 installer() { # installer SOURCE-DIR PHASES – run selected phases of the (new) installer
 	local args=(--prefix "${PREFIX}" --user "${SERVICE_USER}" --non-interactive --skip-packages
 		--jobs "${JOBS}" --phases "$2")

@@ -98,6 +98,17 @@ sync_code() {
 	rm -f "${new}"
 }
 
+# env_hash DIR – fingerprint of everything that decides whether the virtual environment / PJSIP build
+# must be redone (package locks, PJSIP version, its build script, Python version).
+env_hash() {
+	# everything that decides whether the virtual environment / PJSIP build must be redone
+	{
+		cat "$1/requirements/core.lock" "$1/requirements/phone.lock" \
+			"$1/third_party/pjproject/version.mak" "$1/scripts/build-pjsip.sh"
+		python3 --version
+	} | sha256sum | cut -d' ' -f1
+}
+
 # version_of DIR – value of __version__ in DIR/moritz_agent/__init__.py ("unbekannt" if missing).
 version_of() {
 	local file="$1/moritz_agent/__init__.py" value

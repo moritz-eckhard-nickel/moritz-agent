@@ -51,7 +51,7 @@ def _load_pjsua2():
             import pjsua2
         except ImportError as exc:
             raise SipError(
-                "pjsua2 fehlt – bauen mit scripts/build-pjsip.sh (./test-1.sh setup erledigt das)"
+                "pjsua2 fehlt – bauen mit scripts/build-pjsip.sh (./test-1.sh setup bzw. moritz-install.sh erledigen das)"
             ) from exc
         pj = pjsua2
     return pj

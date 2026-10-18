@@ -23,6 +23,7 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | R15 | **Neu:** MoE mit CPU-Experten auf Haswell (DDR4) langsamer als erwartet | – | `--moecpu` senken (mehr auf GPU), Q3_K_S, oder dichtes 14B als Fallback (ADR-016) | P1-02 |
 | R16 | **Neu:** Klang des Hessisch-Piper-Modells (2023, „high“) ist ungehört; er liest hochdeutsch geschriebenen Text mit hessischer Färbung | „das Hessische“ | Hörprobe mit `./test-1.sh speak`; Alternative per `phone.tts.piper.voice` (`de_DE-thorsten-medium`, hochdeutsch) | P1-10 |
 | R17 | **Neu:** Geschwindigkeit des „high“-Modells auf dem E5-2673 v3 ist ungemessen (erwartet: deutlich schneller als Echtzeit) | – | `./test-1.sh bench`; `phone.tts.cpu_threads` anpassen; Ansagen sind ohnehin gecacht (PHONE-48) | P1-10 |
+| R19 | **Neu:** `install.sh`/`update.sh`/`moritz-install.sh` sind nur gegen einen simulierten Proxmox-Host und ein Fake-System getestet, nicht auf echter Hardware (apt, systemd, unprivilegierter LXC, PJSIP-Build und Modell-Download dort; Ubuntu 26.04 mit Python 3.14) | „automatisch aufsetzen oder updaten“ | `--dry-run`; alle Skripte wiederholbar (setzen fort); Proxmox-Snapshot vor jedem Update; Rollback im Container; erster echter Lauf als Protokoll in P1-18 (09) | P1-15 |
 
 ## 2. Offene Fragen – beantwortet
 

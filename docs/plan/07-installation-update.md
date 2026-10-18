@@ -1,7 +1,18 @@
 # 07 – Installation und Update (Spezifikation)
 
-Gilt für `moritz-install.sh` / `moritz-update.sh` (Wrapper: `install.sh` / `update.sh`).
-Anforderungen: INST-01…11, UPD-01…07, CFG-01…10.
+Gilt für die Skripte auf zwei Ebenen (ADR-028):
+
+| Ebene | Skripte | Läuft | Aufgabe |
+| --- | --- | --- | --- |
+| Host | `install.sh`, `update.sh` (+ `deploy/lib/host.sh`) | als root auf dem Proxmox-Host oder per `--remote user@host` von einem anderen Rechner | Container anlegen / Snapshot, Programm hineinkopieren, Skripte im Container starten – Anleitung [`docs/proxmox-installation.md`](../proxmox-installation.md) |
+| Container | `moritz-install.sh`, `moritz-update.sh` (+ `deploy/lib/common.sh`) | als root im LXC (oder auf jedem Ubuntu/Debian) | die in §2 und §3 beschriebenen Phasen |
+| – | `./test-1.sh` | als normaler Benutzer überall | Telefon + Stimme ausprobieren, ohne LXC/Proxmox/root |
+
+Der Host kopiert das Programm (Liste: `deploy/payload.txt`, ≈ 14 MB) in ein Staging-Verzeichnis des Containers
+und startet das Container-Skript **von dort** mit `--prefix /opt/moritz-agent`. Quelle der Programmdateien ist
+damit der Ordner, aus dem `install.sh`/`update.sh` gestartet wurde – kein `git` im Container.
+
+Anforderungen: INST-01…15, UPD-01…07, CFG-01…10.
 
 ## 1. Grundsätze
 
@@ -55,9 +66,9 @@ Anforderungen: INST-01…11, UPD-01…07, CFG-01…10.
 | # | Phase | Details |
 | --- | --- | --- |
 | 1 | `preflight` | wie Installer (Kurzform) + Lock-Datei `data/run/update.lock` (kein Doppellauf) |
-| 2 | `drain` | `POST /api/system/drain` (Admin-Token) → keine neuen Anrufe (Anrufer bekommen „besetzt“ bzw. Ansage `starting_up`); warten bis `/api/system/activity` keine aktiven Anrufe meldet, max. `--drain-timeout` (Default 600 s). Timeout → Drain aufheben, **Update verschieben**, Exit-Code 75 |
+| 2 | `drain` | Wartungsmodus über die Datei `data/run/drain` (statt `POST /api/system/drain`, solange es die Web-API nicht gibt; der Dienst meldet seinen Zustand in `data/run/phone-status.json`) → keine neuen Anrufe (Anrufer bekommen „besetzt“ bzw. Ansage `starting_up`); warten bis `/api/system/activity` keine aktiven Anrufe meldet, max. `--drain-timeout` (Default 600 s). Timeout → Drain aufheben, **Update verschieben**, Exit-Code 75 |
 | 3 | `backup` | `backups/<ts>/` (0700): `passwords.txt`, `config/moritz-agent.toml`, `data/state/`, SQLite per Online-Backup-API, aktueller Commit, venv-Verweis. Rotation: letzte 5 |
-| 4 | `fetch` | `git fetch --tags`; Ziel = neuester `v*`-Tag (`stable`) oder `origin/agent` (`dev`); Changelog-Ausschnitt anzeigen; Abbruch, wenn lokale Änderungen an versionierten Dateien |
+| 4 | `fetch` | **entfällt (ADR-028):** das neue Programm liegt schon im Staging-Verzeichnis des Containers (vom Host kopiert); angezeigt wird Version alt → neu. Wer einen bestimmten Stand will, checkt ihn vor `update.sh` im Programmordner aus. |
 | 5 | `stop` | Dienst stoppen (Phone sendet vorher BYE – es ist aber durch Drain kein Anruf aktiv) |
 | 6 | `apply` | Checkout; neues venv `runtime/venv.new`, Lock-Dateien installieren; PJSIP/KoboldCPP/SearXNG nur bei geändertem Versions-Hash neu bauen |
 | 7 | `migrate` | `moritz_agent.setup migrate`: fehlende TXT-Felder zeilenbasiert anhängen (bestehende Werte, Kommentare, Reihenfolge byte-identisch); neue **Pflicht**-Zugangsdaten interaktiv abfragen, im `--non-interactive`-Modus Exit-Code 78; neue TOML-Schlüssel ergänzen; DB-Migrationen; neue Modelle laden; Ansagen-Cache aktualisieren |

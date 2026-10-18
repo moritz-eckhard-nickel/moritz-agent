@@ -243,6 +243,9 @@ phase_pjsip() {
 	if [[ ${SKIP_ENV} -eq 1 ]]; then return 0; fi
 	run "${PREFIX}/scripts/build-pjsip.sh" --python "$(PY)" --jobs "${JOBS}" \
 		--build-root "${PREFIX}/runtime/pjsip-build"
+	if [[ ${DRY_RUN} -eq 0 ]]; then
+		env_hash "${PREFIX}" >"${PREFIX}/runtime/.env-hash" # lets the updater skip an unneeded rebuild
+	fi
 	run chown -R "${SERVICE_USER}:${SERVICE_USER}" "${PREFIX}/runtime"
 }
 
@@ -299,7 +302,7 @@ phase_config() {
 phase_prompts() {
 	if [[ ${SKIP_ENV} -eq 1 ]]; then return 0; fi
 	log "rendere die Ansagen (landen in assets/audio/cache/)"
-	if ! run runuser -u "${SERVICE_USER}" -- env PYTHONPATH="${PREFIX}" HOME="${PREFIX}/runtime" \
+	if ! run runuser -u "${SERVICE_USER}" -- env -C "${PREFIX}" PYTHONPATH="${PREFIX}" HOME="${PREFIX}/runtime" \
 		"$(PY)" -m moritz_agent.phone prompts; then
 		warn "Ansagen konnten nicht vorgerendert werden – der Dienst rendert sie beim Start selbst"
 	fi

@@ -311,7 +311,10 @@ def cmd_check(args) -> int:
         endpoint.libDestroy()
         report.ok("SIP-Stack (PJSIP)", version)
     except Exception as exc:
-        report.fail("SIP-Stack (PJSIP)", f"{type(exc).__name__}: {exc} – ./test-1.sh setup")
+        report.fail(
+            "SIP-Stack (PJSIP)",
+            f"{type(exc).__name__}: {exc} – scripts/build-pjsip.sh (./test-1.sh setup)",
+        )
 
     try:
         from moritz_agent.phone.audio.factory import build_vad
@@ -336,7 +339,10 @@ def cmd_check(args) -> int:
 
     absent = models.missing(["stt"])
     if absent:
-        report.fail("Spracherkennung (Whisper)", "Modell fehlt – ./test-1.sh setup")
+        report.fail(
+            "Spracherkennung (Whisper)",
+            "Modell fehlt – python -m moritz_agent.phone.audio.models fetch (./test-1.sh models fetch)",
+        )
     else:
         try:
             from moritz_agent.phone.audio.factory import build_stt

@@ -356,3 +356,54 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 - **Offen:** Klang und Geschwindigkeit des Modells auf dem Zielrechner sind noch nicht gehört bzw.
   gemessen (R16, R17); `./test-1.sh speak` / `bench` zeigen es.
 - **Status:** beschlossen und gebaut (Ticket P1-10…P1-13).
+
+## ADR-028 – Installation vom Proxmox-Host aus: `install.sh` legt den LXC an, `update.sh` aktualisiert ihn
+
+- **Kontext (Moritz, 18.10.2026):** „Baue in setup.sh und install.sh und sowas, dass es den LXC und
+  alles vom Proxmox-Host aus als sudo automatisch aufsetzt oder updated. Geht ja per scp und allem
+  drum und dran in einer Konsole von Sophie-1 oder dem Proxmox-Host aus.“ Außerdem: der Test
+  (`./test-1.sh`) soll **nicht** von einem LXC-Setup ausgehen.
+- **Entscheidung – drei voneinander unabhängige Ebenen:**
+  1. **Host** (`install.sh`, `update.sh`, Bibliothek `deploy/lib/host.sh`): benutzt nur `pct`,
+     `pveam`, `pvesm`. Legt den Container an (unprivilegiert, `nesting=1`, `onboot`, Ubuntu 26.04 →
+     25.10 → 24.04, 18 Kerne mit `cpuunits 512`, 16 GB RAM-Limit, 80 GB Platte, feste Werte aus
+     [06 §3](06-infrastruktur.md)), startet ihn, reicht optional die NVIDIA-Geräte durch
+     (Proxmox ≥ 8.1, `devN`-Einträge mit `gid`), kopiert das Programm hinein und startet dort
+     `moritz-install.sh`. Existiert der Container schon (Name `moritz-agent` oder `--ctid`), ist
+     derselbe Aufruf ein Update bzw. setzt eine abgebrochene Installation fort. Läuft als root auf
+     dem Host **oder** mit `--remote [user@]host` von einem anderen Rechner: das Programm (ca. 14 MB,
+     `deploy/payload.txt`) wird per `scp` kopiert und per `ssh -t` mit `sudo` ausgeführt.
+  2. **Container** (`moritz-install.sh`, `moritz-update.sh`): läuft im LXC (oder auf jedem
+     Ubuntu/Debian), vom Host in ein Staging-Verzeichnis kopiert und **von dort** gestartet – ein
+     neuer Updater aktualisiert also immer eine ältere Installation. Installation: Pakete,
+     Dienstbenutzer, Programmdateien, Python-Umgebung, PJSIP, Modelle, `passwords.txt` und
+     `config/moritz-agent.toml` (nur wenn sie fehlen), Ansagen, systemd-Dienst, Prüfung. Update:
+     Wartungsmodus (laufendes Gespräch abwarten, sonst Exit 75), Sicherung, neue venv bei geänderten
+     Paketen, Stopp, Austausch, Start + Prüfung, **Rollback** bei Fehler (Exit 70/71).
+  3. **`./test-1.sh`** (ADR-027): ohne root, ohne LXC, ohne Proxmox – gleicher Code, anderer Rahmen.
+- **Programm-Transport statt Git im Container:** Der Container braucht keinen GitHub-Zugang; installiert
+  wird exakt der Stand des Ordners, aus dem das Skript läuft (geprüft, getestet, notfalls
+  ausgecheckter Tag). Die Liste der Programmteile steht in `deploy/payload.txt`; Benutzerdaten
+  (`passwords.txt`, `config/moritz-agent.toml`, `models/`, `data/`, `runtime/`, Ansagen-Cache) sind
+  nie Teil davon und werden nie überschrieben oder gelöscht. Dateien, die eine neue Version nicht
+  mehr mitbringt, werden anhand der Dateiliste der alten Version entfernt.
+- **Wartungsmodus ohne Web-API:** Der Dienst schreibt jede Sekunde `data/run/phone-status.json`; der
+  Updater legt `data/run/drain` an – neue Anrufe bekommen SIP 486, das laufende Gespräch läuft zu Ende.
+- **Sicherheitsnetze beim Update:** Proxmox-Snapshot `moritz-pre-update-<Zeit>` des Containers (die
+  letzten 3 bleiben; `--no-snapshot`/`--require-snapshot`), Sicherung im Container (`backups/<Zeit>/`
+  mit `passwords.txt`, Konfiguration, Zustand und dem alten Programmcode, die letzten 5), alte venv
+  als `venv.prev`.
+- **Was am Proxmox-Host geändert wird (ändert INST-02):** nur eine fehlende Ubuntu-Vorlage laden,
+  **einen** neuen Container anlegen bzw. dessen `dev`-Einträge ergänzen, Snapshots dieses Containers.
+  Keine Host-Pakete, Treiber, Netzwerk-/Firewall-/Speicherkonfiguration, keine anderen Gäste.
+  Der Container bekommt **kein** Root-Passwort (Zugang per `pct enter`; optional `--ssh-key`); es werden
+  nie Passwörter als Argumente oder Umgebungsvariablen übergeben.
+- **Nicht Teil davon (bewusst):** NVIDIA-Treiber am Host und im Container (Plan 06 §4 – erst fürs
+  Sprachmodell nötig; das Skript nennt die Host-Treiberversion), nftables-Firewall im Container
+  (06 §5), Asterisk-Konfiguration (INST-09), KoboldCpp-/SearXNG-/TLS-Phasen (kommen mit P1-02, P1-08, P1-14).
+- **Verworfen:** Docker/Compose (Plan: LXC), Ansible (zusätzliche Abhängigkeit für ein
+  Einzelsystem), Git-Pull im Container.
+- **Status:** beschlossen und gebaut (P1-15, P1-16); Teststand siehe
+  [`docs/proxmox-installation.md`](../proxmox-installation.md) – gegen einen echten Proxmox-Host noch
+  nicht gelaufen.
+

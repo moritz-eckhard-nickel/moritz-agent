@@ -8,7 +8,8 @@ Repository-Ordner (`runtime/`, `models/`, `assets/audio/cache/`, `config/moritz-
 
 Es ist **derselbe Code**, der später im LXC als Dienst läuft (`moritz_agent/phone/`, ADR-027); den
 LXC samt Dienst legt `./install.sh` auf dem Proxmox-Host an
-([proxmox-installation.md](proxmox-installation.md)).
+([proxmox-installation.md](proxmox-installation.md)); beide benutzen dieselbe Python-Umgebung
+(`scripts/setup-env.sh`).
 
 ## Was funktioniert – und was noch nicht
 

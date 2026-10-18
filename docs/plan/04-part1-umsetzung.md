@@ -309,7 +309,16 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
   `--non-interactive`, `--dry-run`, Exit-Codes gemäß 07 §4.
 - **Tests:** `shellcheck`; Installer-Helfer per pytest (Ersteinrichtung vs. Bestand,
   Rechte, idempotent); manueller Lauf im frischen LXC (Protokoll).
-- **Anforderungen:** INST-01…11, CFG-02, CFG-04, CFG-09.
+- **Stand 18.10.2026 – umgesetzt (ADR-028):** `moritz-install.sh` (Phasen preflight, packages, user_dirs,
+  code, python_env, pjsip, models, secrets, config, prompts, service, verify, testcall; KoboldCpp/
+  SearXNG/TLS folgen mit ihren Tickets), `install.sh` (Proxmox-Host: LXC anlegen, GPU-Geräte,
+  Programm kopieren, Installer starten; lokal oder `--remote`), Bibliotheken `deploy/lib/common.sh`
+  und `deploy/lib/host.sh`, Programmliste `deploy/payload.txt`, `scripts/setup-env.sh`. Tests:
+  `test_installers.py` (echte Läufe gegen einen Fake-Baum mit aufzeichnenden Systembefehlen) und
+  `test_host_scripts.py` (simulierter Proxmox-Host). **Offen:** Lauf auf einem echten Proxmox-Host und
+  in einem echten Ubuntu-LXC (Protokoll für P1-18); `moritz_agent.setup` (Web-Login/Sandbox-Abfragen)
+  kommt mit P1-03/P1-14.
+- **Anforderungen:** INST-01…15, CFG-02, CFG-04, CFG-09.
 
 ## P1-16 – Updater `moritz-update.sh`
 
@@ -319,6 +328,14 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
   Rollback.
 - **Tests:** Rollback-Szenario (absichtlich kaputter Health-Check), TXT mit eigenen Werten
   bleibt byte-identisch bis auf angehängte neue Felder.
+- **Stand 18.10.2026 – umgesetzt (ADR-028):** `moritz-update.sh` (Wartungsmodus über `data/run/drain`,
+  Sicherung, neue venv nur bei geänderten Paketen/PJSIP, Austausch, Start + Prüfung, Rollback mit
+  Exit 70/71, Verschieben mit Exit 75), `update.sh` (Proxmox-Snapshot, Programm kopieren, Updater
+  starten, Exit-Codes durchreichen, alte Snapshots aufräumen). Getestet: Verschieben bei laufendem
+  Gespräch, Rollback bei fehlgeschlagenem Start, Benutzerdaten bleiben unverändert, Wartungsmodus im
+  Dienst per echtem SIP-Anruf (486). **Anders als geplant:** Quelle ist der kopierte Programmordner
+  statt `git fetch` im Container (kein `--channel`); TXT-Feldergänzung und DB-Migration folgen mit
+  `moritz_agent.setup` (P1-03) bzw. der Datenbank (P1-14).
 - **Anforderungen:** UPD-01…07.
 
 ## P1-17 – systemd-Unit + Launcher
@@ -327,6 +344,9 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
 - **Aufgaben:** Härtung (`NoNewPrivileges`, `ProtectSystem=strict`, `ReadWritePaths=`,
   `PrivateTmp`, `ProtectHome`), GPU-Gerätezugriff (`DeviceAllow=/dev/nvidia* rw`), Limits
   (`MemoryMax` informativ unter LXC-Limit), `TimeoutStopSec=30`, `KillMode=mixed`.
+- **Stand 18.10.2026:** Unit angepasst (Programmbaum für den Dienst schreibgeschützt, schreibbar nur
+  `data/`, `models/`, `runtime/`, Ansagen-Cache; ohne `DevicePolicy`, das übernimmt der LXC), vom Installer
+  mit Installationsverzeichnis und Benutzer eingesetzt; `moritz-agent run` startet den Telefon-Worker.
 - **Anforderungen:** INST-08, PRD-01.
 
 ## P1-18 – Abnahme auf Sophie-1

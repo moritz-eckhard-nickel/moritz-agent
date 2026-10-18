@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 import tomllib
@@ -249,19 +250,39 @@ def test_voice_in_versions_lock_matches_the_download_manifest():
     assert voice["url_template"].startswith("https://huggingface.co/Thorsten-Voice/Hessisch/")
 
 
+EXECUTABLE_SCRIPTS = (
+    "test-1.sh",
+    "install.sh",
+    "update.sh",
+    "moritz-install.sh",
+    "moritz-update.sh",
+    "scripts/build-pjsip.sh",
+    "scripts/setup-env.sh",
+)
+LIBRARY_SCRIPTS = ("deploy/lib/common.sh", "deploy/lib/host.sh")  # sourced, not executed
+
+
 def test_test_script_and_setup_scripts_are_executable_and_licensed():
-    for relative in ("test-1.sh", "scripts/build-pjsip.sh"):
+    for relative in EXECUTABLE_SCRIPTS:
         path = REPO_ROOT / relative
         assert os.access(path, os.X_OK), relative
         lines = path.read_text(encoding="utf-8").splitlines()
         assert lines[0].startswith("#!/usr/bin/env bash"), relative
         assert lines[1] == "# SPDX-License-Identifier: LicenseRef-MSOL-1.1", relative
+    for relative in LIBRARY_SCRIPTS:
+        lines = (REPO_ROOT / relative).read_text(encoding="utf-8").splitlines()
+        assert lines[1] == "# SPDX-License-Identifier: LicenseRef-MSOL-1.1", relative
 
 
 def test_shell_scripts_never_trace_commands():
-    for relative in ("test-1.sh", "scripts/build-pjsip.sh"):
-        text = (REPO_ROOT / relative).read_text(encoding="utf-8")
-        assert "set -x" not in text and "xtrace" not in text, relative
+    for relative in (*EXECUTABLE_SCRIPTS, *LIBRARY_SCRIPTS):
+        code = [
+            line
+            for line in (REPO_ROOT / relative).read_text(encoding="utf-8").splitlines()
+            if not line.lstrip().startswith("#")
+        ]
+        offending = [line for line in code if re.search(r"\bset\s+-\w*x|xtrace|bash\s+-x", line)]
+        assert not offending, (relative, offending)
 
 
 def test_test_script_help_lists_all_commands():

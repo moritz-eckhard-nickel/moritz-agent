@@ -1,7 +1,8 @@
 # 06 – Infrastruktur: Sophie-1, Agent-LXC, Asterisk, Redemption-1
 
 > Konkrete Treiber-Befehle werden **aus den Ist-Werten** (Abschnitt 1) abgeleitet. Nichts
-> hier blind ausführen. Der Agent-Installer ändert **nie** etwas am Proxmox-Host (INST-02).
+> hier blind ausführen. Am Proxmox-Host ändert nur `install.sh` etwas – den neuen Container und dessen
+> GPU-Geräteeinträge, sonst nichts (INST-02, ADR-028); Treiber und Firewall bleiben Handarbeit.
 
 ## 1. Inventar
 
@@ -55,6 +56,8 @@ Größere Quantisierung (Q4_K_M, 18,6 GB) bräuchte ein LXC-Limit von ≈ 20 GB 
 6 GB Spielraum möglich, aber erst nach Messung.
 
 ## 3. Agent-LXC anlegen
+
+> **Automatisch:** `sudo ./install.sh` auf dem Proxmox-Host (oder `./install.sh --remote root@proxmox`) legt den Container mit genau diesen Werten an und installiert moritz-agent darin – Anleitung [`docs/proxmox-installation.md`](../proxmox-installation.md), Entscheidung ADR-028. Die Tabelle bleibt die Referenz; abweichende Werte gehen per Option (`--cores`, `--memory`, `--disk`, `--ip` …).
 
 | Einstellung | Wert |
 | --- | --- |

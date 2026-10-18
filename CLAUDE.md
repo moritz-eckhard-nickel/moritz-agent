@@ -52,8 +52,9 @@ pip install -e ".[dev]"                       # Entwicklungsumgebung
 ruff check moritz_agent tests/moritz_agent scripts
 ruff format --check moritz_agent tests/moritz_agent scripts
 pytest                                        # testpaths = tests/moritz_agent
-shellcheck moritz-agent install.sh update.sh moritz-install.sh moritz-update.sh test-1.sh scripts/*.sh
-./test-1.sh setup|check|speak|call|run        # Telefon + Stimme ohne Systeminstallation (runtime/)
+shellcheck -x moritz-agent install.sh update.sh moritz-install.sh moritz-update.sh test-1.sh scripts/*.sh deploy/lib/*.sh
+./test-1.sh setup|check|speak|call|run        # Telefon + Stimme ohne Systeminstallation (läuft überall, kein LXC nötig)
+sudo ./install.sh | sudo ./update.sh          # auf dem Proxmox-Host: LXC anlegen/aktualisieren (oder --remote user@host)
 python -m moritz_agent --version
 ```
 

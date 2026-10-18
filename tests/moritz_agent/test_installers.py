@@ -128,13 +128,13 @@ class Machine:
 def make_source(directory: Path, version: str, extra_files: dict[str, str] | None = None) -> Path:
     """A minimal program tree: the real scripts and unit file, a tiny payload."""
     directory.mkdir(parents=True)
-    for name in ("moritz-install.sh", "moritz-update.sh"):
+    for name in ("moritz-install.sh", "moritz-update.sh", "install.sh", "update.sh"):
         shutil.copy2(REPO_ROOT / name, directory / name)
     shutil.copytree(REPO_ROOT / "deploy" / "lib", directory / "deploy" / "lib")
     (directory / "deploy" / "systemd").mkdir()
     shutil.copy2(REPO_ROOT / "deploy/systemd/moritz-agent.service", directory / "deploy/systemd/")
     (directory / "deploy" / "payload.txt").write_text(
-        "moritz-install.sh\nmoritz-update.sh\ndeploy\nconfig\nmoritz_agent\nrequirements\n"
+        "moritz-install.sh\nmoritz-update.sh\ninstall.sh\nupdate.sh\ndeploy\nconfig\nmoritz_agent\nrequirements\n"
         "scripts\nthird_party/pjproject/version.mak\n"
     )
     (directory / "moritz_agent").mkdir()
