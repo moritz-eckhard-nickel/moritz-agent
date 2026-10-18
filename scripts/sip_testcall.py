@@ -14,6 +14,7 @@ Through the PBX:        scripts/sip_testcall.py --to sip:999@192.168.1.176 --reg
 from __future__ import annotations
 
 import argparse
+import gc
 import shutil
 import subprocess
 import sys
@@ -270,7 +271,11 @@ def main() -> int:
     )
     if latencies:
         print(f"Antwortzeiten: {', '.join(f'{v:.2f} s' for v in latencies)}")
+    # PJSUA2 objects must be gone before the library is destroyed (they unregister themselves)
+    holder.clear()
+    caller_port.clear()
     del call, account, port
+    gc.collect()
     endpoint.libDestroy()
     return result
 

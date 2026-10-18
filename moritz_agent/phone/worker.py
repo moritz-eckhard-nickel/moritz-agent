@@ -3,11 +3,9 @@
 
 Start order (ADR-011, PHONE-34):
  1. load settings and passwords.txt,
- 2. build the speech components (VAD, Whisper, voices – CosyVoice starts loading in the background),
- 3. make sure all required announcements exist (rendered with the best voice that is ready now),
+ 2. build the speech components (VAD, Whisper, voice – Piper "Hessisch", espeak-ng as fallback),
+ 3. make sure all required announcements exist (cached or rendered now),
  4. only then start SIP and register – the phone never answers without being able to speak.
-Announcements spoken by a fallback voice are re-rendered with the main voice (Hessisch Nikita)
-in the background as soon as it is ready, one at a time and never during a call.
 """
 
 from __future__ import annotations
@@ -58,7 +56,6 @@ class WorkerOptions:
     register: bool = True
     allow: list[str] | None = None  # overrides phone.allowed_source_ips
     tts_engines: list[str] | None = None  # overrides engine order, e.g. ["espeak"]
-    no_cosyvoice: bool = False
     force_start: bool = False  # register even if announcements are missing (never in production)
     sip_port: int | None = None  # overrides phone.local_sip_port (tests next to another SIP client)
 
@@ -91,11 +88,6 @@ class PhoneWorker:
         if self.options.tts_engines:
             order = self.options.tts_engines
             tts.engine, tts.fallback_engines = order[0], order[1:]  # type: ignore[assignment]
-        if self.options.no_cosyvoice:
-            tts.fallback_engines = [e for e in tts.fallback_engines if e != "cosyvoice"]  # type: ignore[assignment]
-            if tts.engine == "cosyvoice":
-                remaining = tts.fallback_engines or ["espeak"]
-                tts.engine, tts.fallback_engines = remaining[0], remaining[1:]  # type: ignore[assignment]
 
     def _build_components(self) -> None:
         self._apply_engine_overrides()
@@ -173,55 +165,32 @@ class PhoneWorker:
             )
         log.info("Nikita ist bereit (Strg+C beendet).")
 
-        upgrade = asyncio.ensure_future(self._upgrade_loop())
         heartbeat = asyncio.ensure_future(self._heartbeat())
         try:
             await self._stop.wait()
         finally:
-            for task in (upgrade, heartbeat):
-                task.cancel()
+            heartbeat.cancel()
             with contextlib.suppress(Exception):
-                await asyncio.gather(upgrade, heartbeat, return_exceptions=True)
+                await asyncio.gather(heartbeat, return_exceptions=True)
             await self._shutdown()
         return 0
 
     async def _prepare_announcements(self) -> bool:
-        assert self.announcements and self.tts and self._stop
-        warned = 0.0
-        while True:
-            missing = await asyncio.to_thread(self.announcements.ensure)
-            if not missing:
-                status = self.announcements.status()
-                provisional = len(status["provisional"])
-                log.info(
-                    "Ansagen bereit (%d, davon %d vorläufig mit Ersatzstimme)",
-                    status["loaded"],
-                    provisional,
-                )
-                return True
-            if self.options.force_start:
-                log.error("Ansagen fehlen (%s) – Start trotzdem erzwungen", ", ".join(missing))
-                return True
-            if time.monotonic() - warned > 15:
-                warned = time.monotonic()
-                log.warning(
-                    "Warte auf eine Stimme für die Ansagen (%s) – %s",
-                    ", ".join(missing),
-                    self.tts.describe(),
-                )
-            try:
-                await asyncio.wait_for(self._stop.wait(), 3.0)
-                return False
-            except TimeoutError:
-                continue
-
-    async def _upgrade_loop(self) -> None:
-        assert self.announcements
-        while True:
-            await asyncio.sleep(5)
-            idle = lambda: self.sip is not None and not self.sip.busy  # noqa: E731
-            while await asyncio.to_thread(self.announcements.upgrade_once, idle):
-                await asyncio.sleep(0.5)
+        assert self.announcements and self.tts
+        missing = await asyncio.to_thread(self.announcements.ensure)
+        if not missing:
+            status = self.announcements.status()
+            log.info("Ansagen bereit (%d, Stimme: %s)", status["loaded"], status["voice"])
+            return True
+        log.error(
+            "Ansagen fehlen (%s) – %s. Modelle laden: ./test-1.sh models fetch bzw. moritz-install.sh",
+            ", ".join(missing),
+            self.tts.describe(),
+        )
+        if self.options.force_start:
+            log.error("Start trotzdem erzwungen (--force)")
+            return True
+        return False
 
     async def _heartbeat(self) -> None:
         last = ""

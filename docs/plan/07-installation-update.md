@@ -23,13 +23,13 @@ Anforderungen: INST-01…11, UPD-01…07, CFG-01…10.
 | 1 | `preflight` | root? Ubuntu 26.04/25.10, Python 3.13/3.14, RAM-Limit (`/sys/fs/cgroup/memory.max`), CPU-Threads (≤ 18 erwartet), freier Speicher ≥ 60 GB, `nvidia-smi` + Treiberversion (Warnung wenn fehlt → CPU-Modus nur für Tests), Zeitzone, Ports 3501/5060/RTP frei | Pflicht verletzt |
 | 2 | `packages` | `apt-get install` (ohne System-Upgrade): `build-essential python3-venv python3-dev swig libssl-dev libopus-dev pkg-config libsndfile1 tzdata openssl git curl ca-certificates` | apt-Fehler |
 | 3 | `user_dirs` | Systembenutzer `moritz-agent` (`--system --home /opt/moritz-agent --shell /usr/sbin/nologin`), Gruppen `video`/`render`, Verzeichnisse `data/ models/ runtime/ backups/` (0750/0700) | – |
-| 4 | `python_env` | `runtime/venv`; von PyPI, exakt gepinnt: `pip install --require-hashes -r requirements/core.lock -r requirements/phone.lock` + `pip install --no-deps -e .`; zusätzlich `runtime/venv-tts` für CosyVoice (`scripts/setup-tts-venv.sh`: torch/torchaudio 2.10.0 vom PyTorch-CPU-Index, dann `requirements/tts.txt` exakt gepinnt, ADR-027) | pip-Fehler |
+| 4 | `python_env` | `runtime/venv`; von PyPI, exakt gepinnt: `pip install --require-hashes -r requirements/core.lock -r requirements/phone.lock` + `pip install --no-deps -e .` | pip-Fehler |
 | 5 | `pjsip` | `scripts/build-pjsip.sh --python runtime/venv/bin/python`: Build aus einer Kopie von `third_party/pjproject` (2.17) unter `runtime/pjsip-build/` (ADR-005), SWIG-Binding ins venv; Neubau nur bei geänderter Version/Python (Stempeldatei) oder `--force` | Build-Fehler |
 | 6 | `koboldcpp` | `./koboldcpp.sh rebuild` als Dienstbenutzer (ADR-015); Neubau nur bei geändertem Hash der nativen Quellen | Build-Fehler |
 | 7 | `searxng` | `runtime/searxng-venv` mit `pip install --require-hashes -r requirements/searxng.lock`, Code fertig gebaut aus `third_party/searxng` (kein Build, kein Clone), Secret erzeugen (`data/searxng/secret`, 0600) | – |
-| 8 | `models` | Aus `config/versions.lock`: LLM (13,8 GB), Whisper small (0,5 GB), Piper-Stimme (63 MB), CosyVoice3-Hessisch (4,4 GB: Basismodell + Finetune-Overlay, `python -m moritz_agent.phone.audio.models fetch`) mit Größe anzeigen, freien Platz prüfen, bestätigen, Download mit Resume von Hugging Face, Größenprüfung; SHA-256 gegen `versions.lock` bzw. TOFU (ADR-021). VAD liegt im Repo. | Größe/Prüfsumme falsch |
+| 8 | `models` | Aus `config/versions.lock`: LLM (13,8 GB), Whisper small (0,5 GB), Piper-Stimme „Hessisch“ (114 MB) (Thorsten-Voice Hessisch, `python -m moritz_agent.phone.audio.models fetch`) mit Größe anzeigen, freien Platz prüfen, bestätigen, Download mit Resume von Hugging Face, Größenprüfung; SHA-256 gegen `versions.lock` bzw. TOFU (ADR-021). VAD liegt im Repo. | Größe/Prüfsumme falsch |
 | 9 | `secrets` | `passwords.txt` existiert? → **unverändert lassen**, nur fehlende Felder ergänzen (CFG-09). Sonst aus `config/passwords.template.txt` erzeugen (SIP-Startwerte, 0600). Danach Web-Login und Sandbox abfragen (§2.1) | ungültige Eingabe 3× |
-| 10 | `config` | `config/moritz-agent.toml` aus Example erzeugen, falls fehlt; Fragen: LXC-IP für Zertifikat, RTP-Portbereich, TTS-Hauptstimme (`cosyvoice` oder, bei wenig RAM, `piper`); Zeitzone `Europe/Berlin` | – |
+| 10 | `config` | `config/moritz-agent.toml` aus Example erzeugen, falls fehlt; Fragen: LXC-IP für Zertifikat, RTP-Portbereich, Telefon-Einstellungen (Begrüßung, Stimme); Zeitzone `Europe/Berlin` | – |
 | 11 | `tls` | Selbst signiertes Zertifikat nach `runtime/tls/` (`openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -days 3650`, SAN = IP + Hostname), Fingerprint anzeigen (ADR-022) | – |
 | 12 | `prompts` | Ansagen-Cache erzeugen (P1-13) | TTS-Fehler |
 | 13 | `service` | systemd-Unit installieren, `daemon-reload`, `enable --now` | Start schlägt fehl |
@@ -46,7 +46,7 @@ Anforderungen: INST-01…11, UPD-01…07, CFG-01…10.
   `data/ssh/id_ed25519` erzeugen und Public Key anzeigen), optionale Passphrase; Host-Key per
   `ssh-keyscan` holen, **Fingerprint anzeigen und bestätigen lassen**, in TXT speichern,
   Testverbindung `ssh -o StrictHostKeyChecking=yes … true`. Bei 2: `enabled = false`.
-- **Stimme:** keine Abfrage – Nikita spricht mit CosyVoice3-Hessisch (lokal, keine Zugangsdaten). Bei weniger als ≈ 6 GB freiem RAM schlägt der Installer `--no-cosyvoice` vor (Piper-Stimme, ADR-027).
+- **Stimme:** keine Abfrage – Nikita spricht mit Thorsten-Voice „Hessisch“ (Piper, lokal, keine Zugangsdaten; ADR-027).
 - **SIP:** keine Abfrage bei Ersteinrichtung (Startwerte aus Vorlage). Warnung bei
   `password = agent`. Option `--reconfigure-sip` für spätere interaktive Änderung.
 

@@ -29,7 +29,7 @@ def test_example_config_contains_plan_defaults():
     assert config["server"]["port"] == 3501
     assert config["server"]["tls"] is True
     assert config["storage"]["transcript_retention_hours"] == 24
-    assert config["phone"]["tts"]["cosyvoice"]["speaker"] == "thorsten_hessisch"
+    assert "Hessisch" in config["phone"]["tts"]["piper"]["voice"]
     assert config["search"]["backends"][0] == "searxng"
     assert config["inference"]["context_size"] == 4096
     assert config["phone"]["greeting_text"] == (
@@ -209,50 +209,48 @@ def test_own_sources_carry_msol_spdx_header():
 
 def test_phone_defaults_hessisch_voice_and_hessen():
     config = load_toml("config/moritz-agent.example.toml")
-    assert config["phone"]["tts"]["engine"] == "cosyvoice"
-    assert config["phone"]["tts"]["fallback_engines"] == ["piper", "espeak"]
+    assert config["phone"]["tts"]["engine"] == "piper"
+    assert config["phone"]["tts"]["fallback_engines"] == ["espeak"]
     assert config["fastpaths"]["state"] == "HE"
 
 
-def test_polly_and_hans_are_gone():
+def test_polly_hans_and_cosyvoice_are_gone():
     assert not list((REPO_ROOT / "requirements").glob("polly.*"))
+    assert not list((REPO_ROOT / "requirements").glob("tts.*"))
     assert not (REPO_ROOT / "docs" / "stimme-hans.md").exists()
+    assert not (REPO_ROOT / "third_party" / "cosyvoice").exists()
+    assert not (REPO_ROOT / "third_party" / "Matcha-TTS").exists()
     template = (REPO_ROOT / "config" / "passwords.template.txt").read_text(encoding="utf-8")
     assert "aws_" not in template
-    assert "polly" not in load_toml("config/versions.lock")["python"]["locks"].__str__()
-
-
-def test_voice_environment_is_pinned_without_torch_and_cuda():
-    pins = [
-        line.split("==")[0].lower()
-        for line in (REPO_ROOT / "requirements" / "tts.txt")
-        .read_text(encoding="utf-8")
-        .splitlines()
-        if "==" in line and not line.startswith("#")
-    ]
-    assert pins
-    assert not [
-        p for p in pins if p in {"torch", "torchaudio", "triton"} or p.startswith("nvidia-")
-    ]
     lock = load_toml("config/versions.lock")
-    assert lock["python"]["torch_version"] == "2.10.0"
-    assert lock["python"]["tts_environment"] == "requirements/tts.txt"
+    assert lock["python"]["locks"] == [
+        "requirements/core.lock",
+        "requirements/phone.lock",
+        "requirements/searxng.lock",
+    ]
+    assert "cosyvoice" not in lock
+    for relative in ("core.lock", "phone.lock"):
+        text = (REPO_ROOT / "requirements" / relative).read_text(encoding="utf-8")
+        assert "\ntorch==" not in text and "\nboto3==" not in text, relative
 
 
-def test_vendored_voice_sources_are_present_and_licensed():
-    assert (REPO_ROOT / "third_party" / "cosyvoice" / "LICENSE").is_file()
-    assert (
-        REPO_ROOT / "third_party" / "cosyvoice" / "cosyvoice" / "cli" / "cosyvoice.py"
-    ).is_file()
-    assert (REPO_ROOT / "third_party" / "Matcha-TTS" / "LICENSE").is_file()
-    assert (REPO_ROOT / "third_party" / "Matcha-TTS" / "matcha" / "__init__.py").is_file()
-    vendored = (REPO_ROOT / "third_party" / "VENDORED.md").read_text(encoding="utf-8")
-    lock = load_toml("config/versions.lock")["cosyvoice"]
-    assert lock["commit"] in vendored and lock["matcha_tts_commit"] in vendored
+def test_voice_in_versions_lock_matches_the_download_manifest():
+    from moritz_agent.phone.audio import models
+
+    voice = load_toml("config/versions.lock")["models"]["tts_voice"]
+    manifest = {f.path: f for f in models.GROUPS["piper"]}
+    assert {item["name"] for item in voice["files"]} == set(manifest)
+    for item in voice["files"]:
+        assert manifest[item["name"]].size == item["size_bytes"]
+        assert (
+            manifest[item["name"]].target
+            == f"{voice['target_dir'].removeprefix('models/')}/{item['name']}"
+        )
+    assert voice["url_template"].startswith("https://huggingface.co/Thorsten-Voice/Hessisch/")
 
 
 def test_test_script_and_setup_scripts_are_executable_and_licensed():
-    for relative in ("test-1.sh", "scripts/build-pjsip.sh", "scripts/setup-tts-venv.sh"):
+    for relative in ("test-1.sh", "scripts/build-pjsip.sh"):
         path = REPO_ROOT / relative
         assert os.access(path, os.X_OK), relative
         lines = path.read_text(encoding="utf-8").splitlines()
@@ -261,7 +259,7 @@ def test_test_script_and_setup_scripts_are_executable_and_licensed():
 
 
 def test_shell_scripts_never_trace_commands():
-    for relative in ("test-1.sh", "scripts/build-pjsip.sh", "scripts/setup-tts-venv.sh"):
+    for relative in ("test-1.sh", "scripts/build-pjsip.sh"):
         text = (REPO_ROOT / relative).read_text(encoding="utf-8")
         assert "set -x" not in text and "xtrace" not in text, relative
 

@@ -34,7 +34,7 @@ Moritz wählt intern die **999** und landet bei **Nikita**, dem Assistenten von 
 3. beantwortet einfache Fragen sofort über feste Antwortwege – Uhrzeit, Datum, Kalenderwoche,
    Rechnen, … ([Fast-Paths](docs/plan/12-fast-paths.md)) – die Uhrzeit immer aus der echten Systemuhr (Europe/Berlin),
 4. beantwortet andere Fragen mit dem Sprachmodell und nutzt bei Bedarf die integrierte Websuche,
-5. spricht die Antwort mit der Stimme **Thorsten-Voice Hessisch** (CosyVoice3, lokal auf der CPU; feste Ansagen vorgerendert und gecacht, Rückfall Piper/espeak – [ADR-027](docs/plan/03-entscheidungen.md)) und hört wieder zu – mehrere Runden pro Anruf,
+5. spricht die Antwort mit der Stimme **Thorsten-Voice „Hessisch“** (Piper, lokal auf der CPU; feste Ansagen vorgerendert und gecacht – [ADR-027](docs/plan/03-entscheidungen.md)) und hört wieder zu – mehrere Runden pro Anruf,
 6. räumt beim Auflegen alles sauber auf.
 
 Asterisk-Einrichtung: [`docs/asterisk-konfiguration.md`](docs/asterisk-konfiguration.md)
@@ -43,7 +43,7 @@ Asterisk-Einrichtung: [`docs/asterisk-konfiguration.md`](docs/asterisk-konfigura
 
 ```text
 moritz-agent
-├── Phone Core      SIP (PJSUA2 2.17) · RTP · VAD (Silero) · STT (Whisper small) · TTS (CosyVoice-Hessisch/Piper)
+├── Phone Core      SIP (PJSUA2 2.17) · RTP · VAD (Silero) · STT (Whisper small) · TTS (Piper Hessisch)
 ├── Inference       KoboldCpp / llama.cpp · Qwen3-30B-A3B (MoE) · halb VRAM / halb RAM
 ├── Agent Core      Agent-Loop · Tool-Calling · Fast-Paths · Context Manager · Profile
 ├── Research        SearXNG (alle Engines) → KoboldCpp-Websuche → Wikipedia · später Deep Research
@@ -78,7 +78,6 @@ Programm läuft ([`third_party/VENDORED.md`](third_party/VENDORED.md)):
 | --- | --- |
 | SearXNG (fertig gebaut) | `third_party/searxng/` |
 | PJSIP / PJSUA2 2.17 (Quellcode) | `third_party/pjproject/` |
-| CosyVoice + Matcha-TTS (Quellcode der Stimme) | `third_party/cosyvoice/`, `third_party/Matcha-TTS/` |
 | Silero VAD | `assets/models/vad/` |
 
 SearXNG ist fertig gebaut (Frontend-Assets und Daten liegen bei) und läuft direkt aus dem
@@ -86,18 +85,18 @@ Repo als interner Worker von moritz-agent – kein separater Dienst, keine eigen
 
 Aus dem Netz kommen nur: Python-Pakete von PyPI (exakt gepinnt mit Hashes in
 `requirements/*.lock`), die Build-Toolchain für KoboldCpp/CUDA und die Modelle von Hugging Face
-(LLM 13,8 GB, Whisper small, Piper-Stimme, CosyVoice3-Hessisch 4,4 GB).
+(LLM 13,8 GB, Whisper small, Piper-Stimme Hessisch).
 
 ## Telefon- und Stimmenteil jetzt ausprobieren: `./test-1.sh`
 
 SIP-Telefon, Spracherkennung und Nikitas Stimme laufen schon – ganz ohne Systeminstallation, alles
-unter `runtime/` und `models/` im Repository (Anleitung: [docs/telefon-test-1.md](docs/telefon-test-1.md)).
+unter `runtime/` und `models/` im Repository (Anleitung: [docs/telefon-test-1.md](docs/telefon-test-1.md)). Er setzt keinen LXC voraus und läuft auf jedem Linux-Rechner.
 Es ist derselbe Code, der später im vollständigen System läuft; nur das Sprachmodell fehlt noch
 (Nikita beantwortet Uhrzeit, Datum usw. über Fast-Paths, sonst „Ich habe verstanden: …“).
 
 ```bash
 sudo apt install build-essential python3-venv python3-dev swig pkg-config espeak-ng   # einmalig, falls fehlt
-./test-1.sh setup          # Python-Umgebungen, SIP-Stack bauen, Modelle laden (ca. 5,5 GB)
+./test-1.sh setup          # Python-Umgebung, SIP-Stack bauen, Modelle laden (ca. 0,6 GB)
 ./test-1.sh check          # Selbsttest
 ./test-1.sh speak "Hallo Moritz, hier ist Nikita." --play
 ./test-1.sh call           # Testanruf ohne Telefonanlage (Nikita ruft sich selbst an)
@@ -156,7 +155,7 @@ Jede Komponente behält ihre Lizenz (Übersicht je Pfad: [LICENSING.md](LICENSIN
 - **Eigener Code von moritz-agent: Moritzsoft Open License (MSOL) 1.1** ([LICENSE-MSOL.md](LICENSE-MSOL.md)).
 - KoboldCpp und übrige Upstream-Dateien: **GNU AGPL v3.0** ([LICENSE.md](LICENSE.md)), sofern eine Datei nichts anderes angibt.
 - GGML, llama.cpp und stable-diffusion.cpp: MIT ([MIT_LICENSE_GGML_SDCPP_LLAMACPP_ONLY.md](MIT_LICENSE_GGML_SDCPP_LLAMACPP_ONLY.md)).
-- SearXNG: AGPL-3.0 · PJSIP: GPL-2.0+ · CosyVoice: Apache-2.0 · Matcha-TTS: MIT · Piper: GPL-3.0 · Silero VAD: MIT – Details in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+- SearXNG: AGPL-3.0 · PJSIP: GPL-2.0+ · Piper: GPL-3.0 · Silero VAD: MIT – Details in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - Scribbles und das m-agent-Logo: © LayerNX / Moritz Eckhard Nickel, **alle Rechte vorbehalten**.
 
 Alle ursprünglichen Copyright- und Lizenzhinweise bleiben erhalten.

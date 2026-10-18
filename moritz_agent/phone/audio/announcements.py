@@ -4,18 +4,16 @@
 The catalog lives in assets/audio/prompts.de.toml. Every entry is rendered once and cached on
 disk (16 kHz WAV), so a call starts with the greeting instantly, without waiting for any model.
 
-* :meth:`AnnouncementStore.ensure` makes sure every required announcement exists – rendered
-  with the best voice that is ready *now*. If the main voice (CosyVoice, ~minute load time)
-  is not ready yet, a faster voice is used so that the phone can register immediately.
-* :meth:`AnnouncementStore.upgrade_once` later re-renders those announcements with the main
-  voice, one at a time and only while no call is running.
+:meth:`AnnouncementStore.ensure` makes sure every required announcement exists – taken from the
+cache, else rendered with the best voice that is ready (Piper "Hessisch"; espeak-ng if the Piper
+model is missing). The cache key contains the voice, so installing the real voice later renders
+everything again with it instead of reusing the emergency-voice recordings.
 """
 
 from __future__ import annotations
 
 import threading
 import tomllib
-from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -59,17 +57,18 @@ class AnnouncementStore:
     def missing_required(self) -> list[str]:
         return [p.id for p in self.catalog.values() if p.required and self.get(p.id) is None]
 
-    def provisional(self) -> list[str]:
-        """Announcements currently spoken by a fallback voice instead of the main voice."""
+    def voice(self) -> str | None:
+        """Voice the loaded announcements were rendered with (None while nothing is loaded)."""
         with self._lock:
-            return [pid for pid, (engine, _) in self._audio.items() if engine != self.tts.primary]
+            engines = {engine for engine, _ in self._audio.values()}
+        return ", ".join(sorted(engines)) or None
 
     def status(self) -> dict:
         return {
             "total": len(self.catalog),
             "loaded": len(self._audio),
             "missing_required": self.missing_required(),
-            "provisional": self.provisional(),
+            "voice": self.voice(),
         }
 
     # -- rendering ---------------------------------------------------------------------
@@ -78,50 +77,21 @@ class AnnouncementStore:
             self._audio[prompt_id] = (engine, data)
 
     def ensure(self) -> list[str]:
-        """Load or render all announcements with what is ready now; returns missing required ids."""
+        """Load or render all announcements; returns the ids of required ones still missing."""
+        engine = self.tts.best_available()
+        if engine is None:
+            log.warning("Ansagen können nicht erzeugt werden: keine Stimme bereit")
+            return self.missing_required()
         for prompt in self.catalog.values():
-            # 1. a cached rendering by the main voice, else by any other voice
-            found = False
-            for engine in self.tts.order:
-                data = self.tts.cached(prompt.text, engine)
-                if data:
-                    self._set(prompt.id, engine, data)
-                    found = True
-                    break
-            if found:
-                continue
-            # 2. render with the best voice that is ready right now
-            engine = self.tts.best_available()
-            if engine is None:
-                log.warning("Ansage '%s' kann nicht erzeugt werden: keine Stimme bereit", prompt.id)
-                continue
-            try:
-                data = self.tts.render_blocking(prompt.text, engine_name=engine, persist=True)
-            except TtsError as exc:
-                log.warning("Ansage '%s' fehlgeschlagen: %s", prompt.id, exc)
-                continue
+            data = self.tts.cached(prompt.text, engine)
+            if data is None:
+                try:
+                    data = self.tts.render_blocking(prompt.text, engine_name=engine, persist=True)
+                except TtsError as exc:
+                    log.warning("Ansage '%s' fehlgeschlagen: %s", prompt.id, exc)
+                    continue
             self._set(prompt.id, engine, data)
         return self.missing_required()
-
-    def upgrade_once(self, idle: Callable[[], bool] = lambda: True) -> bool:
-        """Re-render one provisional announcement with the main voice. True if work was done."""
-        if self.tts.primary not in self.tts.ready_engines():
-            return False
-        for prompt_id in self.provisional():
-            if not idle():
-                return False
-            prompt = self.catalog[prompt_id]
-            try:
-                data = self.tts.render_blocking(
-                    prompt.text, engine_name=self.tts.primary, persist=True
-                )
-            except TtsError as exc:
-                log.warning("Upgrade der Ansage '%s' fehlgeschlagen: %s", prompt_id, exc)
-                return False
-            self._set(prompt_id, self.tts.primary, data)
-            log.info("Ansage '%s' mit der Hauptstimme erneuert", prompt_id)
-            return True
-        return False
 
 
 def quarter_hour_phrases() -> list[str]:

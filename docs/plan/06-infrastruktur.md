@@ -42,15 +42,14 @@ Modell: Qwen3-30B-A3B-Instruct-2507 UD-Q3_K_XL, 13,8 GB, „halb/halb“ per `--
 | KV-Cache 4.096 Tokens (48 Schichten, 4 KV-Köpfe, fp16) | – | ≈ 0,4 GB | _offen_ |
 | CUDA-Kontext + Compute-Puffer | 0,5–1 GB | 0,4–0,7 GB | _offen_ |
 | STT faster-whisper small int8 | 0,6–1,0 GB | – | _offen_ |
-| TTS CosyVoice3-Hessisch (Worker, CPU, fp32) | ≈ 4,5–5 GB | – | _offen_ |
-| TTS-Rückfall Piper + espeak | 0,15–0,3 GB | – | _offen_ |
+| TTS Piper „Hessisch“ (high) + onnxruntime | 0,3–0,6 GB | – | _offen_ |
 | Silero VAD | < 0,05 GB | – | _offen_ |
 | PJSIP + Phone-Worker | 0,1–0,2 GB | – | _offen_ |
 | SearXNG (granian) | 0,2–0,4 GB | – | _offen_ |
 | Main (FastAPI, Agent, SQLite) | 0,15–0,3 GB | – | _offen_ |
-| **Summe** | **≈ 13–15,5 GB** | **≈ 6,8–7,6 GB** | _offen_ |
+| **Summe** | **≈ 8,7–10,9 GB** | **≈ 6,8–7,6 GB** | _offen_ |
 
-Folgerung (mit CosyVoice, ADR-027): 16 GB RAM-Limit reicht **knapp** – das LXC-Limit auf 18–20 GB zu erhöhen (innerhalb der 6 GB Spielraum) ist die sichere Wahl; ohne CosyVoice (`--no-cosyvoice`, Piper) bleibt es bei ≈ 9–10,5 GB. VRAM ist eng → `--moecpu` so wählen, dass
+Folgerung: 16 GB RAM-Limit reicht mit Reserve. VRAM ist eng → `--moecpu` so wählen, dass
 ≥ 0,6 GB frei bleiben. 8.192 Kontext (+ ≈ 0,4 GB VRAM) erst nach Messung (INF-05).
 Größere Quantisierung (Q4_K_M, 18,6 GB) bräuchte ein LXC-Limit von ≈ 20 GB – innerhalb der
 6 GB Spielraum möglich, aber erst nach Messung.
@@ -63,7 +62,7 @@ Größere Quantisierung (Q4_K_M, 18,6 GB) bräuchte ein LXC-Limit von ≈ 20 GB 
 | OS-Template | **Ubuntu 26.04 LTS** (`pveam update && pveam available \| grep ubuntu`) |
 | RAM / Swap | `memory: 16384`, `swap: 2048` (Swap nur Notpuffer, kein Modellspeicher) |
 | CPU | `cores: 18` (F-07), optional `cpuunits: 512`, damit der Host Vorrang hat |
-| Disk | ≥ 80 GB (Modell 13,8 GB, Whisper 0,5 GB, CosyVoice-Modelle 4,4 GB, Conda/CUDA-Build ≈ 10 GB, Repo inkl. third_party ≈ 1 GB, venvs ≈ 3 GB + torch-CPU-Umgebung ≈ 1,5 GB, Backups, Reserve) |
+| Disk | ≥ 80 GB (Modell 13,8 GB, Whisper 0,5 GB, Piper-Stimme 0,1 GB, Conda/CUDA-Build ≈ 10 GB, Repo inkl. third_party ≈ 1 GB, venvs ≈ 3 GB, Backups, Reserve) |
 | Netzwerk | Bridge im Server-/Telefonie-Netz, **feste IP**, Asterisk 192.168.1.176 direkt erreichbar (kein NAT) |
 | Zeit | LXC erbt Host-Uhr (Host-NTP aktiv), Zeitzone `Europe/Berlin`, Paket `tzdata` |
 | Autostart | `onboot: 1`, Startreihenfolge nach Asterisk |

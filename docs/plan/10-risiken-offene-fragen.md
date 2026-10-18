@@ -21,9 +21,8 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | R13 | **Neu:** Repo-Größe durch Fremdkomponenten (≈ +95 MB für SearXNG und pjproject) | – | Python-Pakete bewusst nicht im Repo (Moritz: „requirements egal“); Updates von `third_party/` bündeln (ADR-021) | laufend |
 | R14 | ~~Polly „Hans“ braucht Internet + AWS-Konto~~ – entfallen (ADR-027) | – | Stimme läuft lokal; Rückfallkette Piper/espeak | P1-10 |
 | R15 | **Neu:** MoE mit CPU-Experten auf Haswell (DDR4) langsamer als erwartet | – | `--moecpu` senken (mehr auf GPU), Q3_K_S, oder dichtes 14B als Fallback (ADR-016) | P1-02 |
-| R16 | **Neu:** CosyVoice3 auf dem E5-2673 v3 (AVX2, kein AVX-512/bf16, fp32) ist vermutlich deutlich langsamer als Echtzeit | „auf CPU sollte machbar sein“ | Ansagen vorgerendert und gecacht (PHONE-48); Live-Sätze wählen die Stimme nach gemessener Geschwindigkeit (`live_engine = auto`, PHONE-49), sonst Piper; `./test-1.sh bench` misst es; Threads `phone.tts.cpu_threads` anpassen; als Ausweg `live_engine = "piper"` | P1-10 |
-| R17 | **Neu:** CosyVoice braucht ≈ 4,5–5 GB RAM zusätzlich | – | LXC-Limit 18–20 GB (06 §2); `--no-cosyvoice` für kleine Systeme; Worker lädt erst beim Start und wird bei Absturz mit Backoff neu gestartet | P1-10 |
-| R18 | **Neu:** PyTorch-CPU-Wheels kommen nicht von PyPI, die torch-Umgebung hat keine Hashes | – | torch/torchaudio exakt auf 2.10.0 gepinnt, Index per `MORITZ_TORCH_INDEX` änderbar; alle übrigen Pakete exakt gepinnt (`requirements/tts.txt`); Worker läuft isoliert, nur auf 127.0.0.1 | P1-10 |
+| R16 | **Neu:** Klang des Hessisch-Piper-Modells (2023, „high“) ist ungehört; er liest hochdeutsch geschriebenen Text mit hessischer Färbung | „das Hessische“ | Hörprobe mit `./test-1.sh speak`; Alternative per `phone.tts.piper.voice` (`de_DE-thorsten-medium`, hochdeutsch) | P1-10 |
+| R17 | **Neu:** Geschwindigkeit des „high“-Modells auf dem E5-2673 v3 ist ungemessen (erwartet: deutlich schneller als Echtzeit) | – | `./test-1.sh bench`; `phone.tts.cpu_threads` anpassen; Ansagen sind ohnehin gecacht (PHONE-48) | P1-10 |
 
 ## 2. Offene Fragen – beantwortet
 
@@ -36,7 +35,7 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | F-05 | Distribution | Ubuntu 26.04 oder 25.10 | NFR-06, ADR-024, 06 §3 |
 | F-06 | NVIDIA-Treiber am Host? Andere GPU-Nutzer? | Treiber nein, Gast nein | 06 §4.1 Host-Treiber-Anleitung |
 | F-07 | CPU / Kerne | E5-2673 v3, bis zu 18 Threads, Host darf nie überlasten | NFR-08, 02 §5a, 06 §3 |
-| F-08 | Stimme | „Hans“, ab 17.10.2026 „Thorsten-Voice Hessisch“ | ADR-027: CosyVoice3-Hessisch auf der CPU, Piper/espeak als Rückfall |
+| F-08 | Stimme | „Hans“, ab 17.10.2026 „Thorsten-Voice Hessisch“, ab 18.10.2026 „nur Piper“ | ADR-027: Piper-Modell Thorsten-Voice Hessisch auf der CPU, espeak-ng als Notstimme |
 | F-09 | Suchmaschinen | alle | `config/searxng/settings.yml`, ADR-007 |
 | F-10 | Sandbox-Netz | nur Sophie-1 + Internet | SBX-03, 06 §7 |
 | F-11 | KoboldCpp-Oberflächen behalten? | nein, alles weg | ADR-002, Dateien entfernt |

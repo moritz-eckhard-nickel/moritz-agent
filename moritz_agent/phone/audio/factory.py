@@ -14,37 +14,25 @@ from moritz_agent.phone.audio.vad import SileroVad
 log = get_logger("phone")
 
 
-def build_tts(
-    settings: Settings, root: Path = REPO_ROOT, start_cosyvoice: bool = True
-) -> TtsService:
-    """Create the TTS service; the CosyVoice worker starts loading in the background."""
+def build_tts(settings: Settings, root: Path = REPO_ROOT) -> TtsService:
+    """Create the TTS service with the configured voice chain (Piper, then espeak-ng)."""
     tts = settings.phone.tts
     wanted = [tts.engine, *tts.fallback_engines]
     engines: dict[str, TtsEngine] = {}
     for name in dict.fromkeys(wanted):  # unique, ordered
-        if name == "cosyvoice":
-            from moritz_agent.phone.audio.tts_cosyvoice import CosyVoiceEngine
-
-            engine = CosyVoiceEngine(tts.cosyvoice, root, tts.cpu_threads)
-            if start_cosyvoice:
-                engine.start()
-            engines[name] = engine
-        elif name == "piper":
+        if name == "piper":
             from moritz_agent.phone.audio.tts_piper import PiperEngine
 
-            engines[name] = PiperEngine(tts.piper, root)
+            engines[name] = PiperEngine(tts.piper, root, tts.cpu_threads)
         elif name == "espeak":
             from moritz_agent.phone.audio.tts_espeak import EspeakEngine
 
             engines[name] = EspeakEngine(tts.espeak)
-    live = {"auto": "auto", "primary": "primary", "fallback": "fallback"}[tts.live_engine]
     return TtsService(
         engines=engines,
         primary=tts.engine,
         fallbacks=list(tts.fallback_engines),
         cache_dir=settings.resolve(tts.cache_dir, root),
-        live_policy=live,
-        live_budget_s=tts.live_budget_s,
         target_dbfs=tts.loudness_target_dbfs,
         live_cache_entries=tts.live_cache_entries,
     )

@@ -38,8 +38,6 @@ Unmodified copies; provenance and versions in [third_party/VENDORED.md](third_pa
 | SearXNG (commit 8252c0bf) | `third_party/searxng/` | AGPL-3.0 |
 | pjproject / PJSIP 2.17 | `third_party/pjproject/` | GPL-2.0-or-later; bundled sub-components in `third_party/pjproject/third_party/` keep their own licenses |
 | Python packages (installed from PyPI, pinned in `requirements/*.lock`) | not vendored | per package (FastAPI, Starlette, Pydantic: MIT; Uvicorn, HTTPX, Granian: BSD-3-Clause; faster-whisper, CTranslate2, ONNX Runtime: MIT; NumPy (BSD-3-Clause), PyAV (BSD-3-Clause), Piper (GPL-3.0), python-soxr (LGPL-2.1-or-later), boto3 (Apache-2.0), Flask (BSD-3-Clause), lxml (BSD-3-Clause), …) |
-| CosyVoice (commit 074ca6dc, 26.05.2026) | `third_party/cosyvoice/` (only the `cosyvoice` package + LICENSE) | Apache-2.0 |
-| Matcha-TTS (commit dd9105b3, used by CosyVoice) | `third_party/Matcha-TTS/` (only the `matcha` package + LICENSE) | MIT |
 | Silero VAD v6.2.3 | `assets/models/vad/` | MIT |
 | m-agent logo (M + Scribbles) | `assets/branding/`, `niko.ico`, `nikogreen.ico` | contains the Scribbles artwork, see below |
 | **Scribbles** – mascot of LayerNX and moritz-agent | `assets/branding/scribbles/` (original drawing + traced SVG/PNG) | © LayerNX / Moritz Eckhard Nickel. **All rights reserved.** Not covered by MSOL or AGPL |
@@ -50,8 +48,5 @@ Unmodified copies; provenance and versions in [third_party/VENDORED.md](third_pa
 | --- | --- | --- |
 | Qwen3-30B-A3B-Instruct-2507 GGUF (unsloth) | LLM | Apache-2.0 |
 | OpenAI Whisper small (faster-whisper conversion by Systran) | speech-to-text | MIT |
-| Fun-CosyVoice3-0.5B-2512 (FunAudioLLM) | base model of the main voice | Apache-2.0 |
-| CosyVoice3-Hessisch (Thorsten-Voice) | fine-tuned weights `llm.pt`, `flow.pt`, `spk2info.pt` – voice of Nikita | Apache-2.0 (training data: Thorsten-Voice dataset, CC0) – verify per model card |
-| PyTorch / torchaudio 2.10.0 (CPU wheels from download.pytorch.org) | runs CosyVoice in `runtime/venv-tts` | BSD-3-Clause |
-| Piper voice `de_DE-thorsten-medium` | fallback voice | CC0 (Thorsten-Voice dataset) – verify per model card |
+| Thorsten-Voice „Hessisch“ Piper model (`Thorsten-Voice/Hessisch`, `…_Piper_high-Oct2023.onnx`) | Nikita's voice | CC0-1.0 (Thorsten-Voice) – verify per model card |
 | espeak-ng (system package, optional) | last-resort voice and test caller | GPL-3.0-or-later (used as a separate program) |

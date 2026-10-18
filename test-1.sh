@@ -2,10 +2,12 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
 # test-1.sh – Telefon- und Stimmenteil von moritz-agent ausprobieren, ganz ohne Systeminstallation.
 #
-# Alles landet im Repository-Ordner (runtime/, models/, assets/audio/cache/) und lässt sich durch
-# Löschen dieser Ordner wieder entfernen. Es wird kein root gebraucht (nur einmalig apt für die
-# Build-Werkzeuge, falls sie fehlen). Der Code, den dieses Skript startet, ist derselbe, der später
-# im vollständigen System läuft (moritz_agent/phone/, ADR-027).
+# Läuft auf jedem Linux-Rechner (Arbeitsplatz, VM, Sophie-1-Konsole, LXC) – es setzt weder einen
+# LXC noch Proxmox voraus. Alles landet im Repository-Ordner (runtime/, models/, assets/audio/cache/)
+# und lässt sich durch Löschen dieser Ordner wieder entfernen. Es wird kein root gebraucht (nur
+# einmalig apt für die Build-Werkzeuge, falls sie fehlen). Der Code, den dieses Skript startet, ist
+# derselbe, der später im LXC als Dienst läuft (moritz_agent/phone/, ADR-027); den LXC samt Dienst
+# richtet ./install.sh vom Proxmox-Host aus ein (ADR-028).
 #
 # Aufruf: ./test-1.sh <befehl> [optionen]      (./test-1.sh --help zeigt alles)
 set -Eeuo pipefail
@@ -31,26 +33,25 @@ usage() {
 	cat <<'USAGE'
 test-1.sh – Nikitas Telefon- und Stimmenteil testen (ohne Systeminstallation)
 
-  ./test-1.sh setup [--yes] [--no-cosyvoice] [--skip-models]
+  ./test-1.sh setup [--yes] [--skip-models]
         Richtet alles unter runtime/ und models/ ein: Python-Umgebung, PJSIP (SIP-Stack, wird
-        gebaut), CosyVoice-Umgebung (PyTorch CPU), Modelle (ca. 5,5 GB), Konfiguration.
+        gebaut), Modelle (ca. 0,6 GB: Whisper small + Piper-Stimme „Hessisch“), Konfiguration.
         --yes            Modell-Download ohne Rückfrage
-        --no-cosyvoice   nur Spracherkennung + Notstimmen (spart ca. 4,4 GB Download und 5 GB RAM)
         --skip-models    keine Modelle laden
-  ./test-1.sh check [--sip] [--no-wait] [--fallback-ok]
+  ./test-1.sh check [--sip] [--fallback-ok]
         Selbsttest: Umgebung, SIP-Stack, Modelle, Stimmen, Ansagen, Ports (--sip: auch Anmeldung).
-  ./test-1.sh speak "Text" [--out datei.wav] [--engine cosyvoice|piper|espeak] [--play]
+  ./test-1.sh speak "Text" [--out datei.wav] [--engine piper|espeak] [--play]
         Einen Satz mit Nikitas Stimme in eine WAV-Datei sprechen.
   ./test-1.sh prompts [--warm-times]
         Alle Ansagen vorrendern und im Cache ablegen (assets/audio/cache/).
   ./test-1.sh bench
-        Geschwindigkeit von Spracherkennung und Stimmen auf diesem Rechner messen.
+        Geschwindigkeit von Spracherkennung und Stimme auf diesem Rechner messen.
   ./test-1.sh call [--quick] ["Satz" …]
         Testanruf ohne Telefonanlage: startet Nikita und ruft sich selbst an (Aufnahme in
         runtime/test-1/anruf.wav). --quick: nur Notstimme + festes Text-Skript, ohne Modelle.
   ./test-1.sh run [--no-register] [--engines …] …
         Nikita starten, bei der Telefonanlage anmelden (passwords.txt, [sip]) und Anrufe annehmen.
-  ./test-1.sh models [status|fetch] [--groups stt,piper,cosyvoice] [--yes]
+  ./test-1.sh models [status|fetch] [--groups stt,piper] [--yes]
         Modell-Download verwalten.
 
 Umgebungsvariablen: MORITZ_PYTHON (Python-Interpreter), MORITZ_JOBS (Build-Prozesse),
@@ -125,11 +126,10 @@ ensure_user_files() {
 
 # -- setup ---------------------------------------------------------------------------------------
 cmd_setup() {
-	local assume_yes=0 with_cosy=1 models=1
+	local assume_yes=0 models=1
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
 		--yes | -y) assume_yes=1 ;;
-		--no-cosyvoice) with_cosy=0 ;;
 		--skip-models) models=0 ;;
 		-h | --help)
 			usage
@@ -146,32 +146,13 @@ cmd_setup() {
 	check_prereqs "${python}"
 
 	mkdir -p "${RUNTIME}" "${ROOT}/models"
-	if [[ ! -x "${VPY}" ]]; then
-		log "lege Python-Umgebung an: ${VENV} ($("${python}" --version 2>&1))"
-		"${python}" -m venv "${VENV}"
-	fi
-	log "installiere Python-Pakete (exakte Versionen mit Prüfsummen, aus PyPI) …"
-	"${VPY}" -m pip install --disable-pip-version-check --quiet --require-hashes \
-		-r "${ROOT}/requirements/core.lock" -r "${ROOT}/requirements/phone.lock"
-
-	log "baue den SIP-Stack (PJSIP, einige Minuten beim ersten Mal) …"
-	"${ROOT}/scripts/build-pjsip.sh" --python "${VPY}" --jobs "${jobs}"
-
-	if [[ ${with_cosy} -eq 1 ]]; then
-		log "richte die CosyVoice-Umgebung ein (PyTorch CPU) …"
-		"${ROOT}/scripts/setup-tts-venv.sh" --python "${python}"
-	else
-		log "CosyVoice übersprungen (--no-cosyvoice): Nikita spricht mit Piper (Thorsten) bzw. espeak-ng"
-	fi
-
+	"${ROOT}/scripts/setup-env.sh" --venv "${VENV}" --python "${python}" --jobs "${jobs}"
 	ensure_user_files
 
 	if [[ ${models} -eq 1 ]]; then
-		local groups="stt,piper"
-		if [[ ${with_cosy} -eq 1 ]]; then groups="stt,piper,cosyvoice"; fi
-		local fetch_args=(fetch --groups "${groups}")
+		local fetch_args=(fetch --groups "stt,piper")
 		if [[ ${assume_yes} -eq 1 ]]; then fetch_args+=(--yes); fi
-		log "lade Modelle (${groups}) von Hugging Face …"
+		log "lade Modelle (Whisper small, Piper-Stimme Hessisch) von Hugging Face …"
 		PYTHONPATH="${ROOT}" "${VPY}" -m moritz_agent.phone.audio.models "${fetch_args[@]}"
 	fi
 

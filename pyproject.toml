@@ -13,7 +13,6 @@ license = { text = "LicenseRef-MSOL-1.1" }  # own code; see LICENSING.md for bun
 # pinned with hashes in requirements/*.lock. Planned groups:
 #   core:  fastapi, uvicorn, pydantic, httpx
 #   phone: faster-whisper, piper-tts, onnxruntime, soxr, numpy (+ pjsua2, built from source)
-#   tts:   CosyVoice worker environment (runtime/venv-tts), see requirements/tts.in
 dependencies = [
     "tzdata>=2024.1",  # zoneinfo data for Europe/Berlin even without system tzdata
 ]

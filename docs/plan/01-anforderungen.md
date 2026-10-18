@@ -66,7 +66,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PHONE-34 | Sind STT oder TTS nicht bereit, wird kein normaler Gesprächsbetrieb vorgetäuscht Anruf annehmen → vorbereitete Störungsansage → auflegen. Fehlt der Ansagen-Cache selbst, registriert sich der Agent nicht (ADR-011). | MUSS | 1 |
 | PHONE-35 | Dauert die Antwort länger als `thinking_prompt_after_s` (Start: 2,5 s), wird eine vorbereitete Zwischenansage gespielt („Moment, ich schaue nach.“). | SOLL | 1 |
 | PHONE-36 | Optionaler Abschied per Sprache („Tschüss“, „Danke, das war’s“) → Verabschiedung und Auflegen. | SOLL | 1 |
-| PHONE-37 | Stimme: **Thorsten-Voice CosyVoice3 Hessisch** (lokal auf der CPU, Sprecher `thorsten_hessisch`) ist Nikitas Stimme. Fehlt das Modell, ist es zu langsam oder fällt es aus, spricht die lokale Rückfallkette Piper (Thorsten) → espeak-ng; der Anruf bricht nie wegen der Stimme ab (ADR-027). | MUSS | 1 |
+| PHONE-37 | Stimme: **Thorsten-Voice „Hessisch“** (Piper-Modell, lokal auf der CPU) ist Nikitas Stimme. Fehlt das Modell oder fällt es aus, spricht die lokale Notstimme espeak-ng; der Anruf bricht nie wegen der Stimme ab (ADR-027). | MUSS | 1 |
 
 ### 2.3 Ressourcen, Parallelität, Datenschutz
 
@@ -81,7 +81,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PHONE-46 | Eine angezeigte Rufnummer (Caller-ID) ist **keine** Berechtigung für administrative Aktionen – auch nicht in späteren Parts ohne zusätzliche Authentisierung. | MUSS | 1 |
 | PHONE-47 | Speicherverbrauch von SIP/VAD/STT/TTS wird unter Telefonlast gemessen und dokumentiert. | MUSS | 1 |
 | PHONE-48 | Feste Ansagen (Begrüßung, Fehler-, Zwischenansagen, Uhrzeiten) werden **vorgerendert und gecacht** (`assets/audio/cache/`, Schlüssel aus Text+Stimme); das Telefon registriert sich erst, wenn alle nötigen Ansagen sprechbar sind. | MUSS | 1 |
-| PHONE-49 | Live-Antworten werden satzweise gesprochen (erster Satz läuft, während der Rest entsteht); die Stimme für Live-Sätze wird nach gemessener Geschwindigkeit gewählt (`live_engine = auto`). Gerenderte Live-Sätze liegen nie auf der Platte. | MUSS | 1 |
+| PHONE-49 | Antworten werden satzweise gesprochen (erster Satz läuft, während der Rest entsteht). Gerenderte Live-Sätze liegen nie auf der Platte. | MUSS | 1 |
 | PHONE-50 | Antworttexte werden vor der Sprachausgabe in ausgeschriebene deutsche Wörter normalisiert (Zahlen, Datum, Uhrzeit, Euro, Einheiten, Abkürzungen; kein Markdown/Emoji). | MUSS | 1 |
 | PHONE-51 | Das Telefon ist ohne Systeminstallation ausprobierbar (`./test-1.sh`: Einrichtung unter `runtime/`, Selbsttest, Testanruf gegen sich selbst, Anmeldung an der Telefonanlage). | SOLL | 1 |
 

@@ -210,28 +210,23 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
 - **Spike-Teil (zuerst):** `scripts/bench_audio.py` (neu): 30 deutsche Testsätze (von Moritz
   über das echte Telefon aufgenommen **oder** synthetisch + G.711-Codec-Simulation),
   misst Whisper small (int8, 8 Threads; Vergleich `base`) WER + Latenz + RAM und je
-  TTS-Engine (CosyVoice-Hessisch, Piper thorsten-medium, espeak-ng) Time-to-first-audio +
-  Real-Time-Factor. CosyVoice ist Hauptstimme, Piper/espeak Rückfall (PHONE-37, ADR-027).
+  TTS-Engine (Piper „Hessisch“, espeak-ng) Time-to-first-audio + Real-Time-Factor. Piper ist
+  Hauptstimme, espeak-ng Notstimme (PHONE-37, ADR-027).
   **Umgesetzt als** `./test-1.sh bench` (`python -m moritz_agent.phone bench`) – misst auf dem
-  Zielrechner Whisper und jede Stimme mit vier Beispielsätzen.
+  Zielrechner Whisper und die Stimme mit vier Beispielsätzen.
 - **Komponenten-Teil:** `moritz_agent/phone/audio/{resample.py,vad.py,stt.py,tts.py,buffers.py}`
   mit Interfaces `SpeechToText.transcribe(pcm16_16k) -> Transcript(text, avg_logprob, no_speech_prob)`,
   `TextToSpeech.synthesize(text) -> Iterator[pcm16_16k_chunk]` (satzweise),
   `VoiceActivityDetector.feed(frame) -> Event` (Silero aus `assets/models/vad/`).
-  TTS-Engines `cosyvoice` (eigener Worker-Prozess in `runtime/venv-tts`), `piper` und `espeak`
-  mit Rückfallkette (PHONE-37). Modelle werden einmal geladen, Threads konfigurierbar,
+  TTS-Engines `piper` und `espeak` mit Rückfallkette (PHONE-37). Modelle werden einmal geladen, Threads konfigurierbar,
   Self-Test beim Start (`./test-1.sh check`).
-- **Stand 17.10.2026 – umgesetzt (ADR-027):** `moritz_agent/phone/audio/` mit `pcm.py`
+- **Stand 18.10.2026 – umgesetzt (ADR-027):** `moritz_agent/phone/audio/` mit `pcm.py`
   (Resampling/Lautheit/WAV), `vad.py` (Silero, 512er Fenster), `stt.py` (faster-whisper small
   int8 + Halluzinationsfilter), `textnorm.py` (Zahlen/Datum/Uhrzeit → deutsche Wörter),
   `tts.py` (`TtsService`: Engine-Kette, Platten-Cache für Ansagen, RAM-Cache für Live-Sätze,
-  Live-Richtlinie `auto`), `tts_cosyvoice.py` + `cosyvoice_worker.py` (Kindprozess, HTTP,
-  Token, Abbruch), `tts_piper.py`, `tts_espeak.py`, `models.py` (Modell-Manifest/Download mit
-  SHA-256-Prüfung), `factory.py`. Test mit Fake-Engines in `tests/moritz_agent/`.
-  **Offen:** WER-/Latenzmessung mit echten Modellen auf dem Zielrechner (R16).
-- **Unverständlich-Kriterium:** leerer Text, `no_speech_prob > 0.6`, `avg_logprob < -1.0`
-  oder < 2 Zeichen (Werte im Spike kalibrieren).
-- **Anforderungen:** PHONE-05, PHONE-22, PHONE-30, PHONE-42, PHONE-43, PHONE-47.
+  satzweises Streaming), `tts_piper.py`, `tts_espeak.py`, `models.py` (Modell-Manifest/Download
+  mit Größen- und SHA-256-Prüfung), `factory.py`. Test mit Fake-Engines in `tests/moritz_agent/`.
+  **Offen:** WER-/Latenzmessung und Hörprobe mit den echten Modellen auf dem Zielrechner (R16, R17).
 
 ## P1-11 – SIP-Spike (PJSUA2)
 
@@ -288,9 +283,8 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
   änderung), Cache `assets/audio/cache/<voice>/<id>-<hash>.wav` (16 kHz mono), Manifest mit
   Hash von Text+Stimme+TTS-Version; Self-Test „alle Pflichtansagen vorhanden“ (ADR-011).
   Begrüßungstext aus `phone.greeting_text` (Default exakt PHONE-21).
-- **Stand 17.10.2026 – umgesetzt (PHONE-48):** `announcements.py` (`AnnouncementStore`:
-  Pflichtansagen prüfen/rendern, vorläufig mit der besten verfügbaren Stimme, später
-  Aufwertung auf die Hauptstimme im Hintergrund außerhalb von Anrufen; Viertelstunden-Uhrzeiten
+- **Stand 18.10.2026 – umgesetzt (PHONE-48):** `announcements.py` (`AnnouncementStore`:
+  Pflichtansagen aus dem Cache laden bzw. rendern; Viertelstunden-Uhrzeiten
   optional mit `prompts --warm-times`). Cache: `assets/audio/cache/<hash>.wav`, Schlüssel =
   sha256(Version | Engine | Stimme | Lautheit | Satz). Katalog: `assets/audio/prompts.de.toml`.
 - **Anforderungen:** PHONE-21, PHONE-30…35, ADR-011.

@@ -32,8 +32,8 @@ Stand: 16.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, 
   Uhrzeit (über echtes Tool, Europe/Berlin) und Websuche schafft – installiert per Skript.
 - **Risiko zuerst:** SIP-Spike (P1-11) und Audio-Spike (P1-10) vor dem Ausbau.
 - **Modell:** Qwen3-30B-A3B-Instruct-2507 (MoE, UD-Q3_K_XL, 13,8 GB), etwa halb VRAM / halb
-  RAM (ADR-016). **STT:** Whisper small auf CPU. **TTS:** Thorsten-Voice CosyVoice3 Hessisch
-  auf der CPU (ADR-027), Rückfall Piper/espeak. **Web-UI:** HTTPS im LAN auf Port 3501.
+  RAM (ADR-016). **STT:** Whisper small auf CPU. **TTS:** Thorsten-Voice „Hessisch“
+  als Piper-Modell auf der CPU (ADR-027), Notstimme espeak-ng. **Web-UI:** HTTPS im LAN auf Port 3501.
 - **Alles im Repo, ein Programm:** SearXNG (fertig gebaut), PJSIP 2.17 und VAD liegen in
   `third_party/` und `assets/models/`; aus dem Netz kommen nur PyPI-Pakete (gepinnt), die
   CUDA-Toolchain und die Modelle (ADR-021).

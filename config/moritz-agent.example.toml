@@ -97,27 +97,16 @@ min_avg_logprob = -1.0
 initial_prompt = "Nikita, Moritz, Hessen, Frankfurt."   # hilft bei Namen und Orten
 
 [phone.tts]
-# Nikitas Stimme: Thorsten-Voice CosyVoice3 „Hessisch“ (Apache-2.0), läuft auf der CPU (ADR-027).
-engine = "cosyvoice"              # Hauptstimme für Ansagen (gecacht) und Antworten
-fallback_engines = ["piper", "espeak"]   # schnelle Ersatzstimmen (Piper = gleicher Sprecher, hochdeutsch)
-live_engine = "auto"              # "auto" = Hauptstimme, solange der erste Satz ≤ live_budget_s braucht; sonst Fallback
-live_budget_s = 6.0               # Wartezeit bis zum ersten gesprochenen Satz, die wir uns leisten
-cpu_threads = 16                  # Threads für CosyVoice/Piper (LXC max. 18)
+# Nikitas Stimme: Thorsten-Voice „Hessisch“ als Piper-Modell (high, CC0), läuft auf der CPU (ADR-027).
+engine = "piper"                  # Hauptstimme für Ansagen (gecacht) und Antworten
+fallback_engines = ["espeak"]     # Notstimme, falls Piper nicht ladbar ist (roboterhaft)
+cpu_threads = 4                   # Rechenthreads für Piper (onnxruntime)
 loudness_target_dbfs = -20.0      # Zielpegel fürs Telefon (RMS), Spitzen werden auf -1.5 dBFS begrenzt
 cache_dir = "assets/audio/cache"  # vorgerenderte Ansagen und feste Antworten (16 kHz, WAV)
 live_cache_entries = 64           # zuletzt gesprochene Antworten im Arbeitsspeicher (nie auf Platte)
 
-[phone.tts.cosyvoice]
-python = ""                       # Interpreter des TTS-Venv; leer = runtime/venv-tts/bin/python
-model_dir = "models/tts/cosyvoice3-hessisch"
-speaker = "thorsten_hessisch"     # Schlüssel in spk2info.pt
-speed = 1.0
-seed = 42                         # fester Startwert = reproduzierbare Aussprache
-startup_timeout_s = 600           # Modell laden (≈ 5 GB) dauert auf der CPU
-request_timeout_s = 180           # einzelner Satz
-
 [phone.tts.piper]
-voice = "models/tts/piper/de_DE-thorsten-medium.onnx"   # gleicher Sprecher, hochdeutsch
+voice = "models/tts/piper/Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx"   # Hessisch; hochdeutsch wäre de_DE-thorsten-medium
 length_scale = 1.0                # < 1 schneller, > 1 langsamer
 
 [phone.tts.espeak]

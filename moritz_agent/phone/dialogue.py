@@ -333,7 +333,7 @@ class CallSession:
                 if kind == "prompt":
                     await self._play_prompt(value)
                 else:
-                    await self._speak(value, live=True)
+                    await self._speak(value)
             except TtsError as exc:
                 log.error("Sprachausgabe fehlgeschlagen: %s", exc)
             except asyncio.CancelledError:
@@ -354,10 +354,10 @@ class CallSession:
             log.error("Unbekannte Ansage '%s'", prompt_id)
             return
         log.warning("Ansage '%s' nicht vorbereitet – spreche live", prompt_id)
-        await self._speak(prompt.text, live=False)
+        await self._speak(prompt.text)
 
-    async def _speak(self, text: str, live: bool) -> None:
-        async for chunk in self.deps.tts.stream(text, live=live):
+    async def _speak(self, text: str) -> None:
+        async for chunk in self.deps.tts.stream(text):
             self._push(chunk)
 
     def _push(self, data: bytes) -> None:

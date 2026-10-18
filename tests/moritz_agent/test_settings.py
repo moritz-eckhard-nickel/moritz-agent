@@ -15,11 +15,9 @@ def example_text() -> str:
 def test_example_config_is_valid_and_has_the_voice_defaults():
     settings = load_settings(REPO_ROOT / "config" / "moritz-agent.example.toml")
     tts = settings.phone.tts
-    assert tts.engine == "cosyvoice"
-    assert tts.fallback_engines == ["piper", "espeak"]
-    assert tts.live_engine == "auto"
-    assert tts.cosyvoice.speaker == "thorsten_hessisch"
-    assert tts.cosyvoice.model_dir == "models/tts/cosyvoice3-hessisch"
+    assert tts.engine == "piper"
+    assert tts.fallback_engines == ["espeak"]
+    assert "Hessisch" in tts.piper.voice
     assert settings.phone.assistant_name == "Nikita"
     assert settings.phone.max_concurrent_calls == 1
 

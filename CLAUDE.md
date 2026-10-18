@@ -21,7 +21,7 @@ Der vollständige Plan steht in `docs/plan/` – **vor jeder Aufgabe** das passe
 - **Lizenzen (ADR-023, `LICENSING.md`):** eigener Code = MSOL 1.1. Jede neue eigene
   Quelltext-/Skript-/Config-Datei beginnt mit `SPDX-License-Identifier: LicenseRef-MSOL-1.1`
   (nach einer Shebang-Zeile). Fremdcode behält seine Lizenz. Scribbles/Logo: alle Rechte vorbehalten.
-- `third_party/` (SearXNG, pjproject, cosyvoice, Matcha-TTS) und `assets/models/` sind **mitgelieferte
+- `third_party/` (SearXNG, pjproject) und `assets/models/` sind **mitgelieferte
   Fremdkomponenten**: nicht verändern, nur nach `third_party/VENDORED.md` aktualisieren
   (`git add -f third_party`). `third_party/pjproject/CLAUDE.md` gehört zu PJSIP, nicht zu uns.
 - Neue Python-Abhängigkeit: in `requirements/<gruppe>.in` eintragen und Lock mit Hashes neu

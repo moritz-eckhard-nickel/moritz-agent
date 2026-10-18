@@ -4,16 +4,13 @@ from __future__ import annotations
 import asyncio
 import re
 import shutil
-import sys
 from pathlib import Path
 
 import pytest
 
-from moritz_agent.config.settings import CosyVoiceSettings
 from moritz_agent.phone.audio import pcm
 from moritz_agent.phone.audio.announcements import AnnouncementStore, Prompt, load_catalog
-from moritz_agent.phone.audio.tts import TtsCancelled, TtsError, TtsService, TtsUnavailable
-from moritz_agent.phone.audio.tts_cosyvoice import MODEL_FILES, CosyVoiceEngine
+from moritz_agent.phone.audio.tts import TtsCancelled, TtsService, TtsUnavailable
 
 from .fakes import FakeEngine
 
@@ -52,19 +49,19 @@ def test_output_is_normalized_16khz_pcm(tmp_path):
 def test_persist_writes_cache_and_second_run_skips_engine(tmp_path):
     first = FakeEngine()
     tts = service(tmp_path, first)
-    original = collect(tts, "Hallo Moritz.", live=False, persist=True)
+    original = collect(tts, "Hallo Moritz.", persist=True)
     assert len(first.calls) == 1
     assert list((tmp_path / "cache" / "fake").glob("*.wav"))
     again = FakeEngine()
     tts2 = service(tmp_path, again)
-    assert collect(tts2, "Hallo Moritz.", live=False, persist=True) == original
+    assert collect(tts2, "Hallo Moritz.", persist=True) == original
     assert again.calls == []
     assert tts2.cached("Hallo Moritz.", "fake") == b"".join(original)
 
 
 def test_live_answers_are_not_written_to_disk(tmp_path):
     tts = service(tmp_path, FakeEngine())
-    collect(tts, "Das ist eine geheime Antwort.", live=True)
+    collect(tts, "Das ist eine geheime Antwort.")
     assert not (tmp_path / "cache").exists() or not list((tmp_path / "cache").rglob("*.wav"))
 
 
@@ -75,30 +72,18 @@ def test_cache_key_depends_on_voice(tmp_path):
     assert len(b.calls) == 1  # new voice id → no stale cache hit
 
 
-def test_live_uses_fallback_when_main_voice_is_too_slow(tmp_path):
-    main, fast = FakeEngine("cosyvoice"), FakeEngine("piper")
-    tts = service(tmp_path, main, fast, live_budget_s=3.0)
-    text = "Das ist ein ziemlich langer Beispielsatz für die Schätzung."
-    assert tts.pick_live(text) == "cosyvoice"  # speed unknown → trust the main voice
-    tts.stats["cosyvoice"].update(synth_s=30.0, audio_s=3.0)  # RTF 10
-    assert tts.pick_live(text) == "piper"
-    tts.stats["cosyvoice"].rtf = 0.5
-    assert tts.pick_live(text) == "cosyvoice"
-    tts.live_policy = "primary"
-    tts.stats["cosyvoice"].rtf = 50.0
-    assert tts.pick_live(text) == "cosyvoice"
-
-
-def test_announcements_use_best_available_voice_not_the_live_rule(tmp_path):
-    main, fast = FakeEngine("cosyvoice"), FakeEngine("piper")
+def test_speech_always_uses_the_best_available_voice(tmp_path):
+    main, fast = FakeEngine("piper"), FakeEngine("espeak")
     tts = service(tmp_path, main, fast)
-    tts.stats["cosyvoice"].rtf = 99.0
-    collect(tts, "Hallo.", live=False, persist=True)
+    collect(tts, "Hallo.", persist=True)
     assert main.calls and not fast.calls
+    main.ready = False  # model vanished → emergency voice
+    collect(tts, "Noch ein Satz.")
+    assert fast.calls
 
 
 def test_falls_back_when_chosen_voice_fails_midway(tmp_path):
-    main, fast = FakeEngine("cosyvoice"), FakeEngine("piper")
+    main, fast = FakeEngine("piper"), FakeEngine("espeak")
     main.fail_on = "Zwei"
     chunks = collect(service(tmp_path, main, fast), "Eins ist gut. Zwei ist schlecht.")
     assert len(chunks) == 2 and len(fast.calls) == 1
@@ -142,84 +127,6 @@ def service_with(tmp_path, engine) -> TtsService:
     return TtsService({engine.name: engine}, engine.name, [], tmp_path / "cache")
 
 
-# -- CosyVoice process management against the fake worker ------------------------------------
-def fake_cosy(tmp_path, delay: float = 0.0, die: bool = False, monkeypatch=None) -> CosyVoiceEngine:
-    model_dir = tmp_path / "model"
-    (model_dir / "CosyVoice-BlankEN").mkdir(parents=True)
-    for name in MODEL_FILES:
-        (model_dir / name).write_bytes(b"x")
-    (model_dir / "CosyVoice-BlankEN" / "model.safetensors").write_bytes(b"x")
-    settings = CosyVoiceSettings(
-        python=sys.executable, model_dir=str(model_dir), startup_timeout_s=30, request_timeout_s=20
-    )
-    engine = CosyVoiceEngine(settings, REPO_ROOT, threads=2)
-    engine.worker_script = Path(__file__).with_name("fake_cosyvoice_worker.py")
-    if delay:
-        monkeypatch.setenv("FAKE_TTS_DELAY", str(delay))
-    if die:
-        monkeypatch.setenv("FAKE_TTS_DIE_AT_START", "1")
-    return engine
-
-
-def test_cosyvoice_engine_starts_serves_and_stops(tmp_path):
-    engine = fake_cosy(tmp_path)
-    try:
-        assert not engine.available()
-        engine.start()
-        assert engine.wait_ready(30)
-        samples, rate = engine.synthesize("Hallo Moritz")
-        assert rate == 24000 and samples.size > 2000
-        assert engine.voice_id.startswith("thorsten-hessisch/")
-    finally:
-        engine.close()
-    assert not engine.available()
-
-
-def test_cosyvoice_engine_reports_worker_errors(tmp_path):
-    engine = fake_cosy(tmp_path)
-    try:
-        engine.start()
-        assert engine.wait_ready(30)
-        with pytest.raises(TtsError, match="boom"):
-            engine.synthesize("FEHLER bitte")
-    finally:
-        engine.close()
-
-
-def test_cosyvoice_cancel_aborts_request(tmp_path, monkeypatch):
-    engine = fake_cosy(tmp_path, delay=5.0, monkeypatch=monkeypatch)
-    try:
-        engine.start()
-        assert engine.wait_ready(30)
-        import threading
-
-        threading.Timer(0.3, engine.cancel).start()
-        with pytest.raises(TtsCancelled):
-            engine.synthesize("Hallo")
-    finally:
-        engine.close()
-
-
-def test_cosyvoice_not_available_without_model_files(tmp_path):
-    settings = CosyVoiceSettings(python=sys.executable, model_dir=str(tmp_path / "leer"))
-    engine = CosyVoiceEngine(settings, REPO_ROOT, threads=2)
-    engine.start()
-    assert engine.state == "failed" and "Modelldateien fehlen" in engine.last_error
-    assert not engine.available()
-    with pytest.raises(TtsUnavailable):
-        engine.synthesize("Hallo")
-
-
-def test_cosyvoice_failed_startup_is_reported(tmp_path, monkeypatch):
-    engine = fake_cosy(tmp_path, die=True, monkeypatch=monkeypatch)
-    try:
-        engine.start()
-        assert not engine.wait_ready(5)
-        assert "kaputt" in engine.last_error or engine.state in ("failed", "starting")
-    finally:
-        engine.close()
-
-
 # -- announcements ---------------------------------------------------------------------------
 def catalog() -> dict[str, Prompt]:
     return {
@@ -229,20 +136,18 @@ def catalog() -> dict[str, Prompt]:
     }
 
 
-def test_announcements_render_provisionally_then_upgrade(tmp_path):
-    main, fast = FakeEngine("cosyvoice", ready=False), FakeEngine("piper")
-    tts = service(tmp_path, main, fast)
-    store = AnnouncementStore(tts, catalog())
+def test_announcements_follow_the_voice_that_is_ready(tmp_path):
+    main, fast = FakeEngine("piper", ready=False), FakeEngine("espeak")
+    store = AnnouncementStore(service(tmp_path, main, fast), catalog())
     assert store.missing_required() == ["greeting", "bye"]
     assert store.ensure() == []
-    assert sorted(store.provisional()) == ["bye", "greeting", "opt"]
-    assert store.upgrade_once() is False  # main voice not ready yet
+    assert store.voice() == "espeak"  # Piper model missing → emergency voice
+    # the real voice appears (model installed, service restarted): everything is rendered again with it
     main.ready = True
-    assert store.upgrade_once(idle=lambda: False) is False  # a call is running: leave the CPU alone
-    while store.upgrade_once():
-        pass
-    assert store.provisional() == []
-    assert tts.cached("Hallo Moritz.", "cosyvoice")
+    store2 = AnnouncementStore(service(tmp_path, main, fast), catalog())
+    assert store2.ensure() == []
+    assert store2.voice() == "piper"
+    assert main.calls  # not served from the espeak recordings
 
 
 def test_announcements_reuse_disk_cache_after_restart(tmp_path):
