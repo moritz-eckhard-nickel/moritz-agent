@@ -53,6 +53,7 @@ moritz-agent/                      (Repo-Wurzel = Installationsverzeichnis /opt/
 │   ├── phone/                     SIP (PJSUA2), Call-State-Machine, Audio, VAD, STT, TTS, Prompts
 │   ├── inference/                 KoboldCPP-Prozess, OpenAI-kompatibler Client, Queue, Abort
 │   ├── agent/                     Agent-Loop, Profile, Context Manager, Prompts
+│   ├── skills/                    Sofortauskünfte ohne LLM: Router, Zeit/Ort-Parser, Wetter, Kalender, … (13, ADR-029)
 │   ├── tools/                     Tool-Registry, Schemas, get_current_time, web_search, …
 │   ├── research/                  SearXNG-Worker + Client, Web-Fetcher, (später Deep Research)
 │   ├── api/                       FastAPI-App, Auth, Routen, interne API
@@ -74,6 +75,7 @@ moritz-agent/                      (Repo-Wurzel = Installationsverzeichnis /opt/
 │   └── searxng/settings.yml       SearXNG-Konfiguration (versioniert, ohne secret_key)
 ├── assets/audio/                  Ansagenkatalog (versioniert) + generierter Cache (nicht versioniert)
 ├── assets/models/                 kleine Modelle im Repo (Silero VAD, ≤ 100 MB je Datei)
+├── assets/data/                   Daten der Sofortauskünfte: geo/ (GeoNames, Fremddaten, nur per Skript), kalender/, wetter/, sprache/, …
 ├── assets/branding/              Logo m-agent (M + Scribbles), Branding-Regeln; scribbles/ = Maskottchen
 ├── deploy/systemd/                moritz-agent.service
 ├── scripts/                       Spikes und Benchmarks (sip_spike, bench_audio, bench_llm)
@@ -196,8 +198,8 @@ TTS), Inference-Abort falls Phone-Request läuft, Puffer leeren, Call-Record sch
 Phone-Worker         Main/Agent            Inference(KoboldCPP)     SearXNG
     │ POST /internal/phone/turn {call_id, turn, text}
     │──────────────────►│
-    │                   │ Fast-Path Zeitfrage? nein
-    │                   │ chat/completions (tools=[time, web_search], prio=PHONE)
+    │                   │ Sofortauskunft (Skill-Router, 13)? nein – sonst Antwort in ≤ 30 ms (Cache)
+    │                   │ chat/completions (tools=[time, web_search, Skill-Tools], prio=PHONE)
     │                   │──────────────────────►│
     │                   │◄── tool_call web_search("…")
     │                   │──────────────────────────────────────────────►│
@@ -240,7 +242,7 @@ laufen; die harte Grenze setzt der LXC (`cores: 18`), nicht die Konfiguration.
 
 | Parameter | Startwert |
 | --- | --- |
-| Tools | `get_current_time`, `web_search` |
+| Tools | `get_current_time`, `web_search`, lesende Skill-Tools (`get_weather`, `get_warnings`, `get_pollen`, `get_sun_moon`, `calendar_info`, `calculate`, …; SKILL-23) |
 | Max. Tool-Schritte | 3 |
 | Max. Antwort-Tokens | 160 |
 | Temperatur | 0,3 |
@@ -254,6 +256,12 @@ laufen; die harte Grenze setzt der LXC (`cores: 18`), nicht die Konfiguration.
 Tool direkt, Antwort per Template, **kein LLM**. Kein Treffer → normaler Agent-Loop.
 **Guard:** Antwort enthält Uhrzeit-Muster (`\b\d{1,2}[:.]\d{2}\b`, „… Uhr …“) ohne
 `get_current_time`-Aufruf im Turn → Antwort verwerfen und Tool-Ergebnis verwenden.
+
+**Sofortauskünfte vor dem Agenten (ADR-029, [13](13-sofortauskuenfte.md)):** Seit Block S läuft jede
+Äußerung zuerst durch den Skill-Router (Zeit, Kalender, Wetter für den Heimatort 35781 Weilburg oder
+einen genannten Ort, Warnungen, Sonne/Mond, Rechnen …). Nur was kein Skill eindeutig beantwortet,
+erreicht den Agent-Loop; der nutzt dieselben Skills als Tools. **Wetter-Guard** (AGENT-11): Wetterwerte
+ohne Wetter-Tool-Aufruf im Turn → verwerfen, über das Tool neu beantworten.
 
 ## 8. Datenmodell (Part 1, SQLite)
 
@@ -283,6 +291,18 @@ tool_calls(
   result_summary TEXT, sources_json TEXT NULL, duration_ms INTEGER, created_at TEXT
 )
 ```
+
+Sofortauskünfte (Block S): jede Auskunft ist ein `tool_calls`-Eintrag mit `tool = 'skill:<id>'`
+(z. B. `skill:weather.day`), `args_json` mit Ort/Zeitraum (nie der Satz), `sources_json` mit Datendienst
+und Abrufzeit; `call_turns.path = 'skill'`. Dazu zwei kleine Tabellen:
+
+```sql
+notes(id INTEGER PRIMARY KEY, list TEXT, text TEXT, created_at TEXT, done_at TEXT NULL)   -- nur wenn skills.notes.enabled
+skill_misses(id INTEGER PRIMARY KEY, text TEXT, best_skill TEXT NULL, score REAL, created_at TEXT)  -- 24 h, wie Transkripte
+```
+
+Bis zur Datenbank (P1-06) stehen Skill-Aufrufe im Log und Notizen/Fehltreffer in `data/` (JSON, 0600).
+Wettercaches liegen als Dateien unter `data/cache/skills/` (13 §3.6), nicht in SQLite.
 
 Spätere Tabellen (Part 3+): `conversations`, `messages`, `agents`, `tasks`,
 `research_runs`, `sources`, `files`, `memories`, `settings`, `models`.
@@ -315,6 +335,7 @@ bei jedem Start neu erzeugt), nicht über das Web-Passwort.
 | SIP | `0.0.0.0:5060` | UDP | nur Registrar `192.168.1.176` (Firewall + PHONE-09) |
 | RTP/RTCP | `0.0.0.0:40000–40199` | UDP | Asterisk (bei `direct_media=no`) |
 | SSH → Sandbox | ausgehend | TCP 22 | Redemption-1 (Part 4) |
+| Datendienste der Sofortauskünfte | ausgehend | TCP 443 (HTTPS) | nur Hosts der Allowlist im HTTP-Client (ADR-032): `api.open-meteo.com`, `air-quality-api.open-meteo.com`, `geocoding-api.open-meteo.com`, `api.brightsky.dev`, `opendata.dwd.de`, `warnung.bund.de`, `www.pegelonline.wsv.de`, `www.ecb.europa.eu`, `api.energy-charts.info`, `creativecommons.tankerkoenig.de`, `api.openligadb.de`, Nachrichtenquelle, iCal-Host – je nach Aktivierung |
 
 ## 11. Fehlerisolierung (Matrix)
 
@@ -327,6 +348,8 @@ bei jedem Start neu erzeugt), nicht über das Web-Passwort.
 | STT/TTS lädt nicht | Worker-Self-Test | Status `failed`, Neuversuch mit Backoff (ADR-011) | Annehmen → vorbereitete Störungsansage → Auflegen |
 | Ansagen-Cache fehlt/kaputt | Worker-Self-Test | **nicht registrieren**, Status rot (ADR-011) | nicht erreichbar |
 | Sandbox offline | SSH-Test | Tool „unavailable“ | keine Auswirkung |
+| Wetter-/Datendienst nicht erreichbar oder unplausibel | Timeout 3 s / HTTP-Fehler / Schemaprüfung | Rückfallquelle, Cache bis 6 h, Backoff; Status `degraded` | Antwort aus Cache mit Altersangabe oder ehrliche Absage (13 §3.7); Anruf läuft weiter |
+| Gazetteer/Datendateien fehlen oder kaputt | Selbsttest beim Start | Orts-Skills `failed`, Rest läuft | „Orte kann ich gerade nicht auflösen“; Wetter für den Heimatort aus den konfigurierten Koordinaten, falls gesetzt |
 | Main crasht | systemd | Neustart aller Worker | Anruf bricht ab |
 
 ## 12. Upstream-Patches

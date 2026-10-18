@@ -48,7 +48,8 @@ Modell: Qwen3-30B-A3B-Instruct-2507 UD-Q3_K_XL, 13,8 GB, „halb/halb“ per `--
 | PJSIP + Phone-Worker | 0,1–0,2 GB | – | _offen_ |
 | SearXNG (granian) | 0,2–0,4 GB | – | _offen_ |
 | Main (FastAPI, Agent, SQLite) | 0,15–0,3 GB | – | _offen_ |
-| **Summe** | **≈ 8,7–10,9 GB** | **≈ 6,8–7,6 GB** | _offen_ |
+| Sofortauskünfte (Gazetteer + Indizes, Wetter-Caches) | 0,04–0,1 GB | – | _offen_ (P1-21) |
+| **Summe** | **≈ 8,7–11,0 GB** | **≈ 6,8–7,6 GB** | _offen_ |
 
 Folgerung: 16 GB RAM-Limit reicht mit Reserve. VRAM ist eng → `--moecpu` so wählen, dass
 ≥ 0,6 GB frei bleiben. 8.192 Kontext (+ ≈ 0,4 GB VRAM) erst nach Messung (INF-05).
@@ -119,9 +120,15 @@ eingehend:
   tcp 22             von <Admin-Netz>             (Verwaltung)
   sonst: drop
 ausgehend:
-  udp/tcp 53, tcp 80/443 (Suche, Modelldownload), udp 123 (NTP),
+  udp/tcp 53, tcp 80/443 (Suche, Modelldownload, Datendienste der Sofortauskünfte), udp 123 (NTP),
   udp 5060 + RTP zu 192.168.1.176, tcp 22 zur Sandbox-VM (Part 4)
 ```
+
+Die Datendienste der Sofortauskünfte (Wetter, Warnungen, Pollen, Pegel, Kurse; Plan
+[13](13-sofortauskuenfte.md)) laufen über tcp/443. Welche Hosts erreicht werden dürfen, legt der
+HTTP-Client der Anwendung fest (Allowlist, ADR-032, Liste in [02 §10](02-architektur.md#10-ports--netzwerk)),
+weil sich die Adressen der Dienste ändern. NTP muss laufen: Zeitantworten melden eine nicht
+synchronisierte Uhr (13 §8.6).
 
 ## 6. Asterisk
 

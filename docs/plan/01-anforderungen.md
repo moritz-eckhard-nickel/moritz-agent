@@ -77,13 +77,14 @@ Der Originalplan bleibt unverändert als Referenz.
 | PHONE-42 | VAD, STT (**Whisper small**, entschieden) und TTS laufen auf der **CPU**; die RTX 3070 bleibt dem LLM vorbehalten. | MUSS | 1 |
 | PHONE-43 | Keine dauerhafte Audioaufnahme als Standard; temporäre Audiopuffer werden nach Verwendung verworfen (nur im RAM, kein Disk-Spool). | MUSS | 1 |
 | PHONE-44 | Zugangsdaten gelangen weder in Transkripte noch in LLM-Kontexte oder Logs. | MUSS | 1 |
-| PHONE-45 | Telefon-Tools in Part 1: nur `get_current_time`, `web_search` (+ ggf. `web_fetch` light). Shell/SSH/Sandbox sind für das Telefonprofil **nicht** freigegeben. | MUSS | 1 |
+| PHONE-45 | Telefon-Tools in Part 1: `get_current_time`, `web_search` (+ ggf. `web_fetch` light) und die **lesenden Skill-Tools** der Sofortauskünfte (`get_weather`, `get_warnings`, `get_sun_moon`, `calendar_info`, `calculate`, … – SKILL-23, ADR-029). Shell/SSH/Sandbox sind für das Telefonprofil **nicht** freigegeben. | MUSS | 1 |
 | PHONE-46 | Eine angezeigte Rufnummer (Caller-ID) ist **keine** Berechtigung für administrative Aktionen – auch nicht in späteren Parts ohne zusätzliche Authentisierung. | MUSS | 1 |
 | PHONE-47 | Speicherverbrauch von SIP/VAD/STT/TTS wird unter Telefonlast gemessen und dokumentiert. | MUSS | 1 |
 | PHONE-48 | Feste Ansagen (Begrüßung, Fehler-, Zwischenansagen, Uhrzeiten) werden **vorgerendert und gecacht** (`assets/audio/cache/`, Schlüssel aus Text+Stimme); das Telefon registriert sich erst, wenn alle nötigen Ansagen sprechbar sind. | MUSS | 1 |
 | PHONE-49 | Antworten werden satzweise gesprochen (erster Satz läuft, während der Rest entsteht). Gerenderte Live-Sätze liegen nie auf der Platte. | MUSS | 1 |
 | PHONE-50 | Antworttexte werden vor der Sprachausgabe in ausgeschriebene deutsche Wörter normalisiert (Zahlen, Datum, Uhrzeit, Euro, Einheiten, Abkürzungen; kein Markdown/Emoji). | MUSS | 1 |
 | PHONE-51 | Das Telefon ist ohne Systeminstallation ausprobierbar (`./test-1.sh`: Einrichtung unter `runtime/`, Selbsttest, Testanruf gegen sich selbst, Anmeldung an der Telefonanlage). | SOLL | 1 |
+| PHONE-52 | Nach der Begrüßung darf ein **live** gesprochener Satz folgen (Warnhinweis, SKILL-10); die Begrüßung selbst bleibt die gecachte Ansage und wird dadurch nicht verzögert. | SOLL | 1 |
 
 ## 3. Konfiguration & Zugangsdaten (CFG)
 
@@ -152,8 +153,51 @@ Der Originalplan bleibt unverändert als Referenz.
 | AGENT-06 | **Uhrzeit-Garantie:** Eindeutige Zeitfragen gehen über einen deterministischen Fast-Path direkt an `get_current_time`. Enthält eine LLM-Antwort eine Uhrzeit ohne vorherigen Tool-Aufruf im selben Turn, wird sie verworfen und über das Tool neu beantwortet. | MUSS | 1 |
 | AGENT-07 | Telefonantworten: max. ~2–3 kurze Sätze, keine Markdown-/Listen-/URL-Ausgabe, Zahlen/Abkürzungen sprechbar. | MUSS | 1 |
 | AGENT-08 | Quellen von Suchergebnissen werden pro Turn protokolliert (Log + DB). | MUSS | 1 |
-| AGENT-10 | Vordefinierte **Fast-Paths** für einfache Infos (Uhrzeit, Datum, Wochentag, KW, Tage bis …, Feiertage, Zeitumstellung, Rechnen, Identität, Hilfe, Status, Abschied, Wiederholen) ohne LLM – Katalog [12-fast-paths.md](12-fast-paths.md). | MUSS | 1 |
+| AGENT-10 | Vordefinierte **Fast-Paths** für einfache Infos (Uhrzeit, Datum, Wochentag, KW, Tage bis …, Feiertage, Zeitumstellung, Rechnen, Identität, Hilfe, Status, Abschied, Wiederholen) ohne LLM – Katalog [12-fast-paths.md](12-fast-paths.md). **Erweitert durch die Sofortauskünfte (§6a, [13](13-sofortauskuenfte.md), ADR-029)**; die Fast-Path-IDs gehen dort auf. | MUSS | 1 |
 | AGENT-09 | Memory (3 Ebenen), Planner, Multi-Agent – siehe Roadmap. | — | 8/1.1 |
+| AGENT-11 | **Wetter-Garantie:** Wetter-, Warn-, Pollen-, Sonnen- und Mondfragen beantwortet das LLM nur über die Skill-Tools (nie über `web_search`). Enthält eine LLM-Antwort Wetterwerte ohne Wetter-Tool-Aufruf im selben Turn, wird sie verworfen und über das Tool neu beantwortet (analog AGENT-06). | MUSS | 1 |
+
+## 6a. Sofortauskünfte (SKILL)
+
+Deterministische Auskünfte **vor** dem Sprachmodell (Moritz, 18.10.2026). Plan und Katalog:
+[13-sofortauskuenfte.md](13-sofortauskuenfte.md); Tickets P1-19 … P1-30 (Block S in [04](04-part1-umsetzung.md)).
+
+| ID | Anforderung | Prio | Part |
+| --- | --- | --- | --- |
+| SKILL-01 | Sofortauskünfte antworten **ohne LLM** und nur bei eindeutiger Erkennung (Score-Schwellen, Ausschlusslisten, lange/zusammengesetzte Sätze ausgenommen); sonst eine Rückfrage oder Weitergabe (heute Testantwort, später Agent-Loop). | MUSS | 1 |
+| SKILL-02 | Jede Zahl/Angabe stammt aus Systemuhr, Rechnung, mitgelieferter Datei oder Datenabruf; nichts wird geschätzt oder erfunden. Fehlende Daten → ehrliche Ansage. | MUSS | 1 |
+| SKILL-03 | **Heimatort 35781 Weilburg** ist Standard für alle ortsbezogenen Fragen ohne Ortsangabe (Wetter, Warnungen, Pollen, Sonne/Mond, Pegel); konfigurierbar in `skills.home`. | MUSS | 1 |
+| SKILL-04 | Gesprochene Postleitzahl (Ziffern, Zahlwörter, zerlegt) oder Ortsname (inkl. Ortsteile, Zusätze, unscharfe Erkennung) ersetzt den Heimatort; der aufgelöste Ort wird in der Antwort genannt. | MUSS | 1 |
+| SKILL-05 | Mehrdeutige Orte → höchstens eine kurze Rückfrage oder eindeutiger Favorit mit Nennung; unbekannter Ort/unbekannte PLZ → ehrliche Antwort mit Vorschlag. | MUSS | 1 |
+| SKILL-06 | Zeitausdrücke laut [13 §4.3](13-sofortauskuenfte.md#43-zeitangaben-slotswhenpy) werden verstanden (jetzt, Tagesteile, morgen/übermorgen, Wochentage, Wochenende, nächste Woche, „in X …“, Uhrzeiten inkl. „viertel acht“, Datumsangaben, Sonderdaten). | MUSS | 1 |
+| SKILL-07 | Folgefragen im selben Anruf („Und morgen?“, „Und in Limburg?“, „Mehr Details“, „Woher?“) nutzen den Kontext der letzten Auskunft (3 Runden / 2 min). | MUSS | 1 |
+| SKILL-08 | Wetter: aktuell, heute, Tagesteile, morgen/übermorgen, Wochentag, Wochenende, 7-Tage-Trend, bestimmte Stunde, andere Orte, Regionsüberblick; Regen/Schirm, Schnee, Frost/Glätte, Wind/Sturm, Gewitter, Temperatur. | MUSS | 1 |
+| SKILL-09 | Wetter-Zusatz: Regenbeginn/-ende (15-Minuten-Daten), Nebel, gefühlte Temperatur, Luftfeuchte/Schwüle, Luftdruck, Sonnenstunden, UV, gestern, Vergleiche, „wann wird es wieder …“. | SOLL | 1 |
+| SKILL-10 | Amtliche Warnungen: DWD (Gemeinde) und NINA (Kreis); auf Frage und – ab `skills.warnings.announce_on_greeting` (Standard: Unwetter) – als ein Satz nach der Begrüßung. | SOLL | 1 |
+| SKILL-11 | Pollenflug (DWD, Hessen), Luftqualität (CAMS); Biowetter KANN. | SOLL | 1 |
+| SKILL-12 | Alltagsratschläge (Schirm, Jacke, Wäsche, Grillen, Fahrrad, Gießen, Kratzen, Sonnencreme …) nur nach den dokumentierten Regeln aus [13 §7.7](13-sofortauskuenfte.md#77-ratschlagsregeln), immer mit Grund. | SOLL | 1 |
+| SKILL-13 | Wetterdaten werden gecacht und für den Heimatort vorab abgerufen; Cache-Antwort ≤ 50 ms; Netzabruf mit Zeitlimit 3 s; Daten älter als 1 h werden mit Alter genannt, älter als 6 h nicht mehr gesprochen. | MUSS | 1 |
+| SKILL-14 | Quellen- und Lizenzangaben (Open-Meteo, DWD, GeoNames u. a., CC BY 4.0) in `THIRD_PARTY_NOTICES.md`, Doku und später auf der Über-Seite; am Telefon auf Nachfrage. | MUSS | 1 |
+| SKILL-15 | Zeit und Kalender vollständig nach [13 §6.1–6.3](13-sofortauskuenfte.md#61-uhrzeit): Weltzeit, Zeitumstellung, Datumsrechnung, Feiertage aller Länder, Schulferien Hessen (gepflegte Tabelle, ehrlich bei fehlendem Jahr), Arbeits- und Brückentage. | MUSS | 1 |
+| SKILL-16 | Sonne, Mond, Jahreszeiten offline für Heimatort und jeden bekannten Ort (± 2 min). | SOLL | 1 |
+| SKILL-17 | Rechnen mit eigenem Parser (**kein `eval`**), Prozent, Mehrwertsteuer, Trinkgeld, Aufteilen (MUSS); Einheiten, EZB-Währungskurse, Börsenstrompreis (SOLL). | MUSS | 1 |
+| SKILL-18 | Region & Alltag: Lahn-Pegel, Müllabfuhr (iCal), Fußball, Spritpreise (mit Schlüssel), Schlagzeilen, Notizen/Einkaufsliste – jeweils einzeln abschaltbar, Standard laut [13 §10](13-sofortauskuenfte.md#10-konfiguration). | KANN | 1 |
+| SKILL-19 | Kleine Helfer: Buchstabieren (DIN 5009:2022 / traditionell), Münze, Würfel, Zufallszahl, Witze, Eieruhr während des Gesprächs. | SOLL | 1 |
+| SKILL-20 | Gesprächsfunktionen: Gruß erwidern, Danke, Wiederholen, langsamer/schneller sprechen, Gesprächsdauer, Datenschutz-Auskunft, Version/Status, Hilfe (aus aktiven Skills erzeugt), Abbrechen, Abschied, Tagesüberblick („Guten Morgen“). | MUSS | 1 |
+| SKILL-21 | Hessische und umgangssprachliche Formulierungen werden verstanden (Wörterbuch ≥ 50 Einträge, z. B. „Wedder“, „morsche“, „heit“, „isses“, „hammer“, „Guude“), jeder Eintrag mit Test. | MUSS | 1 |
+| SKILL-22 | Antworten: ≤ 3 kurze Sätze, wichtigste Angabe zuerst, gerundet wie gesprochen, keine Abkürzungen; Einheiten und Sonderfälle (Minusgrade, l/m², hPa, km/h, Spannen, PLZ ziffernweise) werden sprechbar normalisiert. | MUSS | 1 |
+| SKILL-23 | Jeder Skill ist zugleich ein Tool mit JSON-Schema für P1-07 (`{ok, data, sources, speakable}`), damit das spätere LLM dieselben Funktionen nutzt (AGENT-11). | MUSS | 1 |
+| SKILL-24 | Skills haben keine Seiteneffekte außerhalb von moritz-agent (keine Geräte, Anrufe, Nachrichten); lokale Notizen nur nach gesprochener Bestätigung, Löschen nur nach Rückfrage. | MUSS | 1 |
+| SKILL-25 | Datensparsamkeit: an Datendienste gehen nur gerundete Koordinaten, PLZ/Ortsnamen und fachliche Kennungen – nie Transkripte, Anrufer oder Zugangsdaten (außer dem Schlüssel des jeweiligen Dienstes); nur HTTPS an Hosts einer festen Liste (ADR-032). | MUSS | 1 |
+| SKILL-26 | `skills.online = false` oder Netzausfall: Offline-Skills laufen unverändert, Online-Skills antworten ehrlich; kein Anruf wartet länger als das Zeitbudget. | MUSS | 1 |
+| SKILL-27 | Testkorpus ≥ 800 Äußerungen (positiv, negativ, Dialekt, STT-Varianten) und Golden-Antworten mit fester Uhr und aufgezeichneten Antworten; Router + Offline-Skill p95 ≤ 20 ms. | MUSS | 1 |
+| SKILL-28 | Nicht erkannte Fragen werden – nur bei aktivierter Transkriptspeicherung, 24 h – gesammelt und per `./test-1.sh misses` angezeigt. | SOLL | 1 |
+| SKILL-29 | Text-Testpfad ohne Telefon: `./test-1.sh ask "…"` (`--explain`, `--play`, `--fixtures`) liefert dieselbe Antwort wie am Telefon. | SOLL | 1 |
+| SKILL-30 | Orts- und Postleitzahldaten (Deutschland, Weltstädte) liegen offline im Repository (GeoNames, CC BY 4.0), reproduzierbar per Skript erzeugt (ADR-031). | MUSS | 1 |
+| SKILL-31 | Status je Datendienst (bereit/eingeschränkt/aus, letzter Abruf, Datenalter) und der aufgelöste Heimatort stehen in der Statusdatei bzw. später auf der Statusseite. | MUSS | 1 |
+| SKILL-32 | Uhrzeit wahlweise umgangssprachlich („Viertel nach sieben“, `skills.time.spoken_style`). | KANN | 1 |
+| SKILL-33 | Die bestehenden Fast-Paths (`moritz_agent/agent/fastpath.py`) laufen ohne Verhaltensänderung über das Skill-Framework weiter; ihre Tests bleiben grün. | MUSS | 1 |
+| SKILL-34 | Fehlerhafte oder unplausible Antworten von Datendiensten (Schema, Wertebereich) werden verworfen; Freitext (Warntexte, Schlagzeilen) wird bereinigt, gekürzt und nie als Anweisung an ein LLM gegeben. | MUSS | 1 |
 
 ## 7. Suche & Research (SEARCH)
 

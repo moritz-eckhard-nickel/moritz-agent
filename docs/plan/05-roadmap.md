@@ -6,6 +6,7 @@ nutzbar.** Jeder Part endet mit einem Regressionsanruf (09, §3 Punkte 4–7).
 | Part | Version | Thema | Kern-Lieferumfang | Abnahme |
 | --- | --- | --- | --- | --- |
 | 1 | 0.1 | Anrufbarer Agent | siehe [04](04-part1-umsetzung.md) | Echter Anruf mit Uhrzeit + Suche, 3 Runden |
+| 1 – Block S | 0.1 | **Sofortauskünfte vor dem LLM** (ADR-029) | Skill-Framework, Zeit/Kalender/Feiertage/Ferien, **Wetter für Weilburg 35781** oder jede genannte PLZ/jeden Ort, Warnungen, Pollen, Sonne/Mond, Rechnen/Umrechnen, Region (Lahn-Pegel, Müll), Helfer – [13](13-sofortauskuenfte.md), Tickets P1-19 … P1-30 | Testanruf nach 13 §17; erst danach P1-02/P1-05/P1-07/P1-09 |
 | 2 | 0.2 | WebUI | Chat mit Streaming (SSE), Verlauf, Agent-Timeline („✓ Search Web …“), Anrufstatus live, Modellverwaltung (GGUF erkennen, laden/entladen, Kontext, GPU-Layer, Presets), Einstellungen (nicht geheime Werte), responsive Layout | Chat + Telefon parallel benutzbar, Modellwechsel entlädt zuerst (INF-06) |
 | 3 | 0.3 | Backend & Speicher | Tabellen `conversations/messages/tasks/agents/settings/models`, sauber getrennte Sitzungen (Telefon ↔ Web), Task-Verwaltung, Wiederaufnahme geeigneter Hintergrundaufgaben nach Neustart, OpenAI-kompatible `/v1/*`-Weitergabe mit API-Key | Neustart verliert keine Verläufe/Tasks |
 | 4 | 0.4 | Sandbox & Coding-Tools | SSH-Client mit gepinntem Host-Key, Workspaces je Task, Tools `shell`, `python`, `files`, `git`, `download`, `archive`, Test-Runner; Ausgabelimits; Bestätigungsmodell für riskante Aktionen; Telefonprofil weiterhin ohne diese Tools | Abgegrenzte Coding-Aufgabe in Redemption-1-VM; Telefon läuft bei ausgeschalteter Sandbox |
@@ -29,3 +30,9 @@ nutzbar.** Jeder Part endet mit einem Regressionsanruf (09, §3 Punkte 4–7).
 - **Tools später:** `database`, `email`, `calendar`, `docker`, `proxmox`, `image`, `ocr`, `mcp`
   – jeweils mit eigenem Berechtigungs- und Bedrohungskapitel. Der vorhandene Upstream-MCP-
   Proxy (`--mcpfile`) und `kcpp_agent.py` dienen als Referenz, nicht als Basis.
+- **Sofortauskünfte in späteren Parts** ([13](13-sofortauskuenfte.md)): Part 2 – Wetterkarte,
+  Vorhersage-Diagramm, Warnungen, Notizen/Einkaufsliste und Liste nicht erkannter Fragen in der WebUI,
+  Über-Seite mit Quellenangaben; Part 3 – Skill-Statistik in der Datenbank; Part 7 – Regenradar
+  (Nowcasting), Barge-in auch bei langen Wetterantworten; Part 8 – persönliche Orte („bei Oma“) und
+  Geburtstage aus dem Memory; 1.1+ – Bus/Bahn (RMV/DB, mit Schlüssel), Kalender (CalDAV), eigene
+  Wetterstation/Home Assistant als lesende Quelle, weitere Bundesländer für Schulferien.

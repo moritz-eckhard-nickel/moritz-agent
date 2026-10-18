@@ -32,7 +32,10 @@ Moritz wählt intern die **999** und landet bei **Nikita**, dem Assistenten von 
 1. nimmt automatisch ab und begrüßt sofort: „Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?“
 2. hört zu, erkennt das Sprachende und transkribiert auf Deutsch (Whisper small, CPU),
 3. beantwortet einfache Fragen sofort über feste Antwortwege – Uhrzeit, Datum, Kalenderwoche,
-   Rechnen, … ([Fast-Paths](docs/plan/12-fast-paths.md)) – die Uhrzeit immer aus der echten Systemuhr (Europe/Berlin),
+   Rechnen, … ([Fast-Paths](docs/plan/12-fast-paths.md)) – die Uhrzeit immer aus der echten Systemuhr (Europe/Berlin);
+   geplant als Nächstes, noch vor dem Sprachmodell: **Sofortauskünfte** mit Wetter für Weilburg (35781)
+   oder jede genannte PLZ/jeden Ort, Warnungen, Pollen, Sonne/Mond, Feiertage, Ferien und mehr
+   ([Plan](docs/plan/13-sofortauskuenfte.md)),
 4. beantwortet andere Fragen mit dem Sprachmodell und nutzt bei Bedarf die integrierte Websuche,
 5. spricht die Antwort mit der Stimme **Thorsten-Voice „Hessisch“** (Piper, lokal auf der CPU; feste Ansagen vorgerendert und gecacht – [ADR-027](docs/plan/03-entscheidungen.md)) und hört wieder zu – mehrere Runden pro Anruf,
 6. räumt beim Auflegen alles sauber auf.

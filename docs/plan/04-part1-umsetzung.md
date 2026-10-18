@@ -45,6 +45,27 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
 4. **Block D – Betrieb:** P1-17, P1-15, P1-16.
 5. **Block E – Abnahme:** P1-18.
 
+**Stand 18.10.2026 und neue Reihenfolge (ADR-029):** Telefon (P1-10 … P1-13) und Betrieb
+(P1-15 … P1-17) sind ohne Sprachmodell gebaut und laufen bei Moritz. Bevor das Sprachmodell kommt,
+wird **Block S – Sofortauskünfte** umgesetzt (Moritz: „bevor wir LLM und richtige Agent-Instanzen
+machen“):
+
+```text
+P1-19 Skill-Framework ─┬─► P1-20 Zeit & Kalender ─────────────────────────┐
+                       ├─► P1-26 Rechnen/Umrechnen/Geld (offline zuerst)  │
+                       ├─► P1-28 Helfer & Gesprächsfunktionen             │
+                       └─► P1-21 Orte/Heimatort ─► P1-22 Wetter-Kern ─┬─► P1-23 Warnungen, Pollen, Luft
+                                                                      ├─► P1-24 Ratschläge
+                                                     P1-25 Sonne/Mond ◄┘   P1-27 Region & Alltag
+P1-29 Erkennung, Aussprache, Korpus (begleitend ab P1-19) ─► P1-30 Abnahme Sofortauskünfte
+danach: P1-02, P1-05, P1-07 (übernimmt skills/tools.py), P1-09 (Agent hinter den Skills), P1-08, P1-14, P1-18
+```
+
+Wellen: **A** P1-19, P1-20, P1-26 (offline), P1-28 · **B** P1-21, P1-22 · **C** P1-23, P1-24, P1-25 ·
+**D** P1-26 (online), P1-27 · **E** P1-29, P1-30 ([13 §16](13-sofortauskuenfte.md#16-umsetzungswellen)).
+P1-03 (Konfiguration) und P1-06 (Speicher) werden nur so weit vorgezogen, wie Block S sie braucht
+(`[skills]`-Sektion, Notizen); Skill-Aufrufe landen bis zur Datenbank im Log.
+
 ---
 
 ## P1-00 – Repo-Grundlage, Rebranding, Plan *(dieser PR)*
@@ -195,7 +216,10 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
   ohne Aufzählungen, ohne Markdown, ohne Links, ohne Emojis.
   Für die aktuelle Uhrzeit oder das Datum rufst du immer das Werkzeug get_current_time auf.
   Nenne niemals eine Uhrzeit ohne dieses Werkzeug.
-  Für aktuelle Ereignisse, Preise, Wetter, Nachrichten oder alles, was du nicht sicher weißt,
+  Für Wetter, Unwetterwarnungen, Pollen, Sonne und Mond rufst du immer das passende Werkzeug auf
+  (get_weather, get_warnings, get_pollen, get_sun_moon) – nie die Websuche. Ohne Ortsangabe gilt
+  Weilburg (35781).
+  Für aktuelle Ereignisse, Preise, Nachrichten oder alles, was du nicht sicher weißt,
   rufst du web_search auf. Nenne kurz die Quelle, z. B. „laut tagesschau.de“.
   Wenn die Suche fehlschlägt, sag ehrlich, dass du gerade nichts nachschlagen kannst.
   Erfinde keine Fakten. Wenn du etwas nicht verstanden hast, frag kurz nach.
@@ -203,7 +227,11 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
   ```
 - **Tests:** Fast-Path-Erkennung (positive/negative Beispielsätze, inkl. „Um wie viel Uhr
   fährt der Zug?“ = **kein** Fast-Path), Guard, Speakable-Normalisierung, Loop mit Fake-LLM.
-- **Anforderungen:** AGENT-01…08, AGENT-10, PHONE-23…27, PHONE-32, PHONE-45.
+- **Nach Block S (ADR-029):** Fast-Paths sind dann Skills (P1-19); der Agent-Loop läuft **hinter**
+  dem `SkillResponder` und bekommt die Skill-Tools aus `skills/tools.py`; zusätzlich Wetter-Guard
+  (AGENT-11). `prompts/phone.de.md` bekommt die Wetter-Zeile aus dem Entwurf oben erst, wenn diese
+  Tools existieren.
+- **Anforderungen:** AGENT-01…08, AGENT-10, AGENT-11, PHONE-23…27, PHONE-32, PHONE-45.
 
 ## P1-10 – Audio-Spike + Audio-Komponenten (VAD, STT, TTS, Resampling)
 
@@ -359,6 +387,163 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
 
 ---
 
+## Block S – Sofortauskünfte (vor dem Sprachmodell)
+
+Plan: [13-sofortauskuenfte.md](13-sofortauskuenfte.md) · Anforderungen SKILL-01 … SKILL-34, AGENT-11,
+PHONE-52 · Entscheidungen ADR-029 … ADR-032. Gemeinsame DoD zusätzlich zur allgemeinen DoD oben:
+Korpus-Einträge für jeden neuen Skill (positiv, negativ, Dialekt), Golden-Antworten, `./test-1.sh ask`
+beantwortet die Beispiele aus 13 §6, keine Netzabrufe in CI (nur Fixtures), Lizenzeintrag jeder neuen
+Datenquelle **vor** dem ersten Abruf.
+
+## P1-19 – Skill-Framework und Sofortauskunft-Responder
+
+- **Dateien:** `moritz_agent/skills/{base,registry,responder,router,context,clock,tools}.py`,
+  `skills/text/{normalize,dialect,numbers,phonetic}.py`, `skills/__main__.py`,
+  `assets/data/sprache/hessisch.toml`, `moritz_agent/config/settings.py` (Sektion `[skills]`,
+  Weiterlesen von `[fastpaths]`), `config/moritz-agent.example.toml`, `test-1.sh` (`ask`, `misses`).
+- **Aufgaben:**
+  1. Protokolle `Skill`, `Match`, `SkillResult` (13 §3.3); Registry mit Aktivierung/Abschaltung je
+     Skill und Gruppe; Hilfe-Text aus aktiven Skills.
+  2. Vorverarbeitung (13 §4.1): Normalisieren, Füllwörter, Dialekt-Wörterbuch (≥ 50 Einträge),
+     Zahlwörter → Ziffern inkl. Ziffernfolgen/PLZ-Zusammenfassung, Kölner Phonetik.
+  3. Router (13 §4.2): Muster + Schlüsselwörter + Ausschlusslisten, Score, Schwellen, Konflikte,
+     Kombination von höchstens zwei Skills, STT-Konfidenz-Regel.
+  4. `SkillContext` (13 §4.5): Folgefragen, eine Rückfrage, „Mehr Details“, „Woher?“, Ablauf.
+  5. `SkillResponder` ersetzt `TestResponder` in `phone/worker.py` (Testantwort bleibt als Rückfall);
+     `agent/fastpath.py` wird Fassade auf die Zeit-/Gesprächs-Skills (SKILL-33).
+  6. `Clock`-Protokoll; Log `[Skill]` je Auskunft ohne Transkript; Statusdatei-Feld `skills`.
+  7. CLI `python -m moritz_agent.skills ask|explain|misses|corpus` und `./test-1.sh ask "…"`
+     (`--explain`, `--play`, `--fixtures DIR`).
+- **Tests:** Vorverarbeitung (≥ 150 Fälle), Router-Grundkorpus, Kontext/Folgefragen, alle bisherigen
+  `test_fastpath.py`-Fälle unverändert grün, Latenz p95 ≤ 20 ms.
+- **Anforderungen:** SKILL-01, -02, -07, -20 (Grundgerüst), -21, -27 (Grundstock), -28, -29, -31, -33.
+
+## P1-20 – Zeit- und Kalenderauskünfte
+
+- **Dateien:** `skills/slots/when.py`, `skills/calendar/{holidays,school,workdays,special}.py`,
+  `skills/catalog/{time,calendar}.py`, `assets/data/kalender/{feiertage-de,schulferien-he}.toml`,
+  `assets/data/geo/aliases.de.toml` (Weltzeit-Städte, falls der Gazetteer noch fehlt).
+- **Aufgaben:** Zeitausdrucks-Parser nach 13 §4.3 (inkl. „viertel acht“, Sonderdaten); alle Skills aus
+  13 §6.1–6.3 (Uhrzeit, Weltzeit, Zeitumstellung, Datum, Datumsrechnung, KW, Alter, Schaltjahr,
+  Sonderdaten, Feiertage aller Länder, Arbeits-/Brückentage, Schulferien Hessen); Ferientabelle aus der
+  Quelle des Kultusministeriums mit Abrufdatum; Selbsttest „Ferientabelle reicht < 12 Monate“.
+- **Tests:** feste Uhr; Sommerzeit-Grenzen (25.10.2026, 28.03.2027), Jahreswechsel, 29.02.2028;
+  Feiertage 2026–2030 gegen amtliche Liste; Ostern 1900–2100; Golden-Antworten.
+- **Anforderungen:** SKILL-06, SKILL-15, SKILL-32, PHONE-23, PHONE-24, AGENT-06.
+
+## P1-21 – Orte: Gazetteer, Heimatort, Ortsauflösung
+
+- **Dateien:** `scripts/build_geodata.py`, `assets/data/geo/{de-postcodes,de-places,world-cities}.tsv`,
+  `assets/data/geo/aliases.de.toml`, `skills/geo/{gazetteer,geocode,distance}.py`, `skills/slots/where.py`,
+  `skills/catalog/geo.py`, `third_party/VENDORED.md`, `THIRD_PARTY_NOTICES.md`, `LICENSING.md`, `CLAUDE.md`.
+- **Aufgaben:** GeoNames-Rohdaten mit fester SHA-256 laden und in kompakte TSV umwandeln (reproduzierbar);
+  Laden im Hintergrund, Indizes (PLZ, Name, ohne Zusätze, Ortsteil, phonetisch); Auflösung nach 13 §4.4
+  (Heimat-Wörter, PLZ, Namen, Mehrdeutigkeit, Ausland, Online-Rückfall über Open-Meteo-Geocoding);
+  Heimatort 35781 auflösen und in Status/Log zeigen (13 §5, Gemeindeschlüssel/Ortsteile gegen amtliche
+  Quelle prüfen); Skills aus 13 §6.10; neue Abhängigkeit `rapidfuzz` (Lock neu erzeugen, ADR-019).
+- **Tests:** 35781 → Weilburg, 60311 → Frankfurt am Main, unbekannte PLZ, PLZ mit mehreren Orten,
+  Ortsteile, „Limburg a. d. Lahn“, „Weilborg“, Frankfurt/Neustadt-Mehrdeutigkeit, Ausland,
+  Ladezeit ≤ 300 ms, RAM gemessen (06 §2.2).
+- **Anforderungen:** SKILL-03, -04, -05, -30, ADR-031.
+
+## P1-22 – Wetter-Kern (Open-Meteo)
+
+- **Dateien:** `skills/providers/{http,cache,open_meteo}.py`, `skills/render/weather.py`,
+  `skills/catalog/weather.py`, `assets/data/wetter/wmo-codes.de.toml`, `assets/audio/prompts.de.toml`
+  (`thinking_weather`, `skills_offline`).
+- **Aufgaben:** gemeinsamer HTTP-Client nach ADR-032 (Allowlist, Zeitlimits, Größenlimit, User-Agent,
+  Backoff, keine Query-Strings im Log); Wetterpaket-Abruf nach 13 §7.2 mit Schema-/Plausibilitätsprüfung;
+  RAM- und Datei-Cache mit Stale-Regeln (13 §3.6); Vorabruf für den Heimatort; Renderer nach 13 §7.3–7.5
+  (Codes, Rundung, Beaufort, Tagesverlauf, Mehrtagestrend, Faktenprioritäten, Varianten); alle Skills
+  aus 13 §6.4/6.5 mit Priorität M; Rückfall-Provider-Schnittstelle (Bright Sky folgt in P1-23);
+  Fehlerverhalten 13 §3.7; Quellenangabe auf Nachfrage.
+- **Tests:** Fixtures für drei Wetterlagen + Fehlerfälle über `httpx.MockTransport`; Golden-Antworten
+  (Weilburg ohne Ort, PLZ, anderer Ort, Folgefragen, nach 18 Uhr, Tag 8+, Stale-Cache, offline).
+- **Anforderungen:** SKILL-02, -03, -08, -13, -14, -22, -25, -26, -34, ADR-030, ADR-032.
+
+## P1-23 – Warnungen, Pollen, Luft, Wetter-Zusatz
+
+- **Dateien:** `skills/providers/{brightsky,dwd,nina}.py`, `skills/catalog/{warnings,health}.py`,
+  `moritz_agent/phone/dialogue.py` (Satz nach der Begrüßung).
+- **Aufgaben:** Bright Sky (`/alerts` mit Warnzelle, `/current_weather`, `/weather` als Rückfall);
+  DWD-Pollenflug-Gefahrenindex (Teilregion aus der aktuellen Datei bestimmen, F-20), UV/Biowetter-Dateien
+  bestimmen; NINA-Kreisübersicht (ARS prüfen, Nutzungsbedingungen prüfen); Warnungsstufen und
+  Freitext-Bereinigung (13 §7.6); Hinweis nach der Begrüßung (`announce_on_greeting`, PHONE-52);
+  restliche Wetter-Skills (S/K) aus 13 §6.5–6.7.
+- **Tests:** Fixtures mit Warnungen jeder Stufe, abgelaufenen Warnungen, NINA-Doppelmeldungen,
+  Pollen-Stufen inkl. Halbstufen, Rückfall bei Open-Meteo-Ausfall; Dialogtest „Begrüßung + Warnsatz“.
+- **Anforderungen:** SKILL-09, -10, -11, -34, PHONE-52.
+
+## P1-24 – Alltagsratschläge
+
+- **Dateien:** `skills/catalog/advice.py`.
+- **Aufgaben:** Regeln exakt nach 13 §7.7 (Schwellwerte als Konstanten mit Verweis), Begründung in
+  jeder Antwort, Warnung zuerst; Zeitraum-Standard je Ratschlag.
+- **Tests:** je Regel Grenzwerte (knapp darüber/darunter) mit synthetischen Wetterpaketen.
+- **Anforderungen:** SKILL-12.
+
+## P1-25 – Sonne, Mond, Jahreszeiten
+
+- **Dateien:** `skills/astro/{sun,moon,seasons}.py`, `skills/catalog/astro.py`; neue Abhängigkeit
+  `astral` (Apache-2.0).
+- **Aufgaben:** Skills aus 13 §6.9; Meeus Kap. 27/49 für Jahreszeiten und Mondphasen; Polarfälle;
+  Ort aus P1-21.
+- **Tests:** Referenzwerte (12 Daten Weilburg/Frankfurt, Mondphasen und Jahreszeiten 2026–2028, ± 2 min).
+- **Anforderungen:** SKILL-16.
+
+## P1-26 – Rechnen, Umrechnen, Geld
+
+- **Dateien:** `skills/slots/quantity.py`, `skills/catalog/{calc,convert,money}.py`,
+  `skills/providers/{ecb,energy_charts,tankerkoenig}.py`, `assets/data/{einheiten,waehrungen.de}.toml`.
+- **Aufgaben:** sicherer Rechen-Parser (kein `eval`, Grenzen, 13 §6.11); Prozent, MwSt, Trinkgeld,
+  Aufteilen, Rabatt; Einheiten-Tabelle („Pfund“ = 500 g); offline zuerst (Welle A). Online (Welle D):
+  EZB-Referenzkurse, Börsenstrompreis, Spritpreise nur mit `tankerkoenig_api_key` (zeilenweise in
+  `passwords.txt` ergänzbar, nie geloggt).
+- **Tests:** Parser-Fuzzing mit festem Startwert (keine Ausnahme, keine Codeausführung), Rundung,
+  Einheiten-Rundreisen, Fixtures für EZB/Energy-Charts/Tankerkönig.
+- **Anforderungen:** SKILL-17, SKILL-25.
+
+## P1-27 – Region und Alltag
+
+- **Dateien:** `skills/providers/{pegelonline,ics,openligadb,news}.py`, `skills/catalog/{region,notes}.py`;
+  neue Abhängigkeit `icalendar` (BSD-2-Clause).
+- **Aufgaben:** Lahn-Pegel (Station aus `stations.json?waters=LAHN` bestimmen, Trend, Kennwerte), Hochwasser
+  mit NINA; Abfallkalender (iCal-Link/-Datei, nur `https://`, keine privaten Adressen, Kategorien
+  normalisieren); Fußball, Schlagzeilen (Nutzungsbedingungen prüfen, Standard aus); Notizen/Einkaufsliste
+  (Standard aus, Bestätigung, Löschen mit Rückfrage, Aufbewahrung).
+- **Tests:** Fixtures je Dienst; iCal mit Wiederholungsregeln; SSRF-Schutz (Redirect auf 192.168.x.x
+  wird abgelehnt).
+- **Anforderungen:** SKILL-18, SKILL-24, SKILL-25.
+
+## P1-28 – Kleine Helfer und Gesprächsfunktionen
+
+- **Dateien:** `skills/catalog/{talk,helpers,fun,timer,briefing}.py`, `assets/data/{buchstabiertafel,sprueche.de}.toml`,
+  `moritz_agent/phone/dialogue.py` (Sprechtempo/Lautheit je Anruf, Eieruhr: Stille-Erinnerung pausiert).
+- **Aufgaben:** alle Skills aus 13 §6.14/6.15 (Buchstabieren, Zufall, Witze, Eieruhr, Gruß, Danke,
+  Tempo, Lautheit, Gesprächsdauer, Datenschutz, Version/Status, Hilfe, Abbrechen, Abschied,
+  Tagesüberblick – Wetterteil ab P1-22).
+- **Tests:** Zufall mit festem Startwert, Eieruhr mit falscher Uhr, Tempo-Grenzen, Dialogtests.
+- **Anforderungen:** SKILL-19, SKILL-20.
+
+## P1-29 – Erkennung, Aussprache, Korpus und Messung
+
+- **Dateien:** `moritz_agent/phone/audio/textnorm.py`, `assets/data/sprache/aussprache.toml`,
+  `config/moritz-agent.example.toml` (`phone.stt.initial_prompt`), `tests/moritz_agent/data/skills*.jsonl`,
+  `scripts/bench_audio.py`/`./test-1.sh bench`.
+- **Aufgaben:** textnorm-Erweiterungen nach 13 §9.3 (Modulkopf korrigieren: CosyVoice ist entfernt);
+  Ausspracheliste per Hörtest; Whisper-Bias (`initial_prompt` vs. `hotwords`) mit PLZ-/Ortsnamen-Sätzen
+  messen und den Gewinner als Standard setzen; Korpus auf ≥ 800 Äußerungen bringen; Latenzmessung je
+  Skill (Cache/Netz) in 09 §4 eintragen.
+- **Anforderungen:** SKILL-21, SKILL-22, SKILL-27, NFR-03.
+
+## P1-30 – Abnahme Sofortauskünfte
+
+- Testanruf über die echte Anlage nach [13 §17](13-sofortauskuenfte.md#17-abnahme-am-telefon),
+  Protokoll `docs/abnahme/sofortauskuenfte-<datum>.md`; offene Fragen F-18 … F-28 geklärt oder Defaults
+  bestätigt; README und `docs/telefon-test-1.md` aktualisiert.
+
+---
+
 ## Anhang A – Ansagenkatalog (Part 1)
 
 | ID | Text | Verwendung |
@@ -373,6 +558,9 @@ Empfohlene Abfolge in Wochen-Blöcken (ohne Zeitversprechen):
 | `starting_up` | Ich starte gerade noch. Bitte ruf in einer Minute noch einmal an. | LLM lädt |
 | `search_failed` | Die Websuche ist gerade nicht erreichbar, deshalb kann ich das nicht nachschlagen. | optional vorgefertigt |
 | `timeout` | Das dauert leider zu lange. Frag mich gern noch einmal. | Deadline überschritten |
+| `thinking_weather` | Moment, ich schaue nach dem Wetter. | Wetterabruf ohne Cache-Treffer (P1-22) |
+| `skills_offline` | Ich komme gerade nicht an die Daten. Versuch es bitte gleich noch einmal. | Datendienst nicht erreichbar, kein Cache (P1-22) |
+| `timer_done` | Die Zeit ist um! | Eieruhr während des Gesprächs (P1-28), davor ein kurzer Ton |
 
 ## Anhang B – Konfigurationsschlüssel Part 1
 

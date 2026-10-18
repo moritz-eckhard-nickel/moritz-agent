@@ -32,6 +32,12 @@
 | T14 | Update bricht Telefonie | Drain, Backup, Health-Check, Rollback; zusätzlich Proxmox-Snapshot des Containers vor jedem Update | UPD-01, UPD-07, INST-14 |
 | T17 | Das Host-Skript verändert versehentlich den Proxmox-Host oder fremde Gäste | arbeitet nur mit `pct`/`pveam`/`pvesm` auf **einem** Container (Name/ID, Markierung in der Beschreibung; fremde Container nur nach Rückfrage); `--dry-run`; Tests gegen simulierten Host; keine Host-Pakete, -Treiber, -Netzwerk- oder -Firewall-Änderung | INST-02, INST-12, INST-15 |
 | T18 | Zugangsdaten beim Kopieren/Installieren | `passwords.txt` ist nie Teil des Programmpakets und wird nie überschrieben; keine Passwörter als Argumente/Umgebungsvariablen; Container ohne Root-Passwort; Installationsprotokolle (0600) enthalten keine Eingaben | INST-04, INST-13 |
+| T19 | Sofortauskünfte verraten Standort/Gewohnheiten an Datendienste | nur gerundete Koordinaten (≈ 1 km), PLZ/Ortsnamen, fachliche Kennungen; kein Transkript, keine Rufnummer, kein Anrufbezug; Vorabruf in festem Takt statt je Anruf (verschleiert Anrufzeiten); `skills.online = false` schaltet alles ab | SKILL-25, ADR-032 |
+| T20 | Manipulierte oder fehlerhafte Antworten von Datendiensten (falsche Werte, Freitext mit „Anweisungen“) | Schema- und Wertebereichsprüfung, Rückfallquelle; Freitext (Warnungen, Schlagzeilen) bereinigt, gekürzt, nur auf Nachfrage gesprochen; nie als Anweisung an ein LLM, Tool-Ergebnisse als Daten markiert (wie T6) | SKILL-34, AGENT-11 |
+| T21 | Ausfall/Rate-Limit eines Datendienstes blockiert Anrufe | Zeitbudget 3 s, Cache mit Stale-Regeln, Backoff bei 429/5xx, Status `degraded`; Offline-Skills unabhängig | SKILL-13, SKILL-26 |
+| T22 | SSRF/Datenabfluss über konfigurierbare URLs (iCal-Link) oder Weiterleitungen | nur `https://`, Host-Allowlist, Weiterleitungen nur innerhalb der Liste, keine privaten/Loopback-/Link-Local-Adressen (auch nicht nach DNS-Auflösung), Antwort ≤ 2 MB | ADR-032 |
+| T23 | Notizen/Einkaufsliste: jeder interne Anrufer kann sie hören oder löschen | Standard aus; Löschen nur nach Rückfrage; Aufbewahrung begrenzt; Hinweis in der Doku; Caller-ID ist keine Berechtigung (PHONE-46) – für Persönliches später Memory mit Bestätigung (Part 8) | SKILL-24 |
+| T24 | API-Schlüssel der Datendienste (Tankerkönig) in Logs, weil sie als URL-Parameter gesendet werden | Schlüssel nur in `passwords.txt` (`[optional_services]`), im Code als `Secret`; der HTTP-Client protokolliert nie Query-Strings, Fehlermeldungen enthalten nur Host und Pfad | LOG-02, CFG-01 |
 
 ## 3. Redaction – Sonderfall kurze Secrets
 
@@ -60,3 +66,9 @@ Logs würde Logs unbrauchbar machen. Daher:
   unverändert. Neue Komponenten werden in `THIRD_PARTY_NOTICES.md` eingetragen, **bevor**
   sie gebündelt oder installiert werden.
 - Modelle (LLM, Stimmen) haben eigene Lizenzen → ebenfalls in `THIRD_PARTY_NOTICES.md`.
+- **Daten der Sofortauskünfte** (Plan [13](13-sofortauskuenfte.md) §7.1, §11): GeoNames (im Repo),
+  Open-Meteo, DWD/Bright Sky, CAMS stehen unter **CC BY 4.0** → Namensnennung in
+  `THIRD_PARTY_NOTICES.md`, `LICENSING.md` und auf der Über-Seite der WebUI (Part 2). Die freie
+  Open-Meteo-API ist nur für nicht kommerzielle Nutzung (privates Homelab: erfüllt). NINA, OpenLigaDB,
+  Tankerkönig, Energy-Charts und die Nachrichtenquelle: Bedingungen werden im jeweiligen Ticket geprüft
+  und eingetragen, **bevor** der erste Abruf eingebaut wird.

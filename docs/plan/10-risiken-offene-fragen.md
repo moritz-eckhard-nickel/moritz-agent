@@ -24,6 +24,13 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | R16 | **Neu:** Klang des Hessisch-Piper-Modells (2023, „high“) ist ungehört; er liest hochdeutsch geschriebenen Text mit hessischer Färbung | „das Hessische“ | Hörprobe mit `./test-1.sh speak`; Alternative per `phone.tts.piper.voice` (`de_DE-thorsten-medium`, hochdeutsch) | P1-10 |
 | R17 | **Neu:** Geschwindigkeit des „high“-Modells auf dem E5-2673 v3 ist ungemessen (erwartet: deutlich schneller als Echtzeit) | – | `./test-1.sh bench`; `phone.tts.cpu_threads` anpassen; Ansagen sind ohnehin gecacht (PHONE-48) | P1-10 |
 | R19 | **Neu:** `install.sh`/`update.sh`/`moritz-install.sh` sind nur gegen einen simulierten Proxmox-Host und ein Fake-System getestet, nicht auf echter Hardware (apt, systemd, unprivilegierter LXC, PJSIP-Build und Modell-Download dort; Ubuntu 26.04 mit Python 3.14) | „automatisch aufsetzen oder updaten“ | `--dry-run`; alle Skripte wiederholbar (setzen fort); Proxmox-Snapshot vor jedem Update; Rollback im Container; erster echter Lauf als Protokoll in P1-18 (09) | P1-15 |
+| R20 | **Neu:** Open-Meteo ändert Bedingungen/Kontingente oder fällt aus (freie API nur nicht kommerziell, < 10.000 Aufrufe/Tag) | „Wetter in der Region“ | Vorabruf statt Abruf je Frage (≈ 50–150 Aufrufe/Tag), Rückfall Bright Sky (DWD), Cache bis 6 h; notfalls eigener Open-Meteo-Server (ADR-030) | P1-22 |
+| R21 | **Neu:** Whisper erkennt Postleitzahlen und Ortsnamen am Telefon schlecht (Zahlen zerstückelt, „Weilborg“) | – | Ziffernfolgen zusammenführen, unscharfe/phonetische Ortssuche, PLZ in der Antwort mit Ortsname wiederholen, Rückfrage bei niedriger Konfidenz, `initial_prompt`/`hotwords` gemessen (13 §9.2) | P1-21, P1-29 |
+| R22 | **Neu:** Moritz’ Formulierungen (Hessisch, Umgangssprache) sind nicht abgedeckt → zu viele „nicht verstanden“ | „nikita erkennt mein gelaber“ | Dialekt-Wörterbuch, Liste nicht erkannter Fragen (`./test-1.sh misses`), Korpus wächst mit echten (nachgestellten) Sätzen | P1-19, P1-29 |
+| R23 | **Neu:** Falsch-positive Erkennung – ein Skill antwortet, obwohl etwas anderes gemeint war („Um wie viel Uhr fährt der Zug?“) | – | Ausschlusslisten, Score-Schwellen, lange Sätze ausgenommen, ≥ 150 Negativbeispiele im Korpus (0 Fehlzuordnungen als Abnahmekriterium) | P1-19 |
+| R24 | **Neu:** Schnittstellen von Bright Sky/DWD/NINA/PEGELONLINE ändern sich unangekündigt | – | Schema-Prüfung je Antwort, Netz-Schema-Tests (`-m network`) regelmäßig, Status `degraded` statt falscher Antwort | P1-23, P1-27 |
+| R25 | **Neu:** Gepflegte Daten veralten (Schulferien, neue Feiertage, GeoNames-PLZ) | – | Selbsttest warnt < 12 Monate Ferien-Vorlauf; jährlicher Daten-PR; Erzeugung per Skript mit Prüfsummen | P1-20, P1-21 |
+| R26 | **Neu:** Piper spricht Fachwörter/Ortsnamen falsch („Böen“, „Hektopascal“, „Limburg-Weilburg“) | – | Ausspracheliste per Hörtest, Renderer schreibt Abkürzungen/Himmelsrichtungen aus (13 §9.3) | P1-29 |
 
 ## 2. Offene Fragen – beantwortet
 
@@ -52,3 +59,14 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | F-15 | ~~Bundesland?~~ | **beantwortet:** Hessen (`fastpaths.state = "HE"`, [12-fast-paths.md](12-fast-paths.md) §4) |
 | F-16 | ~~HF-Modelle ins Repo?~~ | **beantwortet:** nein, HF-Modelle lädt der Installer; alles andere ins Repo, Python-Requirements dürfen aus dem Netz kommen |
 | F-17 | ~~Lizenz Scribbles?~~ | **beantwortet:** alle Rechte vorbehalten (© LayerNX) |
+| F-18 | Soll Nikita nach der Begrüßung von selbst auf Wetterwarnungen hinweisen – ab welcher Stufe? | ja, ab „Unwetter“ (Stufe 3) – [13 §19](13-sofortauskuenfte.md#19-offene-fragen-an-moritz) |
+| F-19 | Uhrzeit „19 Uhr 12“ oder umgangssprachlich („Viertel nach sieben“)? | „19 Uhr 12“ |
+| F-20 | Pollen: Allergien (nur diese nennen)? Region Mittelgebirge oder Rhein-Main? | alle Arten, Mittelgebirge |
+| F-21 | Müllabfuhr: Link zum Abfallkalender für Straße/Stadtteil? | aus |
+| F-22 | Fußball: welcher Verein? | aus (Vorschlag Eintracht Frankfurt) |
+| F-23 | Welcher Lahn-Pegel? | nächster automatisch |
+| F-24 | „Wetter in der Region“: welche Nachbarorte? | Limburg an der Lahn, Wetzlar |
+| F-25 | Spritpreise mit (kostenlosem) Tankerkönig-Schlüssel? Sorte? | aus, E10 |
+| F-26 | Nachrichten-Schlagzeilen am Telefon? Quelle? | aus |
+| F-27 | Einkaufsliste/Notizen per Telefon (jeder interne Anrufer kann sie hören)? | aus |
+| F-28 | Wetterquelle von sich aus nennen oder nur auf Nachfrage? | nur auf Nachfrage |

@@ -304,7 +304,8 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 
 - **Entscheidung (F-13):** Deterministische Antworten ohne LLM für den Katalog in
   [12-fast-paths.md](12-fast-paths.md). Erkennung nur bei eindeutigen Mustern; sonst Agent-Loop.
-- **Status:** beschlossen.
+- **Status:** beschlossen; **erweitert durch ADR-029** (Fast-Paths gehen in den Sofortauskünften auf,
+  Wetter ist nicht mehr Sache der Websuche).
 
 ## ADR-026 – Name des Assistenten: Nikita
 
@@ -407,3 +408,90 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   [`docs/proxmox-installation.md`](../proxmox-installation.md) – gegen einen echten Proxmox-Host noch
   nicht gelaufen.
 
+## ADR-029 – Sofortauskünfte (Skills) vor dem Sprachmodell; jeder Skill ist auch ein Tool
+
+- **Kontext (Moritz, 18.10.2026):** „Bevor wir LLM und richtige Agent-Instanzen machen, will ich Nikita
+  nach Uhrzeit, Datum und simplen Sachen wie dem Wetter in der Region fragen können. Standard ist 35781
+  Weilburg, außer PLZ oder was anderes wird gesagt.“ Bisher waren Wetter, Preise und Sport ausdrücklich
+  Sache der Websuche (12 §3), also erst mit LLM möglich – und dort langsam und halluzinationsanfällig.
+- **Entscheidung:**
+  1. Neues Paket `moritz_agent/skills/` (Plan [13](13-sofortauskuenfte.md)): Vorverarbeitung
+     (Normalisieren, Hessisch-Wörterbuch, Zahlwörter), regelbasierte Erkennung mit Score und
+     Ausschlusslisten, Angaben-Parser für Zeit/Ort/Zahl, Dialogkontext für Folgefragen, Provider mit
+     Cache und Zeitbudget, deutscher Renderer.
+  2. `SkillResponder` ersetzt den `TestResponder` am Telefon. Reihenfolge fest: **erst Skills, dann
+     LLM** (ab P1-09); kein Treffer → heute die Testantwort.
+  3. Die Fast-Paths (ADR-025) werden Skills; `agent/fastpath.py` bleibt als Fassade, bis alle
+     Aufrufer umgestellt sind (SKILL-33).
+  4. Jeder Skill erzeugt ein Tool mit JSON-Schema (P1-07); das Phone-Profil bekommt die lesenden
+     Skill-Tools (PHONE-45). **Wetter-Garantie** (AGENT-11): LLM-Antworten mit Wetterwerten ohne
+     Tool-Aufruf werden verworfen.
+  5. Heimatort 35781 Weilburg (`skills.home`), Bundesland für Feiertage/Ferien wandert von
+     `fastpaths.state` nach `skills.home.state` (alte Schlüssel werden bis 1.0 weiter gelesen).
+- **Alternativen:** (a) Wetter weiter über `web_search` + LLM – verworfen: braucht das LLM, Sekunden
+  statt Millisekunden, Zahlen nicht prüfbar. (b) Kleines Intent-Modell (z. B. Rasa/NLU) – verworfen
+  für Part 1: Trainingsdaten fehlen, Fehlerbilder schwer erklärbar; Regeln + Korpus sind prüfbar und
+  für ~180 klar umrissene Fragen ausreichend; ein Klassifikator kann später **zusätzlich** als
+  Kandidatenquelle dienen. (c) Alles erst mit dem LLM über Tools – verworfen: Moritz will die
+  Funktionen **vor** dem LLM.
+- **Konsequenzen:** Block S (P1-19 … P1-30) wird vor den LLM-Tickets umgesetzt; 12 §3 ist geändert;
+  neuer Testkorpus (≥ 800 Äußerungen); P1-07/P1-09 bauen auf `skills/tools.py` auf.
+- **Status:** beschlossen (Plan); Umsetzung offen.
+
+## ADR-030 – Wetterdaten: Open-Meteo als Hauptquelle, DWD (über Bright Sky und Open Data) für Warnungen, Pollen und Rückfall
+
+- **Kontext:** Wetter für Weilburg und jeden Ort in Deutschland (gelegentlich Ausland), ohne Konto,
+  ohne Kosten, mit Lizenz für die Nutzung, schnell und mit Stunden-/Tageswerten.
+- **Entscheidung:**
+  - **Open-Meteo** Forecast-API: ein Abruf je Ort liefert aktuelle, 15-Minuten-, Stunden- und
+    Tageswerte (bis 16 Tage, `past_days` für Rückblicke); für Deutschland rechnet Open-Meteo mit den
+    DWD-ICON-Modellen (`models=best_match`, wahlweise `icon_seamless`). Ohne Schlüssel; Daten CC BY 4.0;
+    freie Nutzung nur nicht kommerziell und unter 10.000 Aufrufen/Tag – passt für ein privates Homelab
+    mit Vorabruf alle 30 min. Luftqualität/CAMS-Pollen und Geocoding ebenfalls von Open-Meteo.
+  - **Bright Sky** (freie JSON-API für DWD-Open-Data): DWD-Warnungen je Ort (`/alerts`, liefert auch die
+    Warnzelle), Stationsmessungen und MOSMIX-Vorhersage als **Rückfall**.
+  - **DWD Open Data** direkt: Pollenflug-Gefahrenindex (`s31fg.json`), UV/Biowetter-Dateien. DWD-Daten
+    stehen unter CC BY 4.0.
+  - **NINA** (BBK): Bevölkerungswarnungen auf Kreisebene (ARS des Landkreises Limburg-Weilburg).
+  - Jede Antwort wird gegen ein Schema und Wertebereiche geprüft; Cache mit Stale-Regeln (13 §3.6).
+- **Alternativen:** OpenWeatherMap/Weatherbit/Tomorrow.io (Schlüssel, Kontingente, Kosten); Scraping
+  von Wetterportalen (AGB, fragil); DWD-MOSMIX-Rohdaten selbst parsen (Aufwand, Bright Sky macht das);
+  eigener Open-Meteo-Server (später möglich, falls die freie API wegfällt – R20).
+- **Konsequenzen:** ausgehendes HTTPS zu wenigen festen Hosts (ADR-032); Namensnennung der Quellen
+  (SKILL-14); Bedingungen werden vor Inbetriebnahme jeder Quelle geprüft und in
+  `THIRD_PARTY_NOTICES.md` eingetragen.
+- **Status:** beschlossen (Plan).
+
+## ADR-031 – Orte offline: GeoNames-Daten im Repository, Heimatort 35781 Weilburg
+
+- **Kontext:** „Standard ist 35781 Weilburg, außer PLZ oder was anderes wird gesagt.“ Orte müssen
+  schnell, ohne Netz und robust gegen Erkennungsfehler aufgelöst werden („Weilborg“, „35 781“).
+- **Entscheidung:** Postleitzahlen und bewohnte Orte Deutschlands sowie Weltstädte ≥ 15.000 Einwohner
+  aus **GeoNames** (CC BY 4.0) werden per `scripts/build_geodata.py` in kompakte TSV-Dateien unter
+  `assets/data/geo/` umgewandelt und mitgeliefert (Herkunft und Prüfsummen in
+  `third_party/VENDORED.md`, nur per Skript zu ändern). Auflösung: exakt → ohne Zusätze → Ortsteile →
+  unscharf (`rapidfuzz`) → phonetisch (Kölner Phonetik); mehrdeutig → Einwohner- und Nähe-Score,
+  sonst Rückfrage. Nur unbekannte (meist ausländische) Orte gehen online an das Open-Meteo-Geocoding.
+- **Alternativen:** Nominatim/OSM online je Frage (Nutzungsrichtlinie max. 1 Anfrage/s, Netzabhängigkeit),
+  Google Geocoding (Schlüssel, Kosten), nur Postleitzahlen ohne Ortsnamen (zu wenig).
+- **Konsequenzen:** ≈ 6–7 MB Daten im Repo, ≈ 40–80 MB RAM; neue Abhängigkeit `rapidfuzz` (MIT);
+  CLAUDE.md nennt `assets/data/geo/` bei den Fremdkomponenten.
+- **Status:** beschlossen (Plan).
+
+## ADR-032 – Externe Datenabrufe aus dem LXC
+
+- **Kontext:** Bisher holte der Dienst nur bei Installation/Update Daten aus dem Netz (PyPI, Hugging
+  Face) und später über SearXNG. Sofortauskünfte fragen im Betrieb regelmäßig Datendienste ab.
+- **Entscheidung:** Ein gemeinsamer HTTP-Client (`skills/providers/http.py`): nur `https://`, nur Hosts
+  einer festen Liste (Open-Meteo, Bright Sky, DWD Open Data, NINA, PEGELONLINE, EZB, Energy-Charts,
+  Tankerkönig, OpenLigaDB, Nachrichtenquelle – je nach Aktivierung), Weiterleitungen nur innerhalb der
+  Liste, Zeitlimits 1,5 s/3 s, Antwort ≤ 2 MB, identifizierender User-Agent
+  (`moritz-agent/<version>`), Backoff bei 429/5xx, **keine Query-Strings in Logs**. Gesendet werden
+  nur gerundete Koordinaten (2 Nachkommastellen), PLZ/Ortsnamen und fachliche Kennungen. Vom Nutzer
+  konfigurierte URLs (iCal) nur `https://` und nie auf private/lokale Adressen.
+- **Alternativen:** Proxy über SearXNG (passt nicht zu strukturierten APIs); nftables-Allowlist nach
+  Hostnamen (mit wechselnden CDN-Adressen nicht stabil) – die Firewall erlaubt weiter tcp/443 ausgehend
+  (06 §5), die Liste wird in der Anwendung durchgesetzt.
+- **Konsequenzen:** neue Bedrohungen T19–T24 in [08](08-sicherheit.md); Netztests nur mit
+  `@pytest.mark.network`; `skills.online = false` schaltet alle Abrufe ab.
+- **Status:** beschlossen (Plan).
