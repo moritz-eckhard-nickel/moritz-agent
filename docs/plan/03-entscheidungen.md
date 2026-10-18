@@ -441,7 +441,8 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 ## ADR-030 – Wetterdaten: Open-Meteo als Hauptquelle, DWD (über Bright Sky und Open Data) für Warnungen, Pollen und Rückfall
 
 - **Kontext:** Wetter für Weilburg und jeden Ort in Deutschland (gelegentlich Ausland), ohne Konto,
-  ohne Kosten, mit Lizenz für die Nutzung, schnell und mit Stunden-/Tageswerten.
+  ohne Kosten, mit Lizenz für die Nutzung, schnell und mit Stunden-/Tageswerten. Moritz, 18.10.2026:
+  „Wetter bitte Open Source, free if possible.“
 - **Entscheidung:**
   - **Open-Meteo** Forecast-API: ein Abruf je Ort liefert aktuelle, 15-Minuten-, Stunden- und
     Tageswerte (bis 16 Tage, `past_days` für Rückblicke); für Deutschland rechnet Open-Meteo mit den
@@ -454,9 +455,16 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
     stehen unter CC BY 4.0.
   - **NINA** (BBK): Bevölkerungswarnungen auf Kreisebene (ARS des Landkreises Limburg-Weilburg).
   - Jede Antwort wird gegen ein Schema und Wertebereiche geprüft; Cache mit Stale-Regeln (13 §3.6).
-- **Alternativen:** OpenWeatherMap/Weatherbit/Tomorrow.io (Schlüssel, Kontingente, Kosten); Scraping
-  von Wetterportalen (AGB, fragil); DWD-MOSMIX-Rohdaten selbst parsen (Aufwand, Bright Sky macht das);
-  eigener Open-Meteo-Server (später möglich, falls die freie API wegfällt – R20).
+  - **Nur Open Source und kostenlos (SKILL-35):** Open-Meteo (Software AGPL-3.0) und Bright Sky
+    (Software MIT) sind Open Source, DWD und BBK liefern amtliche offene Daten; alle ohne Konto,
+    Schlüssel oder Kosten, Daten unter CC BY 4.0. Proprietäre Wetter-APIs werden auch nicht als
+    Rückfall eingebaut. Die Adressen (`skills.weather.open_meteo_url`, `brightsky_url`) sind
+    konfigurierbar, damit später eine eigene Instanz im Homelab genutzt werden kann.
+- **Alternativen:** OpenWeatherMap/Weatherbit/Tomorrow.io/AccuWeather (proprietär, Schlüssel,
+  Kontingente, Kosten – verworfen nach SKILL-35); Scraping von Wetterportalen (AGB, fragil);
+  DWD-MOSMIX-Rohdaten selbst parsen (Aufwand, Bright Sky macht das); eigener Open-Meteo-/Bright-Sky-
+  Server von Anfang an (Platz/Rechenzeit; später möglich, falls die öffentlichen Instanzen wegfallen –
+  R20).
 - **Konsequenzen:** ausgehendes HTTPS zu wenigen festen Hosts (ADR-032); Namensnennung der Quellen
   (SKILL-14); Bedingungen werden vor Inbetriebnahme jeder Quelle geprüft und in
   `THIRD_PARTY_NOTICES.md` eingetragen.
@@ -488,7 +496,8 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   Liste, Zeitlimits 1,5 s/3 s, Antwort ≤ 2 MB, identifizierender User-Agent
   (`moritz-agent/<version>`), Backoff bei 429/5xx, **keine Query-Strings in Logs**. Gesendet werden
   nur gerundete Koordinaten (2 Nachkommastellen), PLZ/Ortsnamen und fachliche Kennungen. Vom Nutzer
-  konfigurierte URLs (iCal) nur `https://` und nie auf private/lokale Adressen.
+  konfigurierte URLs (iCal) nur `https://` und nie auf private/lokale Adressen. Einzige Ausnahme: eine
+  ausdrücklich als `open_meteo_url`/`brightsky_url` eingetragene eigene Instanz (darf im LAN liegen).
 - **Alternativen:** Proxy über SearXNG (passt nicht zu strukturierten APIs); nftables-Allowlist nach
   Hostnamen (mit wechselnden CDN-Adressen nicht stabil) – die Firewall erlaubt weiter tcp/443 ausgehend
   (06 §5), die Liste wird in der Anwendung durchgesetzt.

@@ -198,6 +198,7 @@ Deterministische Auskünfte **vor** dem Sprachmodell (Moritz, 18.10.2026). Plan 
 | SKILL-32 | Uhrzeit wahlweise umgangssprachlich („Viertel nach sieben“, `skills.time.spoken_style`). | KANN | 1 |
 | SKILL-33 | Die bestehenden Fast-Paths (`moritz_agent/agent/fastpath.py`) laufen ohne Verhaltensänderung über das Skill-Framework weiter; ihre Tests bleiben grün. | MUSS | 1 |
 | SKILL-34 | Fehlerhafte oder unplausible Antworten von Datendiensten (Schema, Wertebereich) werden verworfen; Freitext (Warntexte, Schlagzeilen) wird bereinigt, gekürzt und nie als Anweisung an ein LLM gegeben. | MUSS | 1 |
+| SKILL-35 | **Wetter nur Open Source und kostenlos** (Moritz, 18.10.2026): Wetter-, Warn-, Pollen- und Luftdaten nur von Open-Source-Diensten (Open-Meteo AGPL-3.0, Bright Sky MIT) und amtlichen offenen Daten (DWD, BBK) – ohne Konto, Schlüssel oder Kosten, Daten unter freier Lizenz; keine proprietären Wetter-APIs. Die Dienst-Adressen sind konfigurierbar, damit eigene Instanzen genutzt werden können. | MUSS | 1 |
 
 ## 7. Suche & Research (SEARCH)
 

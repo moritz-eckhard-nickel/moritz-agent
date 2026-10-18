@@ -1,7 +1,7 @@
 # 13 – Sofortauskünfte: Uhrzeit, Datum, Wetter & Co. ohne Sprachmodell
 
 Stand: 18.10.2026 · Tickets: [04 Block S](04-part1-umsetzung.md#block-s--sofortauskünfte-vor-dem-sprachmodell)
-(P1-19 … P1-30) · Anforderungen: [01 §6a](01-anforderungen.md#6a-sofortauskünfte-skill) (SKILL-01 … SKILL-34) ·
+(P1-19 … P1-30) · Anforderungen: [01 §6a](01-anforderungen.md#6a-sofortauskünfte-skill) (SKILL-01 … SKILL-35) ·
 Entscheidungen: ADR-029 … ADR-032 ([03](03-entscheidungen.md)).
 
 > Moritz, 18.10.2026: „Plane nun bitte, bevor wir LLM und richtige Agent-Instanzen machen, dass ich
@@ -63,6 +63,9 @@ Inhalt: [1 Leitlinien](#1-leitlinien) · [2 So klingt das](#2-so-klingt-das-beis
 10. **Messbar.** Jede Auskunft wird mit Skill, Quelle, Cache-Treffer und Dauer protokolliert;
     nicht erkannte Fragen werden (24 h, nur mit Transkriptspeicherung) gesammelt, damit Moritz’
     eigene Formulierungen nachgetragen werden können (SKILL-28).
+11. **Wetter nur Open Source und kostenlos.** Wetter-, Warn-, Pollen- und Luftdaten kommen nur von
+    Open-Source-Diensten (Open-Meteo, Bright Sky) und amtlichen offenen Daten (DWD, BBK) – ohne Konto,
+    ohne Schlüssel, ohne Kosten; beide Dienste sind bei Bedarf selbst betreibbar (SKILL-35, §7.1).
 
 ## 2. So klingt das (Beispielanruf)
 
@@ -705,21 +708,31 @@ bewusst ohne Umsetzung: Kryptokurse).
 
 ### 7.1 Datenquellen und Lizenzen
 
-| Quelle | Wofür | Zugang | Lizenz / Bedingungen | Rolle |
+**Grundsatz (Moritz, 18.10.2026: „Wetter bitte Open Source, free if possible“):** Wetter, Warnungen,
+Pollen und Luft kommen **nur** aus Diensten, deren Software Open Source ist oder die amtliche offene
+Daten liefern – kostenlos, ohne Konto, ohne API-Schlüssel, Daten unter freier Lizenz (CC BY 4.0).
+Proprietäre Wetter-APIs werden nicht eingebaut, auch nicht als Rückfall. Weil Open-Meteo (AGPL-3.0) und
+Bright Sky (MIT) Open Source sind, lassen sie sich bei Bedarf **selbst betreiben**; die Adressen sind
+dafür konfigurierbar (`skills.weather.open_meteo_url`, `brightsky_url`, §10). Standard bleiben die
+öffentlichen, kostenlosen Instanzen.
+
+| Quelle | Wofür | Zugang | Software / Lizenz / Bedingungen | Rolle |
 | --- | --- | --- | --- | --- |
-| **Open-Meteo** Forecast-API (`api.open-meteo.com/v1/forecast`) | aktuell, 15-Minuten-, Stunden-, Tageswerte, bis 16 Tage, Rückblick `past_days` | ohne Schlüssel | Daten **CC BY 4.0**; freie API nur nicht kommerziell, < 10.000 Aufrufe/Tag, < 5.000/h, < 600/min; Namensnennung „Wetterdaten: Open-Meteo.com“ | **Hauptquelle** (Deutschland: DWD-ICON-Modelle, `models=best_match` oder `icon_seamless`) |
+| **Open-Meteo** Forecast-API (`api.open-meteo.com/v1/forecast`) | aktuell, 15-Minuten-, Stunden-, Tageswerte, bis 16 Tage, Rückblick `past_days` | kostenlos, ohne Schlüssel | Software **Open Source (AGPL-3.0)**, selbst hostbar; Daten **CC BY 4.0**; öffentliche API kostenlos für nicht kommerzielle Nutzung, < 10.000 Aufrufe/Tag, < 5.000/h, < 600/min; Namensnennung „Wetterdaten: Open-Meteo.com“ | **Hauptquelle** (Deutschland: DWD-ICON-Modelle, `models=best_match` oder `icon_seamless`) |
 | Open-Meteo Luftqualität (`air-quality-api.open-meteo.com/v1/air-quality`) | Europäischer AQI, PM10/2,5, Ozon, NO₂; Pollen (CAMS) Europa | ohne Schlüssel | CC BY 4.0 + Copernicus-Bedingungen | Luft; Pollen außerhalb Deutschlands |
 | Open-Meteo Geocoding (`geocoding-api.open-meteo.com/v1/search`) | Orte, die der Gazetteer nicht kennt | ohne Schlüssel | CC BY 4.0 (GeoNames-basiert) | Rückfall |
-| **Bright Sky** (`api.brightsky.dev`) | DWD-Warnungen (`/alerts`), Stationsmessungen (`/current_weather`), MOSMIX-Vorhersage (`/weather`) | ohne Schlüssel | Software MIT; Daten DWD Open Data, **CC BY 4.0**, Quelle „Deutscher Wetterdienst“ | Warnungen; Rückfall-Vorhersage; Messwerte |
-| **DWD Open Data** (`opendata.dwd.de/climate_environment/health/alerts/`) | Pollenflug-Gefahrenindex `s31fg.json` (heute/morgen/übermorgen, täglich), UV- und Biowetter-Dateien | ohne Schlüssel | CC BY 4.0 (DWD, Stand Mai 2024) | Pollen (Hauptquelle), UV/Biowetter |
-| **NINA** (BBK, `warnung.bund.de/api31/dashboard/<ARS>.json`) | Bevölkerungswarnungen: MoWaS, KATWARN, BIWAPP, DWD, Hochwasser | ohne Schlüssel | amtliche Daten; Nutzungsbedingungen in P1-23 prüfen | Katastrophen-/Hochwasserwarnungen |
+| **Bright Sky** (`api.brightsky.dev`) | DWD-Warnungen (`/alerts`), Stationsmessungen (`/current_weather`), MOSMIX-Vorhersage (`/weather`) | kostenlos, ohne Schlüssel | Software **Open Source (MIT)**, selbst hostbar; Daten DWD Open Data, **CC BY 4.0**, Quelle „Deutscher Wetterdienst“ | Warnungen; Rückfall-Vorhersage; Messwerte |
+| **DWD Open Data** (`opendata.dwd.de/climate_environment/health/alerts/`) | Pollenflug-Gefahrenindex `s31fg.json` (heute/morgen/übermorgen, täglich), UV- und Biowetter-Dateien | kostenlos, ohne Schlüssel | amtliche offene Daten, CC BY 4.0 (DWD, Stand Mai 2024) | Pollen (Hauptquelle), UV/Biowetter |
+| **NINA** (BBK, `warnung.bund.de/api31/dashboard/<ARS>.json`) | Bevölkerungswarnungen: MoWaS, KATWARN, BIWAPP, DWD, Hochwasser | kostenlos, ohne Schlüssel | amtliche offene Daten; Nutzungsbedingungen in P1-23 prüfen | Katastrophen-/Hochwasserwarnungen |
 | GeoNames (Download, im Repo) | PLZ ↔ Ort ↔ Koordinaten, Orte DE, Weltstädte | einmalig, per Skript | CC BY 4.0 | Ortsauflösung (ADR-031) |
 
-**Verworfen:** OpenWeatherMap/Weatherbit/Tomorrow.io (Schlüssel, Kontingente, Kosten), Scraping von
-wetter.com/wetteronline/kachelmannwetter (AGB, bricht ständig), DWD-MOSMIX-KMZ selbst parsen (macht
-Bright Sky bereits), Wetter per `web_search` (langsam, unzuverlässig, halluzinationsanfällig –
-genau das ersetzt dieser Plan), eigener Open-Meteo-Server (Platz/RAM, später möglich, falls die freie
-API wegfällt; Risiko R20).
+**Verworfen:** OpenWeatherMap/Weatherbit/Tomorrow.io/AccuWeather (proprietär, Schlüssel, Kontingente,
+Kosten – widerspricht dem Grundsatz), Scraping von wetter.com/wetteronline/kachelmannwetter (AGB,
+bricht ständig), DWD-MOSMIX-KMZ selbst parsen (macht Bright Sky bereits, als Open Source), Wetter per
+`web_search` (langsam, unzuverlässig, halluzinationsanfällig – genau das ersetzt dieser Plan).
+**Später möglich:** eigener Open-Meteo- oder Bright-Sky-Server im Homelab (beides Open Source; kostet
+Platz und Rechenzeit für die Modelldaten bzw. eine Datenbank) – nur nötig, falls die öffentlichen
+Instanzen wegfallen oder ihre Bedingungen ändern (R20). Umstellen = Adresse in der Konfiguration ändern.
 
 ### 7.2 Abruf (ein Wetterpaket je Ort)
 
@@ -1039,8 +1052,10 @@ quarter_dialect = true              # „viertel acht“ = 7:15 verstehen
 workdays = [1, 2, 3, 4, 5]          # ISO-Wochentage
 
 [skills.weather]
-provider = "open-meteo"
+provider = "open-meteo"             # nur Open-Source-Dienste mit freien Daten (§7.1)
 fallback_provider = "brightsky"     # "" = kein Rückfall
+open_meteo_url = "https://api.open-meteo.com"     # eigene Open-Meteo-Instanz möglich (AGPL-3.0)
+brightsky_url = "https://api.brightsky.dev"       # eigene Bright-Sky-Instanz möglich (MIT)
 model = "best_match"                # oder "icon_seamless"
 forecast_days = 10                  # 1 … 16
 past_days = 3
@@ -1151,7 +1166,9 @@ Kurzfassung, Details in [08](08-sicherheit.md) (T19–T24):
   Anrufer, Uhrzeit des Anrufs als Bezug, Zugangsdaten (außer dem Schlüssel des jeweiligen Dienstes).
 - **Nur HTTPS** an eine feste Liste von Hosts (Allowlist im HTTP-Client, ADR-032); Weiterleitungen nur
   innerhalb der Liste; Antwortgröße max. 2 MB; konfigurierbare URLs (iCal) nur `https://` und nie auf
-  private/lokale Adressen (Schutz vor SSRF).
+  private/lokale Adressen (Schutz vor SSRF). Ausnahme: eine **selbst betriebene** Open-Meteo- oder
+  Bright-Sky-Instanz, die der Admin ausdrücklich als `open_meteo_url`/`brightsky_url` einträgt, darf im
+  LAN liegen (auch `http://` nur dann, wenn ausdrücklich so eingetragen).
 - **Antworten von außen sind Daten:** Schema- und Plausibilitätsprüfung, Freitext bereinigt und
   gekürzt, nie als Anweisung an ein LLM (spätere Tool-Ergebnisse in `<tool_result>`-Blöcken, T6).
 - **Notizen/Einkaufsliste** (Standard aus): jeder, der intern 999 anruft, kann sie lesen – Hinweis

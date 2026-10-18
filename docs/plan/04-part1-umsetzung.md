@@ -389,7 +389,7 @@ P1-03 (Konfiguration) und P1-06 (Speicher) werden nur so weit vorgezogen, wie Bl
 
 ## Block S – Sofortauskünfte (vor dem Sprachmodell)
 
-Plan: [13-sofortauskuenfte.md](13-sofortauskuenfte.md) · Anforderungen SKILL-01 … SKILL-34, AGENT-11,
+Plan: [13-sofortauskuenfte.md](13-sofortauskuenfte.md) · Anforderungen SKILL-01 … SKILL-35, AGENT-11,
 PHONE-52 · Entscheidungen ADR-029 … ADR-032. Gemeinsame DoD zusätzlich zur allgemeinen DoD oben:
 Korpus-Einträge für jeden neuen Skill (positiv, negativ, Dialekt), Golden-Antworten, `./test-1.sh ask`
 beantwortet die Beispiele aus 13 §6, keine Netzabrufe in CI (nur Fixtures), Lizenzeintrag jeder neuen
@@ -456,10 +456,11 @@ Datenquelle **vor** dem ersten Abruf.
   RAM- und Datei-Cache mit Stale-Regeln (13 §3.6); Vorabruf für den Heimatort; Renderer nach 13 §7.3–7.5
   (Codes, Rundung, Beaufort, Tagesverlauf, Mehrtagestrend, Faktenprioritäten, Varianten); alle Skills
   aus 13 §6.4/6.5 mit Priorität M; Rückfall-Provider-Schnittstelle (Bright Sky folgt in P1-23);
-  Fehlerverhalten 13 §3.7; Quellenangabe auf Nachfrage.
+  Fehlerverhalten 13 §3.7; Quellenangabe auf Nachfrage; Dienst-Adressen `open_meteo_url`/`brightsky_url`
+  konfigurierbar (eigene Instanz möglich, SKILL-35).
 - **Tests:** Fixtures für drei Wetterlagen + Fehlerfälle über `httpx.MockTransport`; Golden-Antworten
   (Weilburg ohne Ort, PLZ, anderer Ort, Folgefragen, nach 18 Uhr, Tag 8+, Stale-Cache, offline).
-- **Anforderungen:** SKILL-02, -03, -08, -13, -14, -22, -25, -26, -34, ADR-030, ADR-032.
+- **Anforderungen:** SKILL-02, -03, -08, -13, -14, -22, -25, -26, -34, -35, ADR-030, ADR-032.
 
 ## P1-23 – Warnungen, Pollen, Luft, Wetter-Zusatz
 
