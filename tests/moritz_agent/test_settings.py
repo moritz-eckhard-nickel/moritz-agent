@@ -22,6 +22,14 @@ def test_example_config_is_valid_and_has_the_voice_defaults():
     assert settings.phone.max_concurrent_calls == 1
 
 
+def test_ring_time_defaults_to_four_to_eight_seconds_and_must_be_a_valid_range():
+    phone = load_settings(REPO_ROOT / "config" / "moritz-agent.example.toml").phone
+    assert (phone.ring_seconds_min, phone.ring_seconds_max) == (4.0, 8.0)
+    broken = example_text().replace("ring_seconds_max = 8.0", "ring_seconds_max = 2.0")
+    with pytest.raises(SettingsError, match="ring_seconds_max"):
+        parse_settings(broken)
+
+
 def test_unknown_keys_are_rejected():
     with pytest.raises(SettingsError):
         parse_settings(example_text() + "\n[phone.tts]\nno_such_key = 1\n")

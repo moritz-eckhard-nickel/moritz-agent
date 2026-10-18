@@ -1,9 +1,17 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
 from __future__ import annotations
 
+import random
+
 import pytest
 
-from moritz_agent.phone.sip import AudioPort, backoff_delay, ip_allowed, parse_source_ip
+from moritz_agent.phone.sip import (
+    AudioPort,
+    backoff_delay,
+    ip_allowed,
+    parse_source_ip,
+    ring_duration,
+)
 
 
 @pytest.mark.parametrize(
@@ -48,3 +56,17 @@ def test_audio_port_pads_with_silence_and_tracks_backlog():
     port.enqueue(b"\x01\x00" * 100)
     port.clear()
     assert port.pending_ms() == 0
+
+
+def test_ring_duration_stays_within_the_limits_and_varies():
+    rng = random.Random(7)
+    values = [ring_duration(4.0, 8.0, rng) for _ in range(200)]
+    assert all(4.0 <= value <= 8.0 for value in values)
+    assert max(values) - min(values) > 2.0  # really random, not a constant
+
+
+def test_ring_duration_edge_cases():
+    assert ring_duration(0, 0) == 0
+    assert ring_duration(5.0, 5.0) == 5.0
+    assert 4.0 <= ring_duration(8.0, 4.0) <= 8.0  # swapped limits are tolerated
+    assert ring_duration(-3.0, 0.0) == 0.0  # never negative

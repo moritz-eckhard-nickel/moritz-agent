@@ -106,7 +106,7 @@ Danach: `asterisk -rx "module reload res_pjsip.so"`.
 [<INTERN_CONTEXT>]
 exten => 999,1,NoOp(moritz-agent: Anruf von ${CALLERID(all)})
  same => n,Set(CALLERID(name)=${CALLERID(name)})
- same => n,Dial(PJSIP/agent,30)          ; 30 s klingeln lassen, der Agent nimmt sofort ab
+ same => n,Dial(PJSIP/agent,30)          ; bis zu 30 s warten; der Agent nimmt nach 4–8 s Klingeln ab
  same => n,GotoIf($["${DIALSTATUS}" = "BUSY"]?busy)
  same => n,Playback(vm-nobodyavail)      ; Agent nicht registriert / nicht erreichbar
  same => n,Hangup()

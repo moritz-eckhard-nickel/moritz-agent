@@ -23,6 +23,7 @@ import contextlib
 import gc
 import ipaddress
 import queue
+import random
 import threading
 import time
 import uuid
@@ -86,6 +87,12 @@ def ip_allowed(ip: str, allowed: list[str]) -> bool:
         except ValueError:
             continue
     return False
+
+
+def ring_duration(minimum: float, maximum: float, rng: random.Random | None = None) -> float:
+    """How long the phone rings before it is answered: a random time between the two limits."""
+    low, high = sorted((max(0.0, minimum), max(0.0, maximum)))
+    return (rng or random).uniform(low, high)
 
 
 def backoff_delay(attempt: int, minimum: float, maximum: float) -> float:
@@ -493,8 +500,26 @@ class SipPhone:
         self._active = call
         self._active_media = None
         self.calls_total += 1
-        op.statusCode = pjsua.PJSIP_SC_OK
-        call.answer(op)
+        ring = ring_duration(self.phone.ring_seconds_min, self.phone.ring_seconds_max)
+        if ring > 0:
+            # 180 Ringing: the caller hears the ringback tone; Nikita picks up after ``ring`` seconds
+            log.info("Anruf von %s: klingelt %.1f s", source, ring)
+            op.statusCode = pjsua.PJSIP_SC_RINGING
+            call.answer(op)
+            self._schedule(ring, lambda: self._answer(call))
+        else:
+            self._answer(call)
+
+    def _answer(self, call) -> None:
+        """Pick up (200 OK) – unless the caller gave up while the phone was ringing."""
+        if call is not self._active:
+            return
+        op = pj.CallOpParam(True)
+        op.statusCode = pj.PJSIP_SC_OK
+        try:
+            call.answer(op)
+        except Exception:
+            log.debug("Annehmen fehlgeschlagen (Anrufer hat aufgelegt?)", exc_info=True)
 
     def _on_media_state(self, call) -> None:
         pjsua = pj

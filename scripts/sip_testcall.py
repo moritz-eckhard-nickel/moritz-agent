@@ -85,6 +85,11 @@ def main() -> int:
     parser.add_argument(
         "--hangup-after-greeting", action="store_true", help="direkt nach der Begrüßung auflegen"
     )
+    parser.add_argument(
+        "--cancel-after",
+        type=float,
+        help="auflegen, wenn nach so vielen Sekunden noch nicht abgenommen wurde (Klingeln abbrechen)",
+    )
     args = parser.parse_args()
 
     import pjsua2 as pj
@@ -212,6 +217,17 @@ def main() -> int:
     while time.monotonic() - started < args.timeout and not state["disconnected"]:
         endpoint.libHandleEvents(20)
         now = time.monotonic()
+        if (
+            args.cancel_after is not None
+            and not state["connected"]
+            and now - started >= args.cancel_after
+        ):
+            print(f"  lege nach {now - started:.1f} s auf, bevor abgenommen wurde")
+            call.hangup(pj.CallOpParam(True))
+            for _ in range(25):
+                endpoint.libHandleEvents(20)
+            result = 0
+            break
         with lock:
             last_voice = voice["last"]
             first_voice = voice["first_after_speech"]
