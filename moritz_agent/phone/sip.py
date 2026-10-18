@@ -163,6 +163,7 @@ class SipPhone:
         session_factory: Callable[[SipCallMedia, str], CallSession],
         pjsip_log_level: int = 3,
         register: bool = True,
+        draining: Callable[[], bool] | None = None,
     ) -> None:
         self.creds = creds
         self.phone = phone
@@ -170,6 +171,7 @@ class SipPhone:
         self.session_factory = session_factory
         self.pjsip_log_level = pjsip_log_level
         self.register = register
+        self.draining = draining or (lambda: False)
         self.registration = RegistrationState("unregistered" if register else "disabled")
         self.last_error = ""
         self.calls_total = 0
@@ -473,6 +475,12 @@ class SipPhone:
         if not ip_allowed(source, self.phone.allowed_source_ips):
             log.warning("INVITE von nicht erlaubter Adresse %s abgewiesen", source)
             op.statusCode = pjsua.PJSIP_SC_FORBIDDEN
+            call.hangup(op)
+            self._zombies.append((time.monotonic(), call))
+            return
+        if self.draining():
+            log.info("Anruf von %s abgewiesen: Wartung (Update) läuft", source)
+            op.statusCode = pjsua.PJSIP_SC_BUSY_HERE
             call.hangup(op)
             self._zombies.append((time.monotonic(), call))
             return

@@ -17,6 +17,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from moritz_agent import __version__
 from moritz_agent.config.secrets import Passwords, PasswordsFileError, load_passwords
 from moritz_agent.config.settings import REPO_ROOT, Settings, SettingsError, load_settings
 from moritz_agent.logging_setup import get_logger, setup_logging
@@ -26,6 +27,7 @@ from moritz_agent.phone.audio.factory import build_stt, build_tts, build_vad
 from moritz_agent.phone.audio.stt import SpeechToText, Transcript
 from moritz_agent.phone.audio.tts import TtsService
 from moritz_agent.phone.audio.vad import SileroVad
+from moritz_agent.phone.control import PhoneControl
 from moritz_agent.phone.dialogue import CallSession, SessionDeps
 from moritz_agent.phone.responder import Responder, TestResponder
 from moritz_agent.phone.sip import SipCallMedia, SipPhone
@@ -80,6 +82,7 @@ class PhoneWorker:
         self.tts: TtsService | None = None
         self.announcements: AnnouncementStore | None = None
         self.sip: SipPhone | None = None
+        self.control = PhoneControl(root, __version__)
         self._stop: asyncio.Event | None = None
 
     # -- build -------------------------------------------------------------------------
@@ -149,6 +152,7 @@ class PhoneWorker:
             self._session_factory,
             pjsip_log_level=self.settings.logging.pjsip_log_level,
             register=self.options.register,
+            draining=self.control.draining,
         )
         try:
             self.sip.start()
@@ -193,12 +197,22 @@ class PhoneWorker:
         return False
 
     async def _heartbeat(self) -> None:
-        last = ""
+        """Once a second: publish the status file; every 30 s: log changes."""
+        last, ticks, draining = "", 0, False
         while True:
-            await asyncio.sleep(30)
+            await asyncio.sleep(1)
             if self.sip is None:
                 continue
             state = self.sip.status()
+            await asyncio.to_thread(self.control.write_status, state)
+            if self.control.draining() != draining:
+                draining = not draining
+                log.info(
+                    "Wartungsmodus %s", "an: neue Anrufe werden abgewiesen" if draining else "aus"
+                )
+            ticks += 1
+            if ticks % 30:
+                continue
             line = f"{state['registration']}, Anruf: {'ja' if state['in_call'] else 'nein'}"
             if line != last:
                 log.info("Status: %s", line)
@@ -229,6 +243,7 @@ class PhoneWorker:
     async def _shutdown(self) -> None:
         if self.sip is not None:
             await asyncio.to_thread(self.sip.stop)
+            await asyncio.to_thread(self.control.write_stopped)
         if self.tts is not None:
             self.tts.close()
         log.info("Beendet.")

@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Programmteile, die install.sh / update.sh in den LXC kopieren (ein Pfad pro Zeile, relativ zum
+# Repository). Alles andere – Benutzerdaten (passwords.txt, config/moritz-agent.toml), Modelle,
+# runtime/, data/ und der Ansagen-Cache – gehört dem LXC und wird NIE überschrieben oder gelöscht.
+# Einträge mit "#" am Anfang sind Kommentare. Ausschlüsse stehen in deploy/lib/common.sh.
+moritz_agent
+config
+assets
+deploy
+scripts
+requirements
+frontend
+docs
+third_party/pjproject
+pyproject.toml
+README.md
+LICENSE-MSOL.md
+LICENSING.md
+THIRD_PARTY_NOTICES.md
+CLAUDE.md
+moritz-agent
+moritz-install.sh
+moritz-update.sh
+install.sh
+update.sh
+test-1.sh

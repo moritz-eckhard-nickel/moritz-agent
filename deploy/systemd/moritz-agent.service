@@ -1,16 +1,18 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-# systemd unit for moritz-agent (ticket P1-17). Installed by moritz-install.sh.
+# systemd unit for moritz-agent. moritz-install.sh / moritz-update.sh install it to
+# /etc/systemd/system/ (with the installation directory and user substituted).
 [Unit]
 Description=moritz-agent – local AI agent with internal telephony
 Documentation=file:///opt/moritz-agent/README.md
 After=network-online.target
 Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=10
 
 [Service]
 Type=simple
 User=moritz-agent
 Group=moritz-agent
-SupplementaryGroups=video render
 WorkingDirectory=/opt/moritz-agent
 ExecStart=/opt/moritz-agent/moritz-agent run
 ExecReload=/bin/kill -HUP $MAINPID
@@ -20,18 +22,15 @@ TimeoutStopSec=30
 KillMode=mixed
 Environment=PYTHONUNBUFFERED=1
 Environment=TZ=Europe/Berlin
+Environment=HF_HOME=/opt/moritz-agent/runtime/hf-home
 
-# Hardening (refined in P1-17)
+# Hardening. The code tree is read-only for the service; it writes only to the paths below.
+# (The "video"/"render" group memberships of the user are set up by the installer.)
 NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectHome=yes
 ProtectSystem=strict
-ReadWritePaths=/opt/moritz-agent/data /opt/moritz-agent/models /opt/moritz-agent/runtime /opt/moritz-agent/assets/audio/cache /opt/moritz-agent/passwords.txt /opt/moritz-agent/config
-DevicePolicy=closed
-DeviceAllow=/dev/nvidia0 rw
-DeviceAllow=/dev/nvidiactl rw
-DeviceAllow=/dev/nvidia-uvm rw
-DeviceAllow=/dev/nvidia-uvm-tools rw
+ReadWritePaths=/opt/moritz-agent/data /opt/moritz-agent/models /opt/moritz-agent/runtime /opt/moritz-agent/assets/audio/cache
 
 [Install]
 WantedBy=multi-user.target

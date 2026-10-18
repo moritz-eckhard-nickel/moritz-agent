@@ -6,7 +6,7 @@
 # Shared by ./test-1.sh (any Linux box) and moritz-install.sh (LXC), so both set up exactly the
 # same environment. Needs no root; run it as the user that owns the environment.
 #
-# Usage: scripts/setup-env.sh --venv DIR [--python PYTHON] [--jobs N] [--no-pjsip]
+# Usage: scripts/setup-env.sh --venv DIR [--python PYTHON] [--jobs N] [--no-pjsip] [--build-root DIR]
 set -Eeuo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -14,6 +14,7 @@ VENV=""
 PYTHON="${MORITZ_PYTHON:-}"
 JOBS="${MORITZ_JOBS:-$(nproc 2>/dev/null || echo 2)}"
 PJSIP=1
+BUILD_ROOT=""
 
 log() { printf '[setup-env] %s\n' "$*"; }
 die() {
@@ -23,12 +24,13 @@ die() {
 
 usage() {
 	cat <<USAGE
-Usage: $(basename "$0") --venv DIR [--python PYTHON] [--jobs N] [--no-pjsip]
+Usage: $(basename "$0") --venv DIR [--python PYTHON] [--jobs N] [--no-pjsip] [--build-root DIR]
 
   --venv DIR        Zielverzeichnis der virtuellen Umgebung (z. B. runtime/venv)
   --python PYTHON   Interpreter >= 3.12 (Standard: python3.13, python3.12, python3)
   --jobs N          parallele Build-Prozesse für PJSIP (Standard: Anzahl der CPUs)
   --no-pjsip        PJSIP nicht bauen
+  --build-root DIR  Build-Verzeichnis von PJSIP (Standard: runtime/pjsip-build)
 USAGE
 }
 
@@ -52,6 +54,11 @@ while [[ $# -gt 0 ]]; do
 	--no-pjsip)
 		PJSIP=0
 		shift
+		;;
+	--build-root)
+		[[ $# -ge 2 ]] || die "--build-root braucht ein Verzeichnis"
+		BUILD_ROOT="$2"
+		shift 2
 		;;
 	-h | --help)
 		usage
@@ -93,6 +100,8 @@ log "installiere Python-Pakete (exakte Versionen mit Prüfsummen, aus PyPI) …"
 
 if [[ ${PJSIP} -eq 1 ]]; then
 	log "baue den SIP-Stack (PJSIP, einige Minuten beim ersten Mal) …"
-	"${ROOT}/scripts/build-pjsip.sh" --python "${VPY}" --jobs "${JOBS}"
+	build_args=(--python "${VPY}" --jobs "${JOBS}")
+	if [[ -n "${BUILD_ROOT}" ]]; then build_args+=(--build-root "${BUILD_ROOT}"); fi
+	"${ROOT}/scripts/build-pjsip.sh" "${build_args[@]}"
 fi
 log "Umgebung fertig: ${VENV}"

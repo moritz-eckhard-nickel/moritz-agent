@@ -271,3 +271,21 @@ def test_test_script_help_lists_all_commands():
     assert result.returncode == 0
     for command in ("setup", "check", "speak", "prompts", "bench", "call", "run", "models"):
         assert f"./test-1.sh {command}" in result.stdout, command
+
+
+def test_run_command_starts_the_phone_worker(monkeypatch):
+    import moritz_agent.phone.__main__ as phone_cli
+
+    seen = []
+    monkeypatch.setattr(phone_cli, "main", lambda argv=None: seen.append(argv) or 0)
+    assert main(["run"]) == 0
+    assert seen == [["run"]]
+
+
+def test_phone_subcommand_is_passed_through(monkeypatch):
+    import moritz_agent.phone.__main__ as phone_cli
+
+    seen = []
+    monkeypatch.setattr(phone_cli, "main", lambda argv=None: seen.append(argv) or 0)
+    assert main(["phone", "check", "--sip"]) == 0
+    assert seen == [["check", "--sip"]]
