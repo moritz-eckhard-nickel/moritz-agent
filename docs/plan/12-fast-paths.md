@@ -1,5 +1,10 @@
 # 12 – Fast-Paths: vordefinierte einfache Infos (F-13)
 
+> **Erweitert (18.10.2026, ADR-029):** Die Fast-Paths gehen in den **Sofortauskünften** auf –
+> Katalog mit rund 180 Auskünften inkl. Wetter für den Heimatort 35781 Weilburg:
+> [13-sofortauskuenfte.md](13-sofortauskuenfte.md). Die Regeln und IDs unten bleiben gültig
+> (`time` → `time.now`, `date` → `date.today`, …); §3 ist geändert.
+
 Moritz: „jaja auf jeden Fall, simple Infos, alle predefined paths.“ Fast-Paths beantworten
 eindeutige, einfache Fragen **deterministisch ohne LLM** – schneller (kein Modellaufruf),
 und nicht halluzinierbar. Alles, was nicht eindeutig erkannt wird, geht an den normalen
@@ -38,9 +43,15 @@ Agent-Loop (AGENT-06, AGENT-10, ADR-025).
 
 ## 3. Bewusst **nicht** als Fast-Path
 
-- Wetter, Nachrichten, Preise, Sportergebnisse → `web_search` (aktuelle Daten nötig).
-- Sonnenauf-/-untergang → erst mit konfiguriertem Standort (`fastpaths.location`, Part 7).
-- Alles mit Seiteneffekten (Licht, Geräte, Anrufe) → nie per Fast-Path (PHONE-46).
+- ~~Wetter, Nachrichten, Preise, Sportergebnisse → `web_search`~~ – **geändert (ADR-029/030):**
+  Wetter, Warnungen, Pollen, Luft, Wechselkurse, Börsenstrompreis, Spritpreise, Pegel, Müllabfuhr und
+  Fußball sind Sofortauskünfte aus offenen Datendiensten mit Cache ([13 §6](13-sofortauskuenfte.md#6-katalog-aller-sofortauskünfte)).
+  Allgemeine Nachrichten, Preise beliebiger Produkte und alles ohne verlässliche offene Quelle bleiben
+  bei `web_search` (ab P1-09).
+- ~~Sonnenauf-/-untergang → erst mit konfiguriertem Standort (`fastpaths.location`, Part 7)~~ –
+  **geändert:** Standort ist der Heimatort `skills.home` (35781 Weilburg), Sonne/Mond offline (13 §6.9).
+- Alles mit Seiteneffekten (Licht, Geräte, Anrufe) → nie per Fast-Path (PHONE-46). Einzige
+  Ausnahme: lokale Notizen/Einkaufsliste mit Bestätigung (SKILL-24, Standard aus).
 
 ## 4. Feiertage Hessen (F-15)
 

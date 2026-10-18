@@ -12,6 +12,8 @@
 | SIP-Spike | `scripts/sip_spike.py` | nein | Registrierung, Audio beidseitig |
 | Abnahme | manuell, Protokoll | nein | §3 |
 | Shell | shellcheck | ja | `moritz-agent`, `install.sh`, `update.sh`, `moritz-*.sh` |
+| Sofortauskünfte | pytest + Korpus + Fixtures | ja | Router-Korpus ≥ 800 Äußerungen, Golden-Antworten mit fester Uhr, Provider über `httpx.MockTransport`, Dialog/Folgefragen, Latenz p95 ≤ 20 ms ([13 §14](13-sofortauskuenfte.md#14-tests)) |
+| Datendienst-Schema | pytest `-m network` | nein | echte Abrufe aller Datendienste, prüfen nur Schema/Plausibilität (erkennt API-Änderungen) |
 | Lint/Format | ruff | ja | `moritz_agent/`, `tests/moritz_agent/`, `scripts/` |
 
 CI-Workflow: `.github/workflows/moritz-ci.yaml` (Python 3.12 und 3.13). Die Upstream-
@@ -26,6 +28,11 @@ Skripte (`install.sh`, `update.sh`, `moritz-install.sh`, `moritz-update.sh`, `te
 - Testsätze Audio: Aufnahme über das echte Telefon (Moritz spricht 30 Sätze, inkl. Zahlen,
   Namen, Umgebungsgeräusch) – Dateien **nicht** ins Repo (Stimme = personenbezogen), nur
   Transkript-Referenzen.
+- `tests/moritz_agent/data/skills.de.jsonl` (Äußerung → erwartete Sofortauskunft + Angaben, inkl.
+  Negativbeispiele, Hessisch, STT-Varianten von PLZ/Ortsnamen) und `skills_golden.de.jsonl`
+  (Äußerung + feste Uhr + Fixture → exakter Antworttext); aufgezeichnete Antworten der Datendienste
+  unter `tests/moritz_agent/data/http/` (CC BY 4.0, Quelle je Datei vermerkt). Nur nachgestellte Sätze,
+  keine echten Transkripte.
 - Test-Secrets: ausschließlich offensichtliche Platzhalter.
 
 ## 3. Abnahmeprotokoll Part 1 (= Originalplan §41)
@@ -47,12 +54,15 @@ Durchführung auf Sophie-1, Ergebnis in `docs/abnahme/part1-<datum>.md`.
 | 10 | Update | Update mit eigenen Zugangsdaten: Werte bleiben, neue Felder ergänzt, Dienst + Registrierung wieder oben; keine Secrets in Web/Logs (grep über Logs nach allen Secret-Werten ≥ 8 Zeichen) | Dauer | ☐ |
 | 11 | Ohne Sandbox | Sandbox-VM aus → Telefon voll funktionsfähig | – | ☐ |
 | 12 | Dauerlauf | 30 Anrufe in Folge, kein Neustart nötig (NFR-04) | Fehlerquote | ☐ |
+| 13 | Sofortauskünfte | Abnahme nach [13 §17](13-sofortauskuenfte.md#17-abnahme-am-telefon): Wetter ohne Ort = Weilburg 35781, PLZ/Ort genannt, Folgefragen, Netz weg → ehrlich, Kalender/Rechnen korrekt | Latenz Cache/Netz | ☐ |
 
 ## 4. Latenz-Messprotokoll (je Turn, aus LOG-03)
 
 | Turn | Pfad | VAD-Ende→STT fertig | LLM erster Token | LLM gesamt | Tools | TTS-Anlauf | Gesamt (Sprechende→Antwortbeginn) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | fast_path_time | | – | – | | | |
+| 1a | skill:weather.day (Cache) | | – | – | | | |
+| 1b | skill:weather.day (Netzabruf) | | – | – | | | |
 | 2 | agent | | | | – | | |
 | 3 | agent + web_search | | | | | | |
 

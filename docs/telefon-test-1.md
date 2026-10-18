@@ -21,6 +21,7 @@ LXC samt Dienst legt `./install.sh` auf dem Proxmox-Host an
 | Vorgefertigte Ansagen gerendert und gecacht | ✅ |
 | Gesprächsablauf: Klingeln (zufällig 4–8 s, `phone.ring_seconds_min/max`), Begrüßung, mehrere Runden, Stille-Erinnerung, Auflegen, Störungsansagen | ✅ |
 | Sofort-Antworten (Uhrzeit, Datum, Wochentag, Kalenderwoche, Name, Verabschiedung) | ✅ (Fast-Paths) |
+| Sofortauskünfte: Wetter (Standard Weilburg 35781), Warnungen, Pollen, Sonne/Mond, Feiertage, Ferien, Rechnen, Lahn-Pegel … und `./test-1.sh ask "…"` | 📋 geplant als Nächstes ([Plan 13](plan/13-sofortauskuenfte.md), Tickets P1-19 … P1-30) |
 | Sprachmodell, Websuche, Web-UI | ❌ kommen mit den nächsten Tickets – Nikita antwortet hier auf alles andere mit „Ich habe verstanden: …“ |
 
 ## Voraussetzungen
