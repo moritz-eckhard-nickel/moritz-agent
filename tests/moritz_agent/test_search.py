@@ -10,7 +10,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from moritz_agent.config.settings import Search, load_settings
+from moritz_agent.config.settings import Search, Settings
 from moritz_agent.inference import InferenceClient
 from moritz_agent.research.fallbacks import KoboldWebSearch, WikipediaSearch
 from moritz_agent.research.search import (
@@ -404,7 +404,7 @@ def test_service_closes_its_backends():
 
 # -- SearXNG process ----------------------------------------------------------------------------------
 def test_process_arguments_and_environment():
-    settings = load_settings(None)
+    settings = Settings()
     argv = build_argv(settings, ROOT, 18080)
     assert argv[0].endswith("runtime/searxng-venv/bin/granian")
     assert argv[argv.index("--host") + 1] == "127.0.0.1"  # loopback only
@@ -419,7 +419,7 @@ def test_process_arguments_and_environment():
 
 
 def test_installed_detects_the_environment(tmp_path):
-    settings = load_settings(None)
+    settings = Settings()
     assert installed(settings, tmp_path) is False
     (tmp_path / "runtime/searxng-venv/bin").mkdir(parents=True)
     (tmp_path / "runtime/searxng-venv/bin/granian").write_text("")
@@ -435,7 +435,7 @@ def test_shipped_settings_enable_json_and_stay_on_loopback():
 # -- with the real SearXNG (optional: -m network, needs scripts/setup-searxng.sh) ---------------
 @pytest.mark.network
 def test_real_searxng_answers_healthz_and_json(tmp_path):
-    settings = load_settings(None)
+    settings = Settings()
     if not installed(settings, ROOT):
         pytest.skip(
             "runtime/searxng-venv fehlt (scripts/setup-searxng.sh --venv runtime/searxng-venv)"

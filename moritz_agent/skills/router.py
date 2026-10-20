@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -152,6 +153,30 @@ class Router:
         outcome.ms = (time.perf_counter() - started) * 1000
         if outcome.result is not None:
             self._remember(ctx, outcome)
+        return outcome
+
+    async def ask(
+        self,
+        raw: str,
+        ctx: SkillContext,
+        *,
+        only: Callable[[Skill], bool],
+        surface: str = "spoken",
+    ) -> Outcome:
+        """Answer ``raw`` from the skills ``only`` allows (the skill tools of the language model).
+
+        No open question, no follow-up and no combination: a tool call is one self-contained request.
+        The answer is remembered, so the caller can follow up with "und morgen?".
+        """
+        started = time.perf_counter()
+        utt = prepare(raw, quarter_dialect=self.svc.cfg.time.quarter_dialect)
+        ranked = [c for c in self.candidates(utt, surface) if only(c.skill)]
+        outcome = await self._try(ranked, utt, ctx, surface)
+        outcome.ms = (time.perf_counter() - started) * 1000
+        if outcome.result is not None:
+            self._remember(ctx, outcome)
+        elif ranked:
+            outcome.best_guess = ranked[0].skill.id
         return outcome
 
     async def _route(self, utt: Utterance, ctx: SkillContext, surface: str) -> Outcome:

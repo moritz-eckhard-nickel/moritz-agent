@@ -37,7 +37,9 @@ def test_example_config_contains_plan_defaults():
         "Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?"
     )
     assert config["phone"]["max_concurrent_calls"] == 1
-    assert set(config["agent"]["phone"]["tools"]) == {"get_current_time", "web_search"}
+    tools = set(config["agent"]["phone"]["tools"])
+    assert {"get_current_time", "web_search", "get_weather", "get_sun_moon", "calculate"} <= tools
+    assert not tools & {"shell", "ssh", "sandbox"}  # PHONE-45
 
 
 def test_example_config_holds_no_credentials():
@@ -102,7 +104,8 @@ def test_cli_check_config_does_not_print_secrets():
     )
     assert result.returncode == 0, result.stderr
     assert "OK" in result.stdout
-    assert "password" not in result.stdout.lower().replace("passwords.txt", "")
+    shown = result.stdout.lower().replace("passwords.template.txt", "").replace("passwords.txt", "")
+    assert "password" not in shown
 
 
 def test_vendored_vad_model_matches_lock():

@@ -123,7 +123,14 @@ speed_wpm = 150
 max_tool_steps = 3
 max_answer_tokens = 160
 temperature = 0.3
-tools = ["get_current_time", "web_search"]   # PHONE-45: keine Shell/SSH
+deadline_s = 15                   # ganze Antwort inklusive Werkzeugaufrufen (AGENT-04)
+max_sentences = 3                 # was vorgelesen wird (AGENT-07)
+# PHONE-45: Uhrzeit, Websuche und die lesenden Sofortauskunft-Werkzeuge; keine Shell/SSH/Sandbox
+tools = [
+    "get_current_time", "web_search",
+    "get_weather", "get_warnings", "get_pollen", "get_air_quality", "get_sun_moon",
+    "calendar_info", "calculate", "money_info", "regional_info", "place_info", "everyday_advice",
+]
 system_prompt_file = "moritz_agent/agent/prompts/phone.de.md"
 
 [storage]

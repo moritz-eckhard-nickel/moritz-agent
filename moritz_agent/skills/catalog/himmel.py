@@ -206,7 +206,7 @@ skill(
         (r"^(?:.*\s)?ist es (?:draußen )?(?:noch |schon )?(?:hell|dunkel)\b.*$", 1.0),
         (r"^(?:.*\s)?wann (?:ist|wird) (?:es )?dunkel\b.*$", 1.0),
     ),
-    exclude=(r"\bmond\b",),
+    exclude=(r"\bmond\b", r"\bwie lange (?:ist|wird) es (?:heute |morgen )?hell\b"),
 )(_sun_dark)
 
 
@@ -498,6 +498,18 @@ async def _moon_rise_set(req: Request) -> SkillResult | None:
             if parts
             else f"geht der Mond um etwa {_clock(set_)} unter"
         )
+    # the moon is up about 50 minutes longer each day, so one calendar day per month has no set
+    # (or no rise): say when it happens instead
+    wanted = "unter" if asks_set and not asks_rise else "auf" if asks_rise and not asks_set else ""
+    if (wanted == "unter" and set_ is None) or (wanted == "auf" and rise is None):
+        later = day + timedelta(days=1)
+        next_rise, next_set = moon.rise_set(place.lat, place.lon, later, place.tz)
+        when = next_set if wanted == "unter" else next_rise
+        if when is not None:
+            return say(
+                f"{label.capitalize()} geht der Mond {_in(resolved)} nicht {wanted}. "
+                f"Das passiert erst {g.day_label(later, now.date())} um etwa {_clock(when)}."
+            )
     if not parts:
         return say(f"{label.capitalize()} geht der Mond {_in(resolved)} weder auf noch unter.")
     return say(g.sentence(f"{label.capitalize()} {' und '.join(parts)}"))

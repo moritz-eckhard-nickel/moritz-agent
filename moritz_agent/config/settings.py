@@ -175,7 +175,23 @@ class AgentPhone(_Section):
     max_tool_steps: int = Field(3, ge=1)
     max_answer_tokens: int = Field(160, ge=16)
     temperature: float = Field(0.3, ge=0, le=2)
-    tools: list[str] = ["get_current_time", "web_search"]
+    deadline_s: float = Field(15, gt=0)
+    max_sentences: int = Field(3, ge=1, le=6)
+    tools: list[str] = [
+        "get_current_time",
+        "web_search",
+        "get_weather",
+        "get_warnings",
+        "get_pollen",
+        "get_air_quality",
+        "get_sun_moon",
+        "calendar_info",
+        "calculate",
+        "money_info",
+        "regional_info",
+        "place_info",
+        "everyday_advice",
+    ]
     system_prompt_file: str = "moritz_agent/agent/prompts/phone.de.md"
 
 
