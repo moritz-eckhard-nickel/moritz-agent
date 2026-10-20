@@ -50,6 +50,7 @@ class SkillResponder:
         ctx.thinking_prompt = None
         outcome: Outcome = await self.router.route(text, ctx, surface="spoken")
         self._log(outcome)
+        self._record(outcome, text)
         if outcome.result is not None:
             result = outcome.result
             ctx.last_text = result.text or ctx.last_text
@@ -77,7 +78,29 @@ class SkillResponder:
             outcome.ms,
         )
 
+    def _record(self, outcome: Outcome, text: str) -> None:
+        """Statistics: one tool_calls row per answered skill (never the sentence itself)."""
+        repo = self.svc.repo
+        if repo is None or outcome.result is None:
+            return
+        try:
+            repo.add_tool_call(
+                f"skill:{outcome.skill_id}",
+                args={"reason": outcome.reason},
+                ok=not outcome.result.serious or outcome.reason != "error",
+                summary=(outcome.result.data or {}).get("place", "") if outcome.result.data else "",
+                sources=[{"name": s.name} for s in outcome.result.sources] or None,
+                duration_ms=round(outcome.ms),
+            )
+        except Exception:  # statistics must never get in the way of an answer
+            log.debug("Statistik nicht geschrieben", exc_info=True)
+
     def _miss(self, text: str, outcome: Outcome) -> None:
         if self.svc.cfg.store_misses:
             self.misses.append((text, outcome.best_guess))
             del self.misses[:-50]
+            if self.svc.repo is not None:
+                try:
+                    self.svc.repo.add_miss(text, outcome.best_guess, outcome.score)
+                except Exception:
+                    log.debug("Fehltreffer nicht geschrieben", exc_info=True)

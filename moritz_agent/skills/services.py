@@ -21,6 +21,7 @@ def build_services(
     seed: int | None = None,
     load_places: bool = True,
     providers: object | Callable[[Services], object] | None = None,
+    database: object | None = None,
 ) -> Services:
     settings = settings or load_settings(root=root)
     clock = clock or SystemClock()
@@ -44,8 +45,11 @@ def build_services(
         except ModuleNotFoundError:
             svc.gazetteer = None
     from moritz_agent.skills.store import NotesStore
+    from moritz_agent.storage import Database, Repo
 
-    svc.store = NotesStore(root / settings.general.data_dir / "skills-notes.db")
+    svc.db = database or Database(root / settings.storage.database)
+    svc.store = NotesStore(svc.db)
+    svc.repo = Repo(svc.db, store_transcripts=settings.storage.store_transcripts)
     if callable(providers):
         svc.providers = providers(svc)
     return svc

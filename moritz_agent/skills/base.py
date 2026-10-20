@@ -136,6 +136,8 @@ class Services:
     started_at: float = 0.0
     assistant_name: str = "Nikita"
     store: Any = None  # notes / reminders store (P1-27)
+    db: Any = None  # moritz_agent.storage.Database
+    repo: Any = None  # moritz_agent.storage.Repo (calls, tool calls, missed questions)
     secrets: dict[str, Any] = field(default_factory=dict)  # optional_services of passwords.txt
 
     @property

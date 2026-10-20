@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import time
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 import httpx
 import pytest
@@ -376,10 +376,8 @@ def test_notes_are_off_by_default_and_the_store_forgets(tmp_path):
     store = NotesStore(tmp_path / "n.db")
     store.add("notizen", "alt")
     store.add("notizen", "neu")
-    import sqlite3
-
-    with sqlite3.connect(tmp_path / "n.db") as conn:
-        conn.execute("UPDATE notes SET created = ? WHERE text = 'alt'", (time.time() - 40 * 86400,))
+    old = datetime.fromtimestamp(time.time() - 40 * 86400, UTC).isoformat(timespec="seconds")
+    store.db.execute("UPDATE notes SET created_at = ? WHERE text = 'alt'", (old,))
     assert store.purge(30) == 1 and store.read("notizen") == ["neu"]
     assert store.clear("notizen") == 1 and store.read("notizen") == []
 
