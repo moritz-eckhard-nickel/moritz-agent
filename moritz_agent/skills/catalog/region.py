@@ -261,10 +261,16 @@ async def _waste_next(req: Request) -> SkillResult | None:
     kinds = sorted({ics.kind_of(p.summary) for p in pickups if p.day == day})
     label = g.day_label(day, today)
     if not kinds:
-        return SkillResult(text=g.sentence(f"{label.capitalize()} wird nichts abgeholt"))
+        return SkillResult(
+            text=g.sentence(f"{label.capitalize()} wird nichts abgeholt"),
+            data={"pickups": 0, "day": day.isoformat()},
+        )
     phrase = g.join_and([_noun_phrase(k) for k in kinds])
     verb = "wird" if len(kinds) == 1 else "werden"
-    return SkillResult(text=g.sentence(f"{label.capitalize()} {verb} {phrase} abgeholt"))
+    return SkillResult(
+        text=g.sentence(f"{label.capitalize()} {verb} {phrase} abgeholt"),
+        data={"pickups": len(kinds), "day": day.isoformat()},
+    )
 
 
 skill(
@@ -512,6 +518,8 @@ def _list_label(name: str) -> str:
 def _notes_enabled(req: Request) -> SkillResult | None:
     if not req.svc.cfg.notes.enabled or req.svc.store is None:
         return SkillResult(text="Notizen sind bei mir ausgeschaltet.", serious=True)
+    if req.ctx.role != "owner":  # docs/plan/14 §5.1: the notes are Moritz' alone
+        return SkillResult(text="Auf die Notizen hast du bei mir keinen Zugriff.", serious=True)
     return None
 
 

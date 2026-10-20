@@ -13,7 +13,7 @@ Still open for ticket P1-03: file permission checks/fixes (CFG-06), reload handl
 from __future__ import annotations
 
 import configparser
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 VALID_SIP_TRANSPORTS = ("udp", "tcp", "tls")
@@ -94,11 +94,25 @@ class SandboxSsh:
 
 
 @dataclass(frozen=True)
+class DiscordCredentials:
+    """``[discord]``: the token of the bot and the default text channel (ids are no secrets)."""
+
+    bot_token: Secret = field(default_factory=lambda: Secret(""))
+    channel_id: str = ""
+    admin_pin: Secret = field(default_factory=lambda: Secret(""))
+
+    @property
+    def enabled(self) -> bool:
+        return bool(self.bot_token)
+
+
+@dataclass(frozen=True)
 class Passwords:
     sip: SipCredentials
     web_login: WebLogin
     sandbox_ssh: SandboxSsh
     optional_services: dict[str, Secret]
+    discord: DiscordCredentials = field(default_factory=DiscordCredentials)
 
     def secret_values(self) -> list[str]:
         """All non-empty secret values, e.g. to feed the log redaction filter."""
@@ -107,6 +121,8 @@ class Passwords:
             self.web_login.password,
             self.sandbox_ssh.password,
             self.sandbox_ssh.private_key_passphrase,
+            self.discord.bot_token,
+            self.discord.admin_pin,
             *self.optional_services.values(),
         ]
         return [s.reveal() for s in values if s]
@@ -233,7 +249,24 @@ def parse_passwords(text: str, source: str = "passwords.txt") -> Passwords:
     if parser.has_section("optional_services"):
         optional = {k: Secret(v.strip()) for k, v in parser["optional_services"].items()}
 
-    return Passwords(sip=sip, web_login=web, sandbox_ssh=ssh, optional_services=optional)
+    discord = DiscordCredentials()
+    if parser.has_section("discord"):
+        section = parser["discord"]
+        token = _get(section, "bot_token", "")
+        channel = _get(section, "channel_id", "")
+        if any(char.isspace() for char in token):
+            raise PasswordsFileError("[discord] bot_token must not contain blanks")
+        if channel and not channel.isdigit():
+            raise PasswordsFileError("[discord] channel_id must be the numeric id of the channel")
+        discord = DiscordCredentials(
+            bot_token=Secret(token),
+            channel_id=channel,
+            admin_pin=Secret(_get(section, "admin_pin", "")),
+        )
+
+    return Passwords(
+        sip=sip, web_login=web, sandbox_ssh=ssh, optional_services=optional, discord=discord
+    )
 
 
 def load_passwords(path: Path) -> Passwords:

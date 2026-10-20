@@ -33,10 +33,10 @@ def _check_config(args: argparse.Namespace) -> int:
 
 
 def _run(_args: argparse.Namespace) -> int:
-    """Start the service. Until the supervisor (P1-04) exists, that is the phone worker."""
-    from moritz_agent.phone.__main__ import main as phone_main
+    """Start the service: main process with the phone worker, search and model as children."""
+    from moritz_agent.supervisor import run
 
-    return phone_main(["run"])
+    return run()
 
 
 def build_parser() -> argparse.ArgumentParser:

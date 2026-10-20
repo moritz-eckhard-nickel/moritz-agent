@@ -58,7 +58,7 @@ def test_every_skill_example_is_answered_by_that_skill():
         if skill.online:
             continue  # online skills are checked with fixtures in their own tests
         for example in skill.examples:
-            session = Session()
+            session = Session(surface="chat" if skill.chat_only else "spoken")
             outcome = session.route(example)
             if skill.id in NEEDS_CONTEXT:
                 continue  # only meaningful after something else was said (checked in the corpus)

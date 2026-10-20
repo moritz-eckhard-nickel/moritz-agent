@@ -57,6 +57,28 @@ def ask(text: str, at: datetime = SUNDAY_EVENING) -> str | None:
     return Session(at).say(text)
 
 
+def default_routes() -> dict:
+    """Answers of every data service, from the fixtures (keys: host + path)."""
+    from . import weather_fixtures as wf
+
+    return {
+        "api.open-meteo.com/v1/forecast": wf.open_meteo_answer(),
+        "api.brightsky.dev/alerts": wf.alerts_answer(),
+        "api.brightsky.dev/current_weather": wf.bright_sky_current(),
+        "api.brightsky.dev/weather": wf.bright_sky_weather(),
+        "opendata.dwd.de/climate_environment/health/alerts/s31fg.json": wf.pollen_answer(),
+        "warnung.bund.de/api31/dashboard/065330000000.json": wf.nina_answer(),
+        "air-quality-api.open-meteo.com/v1/air-quality": wf.air_quality_answer(),
+        "www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml": wf.ecb_xml(),
+        "api.energy-charts.info/price": wf.energy_charts_answer(),
+        "creativecommons.tankerkoenig.de/json/list.php": wf.tankerkoenig_answer(),
+        "www.pegelonline.wsv.de/webservices/rest-api/v2/stations.json": wf.pegel_answer(),
+        "api.openligadb.de/getmatchdata/bl1/2026": wf.liga_matches(),
+        "api.openligadb.de/getbltable/bl1/2026": wf.liga_table(),
+        "www.tagesschau.de/api2u/homepage/": wf.news_answer(),
+    }
+
+
 def weather_session(
     routes: dict | None = None,
     at: datetime = SUNDAY_EVENING,
@@ -74,22 +96,7 @@ def weather_session(
 
     from . import weather_fixtures as wf
 
-    table = {
-        "api.open-meteo.com/v1/forecast": wf.open_meteo_answer(),
-        "api.brightsky.dev/alerts": wf.alerts_answer(),
-        "api.brightsky.dev/current_weather": wf.bright_sky_current(),
-        "api.brightsky.dev/weather": wf.bright_sky_weather(),
-        "opendata.dwd.de/climate_environment/health/alerts/s31fg.json": wf.pollen_answer(),
-        "warnung.bund.de/api31/dashboard/065330000000.json": wf.nina_answer(),
-        "air-quality-api.open-meteo.com/v1/air-quality": wf.air_quality_answer(),
-        "www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml": wf.ecb_xml(),
-        "api.energy-charts.info/price": wf.energy_charts_answer(),
-        "creativecommons.tankerkoenig.de/json/list.php": wf.tankerkoenig_answer(),
-        "www.pegelonline.wsv.de/webservices/rest-api/v2/stations.json": wf.pegel_answer(),
-        "api.openligadb.de/getmatchdata/bl1/2026": wf.liga_matches(),
-        "api.openligadb.de/getbltable/bl1/2026": wf.liga_table(),
-        "www.tagesschau.de/api2u/homepage/": wf.news_answer(),
-    }
+    table = default_routes()
     table.update(routes or {})
     directory = Path(cache_dir) if cache_dir else Path(tempfile.mkdtemp(prefix="skills-cache-"))
 

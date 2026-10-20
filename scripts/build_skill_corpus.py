@@ -223,6 +223,12 @@ POSITIVE: dict[str, list[str]] = {
     "fun.hessian": ["Sag was auf Hessisch", "Was heißt Guude?"],
     "count.down": ["Zähl von 10 runter"],
     "timer.start": ["Stell einen Timer auf 3 Minuten", "Eieruhr 7 Minuten", "Timer für 10 Minuten"],
+    "remind.add": [
+        "Erinnere mich morgen um 8 an den Zahnarzt",
+        "Erinner mich in 2 Stunden an die Wäsche",
+        "Kannst du mich heute Abend um 20 Uhr an Anna erinnern",
+        "Erinnere mich am Freitag um 15 Uhr daran, Moritz anzurufen",
+    ],
     "talk.goodbye": [
         "Tschüss",
         "Auf Wiederhören",

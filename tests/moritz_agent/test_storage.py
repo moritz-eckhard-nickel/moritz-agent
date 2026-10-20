@@ -22,7 +22,7 @@ def db(tmp_path):
 
 def test_the_first_use_creates_and_migrates_the_database(db):
     assert not db.path.exists()
-    assert db.query("SELECT version FROM schema_migrations") and db.current_version() == 1
+    assert db.query("SELECT version FROM schema_migrations") and db.current_version() == 2
     tables = {r["name"] for r in db.query("SELECT name FROM sqlite_master WHERE type='table'")}
     assert {
         "calls",
@@ -177,7 +177,7 @@ def test_backup_is_a_consistent_copy(db, tmp_path):
     copy = sqlite3.connect(target)
     try:
         assert copy.execute("SELECT id FROM calls").fetchone()[0] == "c1"
-        assert copy.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0] == 1
+        assert copy.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0] == 2
     finally:
         copy.close()
     assert not list((tmp_path / "backup").glob("*.tmp"))

@@ -146,6 +146,7 @@ class CallSession:
         log.info("Anruf %s von %s angenommen", self.call_id, self.remote or "?")
         if self.deps.stt is None:
             return await self._out_of_service()
+        self._notify("call_started", self.remote)
         for coroutine in (self._rx_loop(), self._player_loop(), self._watchdog()):
             self._spawn(coroutine)
         self._events.put_nowait(CallAnswered())
@@ -166,6 +167,7 @@ class CallSession:
         finally:
             await self._shutdown()
         reason = self.machine.end_reason or "unknown"
+        self._notify("call_ended", reason)
         log.info(
             "Anruf %s beendet (%s) nach %.0f s, %d Runden",
             self.call_id,
@@ -190,6 +192,13 @@ class CallSession:
                     return "out_of_service"
         finally:
             await self._shutdown()
+
+    def _notify(self, hook: str, value: str) -> None:
+        """Tell the responder that a call began or ended (only the remote one wants to know)."""
+        method = getattr(self.deps.responder, hook, None)
+        if method is not None:
+            with contextlib.suppress(Exception):
+                method(self.call_id, value)
 
     async def _queue_greeting_hint(self) -> None:
         """ "Übrigens: Für Weilburg gilt …" right after the greeting (cache only, never delays it)."""

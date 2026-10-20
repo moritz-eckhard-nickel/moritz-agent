@@ -17,7 +17,7 @@ from pathlib import Path
 
 from moritz_agent.config.secrets import Passwords
 from moritz_agent.config.settings import REPO_ROOT, Settings
-from moritz_agent.config.validate import ValidationReport, settings_path, validate_files
+from moritz_agent.config.validate import Issue, ValidationReport, settings_path, validate_files
 from moritz_agent.logging_setup import get_logger
 
 log = get_logger("system")
@@ -112,6 +112,7 @@ class ConfigManager:
         self._mtimes: tuple[float, float] = (0.0, 0.0)
         self.last_error: str | None = None
         self.last_reload: float | None = None
+        self.warnings: list[Issue] = []  # notes of the last successful load
 
     # -- loading ---------------------------------------------------------------------------------
     @property
@@ -119,6 +120,10 @@ class ConfigManager:
         if self._current is None:
             raise RuntimeError("configuration not loaded")
         return self._current
+
+    @property
+    def loaded(self) -> bool:
+        return self._current is not None
 
     @property
     def settings(self) -> Settings:
@@ -134,6 +139,7 @@ class ConfigManager:
         if not report.ok or report.settings is None or report.passwords is None:
             raise ConfigError("; ".join(f"{i.where}: {i.message}" for i in report.errors), report)
         self._current = RuntimeConfig(report.settings, report.passwords, 1, time.time())
+        self.warnings = report.warnings
         self._mtimes = self._stat()
         return self._current
 
@@ -150,6 +156,7 @@ class ConfigManager:
         new = RuntimeConfig(report.settings, report.passwords, old.generation + 1, time.time())
         result = diff(old, new)
         result.warnings = [f"{i.where}: {i.message}" for i in report.warnings]
+        self.warnings = report.warnings
         self._current = new  # one assignment: readers see the old or the new snapshot, never a mix
         self.last_error = None
         self.last_reload = new.loaded_at

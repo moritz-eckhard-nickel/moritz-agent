@@ -48,7 +48,8 @@ class SkillResponder:
     async def respond(self, text: str, context: TurnContext) -> Reply:
         ctx = self.context_for(context)
         ctx.thinking_prompt = None
-        outcome: Outcome = await self.router.route(text, ctx, surface="spoken")
+        surface = context.extras.get("surface", "spoken")  # "chat" for the web and Discord
+        outcome: Outcome = await self.router.route(text, ctx, surface=surface)
         self._log(outcome)
         self._record(outcome, text)
         if outcome.result is not None:

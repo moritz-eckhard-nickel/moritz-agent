@@ -22,6 +22,7 @@ class Reply:
     hangup: bool = False
     result: Any = None  # the full SkillResult (card, buttons, sources …) for chat channels
     skill_id: str | None = None
+    meta: dict[str, Any] | None = None  # model answers: {"tools": […], "sources": […]}
 
 
 @dataclass

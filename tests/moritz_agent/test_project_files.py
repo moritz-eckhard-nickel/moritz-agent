@@ -297,13 +297,11 @@ def test_test_script_help_lists_all_commands():
         assert f"./test-1.sh {command}" in result.stdout, command
 
 
-def test_run_command_starts_the_phone_worker(monkeypatch):
-    import moritz_agent.phone.__main__ as phone_cli
+def test_run_command_starts_the_supervisor(monkeypatch):
+    import moritz_agent.supervisor as supervisor
 
-    seen = []
-    monkeypatch.setattr(phone_cli, "main", lambda argv=None: seen.append(argv) or 0)
+    monkeypatch.setattr(supervisor, "run", lambda: 0)
     assert main(["run"]) == 0
-    assert seen == [["run"]]
 
 
 def test_phone_subcommand_is_passed_through(monkeypatch):

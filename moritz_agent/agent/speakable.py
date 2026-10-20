@@ -29,6 +29,11 @@ _ABBREVIATIONS = {
 _SENTENCE_END = re.compile(r"([.!?…]+[\"“”)]*)\s+(?=[A-ZÄÖÜ„\"“(0-9])")
 
 
+def strip_reasoning(text: str) -> str:
+    """Only the model's hidden reasoning and special tokens go; markdown and links stay (chat)."""
+    return _SPECIAL.sub("", _THINK.sub("", text)).strip()
+
+
 def clean(text: str) -> str:
     """The answer without reasoning, code, links, emoji and list markers – in plain sentences."""
     text = _THINK.sub("", text)

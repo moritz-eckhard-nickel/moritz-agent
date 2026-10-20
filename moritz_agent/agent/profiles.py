@@ -28,13 +28,20 @@ class Profile:
     notes: list[str] = field(default_factory=list)
 
 
-def render_prompt(text: str, settings: Settings) -> str:
-    """Fill the few variables of a prompt file ({assistant}, {home_name}, {home_postal_code})."""
+CUTE_STYLE = (
+    "Schreib herzlich und ein bisschen süß, mit höchstens einem Emoji; die Fakten bleiben exakt; "
+    "bei Warnungen und Fehlern sachlich."
+)
+
+
+def render_prompt(text: str, settings: Settings, **extra: str) -> str:
+    """Fill the few variables of a prompt file ({assistant}, {home_name}, {home_postal_code}, …)."""
     home = settings.skills.home
     values = {
         "assistant": settings.phone.assistant_name,
         "home_name": home.name,
         "home_postal_code": home.postal_code,
+        **extra,
     }
     for key, value in values.items():
         text = text.replace("{" + key + "}", value)
@@ -55,4 +62,26 @@ def phone_profile(settings: Settings, root: Path) -> Profile:
         temperature=cfg.temperature,
         deadline_s=cfg.deadline_s,
         max_sentences=cfg.max_sentences,
+    )
+
+
+def chat_profile(settings: Settings, root: Path) -> Profile:
+    """Discord text and web: markdown allowed, longer answers, sources as links (docs/plan/14 §4.1)."""
+    from moritz_agent.core.profiles import DISCORD_CHAT
+
+    cfg = settings.agent.phone
+    path = settings.resolve(DISCORD_CHAT.prompt_file, root)
+    style = CUTE_STYLE if settings.discord.style == "cute" else ""
+    prompt = render_prompt(path.read_text(encoding="utf-8"), settings, style=style)
+    return Profile(
+        name=DISCORD_CHAT.name,
+        system_prompt=prompt,
+        tools=frozenset(cfg.tools) - FORBIDDEN_TOOLS,
+        max_tool_steps=cfg.max_tool_steps,
+        max_answer_tokens=DISCORD_CHAT.max_answer_tokens,
+        temperature=cfg.temperature,
+        deadline_s=max(cfg.deadline_s, 30.0),
+        max_sentences=12,
+        max_chars=1800,
+        speak=False,
     )

@@ -185,6 +185,10 @@
 {"say": "Stell einen Timer auf 3 Minuten", "skill": "timer.start"}
 {"say": "Eieruhr 7 Minuten", "skill": "timer.start"}
 {"say": "Timer für 10 Minuten", "skill": "timer.start"}
+{"say": "Erinnere mich morgen um 8 an den Zahnarzt", "skill": "remind.add"}
+{"say": "Erinner mich in 2 Stunden an die Wäsche", "skill": "remind.add"}
+{"say": "Kannst du mich heute Abend um 20 Uhr an Anna erinnern", "skill": "remind.add"}
+{"say": "Erinnere mich am Freitag um 15 Uhr daran, Moritz anzurufen", "skill": "remind.add"}
 {"say": "Tschüss", "skill": "talk.goodbye"}
 {"say": "Auf Wiederhören", "skill": "talk.goodbye"}
 {"say": "Danke, das war's", "skill": "talk.goodbye"}

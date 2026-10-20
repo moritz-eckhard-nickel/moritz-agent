@@ -92,6 +92,9 @@ class SkillResult:
     start_timer: tuple[float, str] | None = None  # (seconds, label)
     serious: bool = False  # chat surfaces: no jokes, no emojis (warnings, errors)
     thinking_prompt: str | None = None  # announcement to play first while data is fetched
+    reminder: tuple[datetime, str] | None = (
+        None  # (when, text): chat surfaces keep it, restart-proof
+    )
 
 
 # -- context -------------------------------------------------------------------------------
@@ -117,6 +120,8 @@ class SkillContext:
     heard: list[str] = field(default_factory=list)  # what the user said, newest last
     home: Place | None = None  # personal home town (Discord users), None = skills.home
     thinking_prompt: str | None = None  # announcement for "Moment, ich schaue nach" this turn
+    role: str = "owner"  # owner | trusted | guest: who asks (notes are Moritz' only)
+    user_id: str | None = None  # Discord user id (reminders belong to a person)
     rng: random.Random = field(default_factory=random.Random)
 
 

@@ -21,7 +21,7 @@ from typing import Any
 from moritz_agent.agent import guard
 from moritz_agent.agent.context import ContextBuilder
 from moritz_agent.agent.profiles import Profile
-from moritz_agent.agent.speakable import clean, make_speakable
+from moritz_agent.agent.speakable import clean, make_speakable, strip_reasoning
 from moritz_agent.inference import Completion, InferenceQueue, Priority, ToolCall
 from moritz_agent.logging_setup import get_logger
 from moritz_agent.tools.base import ToolContext, ToolResult
@@ -153,7 +153,7 @@ class AgentLoop:
                 continue
             answer = self._answer(turn, completion)
             violation = guard.check(
-                turn.user_text, answer, turn.called, supported=turn.weather_values
+                turn.user_text, clean(answer), turn.called, supported=turn.weather_values
             )
             if violation is None:
                 return self._finish(turn, answer)
@@ -176,7 +176,7 @@ class AgentLoop:
         return self._finish(turn, turn.last_speakable or EMPTY_TEXT)
 
     def _answer(self, turn: _Turn, completion: Completion) -> str:
-        return clean(completion.text) if completion.text else ""
+        return strip_reasoning(completion.text) if completion.text else ""
 
     async def _tools(self, turn: _Turn, completion: Completion) -> None:
         calls = completion.tool_calls[:MAX_CALLS_PER_STEP]
@@ -272,11 +272,14 @@ class AgentLoop:
 
     def _finish(self, turn: _Turn, answer: str, *, guarded: str | None = None) -> AgentResult:
         profile = self.profile
-        text = (
-            make_speakable(answer, max_sentences=profile.max_sentences, max_chars=profile.max_chars)
-            if profile.speak
-            else clean(answer)
-        )
+        if profile.speak:
+            text = make_speakable(
+                answer, max_sentences=profile.max_sentences, max_chars=profile.max_chars
+            )
+        else:  # chat: markdown stays, only reasoning goes and the length is limited
+            text = strip_reasoning(answer)
+            if len(text) > profile.max_chars:
+                text = text[: profile.max_chars].rsplit(" ", 1)[0].rstrip(",;:") + " …"
         if not text:
             return AgentResult(turn.last_speakable or EMPTY_TEXT, failure="empty", guard=guarded)
         return AgentResult(text, guard=guarded or (turn.repaired.kind if turn.repaired else None))

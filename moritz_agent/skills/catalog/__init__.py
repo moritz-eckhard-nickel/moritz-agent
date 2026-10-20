@@ -18,6 +18,7 @@ _MODULES = (
     "himmel",
     "geld",
     "region",
+    "erinnerungen",
 )
 _loaded = False
 

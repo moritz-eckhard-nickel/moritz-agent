@@ -348,3 +348,33 @@ def test_without_speech_recognition_the_call_gets_a_fault_announcement(tmp_path)
     h, reason = run(scenario())
     assert reason == "out_of_service" and h.media.hung_up == "out_of_service"
     assert h.played("error_generic") and not h.played("greeting")
+
+
+class RecordingResponder:
+    """Remembers the call life cycle messages the dialogue sends to a remote responder."""
+
+    def __init__(self) -> None:
+        self.events: list[tuple[str, str, str]] = []
+
+    async def respond(self, text: str, context: TurnContext) -> Reply:
+        return Reply(text="Alles klar.", hangup=True)
+
+    def call_started(self, call_id: str, remote: str = "") -> None:
+        self.events.append(("started", call_id, remote))
+
+    def call_ended(self, call_id: str, reason: str = "") -> None:
+        self.events.append(("ended", call_id, reason))
+
+
+def test_the_responder_is_told_when_a_call_begins_and_ends(tmp_path):
+    async def scenario():
+        responder = RecordingResponder()
+        h = Harness(tmp_path, FakeStt("Danke, tschüss"), responder)
+        task = await h.start()
+        await h.wait_for(lambda: h.played("greeting"), "Begrüßung")
+        await h.say()
+        reason = await h.finish(task)
+        return responder.events, reason
+
+    events, reason = run(scenario())
+    assert events == [("started", "test-call", "sip:20@test"), ("ended", "test-call", reason)]

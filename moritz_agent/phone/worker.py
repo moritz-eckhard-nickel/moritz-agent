@@ -21,7 +21,7 @@ from moritz_agent import __version__
 from moritz_agent.config.secrets import Passwords, PasswordsFileError, load_passwords
 from moritz_agent.config.settings import REPO_ROOT, Settings, SettingsError, load_settings
 from moritz_agent.logging_setup import get_logger, setup_logging
-from moritz_agent.phone import dialogue
+from moritz_agent.phone import dialogue, remote
 from moritz_agent.phone.audio.announcements import AnnouncementStore, load_catalog
 from moritz_agent.phone.audio.factory import build_stt, build_tts, build_vad
 from moritz_agent.phone.audio.stt import SpeechToText, Transcript
@@ -79,9 +79,15 @@ class PhoneWorker:
             self.settings.phone.allowed_source_ips = options.allow
         if options.sip_port is not None:
             self.settings.phone.local_sip_port = options.sip_port
-        # instant answers first (time, calendar, weather, …); the test answer / the agent after them
-        self.responder: Responder = responder or SkillResponder(
-            build_services(self.settings, root, providers=Providers), fallback=TestResponder()
+        # Started by the supervisor: every utterance goes to the main process (instant answers,
+        # search, language model). Started alone (./test-1.sh): instant answers first (time,
+        # calendar, weather, …), then the test answer.
+        self.responder: Responder = (
+            responder
+            or remote.from_environment()
+            or SkillResponder(
+                build_services(self.settings, root, providers=Providers), fallback=TestResponder()
+            )
         )
         if isinstance(self.responder, SkillResponder):
             self.responder.svc.secrets = dict(self.passwords.optional_services)
@@ -285,6 +291,8 @@ class PhoneWorker:
         }
 
     async def _shutdown(self) -> None:
+        if isinstance(self.responder, remote.RemoteResponder):
+            await self.responder.aclose()
         if isinstance(self.responder, SkillResponder) and isinstance(
             self.responder.svc.providers, Providers
         ):

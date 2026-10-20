@@ -11,6 +11,7 @@ language = "de"                   # Sprache für STT, TTS, Systemprompts
 data_dir = "data"                 # relativ zum Installationsverzeichnis
 models_dir = "models"
 passwords_file = "passwords.txt"
+config_poll_s = 0                 # >0: Dateien alle n Sekunden auf Änderungen prüfen und neu laden (sonst SIGHUP / Web-UI)
 
 [server]
 host = "0.0.0.0"                  # aus dem LAN erreichbar (F-04); nur mit aktivem Web-Login (API-02)
@@ -30,6 +31,7 @@ backup_count = 10
 pjsip_log_level = 3               # > 3 kann Authorization-Header enthalten (LOG-02)
 
 [inference]
+enabled = true                    # false: nur Sofortauskünfte, kein Sprachmodell starten
 koboldcpp_script = "koboldcpp.py" # Upstream-Einstieg, als Child-Prozess (ADR-003)
 model = "models/llm/Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"   # ADR-016
 context_size = 4096               # 8192 erst nach Messung (INF-05)
@@ -247,3 +249,55 @@ max_minutes = 15
 [sandbox]
 # Verbindungsdaten in passwords.txt [sandbox_ssh]; Nutzung ab Part 4.
 connect_timeout_s = 10
+
+[discord]                         # docs/plan/14-discord.md, Einrichtung: docs/discord-einrichtung.md
+enabled = false                   # true, sobald bot_token in passwords.txt steht (das Setup setzt das)
+owner_user_ids = []               # Discord-Benutzer-IDs (das Setup übernimmt den Besitzer der Anwendung)
+trusted_user_ids = []
+allowed_guild_ids = []            # weitere Server (der Server des Standardkanals ist immer erlaubt)
+chat_channel_ids = []             # weitere Kanäle, in denen Nikita auf jede Nachricht antwortet
+style = "cute"                    # "cute" | "normal" (ADR-037)
+startup_message = true            # „Bin wieder wach ✨“ im Standardkanal nach dem Start
+name_trigger = true               # „Nikita, …“ am Satzanfang wirkt wie eine Erwähnung
+guest_mode = "off"                # "off" | "skills"
+unknown_users = "ignore"          # "ignore" | "notice"
+ephemeral_in_foreign_guilds = true
+call_summaries = "off"            # "off" | "topics" | "transcript" (Transkripte liegen dann bei Discord)
+phone_extensions = {}             # z. B. { "20" = "123456789012345678" } für „schick mir das auf Discord“
+quiet_hours = "22:00-07:00"       # in dieser Zeit nur Unwetter ab Stufe 3 und Erinnerungen
+max_message_chars = 4000
+
+[discord.rate_limits]
+owner_per_minute = 30
+trusted_per_minute = 10
+guest_per_minute = 3
+
+[discord.activities]
+enabled = true                    # schelmische Aktivitäten (ADR-037)
+rotate_minutes = [7, 15]          # zufälliger Wechsel in diesem Bereich (mindestens 5)
+situational = true                # Anruf, Sprachkanal, Nacht, Wetter, Sonderdaten, Wartung
+night = "23:00-06:00"
+
+[discord.voice]
+enabled = true
+default_channel_id = ""           # Sprachkanal für /joinvc, wenn Moritz in keinem ist (optional)
+auto_join = false                 # von selbst kommen, sobald Moritz einen Sprachkanal betritt
+greeting = "phone"                # dieselbe Begrüßung wie am Telefon (PHONE-21)
+after_goodbye = "leave"           # "leave" | "stay"
+on_silence = "rest"               # "rest" (still bleiben, auf „Nikita“ hören) | "leave" (wie Auflegen)
+idle_leave_minutes = 10           # ohne Menschen im Kanal so lange warten, dann gehen
+barge_in = true
+max_session_minutes = 120
+stt_threads = 4
+unload_after_minutes = 10         # Sprachmodelle nach der letzten Sitzung wieder freigeben
+stage_fallback = false            # Bühnenkanal statt E2EE-Sprachkanal (ADR-036, Ergebnis B)
+
+[discord.voice_messages]
+enabled = true
+reply_with_voice = "mirror"       # "mirror" | "always" | "never"
+max_seconds = 300
+
+[discord.notify]
+target = "channel"                # "channel" (Standardkanal) | "dm"
+warnings_default_level = "severe" # Standard-Abo des Owners: "moderate" | "severe" | "extreme"
+system_alerts = true
