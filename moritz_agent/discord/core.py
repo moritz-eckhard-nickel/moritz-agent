@@ -145,6 +145,16 @@ class CoreApi:
             "POST", "/internal/discord/feedback", json={"skill_id": skill_id, "rating": rating}
         )
 
+    async def places(self, text: str) -> list[dict[str, Any]]:
+        return (await self._json("GET", "/internal/discord/places", params={"q": text}))["items"]
+
+    # -- registered commands -----------------------------------------------------------------------------------
+    async def commands_hash(self) -> str | None:
+        return (await self._json("GET", "/internal/discord/commands"))["hash"]
+
+    async def set_commands_hash(self, digest: str) -> None:
+        await self._json("PUT", "/internal/discord/commands", json={"hash": digest})
+
     # -- status and admin ------------------------------------------------------------------------------------
     async def overview(self) -> dict[str, Any]:
         return await self._json("GET", "/internal/discord/overview")

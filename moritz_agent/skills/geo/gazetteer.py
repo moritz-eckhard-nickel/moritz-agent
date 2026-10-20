@@ -16,6 +16,7 @@ as such so the answer can say "Ich nehme an, du meinst …".
 
 from __future__ import annotations
 
+import bisect
 import csv
 import difflib
 import math
@@ -372,6 +373,31 @@ class Gazetteer:
                     hits=hits, ambiguous=len(hits) > 1 and hits[0].score - hits[1].score < 0.03
                 )
         return Lookup()
+
+    def suggest(self, text: str, limit: int = 25) -> list[Place]:
+        """Places whose name or postcode starts with what is typed so far (autocomplete)."""
+        typed = text.strip()
+        if not typed:
+            return []
+        if typed.isdigit():
+            places = [p for p in self.places if any(c.startswith(typed) for c in p.postal_codes)]
+        else:
+            key = fold(typed)
+            start = bisect.bisect_left(self._keys, key)
+            places = []
+            for candidate in self._keys[start:]:
+                if not candidate.startswith(key):
+                    break
+                places.extend(entry.place for entry in self._by_key[candidate])
+        places.sort(key=lambda p: (bool(p.parent), -p.population, p.name))
+        unique: list[Place] = []
+        seen: set[tuple[str, str]] = set()
+        for place in places:
+            ident = (place.name, place.state or place.country)
+            if ident not in seen:
+                seen.add(ident)
+                unique.append(place)
+        return unique[:limit]
 
     def _rank(
         self, entries: list[_Entry], near: Place | None, limit: int, *, matched: str

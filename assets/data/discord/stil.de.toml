@@ -58,4 +58,5 @@ startup = ["Bin wieder wach ✨", "Guude, da bin ich wieder ✨", "Frisch ausges
 joined_voice = "Bin unterwegs in 🔊 {channel} ✨"
 left_voice = "Bin wieder raus aus 🔊 {channel} 👋"
 saved = ["Hab ich notiert", "Gemerkt", "Erledigt"]
+input_cut = "Das war ziemlich lang – ich habe nur die ersten {n} Zeichen gelesen."
 thanks = ["Gern geschehen 💛", "Immer wieder gern 🐾", "Klar doch ✨"]

@@ -180,6 +180,43 @@ def _resolve_home(ctx: AppContext, text: str):
     return hit.place if hit else None
 
 
+@router.get("/places")
+async def places(q: str = "", ctx: AppContext = Depends(require_internal)):
+    """Autocomplete of places and postcodes for the slash commands."""
+    gazetteer = ctx.runtime.svc.gazetteer
+    if gazetteer is None or not q.strip():
+        return {"items": []}
+    return {
+        "items": [
+            {
+                "name": p.name,
+                "postal_code": p.postal_codes[0] if p.postal_codes else "",
+                "state": p.state,
+            }
+            for p in gazetteer.suggest(q, 25)
+        ]
+    }
+
+
+class HashBody(BaseModel):
+    hash: str = Field(pattern=r"^[0-9a-f]{8,64}$")
+
+
+@router.get("/commands")
+async def commands_hash(ctx: AppContext = Depends(require_internal)):
+    store = ctx.runtime.discord_store
+    assert store is not None
+    return {"hash": store.registered_hash()}
+
+
+@router.put("/commands")
+async def set_commands_hash(body: HashBody, ctx: AppContext = Depends(require_internal)):
+    store = ctx.runtime.discord_store
+    assert store is not None
+    store.save_registered_hash(body.hash)
+    return {"ok": True}
+
+
 @router.get("/principal/{user_id}")
 async def principal(user_id: str, ctx: AppContext = Depends(require_internal)):
     if not re.fullmatch(_ID, user_id):

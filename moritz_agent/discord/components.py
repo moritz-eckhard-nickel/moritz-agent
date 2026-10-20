@@ -85,6 +85,13 @@ class Confirmations:
             del self._pending[key]
         return nonce
 
+    def peek(self, nonce: str, user_id: str) -> Pending | None:
+        """The pending action without using it up (the PIN dialog comes first)."""
+        pending = self._pending.get(nonce)
+        if pending is None or pending.expires < self._clock() or pending.user_id != user_id:
+            return None
+        return pending
+
     def take(self, nonce: str, user_id: str) -> Pending | None:
         """The pending action if it is still valid and belongs to this person (single use)."""
         pending = self._pending.get(nonce)
