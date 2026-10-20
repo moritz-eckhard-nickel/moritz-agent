@@ -12,6 +12,7 @@ requirements
 frontend
 docs
 third_party/pjproject
+third_party/searxng
 pyproject.toml
 README.md
 LICENSE-MSOL.md

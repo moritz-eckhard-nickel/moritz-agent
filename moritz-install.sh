@@ -51,7 +51,7 @@ PHASES=(
 	"python_env:venv und gepinnte Python-Pakete (mit Prüfsummen)"
 	"pjsip:PJSIP + PJSUA2-Binding bauen (ADR-005)"
 	"koboldcpp:KoboldCpp bauen (kommt mit Ticket P1-02)"
-	"searxng:SearXNG einrichten (kommt mit Ticket P1-08)"
+	"searxng:SearXNG-Umgebung für die Websuche einrichten"
 	"models:Whisper small und Piper-Stimme Hessisch laden"
 	"secrets:passwords.txt anlegen (vorhandene bleibt unverändert)"
 	"config:config/moritz-agent.toml anlegen (vorhandene bleibt unverändert)"
@@ -250,7 +250,12 @@ phase_pjsip() {
 }
 
 phase_koboldcpp() { log "KoboldCpp: gehört zu Ticket P1-02 und ist noch nicht Teil dieses Installers"; }
-phase_searxng() { log "SearXNG: gehört zu Ticket P1-08 und ist noch nicht Teil dieses Installers"; }
+
+phase_searxng() {
+	if [[ ${SKIP_ENV} -eq 1 ]]; then return 0; fi
+	run "${PREFIX}/scripts/setup-searxng.sh" --venv "${PREFIX}/runtime/searxng-venv"
+	run chown -R "${SERVICE_USER}:${SERVICE_USER}" "${PREFIX}/runtime/searxng-venv"
+}
 
 phase_models() {
 	if [[ ${SKIP_MODELS} -eq 1 || ${SKIP_ENV} -eq 1 ]]; then

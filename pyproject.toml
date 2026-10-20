@@ -37,8 +37,11 @@ moritz_agent = ["agent/prompts/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/moritz_agent"]
-addopts = "--import-mode=importlib"
+addopts = "--import-mode=importlib -m 'not network'"
 pythonpath = ["."]
+markers = [
+    "network: needs the internet or a locally installed service (run with -m network)",
+]
 
 [tool.ruff]
 # Only lint moritz-agent code; KoboldCpp upstream files are out of scope (ADR-001).

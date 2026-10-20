@@ -53,6 +53,10 @@ fallback_timeout_s = 8            # KoboldCpp-Websuche / Wikipedia
 max_results = 5
 language = "de-DE"
 safesearch = 0
+searxng_venv = "runtime/searxng-venv"          # eigene Umgebung (scripts/setup-searxng.sh)
+searxng_source = "third_party/searxng"         # mitgelieferter SearXNG-Code (unverändert)
+searxng_settings = "config/searxng/settings.yml"
+searxng_startup_timeout_s = 90    # SearXNG braucht beim ersten Start einige Sekunden
 # Engines: config/searxng/settings.yml (alle Standard-Engines + google, bing, qwant, …; F-09)
 
 [phone]

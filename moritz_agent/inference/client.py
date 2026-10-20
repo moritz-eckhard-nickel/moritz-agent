@@ -105,6 +105,21 @@ class InferenceClient:
         except (httpx.HTTPError, ValueError, KeyError, TypeError):
             return None
 
+    async def websearch(self, query: str, timeout_s: float = 8.0) -> list[dict[str, Any]]:
+        """``/api/extra/websearch`` (needs ``--websearch``): ``[{title, url, desc, content}]``."""
+        try:
+            response = await self._client.post(
+                "/api/extra/websearch", json={"q": query}, timeout=timeout_s
+            )
+            rows = response.json()
+        except httpx.TimeoutException as exc:
+            raise InferenceTimeout("web search did not answer in time") from exc
+        except (httpx.HTTPError, ValueError) as exc:
+            raise InferenceUnavailable(f"web search unavailable ({type(exc).__name__})") from exc
+        if response.status_code >= 400 or not isinstance(rows, list):
+            raise InferenceUnavailable(f"web search answered {response.status_code}")
+        return [row for row in rows if isinstance(row, dict)]
+
     # -- abort ----------------------------------------------------------------------------------
     async def abort(self, genkey: str) -> None:
         """Stop the generation with this key (and remember it, so ``chat`` raises)."""

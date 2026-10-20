@@ -148,6 +148,7 @@ def make_source(directory: Path, version: str, extra_files: dict[str, str] | Non
     (directory / "scripts").mkdir()
     write_script(directory / "scripts" / "build-pjsip.sh", "exit 0")
     write_script(directory / "scripts" / "setup-env.sh", "exit 0")
+    write_script(directory / "scripts" / "setup-searxng.sh", "exit 0")
     (directory / "third_party" / "pjproject").mkdir(parents=True)
     (directory / "third_party" / "pjproject" / "version.mak").write_text(
         "export PJ_VERSION_MAJOR := 2\n"
@@ -479,10 +480,14 @@ def test_update_rebuilds_the_environment_only_when_packages_changed(machine, tmp
         f'echo "setup $*" >> "{recorder}"; mkdir -p "$2/bin"; ln -sf {sys.executable} "$2/bin/python"',
     )
     write_script(new / "scripts" / "build-pjsip.sh", f'echo "pjsip $*" >> "{recorder}"')
+    searxng_calls = machine.root / "searxng-calls.log"
+    write_script(new / "scripts" / "setup-searxng.sh", f'echo "$*" >> "{searxng_calls}"')
     args = ("--skip-models", "--no-service")
     first = update(machine, new, *args)
     assert first.returncode == 0, first.stdout + first.stderr
     assert "setup --venv" in recorder.read_text()  # no hash recorded yet → built
+    # the search worker has its own environment; the script decides itself whether it is current
+    assert searxng_calls.read_text().strip() == f"--venv {runtime}/searxng-venv"
     assert (runtime / ".env-hash").is_file()
     assert (runtime / "venv.prev").is_dir()
     recorder.write_text("")

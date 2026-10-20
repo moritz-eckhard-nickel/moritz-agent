@@ -79,6 +79,10 @@ class Search(_Section):
     max_results: int = Field(5, ge=1, le=20)
     language: str = "de-DE"
     safesearch: int = Field(0, ge=0, le=2)
+    searxng_venv: str = "runtime/searxng-venv"
+    searxng_source: str = "third_party/searxng"
+    searxng_settings: str = "config/searxng/settings.yml"
+    searxng_startup_timeout_s: float = Field(90, gt=0)
 
 
 class Vad(_Section):
