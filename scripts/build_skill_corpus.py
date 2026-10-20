@@ -389,7 +389,8 @@ POSITIVE.update(
         "weather.humidity": ["Wie hoch ist die Luftfeuchtigkeit?", "Ist es schwül?"],
         "weather.pressure": ["Wie ist der Luftdruck?"],
         "weather.sunshine": ["Scheint heute die Sonne?", "Wie viele Sonnenstunden gibt es morgen?"],
-        "weather.clouds": ["Ist es bewölkt?", "Kann man heute Nacht Sterne sehen?"],
+        "weather.clouds": ["Ist es bewölkt?", "Ist der Himmel klar?"],
+        "sky.stars": ["Kann man heute Nacht Sterne sehen?", "Sieht man heute Sterne?"],
         "weather.uv": ["Wie hoch ist der UV-Index?", "Brauche ich Sonnencreme?"],
         "weather.compare": [
             "Wird es morgen wärmer als heute?",
@@ -454,6 +455,43 @@ POSITIVE.update(
         "advice.hike": ["Wie ist das Wetter zum Wandern am Samstag?", "Ist Wanderwetter?"],
         "advice.plants_frost": ["Muss ich die Pflanzen reinholen?"],
         "advice.heating": ["Wird es kalt genug zum Heizen?", "Ist heute ein Heiztag?"],
+    }
+)
+
+POSITIVE.update(
+    {
+        "sun.rise_set": [
+            "Wann geht die Sonne auf?",
+            "Wann geht die Sonne unter?",
+            "Wann ist morgen Sonnenaufgang in Berlin?",
+            "Sonnenuntergang?",
+            "Wann geht heute die Sonne unter?",
+        ],
+        "sun.dark": ["Wann wird es dunkel?", "Wann wird es hell?", "Ist es draußen noch hell?"],
+        "sun.daylength": ["Wie lange ist es heute hell?", "Wie viel kürzer werden die Tage?"],
+        "sun.noon": ["Wann steht die Sonne am höchsten?"],
+        "sun.golden_hour": ["Wann ist die goldene Stunde?"],
+        "sun.solstice": [
+            "Ab wann werden die Tage wieder länger?",
+            "Wann sind die Tage am kürzesten?",
+            "Wann ist Wintersonnenwende?",
+        ],
+        "moon.phase": [
+            "Welche Mondphase haben wir?",
+            "Ist heute Vollmond?",
+            "Wie sieht der Mond aus?",
+        ],
+        "moon.next": [
+            "Wann ist der nächste Vollmond?",
+            "Wann ist Neumond?",
+            "Wann ist der nächste Halbmond?",
+        ],
+        "moon.rise_set": ["Wann geht der Mond auf?", "Wann geht der Mond unter?"],
+        "season.start": [
+            "Wann ist Frühlingsanfang?",
+            "Wann beginnt der Winter?",
+            "Wann fängt der Sommer an?",
+        ],
     }
 )
 

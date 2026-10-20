@@ -519,8 +519,8 @@ _aspect_skill(
 
 _aspect_skill(
     "weather.clouds",
-    _line(r"bewölkt", r"wolken", r"wolkig", r"sterne\w*", r"sternenhimmel", r"klarer himmel"),
-    examples=("Ist es bewölkt?", "Kann man heute Nacht Sterne sehen?"),
+    _line(r"bewölkt", r"wolken", r"wolkig", r"klarer himmel", r"himmel klar"),
+    examples=("Ist es bewölkt?", "Ist der Himmel klar?"),
     priority="K",
     exclude=(r"\bcloud\b",),
 )(_aspect("weather.clouds", s.answer_clouds))

@@ -25,11 +25,11 @@ from moritz_agent.skills.geo.gazetteer import Gazetteer, Place, fold
 if TYPE_CHECKING:
     from moritz_agent.skills.base import Services, SkillContext
 
-SIGNALS = {"in", "für", "bei", "nach", "von", "aus", "bis", "zwischen", "um", "rund", "und", "nahe"}
+SIGNALS = {"in", "für", "bei", "nach", "von", "aus", "bis", "zwischen", "um", "rund", "nahe"}
 # these only count when a known place follows (a stray "ist Essen fertig" must not become a city)
 KEYWORDS = {
     "wetter", "plz", "postleitzahl", "vorwahl", "ist", "liegt", "sind", "gehört", "entfernung",
-    "distanz", "luftlinie", "abstand", "temperatur",
+    "distanz", "luftlinie", "abstand", "temperatur", "und",
 }  # fmt: skip
 _SKIP_AFTER = {"hat", "von", "vom", "für", "ist", "liegt", "gehört", "zu", "nach", "zwischen"}
 # words that end a place name (time, question and verb words)

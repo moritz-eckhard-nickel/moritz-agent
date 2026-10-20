@@ -336,7 +336,9 @@
 {"say": "Scheint heute die Sonne?", "skill": "weather.sunshine"}
 {"say": "Wie viele Sonnenstunden gibt es morgen?", "skill": "weather.sunshine"}
 {"say": "Ist es bewölkt?", "skill": "weather.clouds"}
-{"say": "Kann man heute Nacht Sterne sehen?", "skill": "weather.clouds"}
+{"say": "Ist der Himmel klar?", "skill": "weather.clouds"}
+{"say": "Kann man heute Nacht Sterne sehen?", "skill": "sky.stars"}
+{"say": "Sieht man heute Sterne?", "skill": "sky.stars"}
 {"say": "Wie hoch ist der UV-Index?", "skill": "weather.uv"}
 {"say": "Brauche ich Sonnencreme?", "skill": "weather.uv"}
 {"say": "Wird es morgen wärmer als heute?", "skill": "weather.compare"}
@@ -395,6 +397,32 @@
 {"say": "Muss ich die Pflanzen reinholen?", "skill": "advice.plants_frost"}
 {"say": "Wird es kalt genug zum Heizen?", "skill": "advice.heating"}
 {"say": "Ist heute ein Heiztag?", "skill": "advice.heating"}
+{"say": "Wann geht die Sonne auf?", "skill": "sun.rise_set"}
+{"say": "Wann geht die Sonne unter?", "skill": "sun.rise_set"}
+{"say": "Wann ist morgen Sonnenaufgang in Berlin?", "skill": "sun.rise_set"}
+{"say": "Sonnenuntergang?", "skill": "sun.rise_set"}
+{"say": "Wann geht heute die Sonne unter?", "skill": "sun.rise_set"}
+{"say": "Wann wird es dunkel?", "skill": "sun.dark"}
+{"say": "Wann wird es hell?", "skill": "sun.dark"}
+{"say": "Ist es draußen noch hell?", "skill": "sun.dark"}
+{"say": "Wie lange ist es heute hell?", "skill": "sun.daylength"}
+{"say": "Wie viel kürzer werden die Tage?", "skill": "sun.daylength"}
+{"say": "Wann steht die Sonne am höchsten?", "skill": "sun.noon"}
+{"say": "Wann ist die goldene Stunde?", "skill": "sun.golden_hour"}
+{"say": "Ab wann werden die Tage wieder länger?", "skill": "sun.solstice"}
+{"say": "Wann sind die Tage am kürzesten?", "skill": "sun.solstice"}
+{"say": "Wann ist Wintersonnenwende?", "skill": "sun.solstice"}
+{"say": "Welche Mondphase haben wir?", "skill": "moon.phase"}
+{"say": "Ist heute Vollmond?", "skill": "moon.phase"}
+{"say": "Wie sieht der Mond aus?", "skill": "moon.phase"}
+{"say": "Wann ist der nächste Vollmond?", "skill": "moon.next"}
+{"say": "Wann ist Neumond?", "skill": "moon.next"}
+{"say": "Wann ist der nächste Halbmond?", "skill": "moon.next"}
+{"say": "Wann geht der Mond auf?", "skill": "moon.rise_set"}
+{"say": "Wann geht der Mond unter?", "skill": "moon.rise_set"}
+{"say": "Wann ist Frühlingsanfang?", "skill": "season.start"}
+{"say": "Wann beginnt der Winter?", "skill": "season.start"}
+{"say": "Wann fängt der Sommer an?", "skill": "season.start"}
 {"say": "Um wie viel Uhr fährt der Zug nach Frankfurt?", "skill": null}
 {"say": "Wann öffnet der Supermarkt?", "skill": null}
 {"say": "Um wie viel Uhr beginnt der Film?", "skill": null}
