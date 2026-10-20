@@ -504,3 +504,89 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 - **Konsequenzen:** neue Bedrohungen T19–T24 in [08](08-sicherheit.md); Netztests nur mit
   `@pytest.mark.network`; `skills.online = false` schaltet alle Abrufe ab.
 - **Status:** beschlossen (Plan).
+
+## ADR-033 – Discord-Kanal: offizieller Bot, Server- und Benutzer-Installation, eigener Worker mit discord.py
+
+- **Kontext (Moritz, 20.10.2026):** „Plane eine komplette Discord-User-Integration mit allen Features,
+  die Nikita jemals hat, und mach ihn zu einem Bot. Beim Setup gibt man den Token ein oder auch in die
+  TXT.“ Plan: [14-discord.md](14-discord.md).
+- **Entscheidung:**
+  1. Nikita ist der **Bot** einer eigenen Discord-Anwendung. „Public Bot“ aus, Server-Installation
+     (eigene Server: Chat, Sprache, Threads) **und** Benutzer-Installation (Befehle überall, wo Moritz
+     ist). Ein Benutzer-Token („Self-Bot“) wird nie verwendet – verstößt gegen Discords
+     Nutzungsbedingungen und gefährdet Moritz’ Konto.
+  2. Eigener Prozess **Discord-Worker** (`python -m moritz_agent.discord run`), vom Supervisor
+     verwaltet (bis P1-04 von `moritz-agent run`), `nice +5`, Statusdatei, Wartungsmodus wie das
+     Telefon. Nur ausgehende Verbindungen: Gateway/REST über TCP 443, Sprache über UDP – kein
+     eingehender Port, kein Webhook-Endpunkt.
+  3. Bibliothek **discord.py ≥ 2.7 mit `[voice]`** (MIT; Gateway, Slash-Befehle, Komponenten, Sprache
+     senden mit DAVE über `davey`). Lock-Gruppe `requirements/discord.lock` (ADR-019).
+  4. Token nur in `passwords.txt` `[discord] bot_token`; Setup-Phase `discord` im Installer mit
+     verdeckter Eingabe über stdin, Prüfung gegen die API, Einladungslinks; Updater hängt den
+     Abschnitt leer an.
+- **Alternativen:** Self-Bot (verboten), Interactions-Endpunkt per HTTPS-Webhook (bräuchte eine
+  öffentliche Adresse und eingehenden Port – verworfen), Pycord (Sprache senden mit DAVE seit 2.8,
+  Empfang laut Doku mit Vorbehalt; kein Vorteil gegenüber discord.py), hikari (keine eingebaute
+  Sprache), discord.js/Node-Worker (zweite Laufzeit im LXC, Audio-Bausteine sind Python),
+  Matrix/Telegram statt Discord (nicht gewünscht).
+- **Konsequenzen:** Block D (P1-31 … P1-42) in [04](04-part1-umsetzung.md); neue Bedrohungen T25–T32;
+  neue Anforderungen DISCORD-01 … DISCORD-42.
+- **Status:** beschlossen (Plan); Umsetzung offen.
+
+## ADR-034 – Kanalunabhängiger Kern und Ausgabeprofile je Oberfläche
+
+- **Kontext:** Nikita soll auf Discord **alles** können, was sie irgendwo kann – heute und in jedem
+  späteren Part. Zwei Implementierungen derselben Funktion würden auseinanderlaufen.
+- **Entscheidung:** Ein Nikita-Kern (SkillResponder → Agent, Tools, Gedächtnis, Aufgaben) bekommt
+  Turns mit `principal` (wer, Rolle, persönliche Einstellungen), `channel` (`phone|discord|web`, Ort)
+  und `surface` (`spoken|chat`). Kanäle sind dünne Adapter. Skills liefern gesprochenen Text **und**
+  `markdown`, `card` und `actions` ([13 §3.3](13-sofortauskuenfte.md#33-schnittstellen)); das LLM-Profil
+  wird je Surface gewählt (`phone`, `discord_voice`, `discord_chat`). **Kanal-Parität** wird DoD-Punkt
+  jedes Tickets: neue Funktionen kommen im selben Ticket auf alle Kanäle oder die Ausnahme wird
+  begründet (Matrix [14 §6](14-discord.md#6-funktionsumfang-alle-funktionen-auf-allen-kanälen)).
+- **Alternativen:** Discord-eigene Logik (doppelter Code, Abweichungen), alles über das LLM (langsam,
+  verliert die deterministischen Sofortauskünfte).
+- **Konsequenzen:** Ticket P1-31 (Kanal-Kern) vor allen Discord-Tickets; `TurnContext` wird
+  erweitert; `call_turns`/`tool_calls` bekommen eine Spalte `channel`.
+- **Status:** beschlossen (Plan).
+
+## ADR-035 – Zugriffsmodell auf Discord
+
+- **Kontext:** Das Telefon ist nur im LAN erreichbar, Discord aus dem Internet. Discord-Identitäten
+  sind besser geschützt als eine Rufnummer, aber Konten können übernommen werden.
+- **Entscheidung:** Standard **verweigern**. Rollen an der unveränderlichen Discord-Benutzer-ID:
+  Owner (aus dem Besitzer der Anwendung übernommen), Vertraut (Liste), Gast (Standard: ignoriert;
+  optional nur Sofortauskünfte in freigegebenen Kanälen). Server-Allowlist, fremde Server werden
+  verlassen. Rate-Limits je Rolle. Admin-Befehle nur Owner, nur DM/ephemeral, Zustandsänderungen mit
+  Bestätigungsknopf, optional PIN aus `passwords.txt`. Nie: Shell im LXC, Updates, Dateizugriff,
+  Secrets. Sandbox/Browser (Part 4/6) nur Owner mit Bestätigung je riskanter Aktion. `allowed_mentions`
+  nie `@everyone`/`@here`/Rollen. Inhalte Dritter sind Daten, keine Anweisungen.
+- **Alternativen:** Discord-Serverrollen als Berechtigung (Serveradmins könnten sich selbst Rechte
+  geben – verworfen), offener Bot mit Moderation (unnötiges Risiko).
+- **Konsequenzen:** T25–T31 in [08](08-sicherheit.md); Tests der vollständigen Rollenmatrix.
+- **Status:** beschlossen (Plan).
+
+## ADR-036 – Discord-Sprache: DAVE-Pflicht, Empfang erst nach Spike, Rückfallwege
+
+- **Kontext:** Seit März 2026 verlangt Discord Ende-zu-Ende-Verschlüsselung (DAVE) für alle Sprach- und
+  Videoanrufe (Bühnenkanäle ausgenommen). discord.py ≥ 2.7 kann mit `davey` **senden**; Audio
+  **empfangen** kann discord.py nicht selbst, und die Erweiterung `discord-ext-voice-recv`
+  entschlüsselt DAVE in der veröffentlichten Fassung nicht – es gibt mehrere Forks/PRs dafür.
+- **Entscheidung:**
+  1. Sprache senden mit discord.py + davey (gesetzt).
+  2. Sprache empfangen: **Spike P1-32** vergleicht die DAVE-fähigen Fassungen von
+     `discord-ext-voice-recv` und die Python-Bindung an Discords `libdave` (Kriterien: 60 min ohne
+     Abbruch, Sprecher- und Schlüsselwechsel, Reconnect, CPU-Last). Stabil → von PyPI, sonst als
+     dokumentierte Fremdkomponente in `third_party/` (ADR-021).
+  3. Nicht stabil → Modus **„nur sprechen“** (Text im Sprachkanal-Chat oder Sprachnachricht rein,
+     gesprochene Antwort raus) und optional Bühnenkanal ohne E2EE; Spike wird wiederholt, sobald eine
+     Bibliothek DAVE-Empfang offiziell unterstützt.
+  4. Audio-Kette mit den Bausteinen des Telefons (VAD, Whisper, Piper, Resampling), aber im
+     Discord-Worker und **nur während Sprachsitzungen geladen**; höchstens eine Sitzung; Barge-in
+     erlaubt (kein Echo im Discord-Audio).
+- **Alternativen:** gemeinsamer Sprachdienst für Telefon und Discord (spart ≈ 1 GB RAM, koppelt aber
+  Discord an den Telefon-Prozess – „verworfen für jetzt“, neu bewerten nach der RAM-Messung in P1-36);
+  Node-Worker mit @discordjs/voice (hat eigene DAVE-Empfangsprobleme, zweite Laufzeit); nur
+  Sprachnachrichten ohne Sprachkanal (zu wenig).
+- **Konsequenzen:** Risiko R27; DISCORD-23 ist SOLL, DISCORD-24 (Rückfall) MUSS.
+- **Status:** vorläufig – bestätigt oder geändert durch P1-32.

@@ -216,6 +216,9 @@ class SkillResult:
     followup: FollowupState | None = None    # was eine Folgefrage erben darf
     detail: str | None = None                # Antwort auf „Mehr Details“
     stale_s: int | None = None               # Datenalter, falls aus altem Cache
+    markdown: str | None = None              # geschriebene Form für Discord/WebUI (ab P1-31, 14 §4.1)
+    card: Card | None = None                 # strukturierte Karte (Titel, Felder, Farbe, Quelle) → Embed
+    actions: tuple[Action, ...] = ()         # Folgeaktionen („Morgen“, „Wochenende“) → Knöpfe
 ```
 
 `SkillResponder.respond()` liefert das bestehende `Reply` (Text, Ansage, Auflegen) – die
@@ -1263,11 +1266,11 @@ Protokoll `docs/abnahme/sofortauskuenfte-<datum>.md`, Anruf an 999 über die ech
 | --- | --- |
 | Bus/Bahn (RMV, DB) | später mit Schlüssel und Haltestellen von Moritz (Part 7+), eigener Plan |
 | Kalender/Termine (CalDAV) | Part 8+ („Tools später: calendar“, 05) |
-| Erinnerung/Weckruf per Rückruf | **nein** ohne eigene Freigabe: Nikita ruft nie selbst an (PHONE-10) |
+| Erinnerung/Weckruf per Rückruf | **nein** ohne eigene Freigabe: Nikita ruft nie selbst an (PHONE-10) – **auf Discord als Direktnachricht: ja** ([14 §11](14-discord.md#11-proaktive-nachrichten-und-erinnerungen)) |
 | Smart Home („Mach das Licht an“) | **nein** per Telefon (PHONE-46, Caller-ID ist keine Berechtigung) |
 | Regenradar „regnet es in 10 Minuten?“ | KANN: Bright-Sky-Radar (DWD RADOLAN) als Nowcasting, nach Welle C |
 | Wetterkarte, Diagramme | WebUI (Part 2) aus denselben Wetterpaketen |
-| Morgen-Anruf mit Wetter | nein (ausgehend); stattdessen `briefing` bei „Guten Morgen“ |
+| Morgen-Anruf mit Wetter | nein (ausgehend); stattdessen `briefing` bei „Guten Morgen“ und als abonnierbares Morgenbriefing auf Discord (14 §11) |
 | Namenstage, Horoskope | Horoskope nein (unseriös); Namenstage KANN mit gepflegter Liste |
 | Persönliche Orte („bei Oma“, „im Büro“) | Part 8 (Memory), mit Bestätigung |
 | Geburtstage („Wann hat Lisa Geburtstag?“) | Part 8 (Memory) |

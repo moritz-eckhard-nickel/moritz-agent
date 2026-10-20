@@ -31,6 +31,13 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | R24 | **Neu:** Schnittstellen von Bright Sky/DWD/NINA/PEGELONLINE ändern sich unangekündigt | – | Schema-Prüfung je Antwort, Netz-Schema-Tests (`-m network`) regelmäßig, Status `degraded` statt falscher Antwort | P1-23, P1-27 |
 | R25 | **Neu:** Gepflegte Daten veralten (Schulferien, neue Feiertage, GeoNames-PLZ) | – | Selbsttest warnt < 12 Monate Ferien-Vorlauf; jährlicher Daten-PR; Erzeugung per Skript mit Prüfsummen | P1-20, P1-21 |
 | R26 | **Neu:** Piper spricht Fachwörter/Ortsnamen falsch („Böen“, „Hektopascal“, „Limburg-Weilburg“) | – | Ausspracheliste per Hörtest, Renderer schreibt Abkürzungen/Himmelsrichtungen aus (13 §9.3) | P1-29 |
+| R27 | **Neu:** DAVE-Empfang (E2EE seit März 2026 Pflicht) ist in Python nur über Forks gelöst → Nikita hört im Discord-Sprachkanal evtl. nicht zuverlässig zu | „Discord mit allen Features“ | Spike P1-32 mit festen Kriterien; Rückfall „nur sprechen“ + Sprachnachrichten + Bühnenkanal; neuer Spike bei offizieller Unterstützung (ADR-036) | P1-32 |
+| R28 | **Neu:** Discord ändert API/Regeln, Bibliothek hinkt hinterher | – | gepinnt, isolierter Worker, schneller Update-Weg (ADR-028) | P1-33 |
+| R29 | **Neu:** Bot-Token gelangt nach außen | – | `passwords.txt` 0600, Redaction, Public Bot aus, Owner-Bestätigung, Reset-Anleitung (T25) | P1-41 |
+| R30 | **Neu:** Inhalte liegen dauerhaft bei Discord (kein E2EE für Text) | – | Standards „aus“ für Transkripte/Notizen/Gedächtnis, `/hilfe datenschutz` (DISCORD-35) | P1-34 |
+| R31 | **Neu:** CPU/RAM-Konkurrenz zwischen Telefon und Discord-Sprache | „Telefon zuerst“ | `nice +5`, Modelle nur bei Bedarf, eine Sitzung, Priorität PHONE, Messung | P1-36 |
+| R32 | **Neu:** Missbrauch durch andere in Servern | – | Allowlists, Standard „ignorieren“, Rate-Limits (T26–T28) | P1-33 |
+| R33 | **Neu:** Grenzen der Benutzer-App (in fremden Servern nur Befehle, oft nur privat sichtbar) | – | dokumentiert, volle Funktionen im eigenen Server und per DM | P1-35 |
 
 ## 2. Offene Fragen – beantwortet
 
@@ -70,3 +77,12 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | F-26 | Nachrichten-Schlagzeilen am Telefon? Quelle? | aus |
 | F-27 | Einkaufsliste/Notizen per Telefon (jeder interne Anrufer kann sie hören)? | aus |
 | F-28 | Wetterquelle von sich aus nennen oder nur auf Nachfrage? | nur auf Nachfrage |
+| F-29 | Eigener Discord-Server für Nikita (ID)? `#nikita`-Kanal, in dem sie auf alles antwortet? | Server beim Setup angeben; sonst nur Erwähnung – [14 §23](14-discord.md#23-offene-fragen-an-moritz) |
+| F-30 | Wer außer dir darf Nikita auf Discord nutzen? Gastmodus nur mit Sofortauskünften? | nur du; Gastmodus aus |
+| F-31 | Automatisch in den Sprachkanal kommen, wenn du ihn betrittst? Weckwort immer? | nein; Weckwort automatisch |
+| F-32 | Welche Abos (Warnungen, Morgenbriefing + Uhrzeit, Müll, Systemhinweise)? | Warnungen ab Unwetter + Systemhinweise |
+| F-33 | Anrufhinweise auf Discord? Mit Themen oder Transkript? | aus |
+| F-34 | Bot-Name und Bild („Nikita“ mit Scribbles)? Status mit Wetter? | „Nikita“, Scribbles, Status ohne Wetter |
+| F-35 | Auf Sprachnachrichten mit Sprachnachricht antworten? | ja („mirror“) |
+| F-36 | PIN für gefährliche Admin-Befehle? | keine PIN, Bestätigungsknopf |
+| F-37 | Antworten an dich im Kanal sichtbar oder alles per DM? | im Kanal, Persönliches per DM |

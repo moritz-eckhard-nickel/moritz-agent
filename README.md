@@ -35,7 +35,8 @@ Moritz wählt intern die **999** und landet bei **Nikita**, dem Assistenten von 
    Rechnen, … ([Fast-Paths](docs/plan/12-fast-paths.md)) – die Uhrzeit immer aus der echten Systemuhr (Europe/Berlin);
    geplant als Nächstes, noch vor dem Sprachmodell: **Sofortauskünfte** mit Wetter für Weilburg (35781)
    oder jede genannte PLZ/jeden Ort, Warnungen, Pollen, Sonne/Mond, Feiertage, Ferien und mehr
-   ([Plan](docs/plan/13-sofortauskuenfte.md)),
+   ([Plan](docs/plan/13-sofortauskuenfte.md)); ebenfalls geplant: Nikita als **Discord-Bot** mit allen Funktionen
+   ([Plan](docs/plan/14-discord.md)),
 4. beantwortet andere Fragen mit dem Sprachmodell und nutzt bei Bedarf die integrierte Websuche,
 5. spricht die Antwort mit der Stimme **Thorsten-Voice „Hessisch“** (Piper, lokal auf der CPU; feste Ansagen vorgerendert und gecacht – [ADR-027](docs/plan/03-entscheidungen.md)) und hört wieder zu – mehrere Runden pro Anruf,
 6. räumt beim Auflegen alles sauber auf.

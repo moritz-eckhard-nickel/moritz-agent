@@ -73,7 +73,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
 | PHONE-40 | Genau **ein aktiver Anruf**; ein zweiter erhält „besetzt“ (SIP 486 Busy Here). Keine Vermischung von Gesprächskontexten. | MUSS | 1 |
-| PHONE-41 | Telefonanfragen haben Vorrang vor nicht gestarteten Hintergrundaufgaben; laufende lange Generierungen werden über `/api/extra/abort` kontrolliert abgebrochen, sonst Warteansage mit Timeout. | MUSS | 1 |
+| PHONE-41 | Telefonanfragen haben Vorrang vor nicht gestarteten Hintergrundaufgaben und vor Discord-Anfragen (Sprache und Text, DISCORD-10); laufende lange Generierungen werden über `/api/extra/abort` kontrolliert abgebrochen, sonst Warteansage mit Timeout. | MUSS | 1 |
 | PHONE-42 | VAD, STT (**Whisper small**, entschieden) und TTS laufen auf der **CPU**; die RTX 3070 bleibt dem LLM vorbehalten. | MUSS | 1 |
 | PHONE-43 | Keine dauerhafte Audioaufnahme als Standard; temporäre Audiopuffer werden nach Verwendung verworfen (nur im RAM, kein Disk-Spool). | MUSS | 1 |
 | PHONE-44 | Zugangsdaten gelangen weder in Transkripte noch in LLM-Kontexte oder Logs. | MUSS | 1 |
@@ -86,12 +86,62 @@ Der Originalplan bleibt unverändert als Referenz.
 | PHONE-51 | Das Telefon ist ohne Systeminstallation ausprobierbar (`./test-1.sh`: Einrichtung unter `runtime/`, Selbsttest, Testanruf gegen sich selbst, Anmeldung an der Telefonanlage). | SOLL | 1 |
 | PHONE-52 | Nach der Begrüßung darf ein **live** gesprochener Satz folgen (Warnhinweis, SKILL-10); die Begrüßung selbst bleibt die gecachte Ansage und wird dadurch nicht verzögert. | SOLL | 1 |
 
+## 2a. Discord (DISCORD)
+
+Nikita als Discord-Bot mit allen Funktionen (Moritz, 20.10.2026). Plan: [14-discord.md](14-discord.md);
+Tickets P1-31 … P1-42 (Block D in [04](04-part1-umsetzung.md)); Entscheidungen ADR-033 … ADR-036.
+
+| ID | Anforderung | Prio | Part |
+| --- | --- | --- | --- |
+| DISCORD-01 | Nikita läuft als **offizieller Bot** einer eigenen Discord-Anwendung. Kein Benutzer-Token, kein Self-Bot (Discord-Nutzungsbedingungen). | MUSS | 1 |
+| DISCORD-02 | Server-Installation **und** Benutzer-Installation: Befehle im eigenen Server, in der DM mit Nikita und als Benutzer-App überall, wo Moritz Discord nutzt. | MUSS | 1 |
+| DISCORD-03 | „Public Bot“ aus; Nikita bleibt nur in `discord.allowed_guild_ids`, verlässt andere Server sofort und meldet das dem Owner. | MUSS | 1 |
+| DISCORD-04 | Rollen Owner / Vertraut / Gast hängen an der Discord-Benutzer-ID; Standard: Unbekannte werden ignoriert, Gastmodus aus. | MUSS | 1 |
+| DISCORD-05 | Bot-Token nur in `passwords.txt` (`[discord] bot_token`), im Code als `Secret`; nie in Argumenten, Umgebungsvariablen, Logs, Statusdateien oder Antworten. | MUSS | 1 |
+| DISCORD-06 | Einrichtung im Installer (Phase `discord`): Token verdeckt per stdin, Prüfung gegen Discord, App-Besitzer als Owner übernehmen, Warnungen (Public Bot an, Message Content aus), Einladungslinks. Alternativ Token direkt in die Datei. | MUSS | 1 |
+| DISCORD-07 | Der Updater ergänzt `[discord]` zeilenweise (CFG-09); ohne Token bleibt Discord aus, ohne Abfrage. | MUSS | 1 |
+| DISCORD-08 | Token- oder Konfigurationswechsel per Reload → Neuverbindung, ohne eine laufende Sprachsitzung abzubrechen. | MUSS | 1 |
+| DISCORD-09 | Eigener Worker-Prozess mit Neustart-Backoff und Statusdatei; Absturz oder Hänger beeinflusst das Telefon nicht (PRD-02). | MUSS | 1 |
+| DISCORD-10 | Telefon hat Vorrang: Discord-Worker mit niedrigerer CPU-Priorität; LLM-Warteschlange `PHONE > VOICE > INTERACTIVE > BACKGROUND`. | MUSS | 1 |
+| DISCORD-11 | Kein eingehender Port: nur ausgehende Verbindungen (Gateway/REST/CDN über TCP 443, Sprache über UDP). | MUSS | 1 |
+| DISCORD-12 | **Kanal-Parität:** jede Nikita-Funktion ist auf Discord verfügbar (Matrix [14 §6](14-discord.md#6-funktionsumfang-alle-funktionen-auf-allen-kanälen)); neue Funktionen bringen ihre Discord-Form im selben Ticket mit oder begründen die Ausnahme. | MUSS | 1–1.1+ |
+| DISCORD-13 | Text: Nikita antwortet in DMs, bei Erwähnung, auf Antworten an sie, in ihren Threads, in Nikita-Kanälen und auf „Nikita, …“ am Satzanfang – nur freigegebenen Personen. | MUSS | 1 |
+| DISCORD-14 | Alle Sofortauskünfte ([13](13-sofortauskuenfte.md)) als Text und als Slash-Befehl; Ausgabe als Karte mit Quelle und Lizenz in der Fußzeile. | MUSS | 1 |
+| DISCORD-15 | Rückfragen des Kerns erscheinen als Auswahlliste, Folgeaktionen als Knöpfe; beides zustandslos und neustartfest. | MUSS | 1 |
+| DISCORD-16 | Slash-Befehle laut [14 §7](14-discord.md#7-befehle-slash-befehle-kontextmenüs-autovervollständigung); registriert werden nur aktive Funktionen; Autovervollständigung für Orte/PLZ. | MUSS | 1 |
+| DISCORD-17 | Kontextmenüs: „Nikita fragen“, „Vorlesen“ (Part 1), „Zusammenfassen“, „Übersetzen“ (ab P1-09), „Merken“ (Part 8), „Bild lesen“ (1.1+). | SOLL | 1–1.1+ |
+| DISCORD-18 | Ab P1-09: freie Fragen an das LLM mit Streaming, Websuche mit Quellen als Links; Uhrzeit- und Wetter-Garantie (AGENT-06, AGENT-11) gelten. | MUSS | 1 |
+| DISCORD-19 | Antworten halten Discords Grenzen ein (Aufteilen an Absätzen, Datei ab Grenze, Embed-Grenzen); `allowed_mentions` pingt nie `@everyone`, `@here` oder Rollen. | MUSS | 1 |
+| DISCORD-20 | Ausgabefilter: keine Secrets, keine internen Details in Serverkanälen; Admin- und persönliche Inhalte nur im DM oder nur für den Aufrufer sichtbar. | MUSS | 1 |
+| DISCORD-21 | Rate-Limits je Rolle, Eingabe- und Anhangsgrenzen; Anhänge nur vom Discord-CDN, nie ausgeführt, nicht dauerhaft gespeichert. | MUSS | 1 |
+| DISCORD-22 | Sprachkanal: `/komm`, `/geh`, optional automatisch beim Betreten durch den Owner; höchstens eine Sitzung; Verlassen bei Leere, Zeitlimit oder Wartung. | SOLL | 1 |
+| DISCORD-23 | Sprachkanal-Gespräch mit DAVE: nur freigegebenen Personen zuhören, VAD je Sprecher, Weckwort „Nikita“ bei mehreren Personen, Antwort mit Nikitas Stimme, Unterbrechen ≤ 300 ms. | SOLL | 1 |
+| DISCORD-24 | Ist DAVE-Empfang nicht stabil (Spike P1-32), läuft der Sprachkanal im Modus „nur sprechen“ (Text oder Sprachnachricht rein, Sprache raus); die Entscheidung ist dokumentiert (ADR-036). | MUSS | 1 |
+| DISCORD-25 | Kein Audio wird gespeichert, Puffer nur im RAM; Whisper/Piper im Discord-Worker nur während Sprachsitzungen geladen. | MUSS | 1 |
+| DISCORD-26 | Sprachnachrichten: Transkript sichtbar + Antwort; Antwort optional als Sprachnachricht bzw. Audiodatei mit Nikitas Stimme. | SOLL | 1 |
+| DISCORD-27 | Erinnerungen und Timer per Direktnachricht, neustartfest; verpasste werden bis 12 h später mit Hinweis nachgeholt. | SOLL | 1 |
+| DISCORD-28 | Proaktive Nachrichten nur mit Abo (Warnungen, Morgenbriefing, Müll, Anrufhinweise, Systemhinweise), Ruhezeiten und Drosselung. | SOLL | 1 |
+| DISCORD-29 | Persönliche Einstellungen je Person (Heimatort, Ruhezeit, Sprachantwort); ohne Einstellung gilt 35781 Weilburg. | SOLL | 1 |
+| DISCORD-30 | Telefon ↔ Discord: Anrufstatus ohne Inhalte; Anrufhinweise, Themen oder Transkript nur per Schalter (Standard aus); „schick mir das auf Discord“ vom Telefon. | SOLL | 1 |
+| DISCORD-31 | Admin-Befehle nur für den Owner, nur im DM/nur für ihn sichtbar, Zustandsänderungen mit Bestätigungsknopf (+ optionale PIN aus `passwords.txt`); nie Shell, Updates, Dateizugriff oder Secrets. | MUSS | 1 |
+| DISCORD-32 | Präsenzstatus („hört auf 999“, „im Gespräch“, optional Wetter). | KANN | 1 |
+| DISCORD-33 | Der Wartungsmodus (`data/run/drain`) gilt auch für Discord (keine neuen Sprachsitzungen, Hinweis bei Text). | MUSS | 1 |
+| DISCORD-34 | Reaktionen 👍/👎 auf Antworten fließen als Feedback in die Statistik. | KANN | 1 |
+| DISCORD-35 | Datenschutz: Transkripte, Notizen und Gedächtnis gehen nur per ausdrücklichem Schalter zu Discord; `/hilfe datenschutz` erklärt das. | MUSS | 1 |
+| DISCORD-36 | Log-Kategorie `[Discord]` ohne Inhalte und Token; Turns in der Datenbank mit Kanal; Transkript-Aufbewahrung wie STORE-02. | MUSS | 1 |
+| DISCORD-37 | `./test-1.sh discord token\|check\|invite\|run\|say` funktioniert ohne LXC und ohne Systeminstallation. | SOLL | 1 |
+| DISCORD-38 | Abhängigkeiten gepinnt mit Hashes (`requirements/discord.lock`), Lizenzen eingetragen; Sprachempfang nur nach Spike, von PyPI oder als dokumentierte Fremdkomponente in `third_party/`. | MUSS | 1 |
+| DISCORD-39 | Tests nach [14 §18](14-discord.md#18-tests) laufen ohne Netz in CI (Fake-Discord); Live-Tests nur manuell gegen einen privaten Test-Server. | MUSS | 1 |
+| DISCORD-40 | Lange Aufgaben (Recherche, Hintergrundaufgaben, Coding) laufen in eigenen Threads mit Fortschrittsanzeige. | SOLL | 3–9 |
+| DISCORD-41 | Sandbox- und Browser-Funktionen über Discord nur für den Owner und mit Bestätigung je riskanter Aktion (SBX-05 sinngemäß). | MUSS | 4/6 |
+| DISCORD-42 | Bot-Name „Nikita“ und Avatar aus `assets/branding/` (Scribbles), erzeugt mit `scripts/build_branding.py` (PRD-08, PRD-10). | SOLL | 1 |
+
 ## 3. Konfiguration & Zugangsdaten (CFG)
 
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
 | CFG-01 | Alle Zugangsdaten zentral in `<app>/passwords.txt` (INI). Keine Zugangsdaten im Code. | MUSS | 1 |
-| CFG-02 | Startinhalt exakt wie im Originalplan (Sektionen `sip`, `web_login`, `sandbox_ssh`, `optional_services`). Vorlage: [`config/passwords.template.txt`](../../config/passwords.template.txt). | MUSS | 1 |
+| CFG-02 | Startinhalt exakt wie im Originalplan (Sektionen `sip`, `web_login`, `sandbox_ssh`, `optional_services`); ab Block D zusätzlich `discord` (angehängt, [14 §14.2](14-discord.md#142-setup-in-moritz-agent)). Vorlage: [`config/passwords.template.txt`](../../config/passwords.template.txt). | MUSS | 1 |
 | CFG-03 | Parser liest die Datei als **Daten** (`configparser`, `interpolation=None`); niemals `source`/`eval`. Sonder- und Prozentzeichen bleiben erhalten. | MUSS | 1 |
 | CFG-04 | Leere Web-/SSH-Werte sind keine nutzbaren Zugänge. Web-Login wird erst mit gültigen Werten aktiviert. | MUSS | 1 |
 | CFG-05 | Änderungen werden über kontrollierten Reload (API/Signal) oder Neustart übernommen; ungültige Konfiguration wird mit verständlicher Meldung **abgelehnt**, der alte gültige Stand bleibt aktiv. | MUSS | 1 |
@@ -187,7 +237,7 @@ Deterministische Auskünfte **vor** dem Sprachmodell (Moritz, 18.10.2026). Plan 
 | SKILL-21 | Hessische und umgangssprachliche Formulierungen werden verstanden (Wörterbuch ≥ 50 Einträge, z. B. „Wedder“, „morsche“, „heit“, „isses“, „hammer“, „Guude“), jeder Eintrag mit Test. | MUSS | 1 |
 | SKILL-22 | Antworten: ≤ 3 kurze Sätze, wichtigste Angabe zuerst, gerundet wie gesprochen, keine Abkürzungen; Einheiten und Sonderfälle (Minusgrade, l/m², hPa, km/h, Spannen, PLZ ziffernweise) werden sprechbar normalisiert. | MUSS | 1 |
 | SKILL-23 | Jeder Skill ist zugleich ein Tool mit JSON-Schema für P1-07 (`{ok, data, sources, speakable}`), damit das spätere LLM dieselben Funktionen nutzt (AGENT-11). | MUSS | 1 |
-| SKILL-24 | Skills haben keine Seiteneffekte außerhalb von moritz-agent (keine Geräte, Anrufe, Nachrichten); lokale Notizen nur nach gesprochener Bestätigung, Löschen nur nach Rückfrage. | MUSS | 1 |
+| SKILL-24 | Skills haben keine Seiteneffekte außerhalb von moritz-agent (keine Geräte, Anrufe, Nachrichten); lokale Notizen nur nach gesprochener Bestätigung, Löschen nur nach Rückfrage. Eine Erinnerung per Discord-Direktnachricht an die Person, die sie bestellt hat, ist eine zeitversetzte Antwort, keine Nachricht an Dritte ([14 §5.3](14-discord.md#53-was-nikita-auf-discord-nie-tut)). | MUSS | 1 |
 | SKILL-25 | Datensparsamkeit: an Datendienste gehen nur gerundete Koordinaten, PLZ/Ortsnamen und fachliche Kennungen – nie Transkripte, Anrufer oder Zugangsdaten (außer dem Schlüssel des jeweiligen Dienstes); nur HTTPS an Hosts einer festen Liste (ADR-032). | MUSS | 1 |
 | SKILL-26 | `skills.online = false` oder Netzausfall: Offline-Skills laufen unverändert, Online-Skills antworten ehrlich; kein Anruf wartet länger als das Zeitbudget. | MUSS | 1 |
 | SKILL-27 | Testkorpus ≥ 800 Äußerungen (positiv, negativ, Dialekt, STT-Varianten) und Golden-Antworten mit fester Uhr und aufgezeichneten Antworten; Router + Offline-Skill p95 ≤ 20 ms. | MUSS | 1 |
