@@ -17,7 +17,7 @@ _NAME = r"n[iy][kg]h?[iy][dt]{1,2}h?[ae]"  # Nikita, Nikida, Nikitta, Nigita …
 _ADDRESS = re.compile(rf"^(?:(?:hey|hallo|hi|ok|okay|na|also)\s+)*{_NAME}\b[,:!.\s]*")
 _NAME_ONLY = re.compile(rf"^(?:hey |hallo |hi )?{_NAME}$")
 _CONTRACTION = re.compile(
-    r"\b(gibt|wird|geht|ist|scheint|regnet|schneit|stürmt|gewittert|bleibt|kommt|wär|wäre|hat|war)'?s\b"
+    r"\b(gibt|wird|geht|ist|scheint|regnet|schneit|stürmt|gewittert|bleibt|kommt|wär|wäre|hat|war|sieht|schaut|läuft|steht)'?s\b"
 )
 _FILLER_PREFIX = re.compile(r"^(?:(?:äh|ähm|ehm|öh|hm|naja|na ja|ja|also|ok|okay|und dann)\s+)+")
 _POLITE = (

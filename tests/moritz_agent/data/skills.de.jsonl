@@ -350,6 +350,51 @@
 {"say": "Was misst die Wetterstation?", "skill": "weather.observed"}
 {"say": "Wie warm ist es wirklich?", "skill": "weather.observed"}
 {"say": "Welcher Wetterdienst?", "skill": "weather.source"}
+{"say": "Gibt es Unwetterwarnungen?", "skill": "warn.weather"}
+{"say": "Gibt's Warnungen für Weilburg?", "skill": "warn.weather"}
+{"say": "Gibt es Wetterwarnungen?", "skill": "warn.weather"}
+{"say": "Gibt es eine Unwetterwarnung heute?", "skill": "warn.weather"}
+{"say": "Warnt der Wetterdienst vor etwas?", "skill": "warn.weather"}
+{"say": "Gibt es Warnungen im Landkreis?", "skill": "warn.civil"}
+{"say": "Gibt es eine Katastrophenwarnung?", "skill": "warn.civil"}
+{"say": "Ist was mit Hochwasser?", "skill": "warn.civil"}
+{"say": "Wie ist der Pollenflug?", "skill": "pollen.today"}
+{"say": "Fliegen heute Pollen?", "skill": "pollen.today"}
+{"say": "Wie sieht's mit Birke aus?", "skill": "pollen.today"}
+{"say": "Hab ich heute Heuschnupfen?", "skill": "pollen.today"}
+{"say": "Wie wird der Pollenflug morgen?", "skill": "pollen.forecast"}
+{"say": "Pollen übermorgen?", "skill": "pollen.forecast"}
+{"say": "Wie ist die Luftqualität?", "skill": "air.quality"}
+{"say": "Wie ist die Luft?", "skill": "air.quality"}
+{"say": "Wie ist der Feinstaub?", "skill": "air.quality"}
+{"say": "Wie hoch ist das Ozon?", "skill": "air.ozone"}
+{"say": "Ozon heute?", "skill": "air.ozone"}
+{"say": "Brauche ich eine Jacke?", "skill": "advice.jacket"}
+{"say": "Was soll ich anziehen?", "skill": "advice.jacket"}
+{"say": "Was soll ich morgen anziehen?", "skill": "advice.jacket"}
+{"say": "Kann ich Wäsche draußen aufhängen?", "skill": "advice.laundry"}
+{"say": "Wäsche draußen trocknen heute?", "skill": "advice.laundry"}
+{"say": "Ist heute Grillwetter?", "skill": "advice.bbq"}
+{"say": "Kann ich heute grillen?", "skill": "advice.bbq"}
+{"say": "Ist Fahrradwetter?", "skill": "advice.bike"}
+{"say": "Kann ich mit dem Rad fahren?", "skill": "advice.bike"}
+{"say": "Kann ich morgen radeln?", "skill": "advice.bike"}
+{"say": "Kann ich joggen gehen?", "skill": "advice.run"}
+{"say": "Wann ist heute die beste Zeit zum Laufen?", "skill": "advice.run"}
+{"say": "Muss ich den Garten gießen?", "skill": "advice.garden_water"}
+{"say": "Muss ich die Tomaten gießen?", "skill": "advice.garden_water"}
+{"say": "Kann ich Rasen mähen?", "skill": "advice.mow"}
+{"say": "Soll ich lüften?", "skill": "advice.ventilate"}
+{"say": "Fenster auflassen heute Nacht?", "skill": "advice.ventilate"}
+{"say": "Lohnt sich Autowaschen?", "skill": "advice.car_wash"}
+{"say": "Soll ich das Auto waschen?", "skill": "advice.car_wash"}
+{"say": "Ist Badewetter?", "skill": "advice.swim"}
+{"say": "Kann man heute baden gehen?", "skill": "advice.swim"}
+{"say": "Wie ist das Wetter zum Wandern am Samstag?", "skill": "advice.hike"}
+{"say": "Ist Wanderwetter?", "skill": "advice.hike"}
+{"say": "Muss ich die Pflanzen reinholen?", "skill": "advice.plants_frost"}
+{"say": "Wird es kalt genug zum Heizen?", "skill": "advice.heating"}
+{"say": "Ist heute ein Heiztag?", "skill": "advice.heating"}
 {"say": "Um wie viel Uhr fährt der Zug nach Frankfurt?", "skill": null}
 {"say": "Wann öffnet der Supermarkt?", "skill": null}
 {"say": "Um wie viel Uhr beginnt der Film?", "skill": null}
@@ -376,6 +421,10 @@
 {"say": "Das ist mir zu laut", "skill": null}
 {"say": "Wie heißt die Hauptstadt von Hessen", "skill": null}
 {"say": "Wie hoch ist der Feldberg", "skill": null}
+{"say": "Ich brauche eine neue Jacke zum Geburtstag", "skill": null}
+{"say": "Die Heizung ist kaputt", "skill": null}
+{"say": "Mein Fahrrad hat einen Platten", "skill": null}
+{"say": "Was soll ich zum Abendessen kochen", "skill": null}
 {"prior": ["Wie lange noch bis Weihnachten?"], "say": "Mehr Details", "skill": null}
 {"prior": ["Was kannst du?"], "say": "Mehr Details", "skill": "talk.details"}
 {"prior": ["Wie spät ist es?"], "say": "Woher weißt du das?", "skill": "talk.source"}

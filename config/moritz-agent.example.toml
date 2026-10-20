@@ -179,6 +179,7 @@ enabled = true
 sources = ["dwd", "nina"]
 announce_on_greeting = "severe"   # "off" | "moderate" | "severe" | "extreme"
 refresh_minutes = 10
+nina_ars = "065330000000"          # Kreisschlüssel (ARS) des Heimatorts für NINA; Landkreis Limburg-Weilburg
 
 [skills.pollen]
 enabled = true

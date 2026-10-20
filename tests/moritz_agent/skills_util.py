@@ -79,6 +79,9 @@ def weather_session(
         "api.brightsky.dev/alerts": wf.alerts_answer(),
         "api.brightsky.dev/current_weather": wf.bright_sky_current(),
         "api.brightsky.dev/weather": wf.bright_sky_weather(),
+        "opendata.dwd.de/climate_environment/health/alerts/s31fg.json": wf.pollen_answer(),
+        "warnung.bund.de/api31/dashboard/065330000000.json": wf.nina_answer(),
+        "air-quality-api.open-meteo.com/v1/air-quality": wf.air_quality_answer(),
     }
     table.update(routes or {})
     directory = Path(cache_dir) if cache_dir else Path(tempfile.mkdtemp(prefix="skills-cache-"))

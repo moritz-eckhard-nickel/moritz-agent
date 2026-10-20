@@ -230,6 +230,7 @@ class SkillsWarnings(_Section):
     sources: list[Literal["dwd", "nina"]] = ["dwd", "nina"]
     announce_on_greeting: Literal["off", "moderate", "severe", "extreme"] = "severe"
     refresh_minutes: int = Field(10, ge=1)
+    nina_ars: str = Field("065330000000", pattern=r"^(\d{12})?$")  # district key for NINA, "" = off
 
 
 class SkillsPollen(_Section):

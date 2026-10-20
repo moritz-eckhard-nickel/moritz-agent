@@ -133,19 +133,24 @@ def when_text(text: str) -> str:
     return re.sub(r"\bdie woche\b", "diese woche", text)
 
 
-async def make_frame(
+@dataclass
+class Resolved:
+    """Place and time of a question, before any data is fetched."""
+
+    where: Where
+    place: Place
+    now: datetime
+    when: When | None
+
+
+async def resolve(
     req: Request,
     skill_id: str,
     *,
-    need: str = "forecast",
     allow_region: bool = False,
     parse_when: bool = True,
-) -> Frame | SkillResult | None:
-    """Resolve place, time and data for a weather question.
-
-    Returns a ``Frame`` to answer from, a ready ``SkillResult`` (unknown place, a question back,
-    no data) or ``None`` when the sentence is no weather question after all.
-    """
+) -> Resolved | SkillResult:
+    """Understand place and time; a ready ``SkillResult`` when the user must be asked or told."""
     svc = req.svc
     overrides = req.overrides
     where: Where | None = overrides.get("where")
@@ -169,32 +174,66 @@ async def make_frame(
         )
     place = where.place or home_place(svc, req.ctx)
     now = svc.clock.now(place.tz or svc.timezone)
-
     if "when" in overrides:
         when = overrides["when"]
     elif parse_when:
         when = find_when(when_text(req.text), now)
     else:
         when = None
-
     if where.kind == "ambiguous":
         return _ask_which_place(req, skill_id, where, when)
+    return Resolved(where, place, now, when)
 
-    providers = svc.providers
+
+def unavailable(exc: ProviderUnavailable, topic: str = "Wetterdaten") -> SkillResult:
+    """The honest answer when a data service gives nothing ("Pollendaten", "Warnungen" …)."""
+    if exc.reason == "disabled":
+        what = "Wetterabfragen" if topic == "Wetterdaten" else topic
+        return SkillResult(text=f"{what} sind bei mir gerade ausgeschaltet.", serious=True)
+    return SkillResult(
+        text=f"Ich komme gerade nicht an die {topic}. Versuch es bitte gleich noch einmal.",
+        prompt="skills_offline",
+        serious=True,
+    )
+
+
+async def make_frame(
+    req: Request,
+    skill_id: str,
+    *,
+    need: str = "forecast",
+    allow_region: bool = False,
+    parse_when: bool = True,
+) -> Frame | SkillResult | None:
+    """Resolve place, time and data for a weather question.
+
+    Returns a ``Frame`` to answer from, a ready ``SkillResult`` (unknown place, a question back,
+    no data) or ``None`` when the sentence is no weather question after all.
+    """
+    resolved = await resolve(req, skill_id, allow_region=allow_region, parse_when=parse_when)
+    if isinstance(resolved, SkillResult):
+        return resolved
+    providers = req.svc.providers
     if providers is None:
         return SkillResult(text=OFFLINE_TEXT, prompt="skills_offline", serious=True)
     try:
         fetched = await providers.weather(
-            place,
+            resolved.place,
             need=need,
             on_miss=lambda: setattr(req.ctx, "thinking_prompt", "thinking_weather"),
         )
     except ProviderUnavailable as exc:
-        if exc.reason == "disabled":
-            return SkillResult(text=DISABLED_TEXT, serious=True)
-        return SkillResult(text=OFFLINE_TEXT, prompt="skills_offline", serious=True)
-    pack = fetched.data
-    return Frame(req, where, place, pack, fetched, now, when, skill_id)
+        return unavailable(exc)
+    return Frame(
+        req,
+        resolved.where,
+        resolved.place,
+        fetched.data,
+        fetched,
+        resolved.now,
+        resolved.when,
+        skill_id,
+    )
 
 
 def _ask_which_place(req: Request, skill_id: str, where: Where, when: When | None) -> SkillResult:

@@ -22,7 +22,7 @@ import httpx
 
 from moritz_agent.logging_setup import get_logger
 from moritz_agent.skills.geo.gazetteer import Place, fold
-from moritz_agent.skills.providers import brightsky, open_meteo
+from moritz_agent.skills.providers import brightsky, dwd, nina, open_meteo
 from moritz_agent.skills.providers.brightsky import Warning
 from moritz_agent.skills.providers.cache import Cache
 from moritz_agent.skills.providers.http import HttpClient, HttpError
@@ -277,6 +277,18 @@ class Providers:
         return brightsky.parse_current(raw, tz)
 
     # -- warnings -----------------------------------------------------------------------------
+    def cached_alerts(self, place: Place, max_age_s: float = 30 * 60) -> list[Warning] | None:
+        """Parsed warnings from the cache only (no network): for the greeting at the start of a call."""
+        entry = self.cache.get(
+            "alerts",
+            f"alerts:{place.lat:.2f},{place.lon:.2f}",
+            fresh_s=max_age_s,
+            stale_s=max_age_s,
+        )
+        if entry is None:
+            return None
+        return brightsky.parse_alerts(entry.value, place.tz or self.svc.timezone)
+
     async def alerts(self, place: Place) -> Fetched[list[Warning]]:
         cfg = self.cfg.warnings
         key = f"alerts:{place.lat:.2f},{place.lon:.2f}"
@@ -301,6 +313,93 @@ class Providers:
         if entry is not None:
             return Fetched(brightsky.parse_alerts(entry.value, tz), "dwd", "stale", entry.age_s)
         raise ProviderUnavailable("alerts", "offline")
+
+    # -- pollen, air, civil warnings --------------------------------------------------------------
+    async def pollen(self, place: Place) -> Fetched[dwd.PollenForecast]:
+        """DWD pollen index for the part region of ``place`` (the home part region is configured)."""
+        key = "dwd-pollen"
+        entry = self.cache.get("pollen", key, fresh_s=4 * 3600, stale_s=24 * 3600)
+        raw = entry.value if entry else None
+        cache, age = ("hit" if entry and entry.fresh else "stale"), (entry.age_s if entry else 0.0)
+        if entry is None or not entry.fresh:
+            if self.online and not self._blocked("dwd"):
+                try:
+                    raw = await dwd.fetch(self.http)
+                except HttpError as exc:
+                    self._failed("dwd", exc)
+                else:
+                    self._ok("dwd")
+                    self.cache.put("pollen", key, raw)
+                    cache, age = "miss", 0.0
+            elif entry is None:
+                raise ProviderUnavailable("pollen", "disabled" if not self.online else "offline")
+        if raw is None:
+            raise ProviderUnavailable("pollen", "offline")
+        from moritz_agent.skills.slots.where import home_place
+
+        home = home_place(self.svc)
+        is_home = (place.lat, place.lon) == (home.lat, home.lon)
+        entry_data = dwd.choose(raw, self.cfg.pollen.dwd_partregion if is_home else "", place.state)
+        if entry_data is None:
+            raise ProviderUnavailable("pollen", "empty")
+        try:
+            forecast = dwd.parse(entry_data, str(raw.get("last_update") or ""))
+        except HttpError as exc:
+            self._failed("dwd", exc)
+            raise ProviderUnavailable("pollen", "offline") from exc
+        return Fetched(forecast, "dwd", cache, age)
+
+    async def air_quality(self, place: Place) -> Fetched[open_meteo.AirQuality]:
+        key = f"air:{place.lat:.2f},{place.lon:.2f}"
+        tz = place.tz or self.svc.timezone
+        now = self.svc.clock.now(tz)
+        entry = self.cache.get("air", key, fresh_s=3600, stale_s=6 * 3600)
+        if entry is not None and entry.fresh:
+            return Fetched(
+                open_meteo.parse_air_quality(entry.value, now, tz), "open-meteo", "hit", entry.age_s
+            )
+        if self.online and not self._blocked("open-meteo-air"):
+            try:
+                raw = await open_meteo.fetch_air_quality(self.http, place, tz)
+                parsed = open_meteo.parse_air_quality(raw, now, tz)
+            except HttpError as exc:
+                self._failed("open-meteo-air", exc)
+            else:
+                self._ok("open-meteo-air")
+                self.cache.put("air", key, raw)
+                return Fetched(parsed, "open-meteo", "miss", 0.0)
+        if entry is not None:
+            return Fetched(
+                open_meteo.parse_air_quality(entry.value, now, tz),
+                "open-meteo",
+                "stale",
+                entry.age_s,
+            )
+        raise ProviderUnavailable("air", "disabled" if not self.online else "offline")
+
+    async def civil_warnings(self) -> Fetched[list[nina.CivilWarning]]:
+        """NINA warnings for the configured district (the home place only)."""
+        ars = self.cfg.warnings.nina_ars
+        if not ars or "nina" not in self.cfg.warnings.sources:
+            raise ProviderUnavailable("nina", "disabled")
+        tz = self.svc.timezone
+        key = f"nina:{ars}"
+        refresh = self.cfg.warnings.refresh_minutes * 60
+        entry = self.cache.get("nina", key, fresh_s=refresh, stale_s=30 * 60)
+        if entry is not None and entry.fresh:
+            return Fetched(nina.parse(entry.value, tz), "nina", "hit", entry.age_s)
+        if self.online and not self._blocked("nina"):
+            try:
+                raw = await nina.fetch(self.http, ars)
+            except HttpError as exc:
+                self._failed("nina", exc)
+            else:
+                self._ok("nina")
+                self.cache.put("nina", key, raw)
+                return Fetched(nina.parse(raw, tz), "nina", "miss", 0.0)
+        if entry is not None:
+            return Fetched(nina.parse(entry.value, tz), "nina", "stale", entry.age_s)
+        raise ProviderUnavailable("nina", "disabled" if not self.online else "offline")
 
     # -- geocoding ----------------------------------------------------------------------------
     async def geocode(self, name: str) -> Place | None:
@@ -370,6 +469,25 @@ class Providers:
         if self.cfg.warnings.enabled:
             await timed("brightsky (DWD-Warnungen)", warnings)
         await timed("open-meteo (Ortssuche)", geocoding)
+
+        async def pollen() -> str:
+            fetched = await self.pollen(home)
+            return f"{fetched.data.partregion}"
+
+        async def air() -> str:
+            fetched = await self.air_quality(home)
+            return f"Index {fetched.data.aqi}"
+
+        async def civil() -> str:
+            fetched = await self.civil_warnings()
+            return f"{len(fetched.data)} Meldungen"
+
+        if self.cfg.pollen.enabled:
+            await timed("DWD (Pollenflug)", pollen)
+        if self.cfg.air.enabled:
+            await timed("open-meteo (Luftqualität)", air)
+        if self.cfg.warnings.enabled and self.cfg.warnings.nina_ars:
+            await timed("NINA (Bevölkerungswarnungen)", civil)
         for name, check in self._checks.items():
             await timed(name, lambda c=check: c(home))
         return results
@@ -396,6 +514,18 @@ class Providers:
                 )
             except ProviderUnavailable as exc:
                 result["warnings"] = f"nicht erreichbar ({exc.reason})"
+        if self.cfg.pollen.enabled:
+            try:
+                pollen = await self.pollen(home)
+                result["pollen"] = f"{pollen.data.partregion} ({pollen.cache})"
+            except ProviderUnavailable as exc:
+                result["pollen"] = f"nicht erreichbar ({exc.reason})"
+        if self.cfg.warnings.enabled and self.cfg.warnings.nina_ars:
+            try:
+                civil = await self.civil_warnings()
+                result["nina"] = f"{len(civil.data)} Meldungen ({civil.cache})"
+            except ProviderUnavailable as exc:
+                result["nina"] = f"nicht erreichbar ({exc.reason})"
         for extra in self._extra_prefetch:
             try:
                 result[extra.__name__] = await extra(home)

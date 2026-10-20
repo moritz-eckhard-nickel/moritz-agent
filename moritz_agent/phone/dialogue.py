@@ -191,6 +191,19 @@ class CallSession:
         finally:
             await self._shutdown()
 
+    async def _queue_greeting_hint(self) -> None:
+        """ "Übrigens: Für Weilburg gilt …" right after the greeting (cache only, never delays it)."""
+        hint_source = getattr(self.deps.responder, "greeting_hint", None)
+        if hint_source is None:
+            return
+        try:
+            hint = await asyncio.wait_for(hint_source(self._context), timeout=0.5)
+        except (TimeoutError, Exception):
+            return
+        if hint:
+            log.info("Warnhinweis nach der Begrüßung")
+            self._queue_playback("text", hint)
+
     def _spawn(self, coroutine) -> asyncio.Task:
         task = asyncio.ensure_future(coroutine)
         self._tasks.add(task)
@@ -204,6 +217,8 @@ class CallSession:
                     skills = self._context.extras.get("skills")
                     prompt = getattr(skills, "thinking_prompt", None) or prompt
                 self._queue_playback("prompt", prompt)
+                if prompt == "greeting":
+                    await self._queue_greeting_hint()
             case PlayText(text):
                 self._queue_playback("text", text)
             case StartListening():

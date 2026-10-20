@@ -410,6 +410,53 @@ POSITIVE.update(
     }
 )
 
+POSITIVE.update(
+    {
+        "warn.weather": [
+            "Gibt es Unwetterwarnungen?",
+            "Gibt's Warnungen für Weilburg?",
+            "Gibt es Wetterwarnungen?",
+            "Gibt es eine Unwetterwarnung heute?",
+            "Warnt der Wetterdienst vor etwas?",
+        ],
+        "warn.civil": [
+            "Gibt es Warnungen im Landkreis?",
+            "Gibt es eine Katastrophenwarnung?",
+            "Ist was mit Hochwasser?",
+        ],
+        "pollen.today": [
+            "Wie ist der Pollenflug?",
+            "Fliegen heute Pollen?",
+            "Wie sieht's mit Birke aus?",
+            "Hab ich heute Heuschnupfen?",
+        ],
+        "pollen.forecast": ["Wie wird der Pollenflug morgen?", "Pollen übermorgen?"],
+        "air.quality": ["Wie ist die Luftqualität?", "Wie ist die Luft?", "Wie ist der Feinstaub?"],
+        "air.ozone": ["Wie hoch ist das Ozon?", "Ozon heute?"],
+        "advice.jacket": [
+            "Brauche ich eine Jacke?",
+            "Was soll ich anziehen?",
+            "Was soll ich morgen anziehen?",
+        ],
+        "advice.laundry": ["Kann ich Wäsche draußen aufhängen?", "Wäsche draußen trocknen heute?"],
+        "advice.bbq": ["Ist heute Grillwetter?", "Kann ich heute grillen?"],
+        "advice.bike": [
+            "Ist Fahrradwetter?",
+            "Kann ich mit dem Rad fahren?",
+            "Kann ich morgen radeln?",
+        ],
+        "advice.run": ["Kann ich joggen gehen?", "Wann ist heute die beste Zeit zum Laufen?"],
+        "advice.garden_water": ["Muss ich den Garten gießen?", "Muss ich die Tomaten gießen?"],
+        "advice.mow": ["Kann ich Rasen mähen?"],
+        "advice.ventilate": ["Soll ich lüften?", "Fenster auflassen heute Nacht?"],
+        "advice.car_wash": ["Lohnt sich Autowaschen?", "Soll ich das Auto waschen?"],
+        "advice.swim": ["Ist Badewetter?", "Kann man heute baden gehen?"],
+        "advice.hike": ["Wie ist das Wetter zum Wandern am Samstag?", "Ist Wanderwetter?"],
+        "advice.plants_frost": ["Muss ich die Pflanzen reinholen?"],
+        "advice.heating": ["Wird es kalt genug zum Heizen?", "Ist heute ein Heiztag?"],
+    }
+)
+
 # sentences no skill may answer: other topics, compound requests, near misses (SKILL-01, R23)
 NEGATIVE: list[str] = [
     "Um wie viel Uhr fährt der Zug nach Frankfurt?",
@@ -438,6 +485,10 @@ NEGATIVE: list[str] = [
     "Das ist mir zu laut",
     "Wie heißt die Hauptstadt von Hessen",
     "Wie hoch ist der Feldberg",
+    "Ich brauche eine neue Jacke zum Geburtstag",
+    "Die Heizung ist kaputt",
+    "Mein Fahrrad hat einen Platten",
+    "Was soll ich zum Abendessen kochen",
 ]
 
 # conversations: the sentence only works with what was said before

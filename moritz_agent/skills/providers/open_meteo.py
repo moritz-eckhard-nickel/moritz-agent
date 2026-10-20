@@ -7,6 +7,7 @@ The pack is parsed from the raw JSON, which is what the cache stores. Every answ
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -304,3 +305,48 @@ async def fetch_air_quality(http: HttpClient, place: Place, tz: str) -> dict[str
     if not isinstance(raw, dict) or "current" not in raw:
         raise HttpError("bad_data", "open-meteo air quality: unexpected answer")
     return raw
+
+
+@dataclass(frozen=True)
+class AirQuality:
+    """Air quality now and the highest ozone value of the rest of the day (CAMS via Open-Meteo)."""
+
+    aqi: float | None  # European index, lower is better
+    pm10: float | None
+    pm25: float | None
+    ozone: float | None  # µg/m³
+    no2: float | None
+    ozone_peak: float | None = None
+    ozone_peak_time: datetime | None = None
+
+
+def parse_air_quality(raw: dict[str, Any], now: datetime, tz: str) -> AirQuality:
+    zone = ZoneInfo(tz)
+    try:
+        cur = raw["current"]
+        peak, peak_time = None, None
+        hourly = raw.get("hourly") or {}
+        for stamp, value in zip(hourly.get("time", []), hourly.get("ozone", []), strict=False):
+            moment = _stamp(stamp, zone)
+            if (
+                value is not None
+                and moment.date() == now.date()
+                and moment >= now.replace(minute=0, second=0, microsecond=0)
+            ) and (peak is None or value > peak):
+                peak, peak_time = float(value), moment
+        aqi = cur.get("european_aqi")
+        if aqi is not None and not 0 <= aqi <= 500:
+            raise HttpError("bad_data", "open-meteo air quality: implausible index")
+        return AirQuality(
+            aqi=aqi,
+            pm10=cur.get("pm10"),
+            pm25=cur.get("pm2_5"),
+            ozone=cur.get("ozone"),
+            no2=cur.get("nitrogen_dioxide"),
+            ozone_peak=peak,
+            ozone_peak_time=peak_time,
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HttpError(
+            "bad_data", f"open-meteo air quality: unreadable ({type(exc).__name__})"
+        ) from exc

@@ -35,6 +35,16 @@ class SkillResponder:
             context.extras[_CONTEXT_KEY] = ctx
         return ctx
 
+    async def greeting_hint(self, context: TurnContext) -> str | None:
+        """A sentence after the greeting when a serious warning is in force (docs/plan/13 §7.6)."""
+        from moritz_agent.skills.catalog.warnungen import greeting_hint
+
+        try:
+            return await greeting_hint(self.svc, self.context_for(context))
+        except Exception:  # a hint must never get in the way of the call
+            log.exception("Warnhinweis fehlgeschlagen")
+            return None
+
     async def respond(self, text: str, context: TurnContext) -> Reply:
         ctx = self.context_for(context)
         ctx.thinking_prompt = None
