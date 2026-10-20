@@ -55,3 +55,35 @@ class Session:
 
 def ask(text: str, at: datetime = SUNDAY_EVENING) -> str | None:
     return Session(at).say(text)
+
+
+def weather_session(
+    routes: dict | None = None,
+    at: datetime = SUNDAY_EVENING,
+    *,
+    calls: list | None = None,
+    settings: Settings | None = None,
+    cache_dir=None,
+    surface: str = "spoken",
+) -> Session:
+    """A session whose data services answer from the weather fixtures (no network)."""
+    import tempfile
+    from pathlib import Path
+
+    from moritz_agent.skills.providers import Providers
+
+    from . import weather_fixtures as wf
+
+    table = {
+        "api.open-meteo.com/v1/forecast": wf.open_meteo_answer(),
+        "api.brightsky.dev/alerts": wf.alerts_answer(),
+        "api.brightsky.dev/current_weather": wf.bright_sky_current(),
+        "api.brightsky.dev/weather": wf.bright_sky_weather(),
+    }
+    table.update(routes or {})
+    directory = Path(cache_dir) if cache_dir else Path(tempfile.mkdtemp(prefix="skills-cache-"))
+
+    def make(svc: Services):
+        return Providers(svc, transport=wf.mock_transport(table, calls), cache_dir=directory)
+
+    return Session(at, settings=settings, providers=make, surface=surface)

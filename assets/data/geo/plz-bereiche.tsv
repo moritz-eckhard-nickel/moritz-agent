@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Postleitzahlbereiche großer Städte: jede PLZ darin gehört zur Stadt (so finden auch „60594“ oder
+# „80999“ ohne die GeoNames-Volldaten ihre Stadt). von<TAB>bis<TAB>Stadtname (wie in seed-places.tsv)
+10115	14199	Berlin
+20095	20999	Hamburg
+22041	22769	Hamburg
+80331	81929	München
+50667	51149	Köln
+60306	60599	Frankfurt am Main
+65929	65936	Frankfurt am Main
+70173	70619	Stuttgart
+40210	40629	Düsseldorf
+04103	04357	Leipzig
+44135	44388	Dortmund
+45127	45359	Essen
+28195	28779	Bremen
+01067	01328	Dresden
+30159	30669	Hannover
+90402	90491	Nürnberg
+65183	65207	Wiesbaden
+55116	55131	Mainz
+64283	64297	Darmstadt
+34117	34134	Kassel
+35390	35398	Gießen
+35037	35043	Marburg
+35576	35586	Wetzlar
+65549	65556	Limburg an der Lahn
+36037	36043	Fulda
+63450	63457	Hanau
+63065	63075	Offenbach am Main

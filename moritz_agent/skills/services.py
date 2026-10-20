@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import random
+from collections.abc import Callable
 from pathlib import Path
 
 from moritz_agent import __version__
@@ -19,7 +20,7 @@ def build_services(
     clock: Clock | None = None,
     seed: int | None = None,
     load_places: bool = True,
-    providers: object | None = None,
+    providers: object | Callable[[Services], object] | None = None,
 ) -> Services:
     settings = settings or load_settings(root=root)
     clock = clock or SystemClock()
@@ -31,13 +32,17 @@ def build_services(
         version=__version__,
         started_at=clock.monotonic(),
         assistant_name=settings.phone.assistant_name,
-        providers=providers,
+        providers=None if callable(providers) else providers,
     )
     if load_places:
         try:
             from moritz_agent.skills.geo.gazetteer import Gazetteer
 
             svc.gazetteer = Gazetteer.load(root)
-        except ModuleNotFoundError:  # places arrive with P1-21
+            home = settings.skills.home
+            svc.gazetteer.set_home(home.postal_code, home.name, home.latitude, home.longitude)
+        except ModuleNotFoundError:
             svc.gazetteer = None
+    if callable(providers):
+        svc.providers = providers(svc)
     return svc

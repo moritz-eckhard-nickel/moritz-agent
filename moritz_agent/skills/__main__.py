@@ -4,6 +4,8 @@
 ask "Wie spät ist es?" [--at 2026-10-18T19:12] [--offline] [--explain] [--chat]
 help                      list all skills with examples
 corpus [FILE]             run the utterance corpus and report mistakes
+providers                 ask every data service once and report the state
+prefetch                  warm the cache for the home place
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ from pathlib import Path
 
 from moritz_agent.config.settings import REPO_ROOT, SettingsError, load_settings
 from moritz_agent.skills.clock import FixedClock
+from moritz_agent.skills.providers import Providers
 from moritz_agent.skills.registry import groups
 from moritz_agent.skills.responder import SkillResponder
 from moritz_agent.skills.router import Router, new_context
@@ -37,6 +40,8 @@ def _parser() -> argparse.ArgumentParser:
         "--chat", action="store_true", help="chat surface (Discord/web) instead of spoken"
     )
     sub.add_parser("help", help="list the skills")
+    sub.add_parser("providers", help="ask every data service once")
+    sub.add_parser("prefetch", help="warm the cache for the home place")
     corpus = sub.add_parser("corpus", help="run an utterance corpus (JSON lines)")
     corpus.add_argument(
         "file", nargs="?", default=str(REPO_ROOT / "tests/moritz_agent/data/skills.de.jsonl")
@@ -50,9 +55,17 @@ async def _ask(args: argparse.Namespace) -> int:
     if args.offline:
         settings.skills.online = False
     clock = FixedClock(datetime.fromisoformat(args.at)) if args.at else None
-    svc = build_services(settings, clock=clock, seed=1)
+    svc = build_services(settings, clock=clock, seed=1, providers=Providers)
     router = Router(svc)
     ctx = new_context(svc, seed=1)
+    try:
+        return await _ask_all(args, svc, router, ctx)
+    finally:
+        if isinstance(svc.providers, Providers):
+            await svc.providers.aclose()
+
+
+async def _ask_all(args: argparse.Namespace, svc, router: Router, ctx) -> int:
     for sentence in args.text:
         surface = "chat" if args.chat else "spoken"
         outcome = await router.route(sentence, ctx, surface=surface)
@@ -78,6 +91,38 @@ def _help() -> int:
         for item in sorted(skills, key=lambda s: s.id):
             example = f"   z. B. „{item.examples[0]}“" if item.examples else ""
             print(f"  {item.id}{example}")
+    return 0
+
+
+async def _providers(args: argparse.Namespace) -> int:
+    settings = load_settings(args.config)
+    svc = build_services(settings, providers=Providers)
+    assert isinstance(svc.providers, Providers)
+    from moritz_agent.skills.slots.where import home_place
+
+    home = home_place(svc)
+    print(f"Heimatort: {home.name} {home.postal_codes[:1]} ({home.lat:.2f}, {home.lon:.2f})")
+    if not settings.skills.online:
+        print("skills.online = false – es wird nichts abgerufen.")
+        return 0
+    failed = 0
+    try:
+        for name, ok, ms, detail in await svc.providers.check_all():
+            print(f"{'✓' if ok else '✗'} {name:<36} {ms:6.0f} ms  {detail}")
+            failed += 0 if ok else 1
+    finally:
+        await svc.providers.aclose()
+    return 1 if failed else 0
+
+
+async def _prefetch(args: argparse.Namespace) -> int:
+    svc = build_services(load_settings(args.config), providers=Providers)
+    assert isinstance(svc.providers, Providers)
+    try:
+        for name, state in (await svc.providers.prefetch_once()).items():
+            print(f"{name}: {state}")
+    finally:
+        await svc.providers.aclose()
     return 0
 
 
@@ -109,6 +154,10 @@ def main(argv: list[str] | None = None) -> int:
             return asyncio.run(_ask(args))
         if args.command == "help":
             return _help()
+        if args.command == "providers":
+            return asyncio.run(_providers(args))
+        if args.command == "prefetch":
+            return asyncio.run(_prefetch(args))
         return asyncio.run(_corpus(args))
     except SettingsError as exc:
         print(f"Konfiguration ungültig: {exc}", file=sys.stderr)

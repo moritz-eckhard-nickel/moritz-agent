@@ -37,6 +37,7 @@ class SkillResponder:
 
     async def respond(self, text: str, context: TurnContext) -> Reply:
         ctx = self.context_for(context)
+        ctx.thinking_prompt = None
         outcome: Outcome = await self.router.route(text, ctx, surface="spoken")
         self._log(outcome)
         if outcome.result is not None:

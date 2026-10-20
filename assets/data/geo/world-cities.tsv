@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Größere Städte der Welt mit deutschem Namen für „Wetter in …“ (docs/plan/13 §11). Näherungswerte.
+# name<TAB>land<TAB>breite<TAB>länge<TAB>zeitzone<TAB>einwohner
+New York	USA	40.7128	-74.0060	America/New_York	8300000
+Los Angeles	USA	34.0522	-118.2437	America/Los_Angeles	3900000
+Chicago	USA	41.8781	-87.6298	America/Chicago	2700000
+San Francisco	USA	37.7749	-122.4194	America/Los_Angeles	870000
+Miami	USA	25.7617	-80.1918	America/New_York	450000
+Las Vegas	USA	36.1699	-115.1398	America/Los_Angeles	640000
+Toronto	Kanada	43.6532	-79.3832	America/Toronto	2800000
+Vancouver	Kanada	49.2827	-123.1207	America/Vancouver	660000
+Mexiko-Stadt	Mexiko	19.4326	-99.1332	America/Mexico_City	9200000
+Rio de Janeiro	Brasilien	-22.9068	-43.1729	America/Sao_Paulo	6700000
+São Paulo	Brasilien	-23.5505	-46.6333	America/Sao_Paulo	12300000
+Buenos Aires	Argentinien	-34.6037	-58.3816	America/Argentina/Buenos_Aires	3000000
+London	Vereinigtes Königreich	51.5074	-0.1278	Europe/London	8900000
+Dublin	Irland	53.3498	-6.2603	Europe/Dublin	550000
+Lissabon	Portugal	38.7223	-9.1393	Europe/Lisbon	550000
+Madrid	Spanien	40.4168	-3.7038	Europe/Madrid	3300000
+Barcelona	Spanien	41.3874	2.1686	Europe/Madrid	1600000
+Palma de Mallorca	Spanien	39.5696	2.6502	Europe/Madrid	420000
+Paris	Frankreich	48.8566	2.3522	Europe/Paris	2100000
+Brüssel	Belgien	50.8503	4.3517	Europe/Brussels	1200000
+Amsterdam	Niederlande	52.3676	4.9041	Europe/Amsterdam	870000
+Wien	Österreich	48.2082	16.3738	Europe/Vienna	1900000
+Salzburg	Österreich	47.8095	13.0550	Europe/Vienna	155000
+Innsbruck	Österreich	47.2692	11.4041	Europe/Vienna	132000
+Zürich	Schweiz	47.3769	8.5417	Europe/Zurich	420000
+Bern	Schweiz	46.9480	7.4474	Europe/Zurich	134000
+Rom	Italien	41.9028	12.4964	Europe/Rome	2800000
+Mailand	Italien	45.4642	9.1900	Europe/Rome	1400000
+Venedig	Italien	45.4408	12.3155	Europe/Rome	260000
+Prag	Tschechien	50.0755	14.4378	Europe/Prague	1300000
+Warschau	Polen	52.2297	21.0122	Europe/Warsaw	1800000
+Krakau	Polen	50.0647	19.9450	Europe/Warsaw	780000
+Budapest	Ungarn	47.4979	19.0402	Europe/Budapest	1750000
+Athen	Griechenland	37.9838	23.7275	Europe/Athens	640000
+Istanbul	Türkei	41.0082	28.9784	Europe/Istanbul	15500000
+Moskau	Russland	55.7558	37.6173	Europe/Moscow	12500000
+Kopenhagen	Dänemark	55.6761	12.5683	Europe/Copenhagen	640000
+Stockholm	Schweden	59.3293	18.0686	Europe/Stockholm	980000
+Oslo	Norwegen	59.9139	10.7522	Europe/Oslo	700000
+Helsinki	Finnland	60.1699	24.9384	Europe/Helsinki	660000
+Reykjavik	Island	64.1466	-21.9426	Atlantic/Reykjavik	135000
+Kairo	Ägypten	30.0444	31.2357	Africa/Cairo	9500000
+Kapstadt	Südafrika	-33.9249	18.4241	Africa/Johannesburg	4600000
+Dubai	Vereinigte Arabische Emirate	25.2048	55.2708	Asia/Dubai	3500000
+Tel Aviv	Israel	32.0853	34.7818	Asia/Jerusalem	460000
+Mumbai	Indien	19.0760	72.8777	Asia/Kolkata	12400000
+Neu-Delhi	Indien	28.6139	77.2090	Asia/Kolkata	250000
+Bangkok	Thailand	13.7563	100.5018	Asia/Bangkok	10500000
+Singapur	Singapur	1.3521	103.8198	Asia/Singapore	5700000
+Hongkong	China	22.3193	114.1694	Asia/Hong_Kong	7400000
+Peking	China	39.9042	116.4074	Asia/Shanghai	21500000
+Shanghai	China	31.2304	121.4737	Asia/Shanghai	24800000
+Seoul	Südkorea	37.5665	126.9780	Asia/Seoul	9700000
+Tokio	Japan	35.6762	139.6503	Asia/Tokyo	13900000
+Sydney	Australien	-33.8688	151.2093	Australia/Sydney	5300000
+Melbourne	Australien	-37.8136	144.9631	Australia/Melbourne	5000000
+Auckland	Neuseeland	-36.8509	174.7645	Pacific/Auckland	1650000
+Teneriffa (Santa Cruz)	Spanien	28.4636	-16.2518	Atlantic/Canary	210000
+Antalya	Türkei	36.8969	30.7133	Europe/Istanbul	1200000

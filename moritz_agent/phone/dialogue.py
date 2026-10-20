@@ -200,6 +200,9 @@ class CallSession:
     async def _perform(self, action: Action) -> None:
         match action:
             case PlayPrompt(prompt):
+                if prompt == "thinking":  # skills may ask for a more specific one
+                    skills = self._context.extras.get("skills")
+                    prompt = getattr(skills, "thinking_prompt", None) or prompt
                 self._queue_playback("prompt", prompt)
             case PlayText(text):
                 self._queue_playback("text", text)

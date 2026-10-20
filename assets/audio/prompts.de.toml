@@ -43,3 +43,16 @@ required = false
 [timeout]
 text = "Das dauert leider zu lange. Frag mich gern noch einmal."
 required = true
+
+# --- Sofortauskünfte (docs/plan/13 §3.5, §3.7, Anhang A) ---------------------------------------------
+[thinking_weather]
+text = "Moment, ich schaue nach dem Wetter."
+required = false
+
+[skills_offline]
+text = "Ich komme gerade nicht an die Daten. Versuch es bitte gleich noch einmal."
+required = false
+
+[timer_done]
+text = "Die Zeit ist um."
+required = false

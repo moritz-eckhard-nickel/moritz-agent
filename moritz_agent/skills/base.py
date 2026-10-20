@@ -116,6 +116,7 @@ class SkillContext:
     place_mentions: int = 0
     heard: list[str] = field(default_factory=list)  # what the user said, newest last
     home: Place | None = None  # personal home town (Discord users), None = skills.home
+    thinking_prompt: str | None = None  # announcement for "Moment, ich schaue nach" this turn
     rng: random.Random = field(default_factory=random.Random)
 
 

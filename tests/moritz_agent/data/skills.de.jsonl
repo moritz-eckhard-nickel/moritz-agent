@@ -242,6 +242,114 @@
 {"say": "Guten Morgen", "skill": "briefing"}
 {"say": "Was steht heute an?", "skill": "briefing"}
 {"say": "Gib mir einen Überblick", "skill": "briefing"}
+{"say": "Wo ist 35781?", "skill": "geo.plz_to_place"}
+{"say": "Welcher Ort hat die Postleitzahl 65549?", "skill": "geo.plz_to_place"}
+{"say": "Zu welchem Ort gehört die PLZ 60311?", "skill": "geo.plz_to_place"}
+{"say": "Welche Postleitzahl hat Limburg?", "skill": "geo.place_to_plz"}
+{"say": "Welche PLZ hat Weilburg?", "skill": "geo.place_to_plz"}
+{"say": "Postleitzahl von Wetzlar", "skill": "geo.place_to_plz"}
+{"say": "Wie weit ist es nach Frankfurt?", "skill": "geo.distance"}
+{"say": "Entfernung Weilburg Gießen", "skill": "geo.distance"}
+{"say": "Wie weit ist Berlin von München entfernt?", "skill": "geo.distance"}
+{"say": "Wie weit ist es bis Köln?", "skill": "geo.distance"}
+{"say": "In welchem Bundesland liegt Wetzlar?", "skill": "geo.region_of"}
+{"say": "Zu welchem Kreis gehört Runkel?", "skill": "geo.region_of"}
+{"say": "Wo bin ich?", "skill": "geo.home"}
+{"say": "Was ist mein Standort?", "skill": "geo.home"}
+{"say": "Für welchen Ort sagst du das Wetter?", "skill": "geo.home"}
+{"say": "Wie ist das Wetter?", "skill": "weather.now"}
+{"say": "Wie isses Wedder drauße?", "skill": "weather.now"}
+{"say": "Wie ist das Wetter in Berlin?", "skill": "weather.now"}
+{"say": "Wetter in 60311", "skill": "weather.now"}
+{"say": "Nikita, wie ist das Wetter gerade?", "skill": "weather.now"}
+{"say": "Wie ist das Wetter bei uns?", "skill": "weather.now"}
+{"say": "Sag mal, wie ist eigentlich das Wetter?", "skill": "weather.now"}
+{"say": "Wetter?", "skill": "weather.now"}
+{"say": "Wie ist das Wetter in Weilborg?", "skill": "weather.now"}
+{"say": "Wie ist das Wetter in der Region?", "skill": "weather.region"}
+{"say": "Wie warm ist es im Landkreis?", "skill": "weather.region"}
+{"say": "Wie wird das Wetter heute?", "skill": "weather.today"}
+{"say": "Wie werd's heit?", "skill": "weather.today"}
+{"say": "Wetter heute", "skill": "weather.today"}
+{"say": "Wie wird es heute Abend?", "skill": "weather.daypart"}
+{"say": "Wie wird das Wetter heute Nacht?", "skill": "weather.daypart"}
+{"say": "Wie ist das Wetter morgen früh?", "skill": "weather.daypart"}
+{"say": "Wie wird das Wetter morgen Nachmittag?", "skill": "weather.daypart"}
+{"say": "Wie wird das Wetter morgen?", "skill": "weather.day"}
+{"say": "Wie wird das Wetter übermorgen?", "skill": "weather.day"}
+{"say": "Wetter am Samstag", "skill": "weather.day"}
+{"say": "Wie wird das Wetter am Freitag in Limburg?", "skill": "weather.day"}
+{"say": "Wie wird's morsche?", "skill": "weather.day"}
+{"say": "Wie wird das Wetter am Wochenende?", "skill": "weather.weekend"}
+{"say": "Wetter am Wochenende in Frankfurt", "skill": "weather.weekend"}
+{"say": "Wie wird die Woche?", "skill": "weather.week"}
+{"say": "Wetter für die nächsten Tage", "skill": "weather.week"}
+{"say": "Wie wird das Wetter nächste Woche?", "skill": "weather.week"}
+{"say": "Wie ist das Wetter um 15 Uhr?", "skill": "weather.hour"}
+{"say": "Wie wird das Wetter in zwei Stunden?", "skill": "weather.hour"}
+{"say": "Wie wird das Wetter in zwei Wochen?", "skill": "weather.long_range"}
+{"say": "Wie wird das Wetter in 20 Tagen?", "skill": "weather.long_range"}
+{"say": "Wie war das Wetter gestern?", "skill": "weather.yesterday"}
+{"say": "Wie war das Wetter vorgestern?", "skill": "weather.yesterday"}
+{"say": "Regnet es heute?", "skill": "weather.rain"}
+{"say": "Gibt's Regen?", "skill": "weather.rain"}
+{"say": "Wird's nass?", "skill": "weather.rain"}
+{"say": "Regnet es morgen?", "skill": "weather.rain"}
+{"say": "Wann fängt es an zu regnen?", "skill": "weather.rain_when"}
+{"say": "Wann hört der Regen auf?", "skill": "weather.rain_when"}
+{"say": "Wie lange regnet es noch?", "skill": "weather.rain_when"}
+{"say": "Regnet es gerade?", "skill": "weather.rain_now"}
+{"say": "Regnet es draußen?", "skill": "weather.rain_now"}
+{"say": "Wie viel Regen kommt?", "skill": "weather.rain_amount"}
+{"say": "Wie viel hat es geregnet?", "skill": "weather.rain_amount"}
+{"say": "Brauche ich einen Schirm?", "skill": "weather.umbrella"}
+{"say": "Brauch isch en Schermche?", "skill": "weather.umbrella"}
+{"say": "Brauche ich morgen einen Regenschirm?", "skill": "weather.umbrella"}
+{"say": "Schneit es morgen?", "skill": "weather.snow"}
+{"say": "Gibt es weiße Weihnachten?", "skill": "weather.snow"}
+{"say": "Wird es Schnee geben?", "skill": "weather.snow"}
+{"say": "Gibt es heute Nacht Frost?", "skill": "weather.frost"}
+{"say": "Muss ich morgen kratzen?", "skill": "weather.frost"}
+{"say": "Wird es glatt?", "skill": "weather.frost"}
+{"say": "Gibt es Glatteis?", "skill": "weather.frost"}
+{"say": "Wie windig ist es?", "skill": "weather.wind"}
+{"say": "Gibt es Sturm?", "skill": "weather.wind"}
+{"say": "Wie stark sind die Böen?", "skill": "weather.wind"}
+{"say": "Wie windig wird es morgen?", "skill": "weather.wind"}
+{"say": "Gibt es Gewitter?", "skill": "weather.thunder"}
+{"say": "Wird's heute gewittrig?", "skill": "weather.thunder"}
+{"say": "Gewittert es morgen?", "skill": "weather.thunder"}
+{"say": "Ist es neblig?", "skill": "weather.fog"}
+{"say": "Gibt es morgen früh Nebel?", "skill": "weather.fog"}
+{"say": "Wie ist die Sicht?", "skill": "weather.visibility"}
+{"say": "Wie warm ist es?", "skill": "weather.temperature"}
+{"say": "Wie viel Grad hat es?", "skill": "weather.temperature"}
+{"say": "Wie kalt wird es heute Nacht?", "skill": "weather.temperature"}
+{"say": "Wie warm wird es morgen?", "skill": "weather.temperature"}
+{"say": "Wieviel Grad sind es draußen?", "skill": "weather.temperature"}
+{"say": "Wie heiß wird es am Mittwoch?", "skill": "weather.temperature"}
+{"say": "Wie kalt fühlt es sich an?", "skill": "weather.feels_like"}
+{"say": "Wie ist die gefühlte Temperatur?", "skill": "weather.feels_like"}
+{"say": "Wie hoch ist die Luftfeuchtigkeit?", "skill": "weather.humidity"}
+{"say": "Ist es schwül?", "skill": "weather.humidity"}
+{"say": "Wie ist der Luftdruck?", "skill": "weather.pressure"}
+{"say": "Scheint heute die Sonne?", "skill": "weather.sunshine"}
+{"say": "Wie viele Sonnenstunden gibt es morgen?", "skill": "weather.sunshine"}
+{"say": "Ist es bewölkt?", "skill": "weather.clouds"}
+{"say": "Kann man heute Nacht Sterne sehen?", "skill": "weather.clouds"}
+{"say": "Wie hoch ist der UV-Index?", "skill": "weather.uv"}
+{"say": "Brauche ich Sonnencreme?", "skill": "weather.uv"}
+{"say": "Wird es morgen wärmer als heute?", "skill": "weather.compare"}
+{"say": "Ist es in Frankfurt wärmer als hier?", "skill": "weather.compare"}
+{"say": "Wird es morgen kälter als heute?", "skill": "weather.compare"}
+{"say": "Wann ist es heute am wärmsten?", "skill": "weather.extremes"}
+{"say": "Welcher Tag wird diese Woche am schönsten?", "skill": "weather.extremes"}
+{"say": "Wann wird es wieder warm?", "skill": "weather.when_change"}
+{"say": "Wann kommt der nächste Frost?", "skill": "weather.when_change"}
+{"say": "Wann wird es wieder trocken?", "skill": "weather.when_change"}
+{"say": "Was misst die Wetterstation?", "skill": "weather.observed"}
+{"say": "Wie warm ist es wirklich?", "skill": "weather.observed"}
+{"say": "Welcher Wetterdienst?", "skill": "weather.source"}
 {"say": "Um wie viel Uhr fährt der Zug nach Frankfurt?", "skill": null}
 {"say": "Wann öffnet der Supermarkt?", "skill": null}
 {"say": "Um wie viel Uhr beginnt der Film?", "skill": null}

@@ -271,6 +271,145 @@ POSITIVE: dict[str, list[str]] = {
     "briefing": ["Guten Morgen", "Was steht heute an?", "Gib mir einen Überblick"],
 }
 
+# places and weather (P1-21, P1-22): online skills answer "no connection" in the corpus test, which
+# is enough to check that the right skill is chosen
+POSITIVE.update(
+    {
+        "geo.plz_to_place": [
+            "Wo ist 35781?",
+            "Welcher Ort hat die Postleitzahl 65549?",
+            "Zu welchem Ort gehört die PLZ 60311?",
+        ],
+        "geo.place_to_plz": [
+            "Welche Postleitzahl hat Limburg?",
+            "Welche PLZ hat Weilburg?",
+            "Postleitzahl von Wetzlar",
+        ],
+        "geo.distance": [
+            "Wie weit ist es nach Frankfurt?",
+            "Entfernung Weilburg Gießen",
+            "Wie weit ist Berlin von München entfernt?",
+            "Wie weit ist es bis Köln?",
+        ],
+        "geo.region_of": [
+            "In welchem Bundesland liegt Wetzlar?",
+            "Zu welchem Kreis gehört Runkel?",
+        ],
+        "geo.home": [
+            "Wo bin ich?",
+            "Was ist mein Standort?",
+            "Für welchen Ort sagst du das Wetter?",
+        ],
+        "weather.now": [
+            "Wie ist das Wetter?",
+            "Wie isses Wedder drauße?",
+            "Wie ist das Wetter in Berlin?",
+            "Wetter in 60311",
+            "Nikita, wie ist das Wetter gerade?",
+            "Wie ist das Wetter bei uns?",
+            "Sag mal, wie ist eigentlich das Wetter?",
+            "Wetter?",
+            "Wie ist das Wetter in Weilborg?",
+        ],
+        "weather.region": ["Wie ist das Wetter in der Region?", "Wie warm ist es im Landkreis?"],
+        "weather.today": ["Wie wird das Wetter heute?", "Wie werd's heit?", "Wetter heute"],
+        "weather.daypart": [
+            "Wie wird es heute Abend?",
+            "Wie wird das Wetter heute Nacht?",
+            "Wie ist das Wetter morgen früh?",
+            "Wie wird das Wetter morgen Nachmittag?",
+        ],
+        "weather.day": [
+            "Wie wird das Wetter morgen?",
+            "Wie wird das Wetter übermorgen?",
+            "Wetter am Samstag",
+            "Wie wird das Wetter am Freitag in Limburg?",
+            "Wie wird's morsche?",
+        ],
+        "weather.weekend": [
+            "Wie wird das Wetter am Wochenende?",
+            "Wetter am Wochenende in Frankfurt",
+        ],
+        "weather.week": [
+            "Wie wird die Woche?",
+            "Wetter für die nächsten Tage",
+            "Wie wird das Wetter nächste Woche?",
+        ],
+        "weather.hour": [
+            "Wie ist das Wetter um 15 Uhr?",
+            "Wie wird das Wetter in zwei Stunden?",
+        ],
+        "weather.long_range": [
+            "Wie wird das Wetter in zwei Wochen?",
+            "Wie wird das Wetter in 20 Tagen?",
+        ],
+        "weather.yesterday": ["Wie war das Wetter gestern?", "Wie war das Wetter vorgestern?"],
+        "weather.rain": ["Regnet es heute?", "Gibt's Regen?", "Wird's nass?", "Regnet es morgen?"],
+        "weather.rain_when": [
+            "Wann fängt es an zu regnen?",
+            "Wann hört der Regen auf?",
+            "Wie lange regnet es noch?",
+        ],
+        "weather.rain_now": ["Regnet es gerade?", "Regnet es draußen?"],
+        "weather.rain_amount": ["Wie viel Regen kommt?", "Wie viel hat es geregnet?"],
+        "weather.umbrella": [
+            "Brauche ich einen Schirm?",
+            "Brauch isch en Schermche?",
+            "Brauche ich morgen einen Regenschirm?",
+        ],
+        "weather.snow": [
+            "Schneit es morgen?",
+            "Gibt es weiße Weihnachten?",
+            "Wird es Schnee geben?",
+        ],
+        "weather.frost": [
+            "Gibt es heute Nacht Frost?",
+            "Muss ich morgen kratzen?",
+            "Wird es glatt?",
+            "Gibt es Glatteis?",
+        ],
+        "weather.wind": [
+            "Wie windig ist es?",
+            "Gibt es Sturm?",
+            "Wie stark sind die Böen?",
+            "Wie windig wird es morgen?",
+        ],
+        "weather.thunder": ["Gibt es Gewitter?", "Wird's heute gewittrig?", "Gewittert es morgen?"],
+        "weather.fog": ["Ist es neblig?", "Gibt es morgen früh Nebel?"],
+        "weather.visibility": ["Wie ist die Sicht?"],
+        "weather.temperature": [
+            "Wie warm ist es?",
+            "Wie viel Grad hat es?",
+            "Wie kalt wird es heute Nacht?",
+            "Wie warm wird es morgen?",
+            "Wieviel Grad sind es draußen?",
+            "Wie heiß wird es am Mittwoch?",
+        ],
+        "weather.feels_like": ["Wie kalt fühlt es sich an?", "Wie ist die gefühlte Temperatur?"],
+        "weather.humidity": ["Wie hoch ist die Luftfeuchtigkeit?", "Ist es schwül?"],
+        "weather.pressure": ["Wie ist der Luftdruck?"],
+        "weather.sunshine": ["Scheint heute die Sonne?", "Wie viele Sonnenstunden gibt es morgen?"],
+        "weather.clouds": ["Ist es bewölkt?", "Kann man heute Nacht Sterne sehen?"],
+        "weather.uv": ["Wie hoch ist der UV-Index?", "Brauche ich Sonnencreme?"],
+        "weather.compare": [
+            "Wird es morgen wärmer als heute?",
+            "Ist es in Frankfurt wärmer als hier?",
+            "Wird es morgen kälter als heute?",
+        ],
+        "weather.extremes": [
+            "Wann ist es heute am wärmsten?",
+            "Welcher Tag wird diese Woche am schönsten?",
+        ],
+        "weather.when_change": [
+            "Wann wird es wieder warm?",
+            "Wann kommt der nächste Frost?",
+            "Wann wird es wieder trocken?",
+        ],
+        "weather.observed": ["Was misst die Wetterstation?", "Wie warm ist es wirklich?"],
+        "weather.source": ["Welcher Wetterdienst?"],
+    }
+)
+
 # sentences no skill may answer: other topics, compound requests, near misses (SKILL-01, R23)
 NEGATIVE: list[str] = [
     "Um wie viel Uhr fährt der Zug nach Frankfurt?",

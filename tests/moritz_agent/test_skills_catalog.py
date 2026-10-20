@@ -201,8 +201,10 @@ def test_leap_day():
 
 
 def test_help_lists_only_what_exists():
-    text = ask("Was kannst du?")
-    assert text and "Uhrzeit" in text and "rechnen" in text
+    session = Session()
+    text = session.say("Was kannst du?")
+    assert text and "Uhrzeit" in text and "Wetter" in text
+    assert "rechnen" in text or "rechnen" in (session.say("Mehr Details") or "")
 
 
 def test_details_follow_the_help():
