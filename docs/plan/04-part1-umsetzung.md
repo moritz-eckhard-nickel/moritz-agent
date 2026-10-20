@@ -64,7 +64,7 @@ P1-29 Erkennung, Aussprache, Korpus (begleitend ab P1-19) ─► P1-30 Abnahme S
 danach: P1-02, P1-05, P1-07 (übernimmt skills/tools.py), P1-09 (Agent hinter den Skills), P1-08, P1-14, P1-18
 ```
 
-**Block D – Discord (ADR-033 … ADR-036, [14](14-discord.md)):** Nikita als Discord-Bot mit allen
+**Block D – Discord (ADR-033 … ADR-037, [14](14-discord.md)):** Nikita als Discord-Bot mit allen
 Funktionen. Startet nach P1-19 mit dem Kanal-Kern (P1-31) und dem Spike (P1-32) und läuft parallel zu
 den späteren Wellen von Block S; LLM-Funktionen kommen mit P1-09 automatisch dazu.
 
@@ -72,7 +72,8 @@ den späteren Wellen von Block S; LLM-Funktionen kommen mit P1-09 automatisch da
 P1-19 ─► P1-31 Kanal-Kern ─► P1-32 Spike ─► P1-33 Worker ─┬─► P1-34 Text + Sofortauskünfte ─┬─► P1-38 Proaktiv/Erinnerungen
                                                           ├─► P1-35 Befehle/Benutzer-App    ├─► P1-39 Telefon ↔ Discord
                                                           ├─► P1-41 Einrichtung             └─► P1-40 Admin
-                                                          └─► P1-36 Sprachkanal, P1-37 Sprachnachrichten (nach Spike)
+                                                          ├─► P1-36 Sprachkanal (/joinvc wie Anruf), P1-37 Sprachnachrichten (nach Spike)
+                                                          └─► P1-43 Persönlichkeit + Aktivitäten
                                                                                  alles ─► P1-42 Abnahme Discord
 ```
 
@@ -562,8 +563,8 @@ Datenquelle **vor** dem ersten Abruf.
 
 ## Block D – Discord-Bot
 
-Plan: [14-discord.md](14-discord.md) · Anforderungen DISCORD-01 … DISCORD-42 · Entscheidungen
-ADR-033 … ADR-036 · Bedrohungen T25–T32. Gemeinsame DoD zusätzlich: Fake-Discord-Tests ohne Netz,
+Plan: [14-discord.md](14-discord.md) · Anforderungen DISCORD-01 … DISCORD-47 · Entscheidungen
+ADR-033 … ADR-037 · Bedrohungen T25–T32. Gemeinsame DoD zusätzlich: Fake-Discord-Tests ohne Netz,
 keine Inhalte/Token im Log (Test sucht den Testtoken), Rollenmatrix getestet, Discord-Ausfall lässt
 das Telefon unberührt (Test: Worker beenden während eines Testanrufs).
 
@@ -618,23 +619,27 @@ das Telefon unberührt (Test: Worker beenden während eines Testanrufs).
 - **Dateien:** `discord/commands/*`, `discord/__main__.py` (`sync-commands`).
 - **Aufgaben:** Befehle aus [14 §7](14-discord.md#7-befehle-slash-befehle-kontextmenüs-autovervollständigung)
   für alle aktiven Funktionen, Kontexte (Server/DM/Benutzer-App), Autovervollständigung für Orte aus dem
-  Gazetteer, Kontextmenüs „Nikita fragen“ und „Vorlesen“, ephemere Antworten in fremden Servern,
+  Gazetteer, `/joinvc` und `/leavevc`, Kontextmenüs „Nikita fragen“ und „Vorlesen“, ephemere Antworten in fremden Servern,
   Registrierung nur bei geändertem Befehlsbaum; `/abo`, `/einstellungen`, `/hilfe`.
 - **Tests:** Befehlsbaum gültig (Namen, Längen, Anzahl), nur aktive Funktionen, Interaktion-Fakes.
 - **Anforderungen:** DISCORD-02, -16, -17, -29.
 
-## P1-36 – Sprachkanal
+## P1-36 – Sprachkanal: `/joinvc` wie ein Anruf
 
-- **Dateien:** `discord/voice/{session,receive,pipeline,playback}.py`; gemeinsame Audio-Bausteine aus
-  `phone/audio/` (VAD, STT, TTS, Resampling) werden dafür als Bibliothek nutzbar gemacht (ohne
-  Verhaltensänderung am Telefon).
-- **Aufgaben:** `/komm`/`/geh`, Auto-Join optional, eine Sitzung, Verlassen bei Leere/Zeit/Wartung;
-  Empfang je Sprecher (Ergebnis P1-32) oder Modus „nur sprechen“; VAD je Sprecher, Weckwort-Logik,
-  Barge-in ≤ 300 ms, Zwischenansage, Ansagen aus dem Telefon-Cache; Modelle bei Bedarf laden/entladen;
-  Priorität `VOICE`; RAM- und Latenzmessung (06 §2.2, 09 §4).
-- **Tests:** Audio-Kette ohne Netz (Opus ↔ PCM, 48 ↔ 16 kHz, VAD je Sprecher, Weckwort, Unterbrechen),
-  Live-Protokoll; Telefon parallel unbeeinträchtigt.
-- **Anforderungen:** DISCORD-22, -23, -24, -25, ADR-036.
+- **Dateien:** `discord/voice/{session,receive,pipeline,playback}.py`; `phone/media.py` (neu:
+  Schnittstelle `MediaChannel`), `phone/dialogue.py` und `phone/sip.py` auf `MediaChannel` umgestellt
+  (ohne Verhaltensänderung am Telefon); gemeinsame Audio-Bausteine aus `phone/audio/` (VAD, STT, TTS,
+  Resampling) als Bibliothek nutzbar.
+- **Aufgaben:** `/joinvc`/`/leavevc`, Auto-Join optional, eine Sitzung; Zustände Wartet → Im Gespräch
+  → Ruht (14 §9.1): Moritz betritt den Kanal = Anruf angenommen (Begrüßung wie PHONE-21), Verlassen =
+  Auflegen, „Tschüss“ = Abschied und gehen, Stille = Ruhe-Modus oder gehen (`on_silence`), Weckwort nur
+  zum Aufwecken; keine Sprecherauswahl (Privatserver), Fremde verworfen; Empfang (Ergebnis P1-32) oder
+  Modus „nur sprechen“; Barge-in ≤ 300 ms, Zwischenansage, Ansagen aus dem Telefon-Cache; Modelle ab
+  `/joinvc` laden, danach entladen; Priorität `VOICE`; RAM- und Latenzmessung (06 §2.2, 09 §4).
+- **Tests:** alle `test_dialogue.py`/`test_state_machine.py`-Fälle laufen zusätzlich über einen
+  Fake-Sprachkanal (`MediaChannel`); Audio-Kette ohne Netz (Opus ↔ PCM, 48 ↔ 16 kHz, VAD, Unterbrechen);
+  Zustandswechsel Betreten/Verlassen/Stille/Ruhe; Live-Protokoll; Telefon parallel unbeeinträchtigt.
+- **Anforderungen:** DISCORD-22, -23, -24, -25, -46, ADR-036.
 
 ## P1-37 – Sprachnachrichten
 
@@ -650,9 +655,9 @@ das Telefon unberührt (Test: Worker beenden während eines Testanrufs).
   Tabellen aus 14 §16.
 - **Aufgaben:** `/erinnere`, `/timer`, natürliche Sprache („erinnere mich morgen um 8 …“), neustartfest,
   Nachholen ≤ 12 h; Abos Warnungen/Morgenbriefing/Müll/Systemhinweise mit Ruhezeiten und Drosselung;
-  Präsenzstatus.
+  Ziel Standardkanal (`notify.target`), Startmeldung im Standardkanal.
 - **Tests:** feste Uhr, Sommerzeitwechsel, Neustart dazwischen, Drosselung, Ruhezeit-Ausnahme Unwetter.
-- **Anforderungen:** DISCORD-27, -28, -32.
+- **Anforderungen:** DISCORD-27, -28, -47.
 
 ## P1-39 – Telefon ↔ Discord
 
@@ -673,20 +678,35 @@ das Telefon unberührt (Test: Worker beenden während eines Testanrufs).
 ## P1-41 – Einrichtung: Installer, `passwords.txt`, `./test-1.sh discord`, Doku
 
 - **Dateien:** `moritz-install.sh` (Phase `discord`), `moritz_agent/setup` (`set-discord-token`,
-  Prüfung gegen die API, App-Infos, Einladungslinks, Avatar), `config/passwords.template.txt`
-  (`[discord]`), Updater-`migrate` (Abschnitt anhängen), `test-1.sh` (`discord token|check|invite|run|say`),
-  `scripts/build_branding.py` (Avatar 512 × 512), `docs/discord-einrichtung.md` (Developer Portal
+  `set-discord-channel`, Prüfung gegen die API, App-Infos, Einladungslinks, Kanalauswahl, Avatar/Banner/Bio),
+  `config/passwords.template.txt` (`[discord]` mit `bot_token`, `channel_id`, `admin_pin`),
+  Updater-`migrate` (Abschnitt/Schlüssel anhängen), `test-1.sh` (`discord token|channel|check|invite|run|say`),
+  `scripts/build_branding.py` (Avatar 512 × 512, Banner), `docs/discord-einrichtung.md` (Developer Portal
   Schritt für Schritt, Token-Reset, Datenschutz), `requirements/discord.in`/`.lock`,
   `THIRD_PARTY_NOTICES.md`, `deploy/payload.txt`.
 - **Tests:** `test_installers.py`: Phase mit Testtoken über stdin (nie in Argumenten/Log), zweiter Lauf
   unverändert, `--non-interactive` überspringt; Updater hängt `[discord]` an, Bestandswerte
   byte-identisch; shellcheck.
-- **Anforderungen:** DISCORD-05, -06, -07, -37, -38, -42, INST-05, CFG-09.
+- **Anforderungen:** DISCORD-05, -06, -07, -37, -38, -42, -45, INST-05, CFG-09.
+
+## P1-43 – Nikitas Discord-Persönlichkeit: süßer Stil und schelmische Aktivitäten
+
+- **Dateien:** `discord/{style,activities}.py`, `assets/data/discord/{stil,aktivitaeten}.de.toml`,
+  `discord/commands/` (`/aktivitaet`), LLM-Profil `discord_chat` (Stilzeile, ab P1-09).
+- **Aufgaben:** Stil-Renderer nach [14 §8.2](14-discord.md#82-persönlichkeit-nikita-ein-bisschen-süß-adr-037)
+  mit Ernst-Modus; Aktivitäten nach [14 §8.5](14-discord.md#85-aktivitäten-schelmisch-und-funny-adr-037):
+  Grundliste, lagebezogene Aktivitäten (Anruf, Sprachkanal, Nacht, Wetter aus dem Cache, Sonderdaten,
+  Wartung, Unwetter), Rotation 7–15 min ohne Wiederholung, Präsenz-Limits, `/aktivitaet neu|aus|an|vorschlag`;
+  Bio-Text; `/hilfe datenschutz`-Satz „ich spiele nicht wirklich mit deinen Daten“.
+- **Tests:** Stil deterministisch je Nachrichten-ID, nie mehr als 2 Emojis, Zahlen unverändert,
+  Ernst-Modus bei Warnungen/Admin/Fehlern; Aktivitäten: Rotation, Vorrang der Lage, keine Wiederholung
+  unter 10, Inhaltsprüfung der Liste (keine Vorfall-Wörter wie „hackt“, „gelöscht“, „kaputt“).
+- **Anforderungen:** DISCORD-32, -43, -44, ADR-037.
 
 ## P1-42 – Abnahme Discord
 
 - Durchführung nach [14 §21](14-discord.md#21-abnahme), Protokoll `docs/abnahme/discord-<datum>.md`;
-  offene Fragen F-29 … F-37 geklärt oder Defaults bestätigt; README und `docs/telefon-test-1.md`
+  offene Fragen F-29 … F-40 geklärt oder Defaults bestätigt; README und `docs/telefon-test-1.md`
   ergänzt.
 
 ---
@@ -708,7 +728,9 @@ das Telefon unberührt (Test: Worker beenden während eines Testanrufs).
 | `thinking_weather` | Moment, ich schaue nach dem Wetter. | Wetterabruf ohne Cache-Treffer (P1-22) |
 | `skills_offline` | Ich komme gerade nicht an die Daten. Versuch es bitte gleich noch einmal. | Datendienst nicht erreichbar, kein Cache (P1-22) |
 | `timer_done` | Die Zeit ist um! | Eieruhr während des Gesprächs (P1-28), davor ein kurzer Ton |
-| `voice_join` | Guude, ich bin da. | Nikita betritt einen Discord-Sprachkanal (P1-36) |
+| `voice_join` | Guude, ich bin da. | Nikita betritt einen Discord-Sprachkanal, in dem Moritz noch nicht ist (P1-36); kommt Moritz dazu, folgt `greeting` |
+| `voice_rest` | Ich bin dann mal still. Sag einfach Nikita, wenn du mich brauchst. | Sprachkanal: Ruhe-Modus nach Stille (P1-36) |
+| `voice_wake` | Ja? | Sprachkanal: aus dem Ruhe-Modus geweckt (P1-36) |
 | `voice_waking` | Einen Moment, ich wache auf. | Sprachmodelle im Discord-Worker werden noch geladen (P1-36) |
 | `voice_leave` | Ich bin dann mal weg. Bis bald! | Nikita verlässt den Sprachkanal (P1-36) |
 

@@ -38,6 +38,7 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | R31 | **Neu:** CPU/RAM-Konkurrenz zwischen Telefon und Discord-Sprache | „Telefon zuerst“ | `nice +5`, Modelle nur bei Bedarf, eine Sitzung, Priorität PHONE, Messung | P1-36 |
 | R32 | **Neu:** Missbrauch durch andere in Servern | – | Allowlists, Standard „ignorieren“, Rate-Limits (T26–T28) | P1-33 |
 | R33 | **Neu:** Grenzen der Benutzer-App (in fremden Servern nur Befehle, oft nur privat sichtbar) | – | dokumentiert, volle Funktionen im eigenen Server und per DM | P1-35 |
+| R34 | **Neu:** Schelmische Aktivitäten/süßer Ton wirken unpassend oder beunruhigend | „bissl cutey“, „schelmisch, funny“ | nur eigene geprüfte Sprüche, Ernst-Modus, `/aktivitaet aus`, `style = "normal"` (ADR-037) | P1-43 |
 
 ## 2. Offene Fragen – beantwortet
 
@@ -77,12 +78,15 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | F-26 | Nachrichten-Schlagzeilen am Telefon? Quelle? | aus |
 | F-27 | Einkaufsliste/Notizen per Telefon (jeder interne Anrufer kann sie hören)? | aus |
 | F-28 | Wetterquelle von sich aus nennen oder nur auf Nachfrage? | nur auf Nachfrage |
-| F-29 | Eigener Discord-Server für Nikita (ID)? `#nikita`-Kanal, in dem sie auf alles antwortet? | Server beim Setup angeben; sonst nur Erwähnung – [14 §23](14-discord.md#23-offene-fragen-an-moritz) |
+| F-29 | ~~Eigener Discord-Server? Kanal für alles?~~ | **beantwortet:** Privatserver Moritz + Nikita; Standard-Textkanal per ID im Setup oder in der TXT (DISCORD-45) |
 | F-30 | Wer außer dir darf Nikita auf Discord nutzen? Gastmodus nur mit Sofortauskünften? | nur du; Gastmodus aus |
-| F-31 | Automatisch in den Sprachkanal kommen, wenn du ihn betrittst? Weckwort immer? | nein; Weckwort automatisch |
+| F-31 | Soll Nikita zusätzlich zu `/joinvc` von selbst kommen, wenn du einen Sprachkanal betrittst? | nein – [14 §23](14-discord.md#23-offene-fragen-an-moritz) |
 | F-32 | Welche Abos (Warnungen, Morgenbriefing + Uhrzeit, Müll, Systemhinweise)? | Warnungen ab Unwetter + Systemhinweise |
 | F-33 | Anrufhinweise auf Discord? Mit Themen oder Transkript? | aus |
-| F-34 | Bot-Name und Bild („Nikita“ mit Scribbles)? Status mit Wetter? | „Nikita“, Scribbles, Status ohne Wetter |
+| F-34 | ~~Bot-Name, Stil, Status?~~ | **beantwortet:** „Nikita“, süß, schelmische Aktivitäten (ADR-037) |
 | F-35 | Auf Sprachnachrichten mit Sprachnachricht antworten? | ja („mirror“) |
 | F-36 | PIN für gefährliche Admin-Befehle? | keine PIN, Bestätigungsknopf |
-| F-37 | Antworten an dich im Kanal sichtbar oder alles per DM? | im Kanal, Persönliches per DM |
+| F-37 | ~~Antworten im Kanal oder per DM?~~ | **beantwortet:** Standardkanal für alles |
+| F-38 | Eine extra niedliche Scribbles-Pose für den Avatar zeichnen? (neue Posen nur von dir) | Scribbles weiß auf dunklem Grund |
+| F-39 | Sprachkanal bei langer Stille: still bleiben und auf „Nikita“ hören oder gehen wie beim Auflegen? | still bleiben |
+| F-40 | Eigene Lieblingssprüche für die Aktivitäten? | Liste aus 14 §8.5 |

@@ -40,7 +40,7 @@ Anforderungen: INST-01…15, UPD-01…07, CFG-01…10.
 | 7 | `searxng` | `runtime/searxng-venv` mit `pip install --require-hashes -r requirements/searxng.lock`, Code fertig gebaut aus `third_party/searxng` (kein Build, kein Clone), Secret erzeugen (`data/searxng/secret`, 0600) | – |
 | 8 | `models` | Aus `config/versions.lock`: LLM (13,8 GB), Whisper small (0,5 GB), Piper-Stimme „Hessisch“ (114 MB) (Thorsten-Voice Hessisch, `python -m moritz_agent.phone.audio.models fetch`) mit Größe anzeigen, freien Platz prüfen, bestätigen, Download mit Resume von Hugging Face, Größenprüfung; SHA-256 gegen `versions.lock` bzw. TOFU (ADR-021). VAD liegt im Repo. | Größe/Prüfsumme falsch |
 | 9 | `secrets` | `passwords.txt` existiert? → **unverändert lassen**, nur fehlende Felder ergänzen (CFG-09). Sonst aus `config/passwords.template.txt` erzeugen (SIP-Startwerte, 0600). Danach Web-Login und Sandbox abfragen (§2.1) | ungültige Eingabe 3× |
-| 9a | `discord` | optional ([14 §14](14-discord.md#14-einrichtung)): „Discord-Bot einrichten? [j/N]“ → Token verdeckt (stdin) → Prüfung gegen die Discord-API, App-Besitzer als Owner, Warnungen (Public Bot an / Message Content aus) → Token zeilenweise in `passwords.txt`, `discord.enabled = true` → Einladungslinks. Mit `--non-interactive` übersprungen (Token nur über die Datei) | Token 3× ungültig → Phase überspringen, Hinweis (kein Abbruch) |
+| 9a | `discord` | optional ([14 §14](14-discord.md#14-einrichtung)): „Discord-Bot einrichten? [j/N]“ → Token verdeckt (stdin) → Prüfung gegen die Discord-API, App-Besitzer als Owner, Warnungen (Public Bot an / Message Content aus) → Token zeilenweise in `passwords.txt`, `discord.enabled = true` → Einladungslinks → **Standard-Textkanal**: ID eingeben oder (Enter) aus der Liste der Textkanäle wählen, geprüft, als `channel_id` in `passwords.txt` → Testnachricht in den Kanal. Mit `--non-interactive` übersprungen (Token nur über die Datei) | Token 3× ungültig → Phase überspringen, Hinweis (kein Abbruch) |
 | 10 | `config` | `config/moritz-agent.toml` aus Example erzeugen, falls fehlt; Fragen: LXC-IP für Zertifikat, RTP-Portbereich, Telefon-Einstellungen (Begrüßung, Stimme); Zeitzone `Europe/Berlin` | – |
 | 11 | `tls` | Selbst signiertes Zertifikat nach `runtime/tls/` (`openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -days 3650`, SAN = IP + Hostname), Fingerprint anzeigen (ADR-022) | – |
 | 12 | `prompts` | Ansagen-Cache erzeugen (P1-13) | TTS-Fehler |
@@ -62,8 +62,9 @@ Anforderungen: INST-01…15, UPD-01…07, CFG-01…10.
 - **Discord:** Auswahl `[1] jetzt einrichten  [2] später`. Bei 1: Kurzanleitung Developer Portal
   (Public Bot aus, Message Content an), Token mit `read -rs` (kein Echo, per stdin an
   `moritz_agent.setup set-discord-token`), Anzeige des Bot-Namens, Auswahl des Owners bei Team-Apps,
-  Einladungslinks für Server- und Benutzer-Installation, optional Avatar/Name setzen. Bei 2: leerer
-  `bot_token`, `discord.enabled = false`.
+  Einladungslinks für Server- und Benutzer-Installation, dann Standard-Textkanal (ID eingeben oder aus
+  der Liste wählen, sobald Nikita im Server ist; `set-discord-channel` per stdin), optional Avatar,
+  Banner und Bio setzen. Bei 2: leere `bot_token`/`channel_id`, `discord.enabled = false`.
 - **SIP:** keine Abfrage bei Ersteinrichtung (Startwerte aus Vorlage). Warnung bei
   `password = agent`. Option `--reconfigure-sip` für spätere interaktive Änderung.
 
@@ -77,7 +78,7 @@ Anforderungen: INST-01…15, UPD-01…07, CFG-01…10.
 | 4 | `fetch` | **entfällt (ADR-028):** das neue Programm liegt schon im Staging-Verzeichnis des Containers (vom Host kopiert); angezeigt wird Version alt → neu. Wer einen bestimmten Stand will, checkt ihn vor `update.sh` im Programmordner aus. |
 | 5 | `stop` | Dienst stoppen (Phone sendet vorher BYE – es ist aber durch Drain kein Anruf aktiv) |
 | 6 | `apply` | Checkout; neues venv `runtime/venv.new`, Lock-Dateien installieren; PJSIP/KoboldCPP/SearXNG nur bei geändertem Versions-Hash neu bauen |
-| 7 | `migrate` | `moritz_agent.setup migrate`: fehlende TXT-Felder zeilenbasiert anhängen (u. a. Abschnitt `[discord]` mit leerem `bot_token` – Discord bleibt dann aus, keine Abfrage) (bestehende Werte, Kommentare, Reihenfolge byte-identisch); neue **Pflicht**-Zugangsdaten interaktiv abfragen, im `--non-interactive`-Modus Exit-Code 78; neue TOML-Schlüssel ergänzen; DB-Migrationen; neue Modelle laden; Ansagen-Cache aktualisieren |
+| 7 | `migrate` | `moritz_agent.setup migrate`: fehlende TXT-Felder zeilenbasiert anhängen (u. a. Abschnitt `[discord]` mit leerem `bot_token` und `channel_id` – Discord bleibt dann aus, keine Abfrage) (bestehende Werte, Kommentare, Reihenfolge byte-identisch); neue **Pflicht**-Zugangsdaten interaktiv abfragen, im `--non-interactive`-Modus Exit-Code 78; neue TOML-Schlüssel ergänzen; DB-Migrationen; neue Modelle laden; Ansagen-Cache aktualisieren |
 | 8 | `switch` | `runtime/venv` → `runtime/venv.prev`, `venv.new` → `venv` (Rename) |
 | 9 | `start+verify` | Dienst starten, Health je Komponente (Timeout 180 s, LLM-Ladezeit) |
 | 10 | `rollback` (bei Fehler in 6–9) | alten Commit auschecken, `venv.prev` zurück, Backups von TXT/TOML/DB zurückspielen, Dienst starten, Ergebnis klar melden (Exit-Code 70) |

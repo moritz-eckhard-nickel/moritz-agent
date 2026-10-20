@@ -57,7 +57,7 @@ Durchführung auf Sophie-1, Ergebnis in `docs/abnahme/part1-<datum>.md`.
 | 11 | Ohne Sandbox | Sandbox-VM aus → Telefon voll funktionsfähig | – | ☐ |
 | 12 | Dauerlauf | 30 Anrufe in Folge, kein Neustart nötig (NFR-04) | Fehlerquote | ☐ |
 | 13 | Sofortauskünfte | Abnahme nach [13 §17](13-sofortauskuenfte.md#17-abnahme-am-telefon): Wetter ohne Ort = Weilburg 35781, PLZ/Ort genannt, Folgefragen, Netz weg → ehrlich, Kalender/Rechnen korrekt | Latenz Cache/Netz | ☐ |
-| 14 | Discord | Abnahme nach [14 §21](14-discord.md#21-abnahme): Setup mit Token, DM/Befehle/Benutzer-App, Fremde ignoriert, Sprachkanal (bzw. „nur sprechen“), Telefon parallel unbeeinträchtigt, kein Token in Logs | Latenz Text/Sprache | ☐ |
+| 14 | Discord | Abnahme nach [14 §21](14-discord.md#21-abnahme): Setup mit Token, Standardkanal/DM/Befehle/Benutzer-App, Fremde ignoriert, `/joinvc` wie ein Anruf (bzw. „nur sprechen“), süßer Stil und Aktivitäten, Telefon parallel unbeeinträchtigt, kein Token in Logs | Latenz Text/Sprache | ☐ |
 
 ## 4. Latenz-Messprotokoll (je Turn, aus LOG-03)
 

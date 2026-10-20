@@ -89,7 +89,7 @@ Der Originalplan bleibt unverändert als Referenz.
 ## 2a. Discord (DISCORD)
 
 Nikita als Discord-Bot mit allen Funktionen (Moritz, 20.10.2026). Plan: [14-discord.md](14-discord.md);
-Tickets P1-31 … P1-42 (Block D in [04](04-part1-umsetzung.md)); Entscheidungen ADR-033 … ADR-036.
+Tickets P1-31 … P1-43 (Block D in [04](04-part1-umsetzung.md)); Entscheidungen ADR-033 … ADR-037.
 
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
@@ -105,7 +105,7 @@ Tickets P1-31 … P1-42 (Block D in [04](04-part1-umsetzung.md)); Entscheidungen
 | DISCORD-10 | Telefon hat Vorrang: Discord-Worker mit niedrigerer CPU-Priorität; LLM-Warteschlange `PHONE > VOICE > INTERACTIVE > BACKGROUND`. | MUSS | 1 |
 | DISCORD-11 | Kein eingehender Port: nur ausgehende Verbindungen (Gateway/REST/CDN über TCP 443, Sprache über UDP). | MUSS | 1 |
 | DISCORD-12 | **Kanal-Parität:** jede Nikita-Funktion ist auf Discord verfügbar (Matrix [14 §6](14-discord.md#6-funktionsumfang-alle-funktionen-auf-allen-kanälen)); neue Funktionen bringen ihre Discord-Form im selben Ticket mit oder begründen die Ausnahme. | MUSS | 1–1.1+ |
-| DISCORD-13 | Text: Nikita antwortet in DMs, bei Erwähnung, auf Antworten an sie, in ihren Threads, in Nikita-Kanälen und auf „Nikita, …“ am Satzanfang – nur freigegebenen Personen. | MUSS | 1 |
+| DISCORD-13 | Text: Im **Standard-Textkanal** (ID `[discord] channel_id` in `passwords.txt`, beim Setup abgefragt) und in DMs antwortet Nikita auf jede Nachricht freigegebener Personen ohne Erwähnung; sonst bei Erwähnung, auf Antworten an sie, in ihren Threads, in weiteren Nikita-Kanälen und auf „Nikita, …“ am Satzanfang. | MUSS | 1 |
 | DISCORD-14 | Alle Sofortauskünfte ([13](13-sofortauskuenfte.md)) als Text und als Slash-Befehl; Ausgabe als Karte mit Quelle und Lizenz in der Fußzeile. | MUSS | 1 |
 | DISCORD-15 | Rückfragen des Kerns erscheinen als Auswahlliste, Folgeaktionen als Knöpfe; beides zustandslos und neustartfest. | MUSS | 1 |
 | DISCORD-16 | Slash-Befehle laut [14 §7](14-discord.md#7-befehle-slash-befehle-kontextmenüs-autovervollständigung); registriert werden nur aktive Funktionen; Autovervollständigung für Orte/PLZ. | MUSS | 1 |
@@ -114,8 +114,8 @@ Tickets P1-31 … P1-42 (Block D in [04](04-part1-umsetzung.md)); Entscheidungen
 | DISCORD-19 | Antworten halten Discords Grenzen ein (Aufteilen an Absätzen, Datei ab Grenze, Embed-Grenzen); `allowed_mentions` pingt nie `@everyone`, `@here` oder Rollen. | MUSS | 1 |
 | DISCORD-20 | Ausgabefilter: keine Secrets, keine internen Details in Serverkanälen; Admin- und persönliche Inhalte nur im DM oder nur für den Aufrufer sichtbar. | MUSS | 1 |
 | DISCORD-21 | Rate-Limits je Rolle, Eingabe- und Anhangsgrenzen; Anhänge nur vom Discord-CDN, nie ausgeführt, nicht dauerhaft gespeichert. | MUSS | 1 |
-| DISCORD-22 | Sprachkanal: `/komm`, `/geh`, optional automatisch beim Betreten durch den Owner; höchstens eine Sitzung; Verlassen bei Leere, Zeitlimit oder Wartung. | SOLL | 1 |
-| DISCORD-23 | Sprachkanal-Gespräch mit DAVE: nur freigegebenen Personen zuhören, VAD je Sprecher, Weckwort „Nikita“ bei mehreren Personen, Antwort mit Nikitas Stimme, Unterbrechen ≤ 300 ms. | SOLL | 1 |
+| DISCORD-22 | Sprachkanal: `/joinvc` (Kanal von Moritz, sonst Standard-Sprachkanal) und `/leavevc`, optional automatisch beim Betreten durch den Owner; höchstens eine Sitzung; Verlassen nach Abschied, ohne Menschen nach 10 min, bei Höchstdauer oder Wartung. | SOLL | 1 |
+| DISCORD-23 | Sprachkanal **wie im Anruf**: Betritt Moritz den Kanal (oder ist schon da), läuft derselbe Gesprächsablauf wie am Telefon (`CallSession` über eine gemeinsame `MediaChannel`-Schnittstelle): Begrüßung, Zuhören, Antworten mit Nikitas Stimme, Stille-Nachfrage, Rückfragen, Abschied; Verlassen des Kanals = Auflegen. Kein Weckwort und keine Sprecherauswahl (Privatserver), Unterbrechen ≤ 300 ms, DAVE. | SOLL | 1 |
 | DISCORD-24 | Ist DAVE-Empfang nicht stabil (Spike P1-32), läuft der Sprachkanal im Modus „nur sprechen“ (Text oder Sprachnachricht rein, Sprache raus); die Entscheidung ist dokumentiert (ADR-036). | MUSS | 1 |
 | DISCORD-25 | Kein Audio wird gespeichert, Puffer nur im RAM; Whisper/Piper im Discord-Worker nur während Sprachsitzungen geladen. | MUSS | 1 |
 | DISCORD-26 | Sprachnachrichten: Transkript sichtbar + Antwort; Antwort optional als Sprachnachricht bzw. Audiodatei mit Nikitas Stimme. | SOLL | 1 |
@@ -124,7 +124,7 @@ Tickets P1-31 … P1-42 (Block D in [04](04-part1-umsetzung.md)); Entscheidungen
 | DISCORD-29 | Persönliche Einstellungen je Person (Heimatort, Ruhezeit, Sprachantwort); ohne Einstellung gilt 35781 Weilburg. | SOLL | 1 |
 | DISCORD-30 | Telefon ↔ Discord: Anrufstatus ohne Inhalte; Anrufhinweise, Themen oder Transkript nur per Schalter (Standard aus); „schick mir das auf Discord“ vom Telefon. | SOLL | 1 |
 | DISCORD-31 | Admin-Befehle nur für den Owner, nur im DM/nur für ihn sichtbar, Zustandsänderungen mit Bestätigungsknopf (+ optionale PIN aus `passwords.txt`); nie Shell, Updates, Dateizugriff oder Secrets. | MUSS | 1 |
-| DISCORD-32 | Präsenzstatus („hört auf 999“, „im Gespräch“, optional Wetter). | KANN | 1 |
+| DISCORD-32 | Präsenz: schelmische, rotierende Aktivitäten (DISCORD-44) und lagebezogene Aktivitäten (Anruf, Sprachkanal, Nacht, Wetter, Sonderdaten, Wartung). | SOLL | 1 |
 | DISCORD-33 | Der Wartungsmodus (`data/run/drain`) gilt auch für Discord (keine neuen Sprachsitzungen, Hinweis bei Text). | MUSS | 1 |
 | DISCORD-34 | Reaktionen 👍/👎 auf Antworten fließen als Feedback in die Statistik. | KANN | 1 |
 | DISCORD-35 | Datenschutz: Transkripte, Notizen und Gedächtnis gehen nur per ausdrücklichem Schalter zu Discord; `/hilfe datenschutz` erklärt das. | MUSS | 1 |
@@ -135,19 +135,24 @@ Tickets P1-31 … P1-42 (Block D in [04](04-part1-umsetzung.md)); Entscheidungen
 | DISCORD-40 | Lange Aufgaben (Recherche, Hintergrundaufgaben, Coding) laufen in eigenen Threads mit Fortschrittsanzeige. | SOLL | 3–9 |
 | DISCORD-41 | Sandbox- und Browser-Funktionen über Discord nur für den Owner und mit Bestätigung je riskanter Aktion (SBX-05 sinngemäß). | MUSS | 4/6 |
 | DISCORD-42 | Bot-Name „Nikita“ und Avatar aus `assets/branding/` (Scribbles), erzeugt mit `scripts/build_branding.py` (PRD-08, PRD-10). | SOLL | 1 |
+| DISCORD-43 | **Süßer Stil** („cutey“, `discord.style = "cute"`): herzlicher, verspielter Ton mit höchstens 1–2 Emojis und gelegentlichen Kaomojis; Fakten unverändert; Ernst-Modus ohne Späße bei Warnungen ab Stufe 2, Katastrophen, Admin, Sicherheit und Fehlern mit Datenverlust; gesprochene Antworten wie am Telefon. Bio und Avatar (Scribbles monochrom) passend. | SOLL | 1 |
+| DISCORD-44 | **Aktivitäten:** Grundliste schelmisch-lustiger Aktivitäten („Spielt mit deinen Daten 😈“, …) in `assets/data/discord/aktivitaeten.de.toml`, Wechsel alle 7–15 min ohne Wiederholung unter den letzten 10; keine Texte, die wie echte Vorfälle wirken; `/aktivitaet neu\|aus\|an\|vorschlag`. | SOLL | 1 |
+| DISCORD-45 | Der Standard-Textkanal wird beim Setup per ID oder Auswahlliste festgelegt (geprüft: existiert, Nikita darf schreiben) oder direkt in `passwords.txt` eingetragen; sein Server ist automatisch erlaubt; fehlt er, läuft Nikita ohne ihn weiter (Abos per DM, Hinweis im Status). | MUSS | 1 |
+| DISCORD-46 | Privatserver-Annahme: keine Sprecher- oder Personenauswahl im Gespräch; Fremde werden als Sicherheitsnetz trotzdem ignoriert und einmal im Standardkanal gemeldet. | MUSS | 1 |
+| DISCORD-47 | Proaktive Nachrichten, Erinnerungen und Hinweise landen im Standardkanal (`discord.notify.target = "channel"`, wahlweise DM); Nikita meldet sich nach dem Start dort (abschaltbar). | SOLL | 1 |
 
 ## 3. Konfiguration & Zugangsdaten (CFG)
 
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
 | CFG-01 | Alle Zugangsdaten zentral in `<app>/passwords.txt` (INI). Keine Zugangsdaten im Code. | MUSS | 1 |
-| CFG-02 | Startinhalt exakt wie im Originalplan (Sektionen `sip`, `web_login`, `sandbox_ssh`, `optional_services`); ab Block D zusätzlich `discord` (angehängt, [14 §14.2](14-discord.md#142-setup-in-moritz-agent)). Vorlage: [`config/passwords.template.txt`](../../config/passwords.template.txt). | MUSS | 1 |
+| CFG-02 | Startinhalt exakt wie im Originalplan (Sektionen `sip`, `web_login`, `sandbox_ssh`, `optional_services`); ab Block D zusätzlich `discord` mit `bot_token`, `channel_id`, `admin_pin` (angehängt, [14 §14.2](14-discord.md#142-setup-in-moritz-agent)). Vorlage: [`config/passwords.template.txt`](../../config/passwords.template.txt). | MUSS | 1 |
 | CFG-03 | Parser liest die Datei als **Daten** (`configparser`, `interpolation=None`); niemals `source`/`eval`. Sonder- und Prozentzeichen bleiben erhalten. | MUSS | 1 |
 | CFG-04 | Leere Web-/SSH-Werte sind keine nutzbaren Zugänge. Web-Login wird erst mit gültigen Werten aktiviert. | MUSS | 1 |
 | CFG-05 | Änderungen werden über kontrollierten Reload (API/Signal) oder Neustart übernommen; ungültige Konfiguration wird mit verständlicher Meldung **abgelehnt**, der alte gültige Stand bleibt aktiv. | MUSS | 1 |
 | CFG-06 | Dateirechte `0600`, Besitzer Dienstbenutzer. Nie über Webserver, Downloads, Tool-Dateizugriff oder Diagnosearchive ausliefern. Start mit zu offenen Rechten → Warnung + automatische Korrektur, wenn möglich. | MUSS | 1 |
 | CFG-07 | `passwords.txt` und Sicherungen (`passwords.txt.*`, `backups/`) stehen in `.gitignore`. | MUSS | 1 |
-| CFG-08 | Nicht geheime Einstellungen (Zeitzone, Begrüßungstext, Stimme, Sprache, RTP-Ports, Timeouts, Modellpfade) in `config/moritz-agent.toml`. SIP-Daten **nur** in der TXT. | MUSS | 1 |
+| CFG-08 | Nicht geheime Einstellungen (Zeitzone, Begrüßungstext, Stimme, Sprache, RTP-Ports, Timeouts, Modellpfade) in `config/moritz-agent.toml`. SIP-Daten **nur** in der TXT; ebenso die Discord-Grunddaten Token und Standardkanal-ID (Moritz’ Wunsch: „beim Setup oder in der TXT“). | MUSS | 1 |
 | CFG-09 | Neue Felder werden beim Update ergänzt, ohne Formatierung/Kommentare/bestehende Werte der TXT zu verändern (zeilenbasiertes Anhängen, kein Neu-Serialisieren). | MUSS | 1 |
 | CFG-10 | Werte mit führenden/abschließenden Leerzeichen werden nicht unterstützt (INI-Grenze) – dokumentiert und bei Eingabe im Installer abgefangen. | MUSS | 1 |
 

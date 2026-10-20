@@ -1,12 +1,18 @@
 # 14 – Discord: Nikita als Discord-Bot mit allen Funktionen
 
-Stand: 20.10.2026 · Tickets: [04 Block D](04-part1-umsetzung.md#block-d--discord-bot) (P1-31 … P1-42) ·
-Anforderungen: [01 §2a](01-anforderungen.md#2a-discord-discord) (DISCORD-01 … DISCORD-42) ·
-Entscheidungen: ADR-033 … ADR-036 ([03](03-entscheidungen.md)).
+Stand: 20.10.2026 · Tickets: [04 Block D](04-part1-umsetzung.md#block-d--discord-bot) (P1-31 … P1-43) ·
+Anforderungen: [01 §2a](01-anforderungen.md#2a-discord-discord) (DISCORD-01 … DISCORD-47) ·
+Entscheidungen: ADR-033 … ADR-037 ([03](03-entscheidungen.md)).
 
 > Moritz, 20.10.2026: „Plane bitte noch für Step One eine KOMPLETTE Discord-User-Integration mit ALLEN
 > FEATURES, die Nikita jemals hat, und mach ihn zu einem Bot. Beim Setup gibt man dann den Token ein –
 > oder auch in die TXT mit den Sachen. Plane auch mal wieder nur.“
+>
+> Nachtrag, 20.10.2026: „Mache den User bitte bissl cutey. Alles muss gehen in der Zukunft. Er soll
+> als Aktivitäten coole Sachen haben wie ‚spielt mit deinen Daten‘ – schelmisch, funny. Ein
+> Standard-Textkanal für alles braucht auch eine ID, die man beim Setup oder in der TXT angibt. Mit
+> `/joinvc` kann er dem Sprachkanal beitreten und verhält sich dann wie im Anruf, sobald ein anderer
+> User dem Kanal beitritt – das ist ein Server mit dem User und ihm, also gibt es kein ‚welcher User‘.“
 
 **Ziel:** Nikita ist neben dem Telefon (999) und der WebUI auch auf **Discord** erreichbar – als
 offizieller **Bot** (kein Benutzerkonto), den man in eigene Server einlädt **und** als
@@ -58,14 +64,27 @@ Inhalt: [1 Leitlinien](#1-leitlinien) · [2 So sieht das aus](#2-so-sieht-das-au
 9. **Ehrlich und deterministisch wie am Telefon.** Uhrzeit-Garantie (AGENT-06), Wetter-Garantie
    (AGENT-11) und „nichts erfinden“ (SKILL-02) gelten auf Discord genauso; Quellen stehen auf
    Discord immer als Link dabei.
+10. **Privatserver: Moritz + Nikita.** Nikitas Server ist ein privater Server, auf dem nur Moritz und
+    Nikita sind. Es gibt einen **Standard-Textkanal für alles** (ID beim Setup oder in
+    `passwords.txt`): dort antwortet Nikita auf jede Nachricht ohne Erwähnung, und dort landen
+    Erinnerungen, Warnungen und Hinweise. Im Sprachkanal gibt es **keine Sprecherauswahl und kein
+    Weckwort** – wer mit Nikita im Kanal ist, ist „der Anrufer“ (§9). Die Allowlist bleibt nur als
+    Sicherheitsnetz, falls doch einmal jemand Fremdes auf den Server kommt (ADR-035).
+11. **Ein bisschen süß.** Auf Discord ist Nikita „cutey“: verspielter Ton, kleine Emojis und
+    Kaomojis, schelmische Aktivitäten („Spielt mit deinen Daten 😈“). Die Fakten bleiben exakt, bei
+    Unwettern, Fehlern und Admin-Sachen ist Schluss mit lustig (§8.2, §8.5, ADR-037).
+12. **Alles muss gehen – auch in Zukunft.** Kanal-Parität ist Pflicht für jedes künftige Ticket (§6).
 
 ## 2. So sieht das aus
 
 ```text
-Direktnachricht an Nikita
+Mitgliederliste:  🟢 Nikita ✨   Spielt mit deinen Daten 😈        (Aktivität wechselt alle paar Minuten, §8.5)
+
+Standard-Textkanal #nikita (keine Erwähnung nötig)
   Moritz:  wie isses wedder morsche?
-  Nikita:  ┌ Wetter morgen in Weilburg ─────────────────────────┐
-           │ Montag, 21. Oktober · wechselhaft · 8 bis 13 °C    │
+  Nikita:  Morgen wird’s in Weilburg ein bisschen ungemütlich ☔ (｡•́︿•̀｡)
+           ┌ Wetter morgen in Weilburg ─────────────────────────┐
+           │ Mittwoch, 21. Oktober · wechselhaft · 8 bis 13 °C  │
            │ 🌧 Regen 70 % (vormittags) · 💨 Böen 45 km/h SW     │
            │ Wetterdaten: Open-Meteo.com (CC BY 4.0) · DWD      │
            └────────────────────────────────────────────────────┘
@@ -76,21 +95,29 @@ Slash-Befehl in einem beliebigen Chat (Benutzer-App)
 
 Mehrdeutig
   Moritz:  wetter in neustadt
-  Nikita:  Welches Neustadt meinst du?   [Auswahl: Neustadt (Hessen) · Neustadt an der Weinstraße · …]
+  Nikita:  Uii, da gibt’s mehrere 👀 Welches Neustadt meinst du?
+           [Auswahl: Neustadt (Hessen) · Neustadt an der Weinstraße · …]
 
-Sprachkanal (Moritz tippt /komm)
-  Nikita (spricht):  Guude, ich bin da.
-  Moritz (spricht):  Nikita, wann geht die Sonne unter?
+Sprachkanal – „wie im Anruf“ (§9)
+  Moritz:  /joinvc
+  Nikita:  Bin unterwegs in 🔊 Quatschecke ✨                (Text)
+  … Moritz ist im Sprachkanal →
+  Nikita (spricht):  Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?
+  Moritz (spricht):  Wann geht die Sonne unter?              (kein „Nikita, …“ nötig)
   Nikita (spricht):  Heute geht in Weilburg die Sonne um 18 Uhr 17 unter.
+  Moritz (spricht):  Danke, tschüss.
+  Nikita (spricht):  Alles klar, bis bald!                    (Gespräch zu Ende wie beim Auflegen)
 
 Sprachnachricht
   Moritz schickt 🎤 0:04 „Wie viele Tage noch bis Weihnachten?“
-  Nikita:  „Noch 65 Tage bis Heiligabend.“  (+ auf Wunsch als Sprachnachricht mit Nikitas Stimme)
+  Nikita:  🎤 *Wie viele Tage noch bis Weihnachten?*
+           Noch 65 Tage bis Heiligabend 🎄✨  (+ auf Wunsch als Sprachnachricht mit Nikitas Stimme)
 
-Proaktiv (abonniert)
-  Nikita (DM, 06:45):  Guten Morgen! Heute ist Dienstag, der 22. Oktober. In Weilburg bewölkt bis 12 °C,
-                       ab Mittag Regen. Morgen wird die Biotonne abgeholt.
-  Nikita (DM, sofort): ⚠️ Unwetterwarnung für Weilburg: Sturmböen bis 85 km/h, bis heute 22 Uhr. [Details]
+Proaktiv im Standardkanal (abonniert)
+  Nikita (06:45):  Guten Morgen, Moritz ☀️ Heute ist Donnerstag, der 22. Oktober. In Weilburg bewölkt bis
+                   12 °C, ab Mittag Regen. Morgen wird die Biotonne abgeholt 🗑️
+  Nikita (sofort): ⚠️ Unwetterwarnung für Weilburg: Sturmböen bis 85 km/h, bis heute 22 Uhr. [Details]
+                   (ernst, ohne Späße)
 ```
 
 Alle Werte sind Beispiele; die echten kommen aus den Quellen in [13 §7](13-sofortauskuenfte.md#7-wetter-im-detail).
@@ -171,7 +198,9 @@ moritz_agent/discord/
 │   ├── pipeline.py    48 kHz Stereo ↔ 16 kHz Mono, VAD je Benutzer, STT, TTS (gemeinsame Audio-Bausteine aus phone/audio)
 │   └── playback.py    TTS/Ansagen → 48 kHz Stereo → Opus → Discord
 ├── voice_messages.py  Sprachnachrichten empfangen/senden
-├── notify.py          proaktive Nachrichten, Erinnerungen, ruhige Zeiten, Drosselung
+├── notify.py          proaktive Nachrichten, Erinnerungen, ruhige Zeiten, Drosselung (Ziel: Standardkanal)
+├── style.py           süßer Stil: Emojis, Kaomojis, Floskeln, Ernst-Modus (§8.2)
+├── activities.py      rotierende schelmische Aktivitäten + lagebezogene (§8.5)
 ├── admin.py           Owner-Befehle mit Bestätigung
 └── setup.py           Token prüfen, App-Infos lesen, Einladungslinks, Avatar
 ```
@@ -179,13 +208,14 @@ moritz_agent/discord/
 ### 4.3 Ablauf einer Textnachricht
 
 1. Ereignis `message` → **Filter**: eigener Bot? anderer Bot? (beides ignorieren) · Principal aus
-   Allowlist? · Ort erlaubt (DM, freigegebener Server/Kanal, Thread von Nikita)? · angesprochen
-   (DM, Erwähnung, Antwort auf Nikita, Nikita-Kanal, „Nikita, …“ am Satzanfang)? Sonst: nichts tun.
+   Allowlist? · Ort erlaubt (Standardkanal, DM, freigegebener Server/Kanal, Thread von Nikita)? ·
+   angesprochen (Standardkanal und DM: immer; sonst Erwähnung, Antwort auf Nikita, Nikita-Thread,
+   weiterer Nikita-Kanal, „Nikita, …“ am Satzanfang)? Sonst: nichts tun.
 2. **Rate-Limit** je Person (§5.4); Tippanzeige an.
 3. Sitzung laden (DM/Kanal/Thread), Anhänge prüfen (§5.5), Text normalisieren.
 4. **Kern-Turn** mit `surface = chat`: Skill-Router → (ab P1-09) Agent. Lange LLM-Antworten werden
    gestreamt: erste Nachricht nach dem ersten Satz, danach höchstens jede 1,2 s bearbeitet.
-5. **Rendern** (§8): Text/Markdown, Embed-Karte, Knöpfe für Folgeaktionen, Quellenlinks, Aufteilen
+5. **Rendern** (§8) im süßen Stil (§8.2): Text/Markdown, Embed-Karte, Knöpfe für Folgeaktionen, Quellenlinks, Aufteilen
    oder Datei.
 6. Protokoll `[Discord]` (Kanaltyp, Rolle, Skill/Agent, Dauer, Fehler – ohne Inhalt) und Turn in der
    Datenbank (Text nur bei `storage.store_transcripts`, 24 h, STORE-02).
@@ -201,7 +231,7 @@ zustandslosen `custom_id` (z. B. `w:day:+1:p=35781`), funktionieren also auch na
 
 ```text
 Discord-Voice (UDP, DAVE) ─► je Sprecher: entschlüsseln ─► Opus → PCM 48 kHz Stereo ─► Mono 16 kHz
-   ─► VAD je Sprecher ─► Whisper ─► angesprochen? ─► Kern (surface = spoken) ─► Piper ─► 48 kHz Stereo ─► Opus ─► Discord
+   ─► VAD ─► Whisper ─► CallSession wie am Telefon (§9.1) ─► Kern (surface = spoken) ─► Piper ─► 48 kHz Stereo ─► Opus ─► Discord
 ```
 
 ## 5. Zugriff und Sicherheit
@@ -222,12 +252,22 @@ Owner sieht).
 
 ### 5.2 Orte
 
-- **Direktnachrichten:** Owner und Vertraute.
-- **Server:** nur `discord.allowed_guild_ids`. Wird Nikita in einen anderen Server geholt (sollte
-  bei „Public Bot = aus“ nicht gehen), verlässt sie ihn sofort und meldet das dem Owner.
-- **Kanäle:** in erlaubten Servern antwortet Nikita auf Erwähnung, auf Antworten auf ihre
-  Nachrichten, in ihren Threads und in `discord.chat_channel_ids` auf jede Nachricht freigegebener
-  Personen.
+- **Standard-Textkanal** (`[discord] channel_id` in `passwords.txt`, beim Setup abgefragt): Nikitas
+  Zuhause. Dort antwortet sie auf **jede** Nachricht von Moritz (keine Erwähnung nötig), dort landen
+  Erinnerungen, Abos, Anruf- und Systemhinweise, dort meldet sie sich nach dem Start („Bin wieder
+  wach ✨“, abschaltbar). Der Server dieses Kanals ist automatisch erlaubt – eine eigene Server-ID
+  muss man nicht angeben.
+- **Direktnachrichten:** Owner und Vertraute (alles, was im Standardkanal geht).
+- **Server:** der Server des Standardkanals plus optional `discord.allowed_guild_ids`. Wird Nikita in
+  einen anderen Server geholt (sollte bei „Public Bot = aus“ nicht gehen), verlässt sie ihn sofort
+  und meldet das im Standardkanal.
+- **Weitere Kanäle:** in erlaubten Servern antwortet Nikita auf Erwähnung, auf Antworten auf ihre
+  Nachrichten, in ihren Threads und in `discord.chat_channel_ids` (optional) auf jede Nachricht
+  freigegebener Personen.
+- **Privatserver-Annahme:** Auf dem Server sind nur Moritz und Nikita. Deshalb entscheidet Nikita
+  nicht, „wer gemeint ist“ – sie redet mit dem Menschen, der da ist. Taucht doch eine fremde Person
+  auf (nicht Owner/Vertraut), ignoriert Nikita sie und schreibt einmal einen Hinweis in den
+  Standardkanal („Psst, da ist jemand Neues auf dem Server 👀 – mit dem rede ich nicht.“).
 - **Benutzer-App** (Befehle in fremden Servern/DMs): nur Owner und Vertraute; Antworten dort
   standardmäßig nur für den Aufrufer sichtbar (fremde Server erlauben externe Apps oft nicht öffentlich).
 
@@ -304,7 +344,8 @@ wann die Funktion überhaupt existiert; auf Discord kommt sie im selben Ticket d
 | Freie Fragen an das Sprachmodell | 1 (P1-09) | ✅ | ✅ | ✅ `/frag` | ✅ | Markdown, längere Antworten, Streaming |
 | Websuche mit Quellen | 1 (P1-08/09) | ✅ | ✅ | ✅ `/suche` | ✅ | Quellen als Links |
 | Gesprächsfunktionen (wiederholen, langsamer, Status, Hilfe, Abschied) | 1 | ✅ | ✅ | ✅ `/hilfe` | ✅ | „langsamer“ wirkt in der Sprachsitzung |
-| Sprachkanal-Gespräch | 1 (D) | – | – | ✅ `/komm` `/geh` | ✅ | DAVE, Spike P1-32 |
+| Sprachkanal-Gespräch „wie im Anruf“ | 1 (D) | – | – | ✅ `/joinvc` `/leavevc` | ✅ | DAVE, Spike P1-32; gleicher Gesprächsablauf wie am Telefon |
+| Süßer Stil, schelmische Aktivitäten | 1 (D) | – (Telefonstimme bleibt) | ✅ | ✅ `/aktivitaet` | – | §8.2, §8.5 |
 | Sprachnachrichten | 1 (D) | – | ✅ | – | – | Antwort als Text und optional als Sprachnachricht |
 | Telefon-Status, Anrufhinweise | 1 (D) | – | ✅ | ✅ `/anrufe` | – | Hinweise nur mit Abo, Inhalte nur mit Schalter (§12) |
 | Admin: Status, Neu laden, Wartung, Logs, Version | 1 (D) | – | – | ✅ `/admin …` (Owner) | – | nur DM bzw. nur für Owner sichtbar, Bestätigung |
@@ -348,7 +389,8 @@ Beschreibung deutsch. Kontexte: **S** = Server-Installation, **DM** = Direktnach
 | `/briefing` | – | S DM U | O V | 1 |
 | `/abo` | `warnungen` an/aus/Stufe, `briefing` Uhrzeit/aus, `muell` an/aus, `anrufe` an/aus | DM U | O V | 1 |
 | `/einstellungen` | `heimatort` (PLZ/Ort), `ruhezeit`, `sprachantwort` | DM U | O V | 1 |
-| `/komm` · `/geh` | `kanal` (optional) | S | O V | 1 |
+| `/joinvc` · `/leavevc` | `kanal` (optional; Standard: der Sprachkanal, in dem Moritz gerade ist, sonst `discord.voice.default_channel_id`) | S | O V | 1 |
+| `/aktivitaet` | `neu` (sofort wechseln), `aus`/`an`, `vorschlag` (eigenen Spruch hinzufügen, Owner) | S DM | O | 1 |
 | `/anrufe` | – (Status, letzte Anrufe ohne Inhalt) | DM U | O | 1 |
 | `/hilfe` | `thema` (Befehle, Datenschutz, Sprache, Admin) | S DM U | alle | 1 |
 | `/admin status` · `neu-laden` · `wartung` · `logs` · `version` · `neustart` | je nach Befehl | DM | O | 1 |
@@ -390,11 +432,37 @@ was wirklich geht.
 - **Threads:** Recherche, Aufgaben, Coding und lange Gespräche in einem Kanal laufen in einem eigenen
   Thread („🔎 Recherche: …“), damit der Kanal sauber bleibt.
 
-### 8.2 Sprache und Stil
+### 8.2 Persönlichkeit: Nikita, ein bisschen süß (ADR-037)
 
-Deutsch, duzt, Nikita bleibt Nikita (männlich, hessischer Einschlag in Grüßen: „Guude!“). Keine
-Emoji-Flut: höchstens ein Emoji pro Kartenfeld, keines im Fließtext. Zahlen mit Einheiten als Ziffern
-(„12 °C“, nicht ausgeschrieben – textnorm gilt nur für gesprochene Ausgabe).
+Moritz: „Mache den User bitte bissl cutey.“ Auf Discord schreibt Nikita verspielt und herzlich – er
+bleibt Nikita (männlich, duzt, hessischer Einschlag: „Guude~ ✨“), aber mit Zucker obendrauf.
+Stil `discord.style = "cute"` (Standard) oder `"normal"`.
+
+| Regel | Beispiel |
+| --- | --- |
+| Kernaussage zuerst, sachlich korrekt – der Zucker kommt **drumherum**, nie in die Zahlen | „Noch 65 Tage bis Heiligabend 🎄✨“ |
+| höchstens 1–2 Emojis pro Nachricht, passend zum Inhalt (☀️ ☔ ❄️ 🌸 ✨ 🐾 👀 🙈 💤) | „Morgen wird’s sonnig ☀️“ |
+| ab und zu ein Kaomoji (etwa jede fünfte Nachricht, nie zweimal hintereinander) | „Hab ich notiert (｡•̀ᴗ-)✧“ |
+| kleine Ausrufe und Verkleinerungen sparsam: „uii“, „hihi“, „ein Momentchen“ | „Ein Momentchen, ich schau nach 👀“ |
+| Fehler charmant, aber klar | „Uff, an die Wetterdaten komm ich gerade nicht ran 🙈 Versuch’s gleich nochmal.“ |
+| Begrüßung/Abschied mit Herz | „Guude, Moritz ✨“ · „Bis bald 👋🐾“ |
+| **Ernst-Modus** (keine Emojis, keine Späße): Warnungen ab Stufe 2, Hochwasser/Katastrophe, Admin-Befehle, Sicherheitshinweise, Fehler mit Datenverlust | „⚠️ Unwetterwarnung für Weilburg: …“ (nur das Warnsymbol) |
+| Gesprochene Antworten (Sprachkanal) bleiben wie am Telefon: ohne Emojis, kurz, freundlich | – |
+
+Umsetzung: Die Kern-Antwort bleibt neutral; ein **Stil-Renderer** im Discord-Adapter ergänzt Emoji,
+Kaomoji und Floskeln aus eigenen Textlisten (`assets/data/discord/stil.de.toml`, MSOL) –
+deterministisch je Nachricht (Startwert aus Nachrichten-ID), damit Tests stabil sind. Beim LLM
+(ab P1-09) kommt eine Zeile in das Profil `discord_chat`: „Schreib herzlich und ein bisschen süß, mit
+höchstens einem Emoji; Fakten exakt; bei Warnungen und Fehlern sachlich.“ Zahlen mit Einheiten als
+Ziffern („12 °C“ – textnorm gilt nur für gesprochene Ausgabe). Reaktionen von Nikita: ✅ für
+Erledigtes, gelegentlich 💛 auf ein „Danke“.
+
+**Profil des Bots:** Name „Nikita“, Avatar = Scribbles **weiß auf dunklem, rundem Grund** (Branding-Regel
+„monochrom, nicht neu zeichnen“ – süß wird es über den Ton; eine extra niedliche Scribbles-Pose kann nur
+Moritz zeichnen, F-38), Banner = Scribbles-Muster monochrom; Bio („Über mich“):
+„Guude! Ich bin Nikita ✨ Moritz’ kleiner Helfer aus Weilburg – Telefon 999, Wetter, Uhrzeit & ganz viel
+Quatsch. Frag mich einfach 🐾“. Avatar und Banner erzeugt `scripts/build_branding.py`; das Setup lädt
+sie auf Wunsch hoch.
 
 ### 8.3 Reaktionen
 
@@ -409,30 +477,99 @@ Emoji-Flut: höchstens ein Emoji pro Kartenfeld, keines im Fließtext. Zahlen mi
 - Benutzer-App in fremden Servern: standardmäßig nur für den Aufrufer sichtbar; Option `oeffentlich:
   ja`, wenn der Server das zulässt.
 
-### 8.5 Präsenz
+### 8.5 Aktivitäten: schelmisch und funny (ADR-037)
 
-Nikitas Status: „🎧 hört auf 999“, während eines Anrufs „📞 im Gespräch“; optional
-(`discord.presence_weather`) „☁️ 12 °C in Weilburg“, alle 30 min aktualisiert.
+Moritz: „Er soll als Aktivitäten coole Sachen haben wie ‚spielt mit deinen Daten‘ – schelmisch,
+funny.“ Nikita zeigt in der Mitgliederliste und im Profil eine **Aktivität**, die alle 7–15 Minuten
+zufällig wechselt. Discord kennt dafür „Spielt …“, „Hört …“, „Schaut …“, „Tritt an in …“ und einen
+freien Status – alle werden genutzt.
+
+**Grundliste (rotiert, keine Wiederholung unter den letzten 10):**
+
+| Art | Aktivitäten |
+| --- | --- |
+| Spielt | mit deinen Daten 😈 · Verstecken mit deinen Bits · Tetris mit deinem RAM · Wetterfrosch 🐸 · Mikado mit Telefonkabeln · Schach gegen den Router (und verliert) · mit Scribbles 🐾 · Bingo mit Postleitzahlen · „Wer hat an der Uhr gedreht?“ · Kopf oder Zahl mit sich selbst |
+| Hört | deinem Kühlschrank zu · Ebbelwoi-Lofi 🎶 · dem Rauschen der Lahn · Hessisch für Fortgeschrittene · dem Lüfter beim Singen zu · Wettervorhersagen als Hörbuch |
+| Schaut | Wolken über Weilburg zu ☁️ · deinen Logs beim Wachsen zu · ob der Toast schon fertig ist · dir über die Schulter 👀 · dem Lahn-Pegel beim Steigen zu · Sekunden beim Vergehen zu |
+| Tritt an in | Wer zuerst die Uhrzeit sagt · Wetterraten-Weltmeisterschaft · Kopfrechnen gegen einen Taschenrechner · Langsamer-Sprechen-Wettbewerb |
+| Freier Status | 🍪 isst gerade deine Cookies · 🧠 denkt über die 42 nach · 🔌 hängt am Strom (wie immer) · 🧦 sucht die zweite Socke · 📎 sortiert Büroklammern nach Farbe |
+
+**Lagebezogen (hat Vorrang vor der Grundliste):**
+
+| Lage | Aktivität |
+| --- | --- |
+| Anruf an 999 läuft | 📞 Telefoniert gerade – psst! |
+| Sprachkanal-Gespräch läuft | 🎧 Quatscht mit Moritz im Sprachkanal |
+| Nachts (23–6 Uhr) | 💤 Träumt von Gigabytes · Zählt elektrische Schäfchen |
+| Regen / Schnee / Hitze ≥ 30 °C / Gewitter in Weilburg (aus dem Wetter-Cache) | Spielt im Regen ☔ · Baut einen Schneemann ⛄ · Schmilzt langsam 🫠 · Versteckt sich vorm Donner ⛈️ |
+| Unwetterwarnung ab Stufe 3 | ⚠️ Achtet auf das Unwetter in Weilburg (Ernst-Modus, keine Witze) |
+| Sonderdaten (13 §8.2) | Weihnachten: Packt Geschenke ein 🎁 · Halloween: Spukt in deinen Kabeln 👻 · Silvester: Zählt runter 🎆 · Ostern: Versteckt Eier im Dateisystem 🥚 · Fastnacht: Helau aus dem Serverraum 🎭 |
+| Start · Wartung/Update · Datendienst gestört | Wacht gerade auf ✨ · 🔧 Wird gerade frisch gemacht · Sucht das Internet 🔍 |
+
+**Regeln:**
+
+- Nur Spaß, der nicht beunruhigt: keine Texte, die wie ein echter Vorfall aussehen („hackt deinen
+  Server“, „Festplatte kaputt“), nichts über echte Personen, nichts Gemeines. Neue Sprüche gehen per PR
+  in `assets/data/discord/aktivitaeten.de.toml` (eigene Texte, MSOL) mit Art, Text und optionalen
+  Bedingungen (Uhrzeit, Datum, Wetterklasse, Systemlage).
+- `/aktivitaet neu` wechselt sofort, `/aktivitaet aus` zeigt nur noch „online“, `/aktivitaet vorschlag`
+  speichert einen eigenen Spruch des Owners lokal (`data/discord/aktivitaeten.local.toml`), der in die
+  Rotation kommt.
+- `/hilfe datenschutz` stellt klar: „Keine Sorge – ich spiele nicht wirklich mit deinen Daten 😇“.
+- Wechsel höchstens alle 5 Minuten (Discords Präsenz-Limits); bei Lagewechsel (Anruf beginnt) sofort.
 
 ## 9. Sprachkanal
 
-### 9.1 Betreten und Verlassen
+### 9.1 `/joinvc`: wie ein Anruf
 
-- `/komm` (Owner/Vertraute): Nikita betritt den Sprachkanal des Aufrufers (oder `kanal`). Optional
-  `discord.voice.auto_join_channel_ids`: Nikita kommt dazu, sobald der Owner einen davon betritt.
-- Verlässt den Kanal mit `/geh`, „Nikita, tschüss“, nach `idle_leave_s` (Standard 60 s) ohne
-  freigegebene Person, nach `max_session_minutes` (Standard 120) oder bei Wartung.
-- Höchstens **eine** Sprachsitzung gleichzeitig (über alle Server).
-- Begrüßung beim Betreten (kurz, gecacht): „Guude, ich bin da.“
+Moritz: „Mit `/joinvc` kann er dem Sprachkanal beitreten und verhält sich dann wie im Anruf, sobald ein
+anderer User dem Kanal beitritt.“ Der Sprachkanal läuft deshalb mit **demselben Gesprächsablauf wie
+das Telefon**: dieselbe `CallSession` und derselbe Zustandsautomat (`phone/dialogue.py`,
+`phone/state_machine.py`), nur mit einem anderen Medienweg. Dafür bekommen beide eine gemeinsame
+Schnittstelle `MediaChannel` (Audio rein in 16-kHz-Rahmen, Audio raus, „aufgelegt“-Ereignis) mit zwei
+Umsetzungen: SIP-Anruf und Discord-Sprachkanal (P1-36).
 
-### 9.2 Wem Nikita zuhört
+```text
+/joinvc ──► [Wartet]  Nikita sitzt still im Sprachkanal, Aktivität „🎧 Wartet im Sprachkanal“
+               │  Moritz ist schon da oder kommt dazu
+               ▼
+            [Im Gespräch]  = Anruf angenommen:
+               Begrüßung (gecacht, wie PHONE-21): „Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?“
+               zuhören (VAD) → Whisper → Sofortauskunft/Agent → Nikitas Stimme → wieder zuhören …
+               Zwischenansage nach 2,5 s · Rückfrage bei Unverständlichem · Unterbrechen erlaubt
+               │
+               ├─ Moritz verlässt den Sprachkanal ──► wie Auflegen: alles abbrechen, Kontext weg ──► [Wartet]
+               ├─ „Tschüss“, „Danke, das war’s“ ────► Abschied (gecacht) ──► Nikita verlässt den Kanal
+               │                                       (discord.voice.after_goodbye = "leave"; oder "stay")
+               ├─ Stille: „Bist du noch da?“ … weiter Stille ──► „Ich bin dann mal still. Sag einfach Nikita,
+               │                                       wenn du mich brauchst.“ ──► [Ruht]
+               │                                       (discord.voice.on_silence = "rest"; oder "leave" wie am Telefon)
+               └─ /leavevc, Wartung, Höchstdauer ──► Abschied ──► Nikita verlässt den Kanal
 
-- Nur freigegebenen Personen; Audio anderer wird verworfen, bevor es dekodiert wird (Zuordnung über
-  die Sprecher-Kennung des Pakets).
-- **Ansprechen:** Ist außer Nikita nur **eine** freigegebene Person im Kanal → jede Äußerung gilt.
-  Sonst nur Äußerungen, die mit „Nikita“ beginnen (unscharf erkannt: „Nikita“, „Nikida“, „Nikitta“ …)
-  und 8 s lang Folgeäußerungen derselben Person nach einer Antwort/Rückfrage
-  (`discord.voice.wake_word = "auto" | "always" | "never"`).
+[Ruht]  Nikita bleibt im Kanal und hört nur auf „Nikita …“ (unscharf: „Nikida“, „Nikitta“) → zurück in [Im Gespräch]
+        ohne neue Begrüßung („Ja?“). Niemand mehr da → [Wartet].
+[Wartet] länger als discord.voice.idle_leave_minutes (Standard 10) ohne Menschen → Nikita geht und schreibt es in den Standardkanal.
+```
+
+- `/joinvc [kanal]`: ohne Angabe der Sprachkanal, in dem Moritz gerade ist, sonst
+  `discord.voice.default_channel_id` (beim Setup abfragbar), sonst Rückfrage mit Auswahlliste.
+  Textantwort im Stil von §8.2: „Bin unterwegs in 🔊 Quatschecke ✨“.
+- Optional `discord.voice.auto_join = true`: Nikita kommt von selbst, sobald Moritz einen Sprachkanal
+  des Servers betritt (Standard aus, F-31).
+- Kein Klingeln: Nikita wartet nach dem Betreten von Moritz 1 s (Audio steht), dann kommt die Begrüßung.
+- Höchstens **eine** Sprachsitzung gleichzeitig (über alle Server); die Gesprächsparameter
+  (Stille-Zeiten, Rückfragen, Höchstdauer) sind dieselben wie am Telefon (`phone.*`) und lassen sich unter
+  `discord.voice` einzeln überschreiben.
+- Während eines Telefonats an 999 läuft das Discord-Gespräch weiter, Antworten können sich aber
+  verzögern (Telefon hat Vorrang, §9.4).
+
+### 9.2 Wem Nikita zuhört: kein „welcher User“
+
+- Privatserver (§5.2): Im Sprachkanal sind Moritz und Nikita – **jede Äußerung gilt Nikita**, wie am
+  Telefon. Kein Weckwort, keine Sprecherauswahl (das Weckwort gibt es nur zum Aufwecken aus [Ruht]).
+- Sicherheitsnetz: Audio von Personen, die nicht Owner/Vertraut sind, wird verworfen, bevor es
+  dekodiert wird (Zuordnung über die Sprecher-Kennung des Pakets); einmaliger Hinweis im Standardkanal.
+  Sind ausnahmsweise zwei freigegebene Personen da, hört Nikita beiden zu (Halbduplex wie am Telefon).
 - Text im integrierten Textchat des Sprachkanals funktioniert immer (auch als Rückfall, §9.5).
 
 ### 9.3 Audio-Kette
@@ -457,8 +594,8 @@ Nikitas Status: „🎧 hört auf 999“, während eines Anrufs „📞 im Gespr
 
 ### 9.4 Ressourcen und Vorrang
 
-- Whisper und Piper werden im Discord-Worker **erst beim ersten Betreten** eines Sprachkanals geladen
-  (5–15 s; währenddessen „Einen Moment, ich wache auf.“) und `unload_after_minutes` (Standard 10)
+- Whisper und Piper werden im Discord-Worker **erst bei `/joinvc`** geladen – meist sind sie fertig,
+  bevor Moritz im Kanal ist (5–15 s; sonst „Einen Moment, ich wache auf.“) und `unload_after_minutes` (Standard 10)
   nach der letzten Sitzung wieder freigegeben: + ≈ 1–1,5 GB RAM nur während Sprachsitzungen
   (06 §2.2).
 - CPU: Discord-Worker mit `nice +5`, Whisper mit `discord.voice.stt_threads` (Standard 4). Läuft
@@ -499,7 +636,9 @@ Nikitas Status: „🎧 hört auf 999“, während eines Anrufs „📞 im Gespr
 ## 11. Proaktive Nachrichten und Erinnerungen
 
 Discord-Nachrichten sind keine Anrufe – Nikita darf hier von sich aus schreiben, aber **nur mit Abo**
-(`/abo`, je Person) und in Ruhezeiten (Standard 22–7 Uhr) nur bei Unwettern ab Stufe 3.
+(`/abo`, je Person) und in Ruhezeiten (Standard 22–7 Uhr) nur bei Unwettern ab Stufe 3. Ziel ist der
+**Standard-Textkanal** (`discord.notify.target = "channel"`, mit Erwähnung von Moritz), wahlweise
+`"dm"`. Erinnerungen gehen dorthin, wo sie bestellt wurden.
 
 | Abo | Inhalt | Auslöser | Standard |
 | --- | --- | --- | --- |
@@ -518,7 +657,7 @@ wenn sie höchstens 12 Stunden alt sind.
 
 - **Status:** `/anrufe` zeigt, ob gerade telefoniert wird, und die letzten 10 Anrufe (Zeit, Dauer,
   Nebenstelle, Ende-Grund) – **ohne Inhalte**.
-- **Anrufhinweise** (Abo): nach jedem Anruf eine DM mit Metadaten. Mit
+- **Anrufhinweise** (Abo): nach jedem Anruf eine Nachricht im Standardkanal mit Metadaten. Mit
   `discord.call_summaries = "topics"` zusätzlich die erkannten Themen (Skill-IDs: „Wetter,
   Uhrzeit“), mit `"transcript"` das Transkript – Standard `"off"`, weil es danach dauerhaft bei
   Discord liegt (§5.7).
@@ -548,13 +687,19 @@ Nicht vorgesehen: Updates (laufen vom Proxmox-Host, ADR-028), Shell, Dateizugrif
 
 1. Neue Anwendung „Nikita“ anlegen; Avatar = Nikita-/Scribbles-Bild aus `assets/branding/`
    (512 × 512, von `scripts/build_branding.py` erzeugt).
-2. Bot: **Public Bot aus**, **Message Content Intent an**, Token kopieren.
+2. Bot: **Public Bot aus**, **Message Content Intent an**, Token kopieren. „Über mich“ (Bio) aus §8.2
+   eintragen (oder vom Setup setzen lassen).
 3. Installation: Server- **und** Benutzer-Installation an; Scopes `bot` und `applications.commands`;
    Bot-Rechte: Kanäle ansehen, Nachrichten senden, in Threads senden, öffentliche Threads erstellen,
    Links einbetten, Dateien anhängen, Nachrichtenverlauf lesen, Reaktionen hinzufügen, Verbinden,
    Sprechen, Sprachaktivierung, Sprachnachrichten senden (Rechte-Zahl `70678018640960`, vom
    Setup aus der Liste berechnet und per Test geprüft). Keine Admin- oder Verwaltungsrechte.
 4. 2FA am eigenen Discord-Konto einschalten (empfohlen).
+5. Eigenen Server anlegen (nur Moritz + Nikita), darin einen Textkanal wie `#nikita` (Standardkanal)
+   und einen Sprachkanal; Nikita über den Einladungslink holen.
+6. **Kanal-ID kopieren:** Discord → Einstellungen → Erweitert → *Entwicklermodus* an → Rechtsklick auf
+   `#nikita` → *Kanal-ID kopieren* (eine lange Zahl). Das Setup kann den Kanal auch selbst anbieten
+   (siehe §14.2).
 
 ### 14.2 Setup in moritz-agent
 
@@ -565,14 +710,21 @@ Nicht vorgesehen: Updates (laufen vom Proxmox-Host, ADR-028), Shell, Dateizugrif
   Warnungen, falls „Public Bot“ an oder Message Content aus ist → Token zeilenweise in
   `passwords.txt` (nur der Wert hinter `bot_token =`, nichts neu serialisiert), `discord.enabled =
   true` und `owner_user_ids` in die TOML → **Einladungslinks** ausgeben (Server-Installation und
-  Benutzer-Installation) → optional Avatar und Name des Bots setzen.
-- **Ohne Installer:** Token direkt in `passwords.txt` eintragen und `discord.enabled = true` setzen –
-  beim nächsten Start/Reload liest Nikita die Anwendungsdaten selbst und schreibt die Einladungslinks
-  ins Log und in `data/run/discord-status.json`.
+  Benutzer-Installation) → **Standard-Textkanal:** „Kanal-ID eingeben (Enter = aus Liste wählen)“ –
+  bei Enter wartet das Setup, bis Nikita im Server ist, und zeigt die Textkanäle nummeriert zur
+  Auswahl; die ID wird geprüft (Kanal existiert, Nikita darf dort schreiben) und zeilenweise als
+  `channel_id` in `passwords.txt` geschrieben → Testnachricht in den Kanal („Guude! Ich bin jetzt
+  hier zu Hause ✨“) → optional Avatar, Banner und Bio des Bots setzen.
+- **Ohne Installer:** Token und Kanal-ID direkt in `passwords.txt` eintragen und `discord.enabled =
+  true` setzen – beim nächsten Start/Reload liest Nikita die Anwendungsdaten selbst und schreibt die
+  Einladungslinks ins Log und in `data/run/discord-status.json`. Fehlt die Kanal-ID, läuft Nikita trotzdem
+  (DMs, Befehle, Erwähnungen) und meldet im Status „Standardkanal fehlt“; Abos gehen dann per DM.
 - **`./test-1.sh discord`** (ohne LXC, wie der Telefontest): `token` (verdeckte Eingabe → lokale
-  `passwords.txt`), `check` (Token, Intents, App-Einstellungen, Rechte, Links), `invite`, `run`
-  (Bot im Vordergrund; Strg+C beendet), `say "Text"` (Testnachricht an den Owner).
-- **Updater:** `migrate` hängt einen fehlenden Abschnitt `[discord]` mit leerem `bot_token` an
+  `passwords.txt`), `channel` (Kanal-ID eingeben oder aus Liste wählen), `check` (Token, Intents,
+  App-Einstellungen, Rechte, Kanal, Links), `invite`, `run` (Bot im Vordergrund; Strg+C beendet),
+  `say "Text"` (Testnachricht in den Standardkanal).
+- **Updater:** `migrate` hängt einen fehlenden Abschnitt `[discord]` mit leerem `bot_token` und
+  `channel_id` an bzw. ergänzt einzelne fehlende Schlüssel
   (CFG-09); Discord bleibt aus, bis ein Token eingetragen ist (UPD-04: optionale Integration, keine
   Abfrage). Mit `--non-interactive` gibt es keine Abfrage; der Token kommt dann nur über die Datei.
 - **Token wechseln:** neuen Token eintragen, `/admin neu-laden` oder `systemctl reload moritz-agent`
@@ -584,9 +736,16 @@ Nicht vorgesehen: Updates (laufen vom Proxmox-Host, ADR-028), Shell, Dateizugrif
 [discord]
 # Bot-Token aus dem Discord Developer Portal (Anwendung → Bot → Reset Token). Leer = Discord aus.
 bot_token =
+# ID des Standard-Textkanals (Entwicklermodus → Rechtsklick auf den Kanal → Kanal-ID kopieren).
+# Dort antwortet Nikita auf alles und schreibt Erinnerungen, Warnungen und Hinweise hinein.
+channel_id =
 # Optional: PIN für gefährliche Admin-Befehle (/admin neustart, /admin modell, später Sandbox).
 admin_pin =
 ```
+
+Die Kanal-ID ist kein Geheimnis, steht aber auf Moritz’ Wunsch zusammen mit dem Token in der TXT – so
+wie die SIP-Grunddaten (Registrar, Port) neben dem SIP-Passwort stehen (CFG-08 ergänzt). Alles
+Weitere bleibt in der TOML.
 
 ## 15. Konfiguration
 
@@ -597,13 +756,14 @@ Neue Sektion in `config/moritz-agent.example.toml` (P1-33/P1-41; IDs sind keine 
 enabled = false                      # true, sobald bot_token in passwords.txt steht (Setup setzt das)
 owner_user_ids = []                  # Discord-Benutzer-IDs (Setup übernimmt den App-Besitzer)
 trusted_user_ids = []
-allowed_guild_ids = []               # Server, in denen Nikita sein darf (sonst verlässt sie ihn)
-chat_channel_ids = []                # Kanäle, in denen Nikita auf jede Nachricht Freigegebener antwortet
+allowed_guild_ids = []               # weitere Server (der Server des Standardkanals ist immer erlaubt)
+chat_channel_ids = []                # weitere Kanäle, in denen Nikita auf jede Nachricht antwortet (Standardkanal steht in passwords.txt)
+style = "cute"                       # "cute" | "normal" (§8.2)
+startup_message = true               # „Bin wieder wach ✨“ im Standardkanal nach dem Start
 name_trigger = true                  # „Nikita, …“ am Satzanfang wirkt wie eine Erwähnung
 guest_mode = "off"                   # "off" | "skills"
 unknown_users = "ignore"             # "ignore" | "notice"
 ephemeral_in_foreign_guilds = true
-presence_weather = false
 call_summaries = "off"               # "off" | "topics" | "transcript"
 phone_extensions = {}                # z. B. { "20" = "123456789012345678" } für „schick mir das auf Discord“
 quiet_hours = "22:00-07:00"
@@ -614,16 +774,26 @@ owner_per_minute = 30
 trusted_per_minute = 10
 guest_per_minute = 3
 
+[discord.activities]
+enabled = true                       # schelmische Aktivitäten (§8.5)
+rotate_minutes = [7, 15]             # zufälliger Wechsel in diesem Bereich (mindestens 5)
+situational = true                   # Anruf, Sprachkanal, Nacht, Wetter, Sonderdaten, Wartung
+night = "23:00-06:00"
+
 [discord.voice]
 enabled = true
-auto_join_channel_ids = []
-wake_word = "auto"                   # "auto" | "always" | "never"
+default_channel_id = ""              # Sprachkanal für /joinvc, wenn Moritz in keinem ist (optional)
+auto_join = false                    # von selbst kommen, sobald Moritz einen Sprachkanal betritt
+greeting = "phone"                   # "phone" = dieselbe Begrüßung wie am Telefon (PHONE-21)
+after_goodbye = "leave"              # "leave" | "stay"
+on_silence = "rest"                  # "rest" (still bleiben, auf „Nikita“ hören) | "leave" (wie Auflegen)
+idle_leave_minutes = 10              # ohne Menschen im Kanal so lange warten, dann gehen
 barge_in = true
-idle_leave_s = 60
 max_session_minutes = 120
 stt_threads = 4
 unload_after_minutes = 10
 stage_fallback = false               # Bühnenkanal statt E2EE-Sprachkanal (ADR-036, Ergebnis B)
+# Gesprächsparameter wie am Telefon (phone.silence_prompt_s, …); hier nur bei Bedarf überschreiben
 
 [discord.voice_messages]
 enabled = true
@@ -631,6 +801,7 @@ reply_with_voice = "mirror"          # "mirror" | "always" | "never"
 max_seconds = 300
 
 [discord.notify]
+target = "channel"                   # "channel" (Standardkanal) | "dm"
 warnings_default_level = "severe"    # Standard-Abo des Owners
 system_alerts = true
 ```
@@ -681,7 +852,7 @@ Neue Lock-Gruppe `requirements/discord.in` → `discord.lock` mit Hashes (ADR-01
 | Rendern | Embed-Grenzen, Aufteilen an Absätzen ohne kaputte Code-Blöcke, Datei ab Grenze, `allowed_mentions` nie `@everyone`, Secret-Filter, custom_id kodieren/dekodieren | ja |
 | Kern-Anbindung | Turn mit `surface = chat`/`spoken`, Skill-Antworten mit `markdown`/`card`/`actions`, Rückfrage → Auswahlliste → Auflösung | ja |
 | Planer | Erinnerungen/Abos mit fester Uhr: Ruhezeiten, Sommerzeitwechsel, Nachholen nach Neustart, Drosselung | ja |
-| Sprache (ohne Discord) | synthetische PCM → Opus → zurück, 48↔16 kHz, VAD je Sprecher, Weckwort im Transkript, Unterbrechen, Wiedergabe-Takt 20 ms | ja |
+| Sprache (ohne Discord) | synthetische PCM → Opus → zurück, 48↔16 kHz, VAD je Sprecher, Weckwort im Ruhe-Modus, Unterbrechen, Wiedergabe-Takt 20 ms; `CallSession` über `MediaChannel` (Fake-Sprachkanal: Betreten = Anruf, Verlassen = Auflegen) | ja |
 | Sprachnachrichten | OGG/Opus-Dateien dekodieren, Längen-/Größengrenzen, Antwort-Datei mit Wellenform | ja |
 | Fake-Discord | Ereignisse und Interaktionen als JSON-Payloads in den Client einspeisen; ausgehende REST-Aufrufe aufzeichnen (kein Netz) | ja |
 | Live | privater Test-Server mit Test-Bot (Token nur in lokaler `passwords.txt`), `@pytest.mark.discord` | nein |
@@ -706,10 +877,10 @@ Tickets in [04 Block D](04-part1-umsetzung.md#block-d--discord-bot): **P1-31** K
 **P1-33** Worker-Grundgerüst · **P1-34** Text + Sofortauskünfte · **P1-35** Befehle, Kontextmenüs,
 Autovervollständigung, Benutzer-App · **P1-36** Sprachkanal · **P1-37** Sprachnachrichten ·
 **P1-38** Proaktive Nachrichten, Erinnerungen · **P1-39** Telefon ↔ Discord · **P1-40** Admin ·
-**P1-41** Einrichtung · **P1-42** Abnahme.
+**P1-41** Einrichtung · **P1-43** Persönlichkeit und Aktivitäten · **P1-42** Abnahme (zuletzt).
 
 Reihenfolge: P1-31 braucht P1-19 (Skill-Framework). Danach P1-32 → P1-33 → P1-34/P1-35/P1-41 →
-P1-36/P1-37 (je nach Spike) → P1-38/P1-39/P1-40 → P1-42. Block D läuft parallel zu den späteren
+P1-36/P1-37 (je nach Spike) → P1-38/P1-39/P1-40/P1-43 → P1-42. Block D läuft parallel zu den späteren
 Wellen von Block S; LLM-Funktionen (`/frag`, freie Fragen, `/suche`) kommen mit P1-09 automatisch dazu.
 Jede spätere Funktion (Part 2–9, 1.1+) bringt ihre Discord-Form im selben Ticket mit (Kanal-Parität).
 
@@ -725,7 +896,10 @@ Protokoll `docs/abnahme/discord-<datum>.md`, privater Server + DM + Benutzer-App
 | 4 | Benutzer-App in einem fremden Server/Gruppen-DM | `/wetter` geht, Antwort nur für mich sichtbar |
 | 5 | Fremde Person schreibt Nikita / erwähnt sie | keine Reaktion (bzw. Hinweis bei `notice`) |
 | 6 | Bot in nicht erlaubten Server einladen | geht nicht (Public Bot aus) bzw. Nikita verlässt ihn |
-| 7 | `/komm` im Sprachkanal, drei Fragen, Unterbrechen, `/geh` | Antworten gesprochen, Unterbrechen < 300 ms, sauberes Verlassen |
+| 7 | `/joinvc`, dann den Sprachkanal betreten; drei Fragen ohne „Nikita“; Unterbrechen; „Tschüss“ | Begrüßung wie am Telefon, Antworten gesprochen, Unterbrechen < 300 ms, Abschied und Verlassen |
+| 7a | Im Sprachkanal: schweigen; Kanal verlassen und wieder betreten | „Bist du noch da?“ → Ruhe-Modus, „Nikita“ weckt; Verlassen = Auflegen, Wiederkommen = neues Gespräch |
+| 7b | Standardkanal: Frage ohne Erwähnung; Erinnerung und Warnungs-Abo | Antwort ohne Erwähnung; Erinnerung/Warnung landen im Standardkanal |
+| 7c | Stil und Aktivitäten eine Stunde beobachten; Warnung (Fixture) | süß, aber Fakten exakt; Aktivitäten wechseln, keine Wiederholung unter 10; bei Warnung Ernst-Modus |
 | 8 | Sprachkanal + gleichzeitiger Anruf an 999 | Telefon unbeeinträchtigt (Latenz wie ohne Discord) |
 | 9 | Sprachnachricht senden | Transkript + Antwort, optional als Sprachnachricht |
 | 10 | `/erinnere wann: in 2 Minuten`, Dienst zwischendurch neu starten | Erinnerung kommt (ggf. „verspätet“) |
@@ -746,6 +920,7 @@ Protokoll `docs/abnahme/discord-<datum>.md`, privater Server + DM + Benutzer-App
 | R31 | CPU/RAM-Konkurrenz Telefon ↔ Discord-Sprache | `nice +5`, Modelle nur bei Bedarf, eine Sprachsitzung, Priorität PHONE, Messung in P1-36 |
 | R32 | Missbrauch durch andere in Servern (Spam, Prompt-Injection, Ausfragen) | Allowlists, Standard „ignorieren“, Rate-Limits, Fremdinhalte nur als Daten, keine Interna in Kanälen |
 | R33 | Benutzer-App-Grenzen (keine Nachrichten/Sprache in fremden Servern, dort oft nur privat sichtbar) | so dokumentiert und in `/hilfe` erklärt; volle Funktionen im eigenen Server und per DM |
+| R34 | Schelmische Aktivitäten oder der süße Ton wirken unpassend oder beunruhigend („spielt mit deinen Daten“) | nur eigene, geprüfte Sprüche ohne Vorfall-Anschein; Ernst-Modus bei Warnungen/Fehlern; `/aktivitaet aus`, `style = "normal"`; Privatserver |
 
 ## 23. Offene Fragen an Moritz
 
@@ -753,12 +928,15 @@ Default bis zur Antwort in Klammern; auch in [10 §3](10-risiken-offene-fragen.m
 
 | # | Frage | Default |
 | --- | --- | --- |
-| F-29 | Hast du einen eigenen Discord-Server für Nikita (ID)? Soll es einen `#nikita`-Kanal geben, in dem sie auf alles antwortet? | Server beim Setup angeben; Antworten nur bei Erwähnung |
+| F-29 | ~~Eigener Server, Kanal für alles?~~ **beantwortet:** Privatserver mit Moritz + Nikita, Standard-Textkanal per ID im Setup oder in der TXT | – |
 | F-30 | Wer außer dir darf Nikita auf Discord benutzen (Familie, Freunde)? Gastmodus mit nur Sofortauskünften? | nur du; Gastmodus aus |
-| F-31 | Soll Nikita automatisch in einen Sprachkanal kommen, wenn du ihn betrittst? Weckwort „Nikita“ immer? | nein; Weckwort automatisch (nur nötig, wenn mehrere da sind) |
+| F-31 | Soll Nikita zusätzlich zu `/joinvc` automatisch kommen, wenn du einen Sprachkanal betrittst? | nein |
 | F-32 | Welche Abos willst du (Warnungen, Morgenbriefing mit Uhrzeit, Müll am Vorabend, Systemhinweise)? | Warnungen ab Unwetter + Systemhinweise an, Rest aus |
 | F-33 | Anrufhinweise auf Discord? Mit Themen oder Transkript? | aus |
-| F-34 | Bot-Name und Bild: „Nikita“ mit Scribbles/Logo? Status mit Wetter? | „Nikita“, Scribbles-Avatar, Status ohne Wetter |
+| F-34 | ~~Bot-Name, Stil, Status?~~ **beantwortet:** „Nikita“, süß, schelmische Aktivitäten (§8.2, §8.5) | – |
 | F-35 | Auf Sprachnachrichten auch mit Sprachnachricht antworten? | ja („mirror“) |
 | F-36 | PIN für gefährliche Admin-Befehle? | keine PIN, aber Bestätigungsknopf |
-| F-37 | Sollen andere in deinem Server Nikitas Antworten an dich sehen oder lieber alles per DM? | im Kanal sichtbar, Persönliches nur per DM |
+| F-37 | ~~Antworten im Kanal oder per DM?~~ **beantwortet:** Standardkanal für alles (Privatserver) | – |
+| F-38 | Magst du eine extra niedliche Scribbles-Pose für Nikitas Avatar zeichnen? (Neue Posen kommen nur von dir, Branding-Regel 2) | Scribbles weiß auf dunklem Grund |
+| F-39 | Im Sprachkanal bei langer Stille: still im Kanal bleiben und auf „Nikita“ hören, oder gehen wie beim Auflegen? | still bleiben („rest“) |
+| F-40 | Lieblingssprüche für die Aktivitäten? (kommen zusätzlich in die Rotation) | Liste aus §8.5 |

@@ -521,16 +521,20 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
      eingehender Port, kein Webhook-Endpunkt.
   3. Bibliothek **discord.py ≥ 2.7 mit `[voice]`** (MIT; Gateway, Slash-Befehle, Komponenten, Sprache
      senden mit DAVE über `davey`). Lock-Gruppe `requirements/discord.lock` (ADR-019).
-  4. Token nur in `passwords.txt` `[discord] bot_token`; Setup-Phase `discord` im Installer mit
-     verdeckter Eingabe über stdin, Prüfung gegen die API, Einladungslinks; Updater hängt den
-     Abschnitt leer an.
+  4. Token **und Standard-Textkanal-ID** in `passwords.txt` (`[discord] bot_token`, `channel_id`;
+     Moritz: „beim Setup oder in der TXT“); Setup-Phase `discord` im Installer mit verdeckter
+     Token-Eingabe über stdin, Prüfung gegen die API, Einladungslinks und Kanalauswahl; Updater hängt
+     den Abschnitt leer an.
+  5. **Privatserver** (Nachtrag 20.10.2026): Nikitas Server enthält nur Moritz und Nikita. Der
+     Standard-Textkanal ist ihr Zuhause (Antwort auf alles, Ziel aller Hinweise); der Server dieses
+     Kanals ist automatisch erlaubt.
 - **Alternativen:** Self-Bot (verboten), Interactions-Endpunkt per HTTPS-Webhook (bräuchte eine
   öffentliche Adresse und eingehenden Port – verworfen), Pycord (Sprache senden mit DAVE seit 2.8,
   Empfang laut Doku mit Vorbehalt; kein Vorteil gegenüber discord.py), hikari (keine eingebaute
   Sprache), discord.js/Node-Worker (zweite Laufzeit im LXC, Audio-Bausteine sind Python),
   Matrix/Telegram statt Discord (nicht gewünscht).
-- **Konsequenzen:** Block D (P1-31 … P1-42) in [04](04-part1-umsetzung.md); neue Bedrohungen T25–T32;
-  neue Anforderungen DISCORD-01 … DISCORD-42.
+- **Konsequenzen:** Block D (P1-31 … P1-43) in [04](04-part1-umsetzung.md); neue Bedrohungen T25–T32;
+  neue Anforderungen DISCORD-01 … DISCORD-47.
 - **Status:** beschlossen (Plan); Umsetzung offen.
 
 ## ADR-034 – Kanalunabhängiger Kern und Ausgabeprofile je Oberfläche
@@ -556,7 +560,9 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   sind besser geschützt als eine Rufnummer, aber Konten können übernommen werden.
 - **Entscheidung:** Standard **verweigern**. Rollen an der unveränderlichen Discord-Benutzer-ID:
   Owner (aus dem Besitzer der Anwendung übernommen), Vertraut (Liste), Gast (Standard: ignoriert;
-  optional nur Sofortauskünfte in freigegebenen Kanälen). Server-Allowlist, fremde Server werden
+  optional nur Sofortauskünfte in freigegebenen Kanälen). Weil der Server ein Privatserver ist, gibt es
+  im Gespräch **keine** Personenauswahl und kein Weckwort; die Rollen wirken nur als Sicherheitsnetz
+  gegen Fremde (die ignoriert und einmal gemeldet werden). Server-Allowlist, fremde Server werden
   verlassen. Rate-Limits je Rolle. Admin-Befehle nur Owner, nur DM/ephemeral, Zustandsänderungen mit
   Bestätigungsknopf, optional PIN aus `passwords.txt`. Nie: Shell im LXC, Updates, Dateizugriff,
   Secrets. Sandbox/Browser (Part 4/6) nur Owner mit Bestätigung je riskanter Aktion. `allowed_mentions`
@@ -582,11 +588,41 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
      gesprochene Antwort raus) und optional Bühnenkanal ohne E2EE; Spike wird wiederholt, sobald eine
      Bibliothek DAVE-Empfang offiziell unterstützt.
   4. Audio-Kette mit den Bausteinen des Telefons (VAD, Whisper, Piper, Resampling), aber im
-     Discord-Worker und **nur während Sprachsitzungen geladen**; höchstens eine Sitzung; Barge-in
-     erlaubt (kein Echo im Discord-Audio).
+     Discord-Worker und **nur während Sprachsitzungen geladen** (ab `/joinvc`); höchstens eine Sitzung;
+     Barge-in erlaubt (kein Echo im Discord-Audio).
+  5. **`/joinvc` = Anruf** (Nachtrag 20.10.2026): Der Sprachkanal benutzt dieselbe `CallSession` und
+     denselben Zustandsautomaten wie das Telefon über eine gemeinsame Schnittstelle `MediaChannel`
+     (SIP-Anruf bzw. Discord-Sprachkanal). Moritz betritt den Kanal = Anruf angenommen (Begrüßung wie
+     PHONE-21), verlässt ihn = aufgelegt; „Tschüss“ = Abschied und Nikita geht; lange Stille = Ruhe-Modus
+     (still im Kanal, „Nikita“ weckt) oder wie am Telefon gehen (`on_silence`).
 - **Alternativen:** gemeinsamer Sprachdienst für Telefon und Discord (spart ≈ 1 GB RAM, koppelt aber
   Discord an den Telefon-Prozess – „verworfen für jetzt“, neu bewerten nach der RAM-Messung in P1-36);
   Node-Worker mit @discordjs/voice (hat eigene DAVE-Empfangsprobleme, zweite Laufzeit); nur
   Sprachnachrichten ohne Sprachkanal (zu wenig).
 - **Konsequenzen:** Risiko R27; DISCORD-23 ist SOLL, DISCORD-24 (Rückfall) MUSS.
 - **Status:** vorläufig – bestätigt oder geändert durch P1-32.
+
+## ADR-037 – Nikita auf Discord: ein bisschen süß, mit schelmischen Aktivitäten
+
+- **Kontext (Moritz, 20.10.2026):** „Mache den User bitte bissl cutey. Er soll als Aktivitäten coole
+  Sachen haben wie ‚spielt mit deinen Daten‘ – schelmisch, funny.“
+- **Entscheidung:**
+  1. **Stil** `discord.style = "cute"` (Standard): Die Kern-Antwort bleibt neutral und exakt; ein
+     Stil-Renderer im Discord-Adapter ergänzt höchstens 1–2 passende Emojis, gelegentlich ein Kaomoji
+     und herzliche Floskeln aus eigenen Textlisten (`assets/data/discord/stil.de.toml`), deterministisch
+     je Nachricht. **Ernst-Modus** ohne Späße bei Warnungen ab Stufe 2, Katastrophen, Admin,
+     Sicherheit und Fehlern mit Datenverlust. Gesprochene Antworten bleiben wie am Telefon.
+  2. **Aktivitäten:** rotierende, schelmisch-lustige Aktivitäten („Spielt mit deinen Daten 😈“, „Hört
+     deinem Kühlschrank zu“, „Schaut Wolken über Weilburg zu“ …) aus
+     `assets/data/discord/aktivitaeten.de.toml`, alle 7–15 min, keine Wiederholung unter 10; lagebezogene
+     Aktivitäten haben Vorrang (Anruf, Sprachkanal, Nacht, Wetter, Sonderdaten, Wartung, Unwetter im
+     Ernst-Modus). Nie Texte, die wie echte Vorfälle wirken; `/aktivitaet` zum Wechseln, Abschalten und
+     für eigene Sprüche.
+  3. **Profil:** Name „Nikita“, Bio im gleichen Ton, Avatar und Banner aus Scribbles **monochrom** über
+     `scripts/build_branding.py` (Branding-Regeln: keine Farben, nicht neu zeichnen – eine niedlichere
+     Pose kann nur Moritz zeichnen).
+- **Alternativen:** neutraler Ton (nicht gewünscht); Stil im LLM allein (nicht deterministisch, gilt
+  nicht für Sofortauskünfte); farbiger Kawaii-Avatar (verstößt gegen die Branding-Regeln).
+- **Konsequenzen:** DISCORD-43, DISCORD-44, Ticket P1-43, Risiko R34; `/hilfe datenschutz` stellt klar,
+  dass Nikita nicht wirklich mit Daten spielt.
+- **Status:** beschlossen (Plan).
