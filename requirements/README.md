@@ -8,6 +8,7 @@ sie liegen bewusst nicht im Repository.
 | --- | --- |
 | `core` | Backend, Agent, Inference-Client |
 | `phone` | Audio: faster-whisper, Piper, ONNX Runtime, soxr (PJSUA2 wird aus `third_party/pjproject` gebaut) |
+| `discord` | Discord-Bot: discord.py mit Sprache (PyNaCl, davey) – nur wenn Discord eingerichtet ist |
 | `searxng` | Abhängigkeiten des mitgelieferten SearXNG (`third_party/searxng`) inkl. granian |
 
 Neu erzeugen: `uv pip compile --universal --python-version 3.13 --generate-hashes --no-header -o <g>.lock <g>.in`
