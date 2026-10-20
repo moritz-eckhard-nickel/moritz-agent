@@ -82,6 +82,13 @@ def weather_session(
         "opendata.dwd.de/climate_environment/health/alerts/s31fg.json": wf.pollen_answer(),
         "warnung.bund.de/api31/dashboard/065330000000.json": wf.nina_answer(),
         "air-quality-api.open-meteo.com/v1/air-quality": wf.air_quality_answer(),
+        "www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml": wf.ecb_xml(),
+        "api.energy-charts.info/price": wf.energy_charts_answer(),
+        "creativecommons.tankerkoenig.de/json/list.php": wf.tankerkoenig_answer(),
+        "www.pegelonline.wsv.de/webservices/rest-api/v2/stations.json": wf.pegel_answer(),
+        "api.openligadb.de/getmatchdata/bl1/2026": wf.liga_matches(),
+        "api.openligadb.de/getbltable/bl1/2026": wf.liga_table(),
+        "www.tagesschau.de/api2u/homepage/": wf.news_answer(),
     }
     table.update(routes or {})
     directory = Path(cache_dir) if cache_dir else Path(tempfile.mkdtemp(prefix="skills-cache-"))

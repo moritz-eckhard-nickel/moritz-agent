@@ -12,6 +12,7 @@ import math
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import httpx
 
@@ -55,6 +56,7 @@ SUNDAY_EVENING_SCENARIO: list[Day] = [
     Day(4, 9, 80, 16, 35, rain=[(15, 19, 0.5, 80)]),  # Wed 28
 ]
 FIRST_DAY = date(2026, 10, 15)
+BERLIN_ZONE = ZoneInfo("Europe/Berlin")
 
 
 def _hour_values(day: Day, hour: int) -> dict[str, Any]:
@@ -319,6 +321,8 @@ def mock_transport(routes: dict[str, Any], calls: list[httpx.Request] | None = N
             answer = answer(request)
             if isinstance(answer, httpx.Response):
                 return answer
+        if isinstance(answer, str | bytes):
+            return httpx.Response(200, content=answer)
         return httpx.Response(200, json=answer)
 
     return httpx.MockTransport(handler)
@@ -457,4 +461,195 @@ def air_quality_answer(
             "time": times,
             "ozone": [ozone_peak if 12 <= i % 24 <= 18 else ozone for i in range(len(times))],
         },
+    }
+
+
+def ecb_xml(day: str = "2026-10-16", **rates: float) -> str:
+    table = {"USD": 1.0912, "GBP": 0.8654, "CHF": 0.9321, "JPY": 163.4, "PLN": 4.2788, "SEK": 11.52}
+    table.update(rates)
+    cubes = "".join(f'<Cube currency="{code}" rate="{value}"/>' for code, value in table.items())
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<gesmes:Envelope xmlns:gesmes="http://www.gesmes.org/xml/2002-08-01" '
+        'xmlns="http://www.ecb.int/vocabulary/2002-08-01/eurofxref">'
+        "<gesmes:subject>Reference rates</gesmes:subject>"
+        f'<Cube><Cube time="{day}">{cubes}</Cube></Cube></gesmes:Envelope>'
+    )
+
+
+def energy_charts_answer(
+    day: date = date(2026, 10, 18), cheap_hours: tuple[int, int] = (13, 15)
+) -> dict[str, Any]:
+    from datetime import timezone
+
+    seconds, prices = [], []
+    for offset in range(48):
+        moment = datetime(day.year, day.month, day.day, tzinfo=BERLIN_ZONE) + timedelta(
+            hours=offset
+        )
+        seconds.append(int(moment.timestamp()))
+        hour = offset % 24
+        prices.append(
+            40.0 if cheap_hours[0] <= hour < cheap_hours[1] and offset < 24 else 95.0 + hour
+        )
+    del timezone
+    return {
+        "license_info": "CC BY 4.0",
+        "unix_seconds": seconds,
+        "price": prices,
+        "unit": "EUR / MWh",
+    }
+
+
+def tankerkoenig_answer(stations: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    return {
+        "ok": True,
+        "status": "ok",
+        "stations": stations
+        or [
+            {
+                "id": "1",
+                "name": "ARAL",
+                "brand": "ARAL",
+                "place": "WEILBURG",
+                "dist": 1.2,
+                "price": 1.739,
+                "isOpen": True,
+            },
+            {
+                "id": "2",
+                "name": "Freie Tankstelle",
+                "brand": "",
+                "place": "LÖHNBERG",
+                "dist": 4.0,
+                "price": 1.759,
+                "isOpen": True,
+            },
+            {
+                "id": "3",
+                "name": "Nachts zu",
+                "brand": "X",
+                "place": "WEILBURG",
+                "dist": 0.5,
+                "price": 1.699,
+                "isOpen": False,
+            },
+        ],
+    }
+
+
+def pegel_answer(
+    value: float = 142.0,
+    trend: int = 1,
+    state: str = "normal",
+    mw: float = 110.0,
+    mhw: float = 330.0,
+) -> list[dict[str, Any]]:
+    def station(name: str, lat: float, lon: float, level: float) -> dict[str, Any]:
+        return {
+            "uuid": name,
+            "shortname": name,
+            "longname": name.upper(),
+            "latitude": lat,
+            "longitude": lon,
+            "water": {"shortname": "LAHN", "longname": "LAHN"},
+            "timeseries": [
+                {
+                    "shortname": "W",
+                    "unit": "cm",
+                    "currentMeasurement": {
+                        "timestamp": "2026-10-18T19:00:00+02:00",
+                        "value": level,
+                        "trend": trend,
+                        "stateMnwMhw": state,
+                    },
+                    "characteristicValues": [
+                        {"shortname": "MW", "value": mw},
+                        {"shortname": "MHW", "value": mhw},
+                    ],
+                }
+            ],
+        }
+
+    return [
+        station("Leun", 50.5503, 8.4189, value),
+        station("Kalkofen", 50.3764, 8.0206, 55.0),
+        station("Marburg", 50.8, 8.77, 80.0),
+    ]
+
+
+def liga_matches() -> list[dict[str, Any]]:
+    def match(start: str, home: str, away: str, finished: bool, score: tuple[int, int] | None):
+        return {
+            "matchID": hash((start, home)) % 100000,
+            "matchDateTimeUTC": start,
+            "team1": {"teamName": home},
+            "team2": {"teamName": away},
+            "matchIsFinished": finished,
+            "matchResults": (
+                [
+                    {"resultTypeID": 1, "pointsTeam1": 1, "pointsTeam2": 0},
+                    {"resultTypeID": 2, "pointsTeam1": score[0], "pointsTeam2": score[1]},
+                ]
+                if score
+                else []
+            ),
+        }
+
+    return [
+        match("2026-10-03T13:30:00Z", "Eintracht Frankfurt", "FC Augsburg", True, (0, 0)),
+        match("2026-10-17T13:30:00Z", "Eintracht Frankfurt", "VfL Wolfsburg", True, (2, 1)),
+        match("2026-10-25T16:30:00Z", "Borussia Dortmund", "Eintracht Frankfurt", False, None),
+        match("2026-10-17T13:30:00Z", "FC Bayern München", "SC Freiburg", True, (3, 0)),
+    ]
+
+
+def liga_table() -> list[dict[str, Any]]:
+    teams = [
+        "FC Bayern München",
+        "Borussia Dortmund",
+        "RB Leipzig",
+        "Bayer 04 Leverkusen",
+        "Eintracht Frankfurt",
+    ]
+    return [{"teamName": t, "points": 20 - i * 2, "matches": 8} for i, t in enumerate(teams)]
+
+
+def waste_ics() -> str:
+    return "\r\n".join(
+        [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "BEGIN:VEVENT",
+            "DTSTART;VALUE=DATE:20261019",
+            "SUMMARY:Biotonne",
+            "END:VEVENT",
+            "BEGIN:VEVENT",
+            "DTSTART;VALUE=DATE:20261022",
+            "SUMMARY:Papiertonne (blau)",
+            "END:VEVENT",
+            "BEGIN:VEVENT",
+            "DTSTART;VALUE=DATE:20261026",
+            "RRULE:FREQ=WEEKLY;INTERVAL=2;COUNT=3",
+            "SUMMARY:Gelber Sack",
+            "END:VEVENT",
+            "BEGIN:VEVENT",
+            "DTSTART;VALUE=DATE:20261105",
+            "SUMMARY:Sperrmüll\\, nach Anmeldung",
+            "END:VEVENT",
+            "END:VCALENDAR",
+            "",
+        ]
+    )
+
+
+def news_answer() -> dict[str, Any]:
+    return {
+        "news": [
+            {"type": "story", "title": "Erste Meldung des Tages"},
+            {"type": "video", "title": "Zweite Meldung\x00 mit https://spam.example/x"},
+            {"type": "webview", "title": "Werbung"},
+            {"type": "story", "title": "DRITTE MELDUNG"},
+            {"type": "story", "title": "Vierte Meldung"},
+        ]
     }

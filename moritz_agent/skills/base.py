@@ -136,6 +136,7 @@ class Services:
     started_at: float = 0.0
     assistant_name: str = "Nikita"
     store: Any = None  # notes / reminders store (P1-27)
+    secrets: dict[str, Any] = field(default_factory=dict)  # optional_services of passwords.txt
 
     @property
     def cfg(self) -> Skills:

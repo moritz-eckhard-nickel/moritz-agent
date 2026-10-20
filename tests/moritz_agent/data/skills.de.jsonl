@@ -359,7 +359,6 @@
 {"say": "Warnt der Wetterdienst vor etwas?", "skill": "warn.weather"}
 {"say": "Gibt es Warnungen im Landkreis?", "skill": "warn.civil"}
 {"say": "Gibt es eine Katastrophenwarnung?", "skill": "warn.civil"}
-{"say": "Ist was mit Hochwasser?", "skill": "warn.civil"}
 {"say": "Wie ist der Pollenflug?", "skill": "pollen.today"}
 {"say": "Fliegen heute Pollen?", "skill": "pollen.today"}
 {"say": "Wie sieht's mit Birke aus?", "skill": "pollen.today"}
@@ -423,6 +422,38 @@
 {"say": "Wann ist Frühlingsanfang?", "skill": "season.start"}
 {"say": "Wann beginnt der Winter?", "skill": "season.start"}
 {"say": "Wann fängt der Sommer an?", "skill": "season.start"}
+{"say": "Wie viel sind 100 Dollar in Euro?", "skill": "money.fx"}
+{"say": "Wie steht der Franken?", "skill": "money.fx"}
+{"say": "Euro in Pfund?", "skill": "money.fx"}
+{"say": "Wie ist der Dollarkurs?", "skill": "money.fx"}
+{"say": "Was sind 50 Kronen in Euro?", "skill": "money.fx"}
+{"say": "Wann ist Strom heute am billigsten?", "skill": "money.power_price"}
+{"say": "Was kostet Strom an der Börse?", "skill": "money.power_price"}
+{"say": "Was kostet E10 gerade?", "skill": "money.fuel"}
+{"say": "Wo tanke ich am billigsten?", "skill": "money.fuel"}
+{"say": "Wie teuer ist Diesel?", "skill": "money.fuel"}
+{"say": "Wie hoch steht die Lahn?", "skill": "water.level"}
+{"say": "Wasserstand Lahn?", "skill": "water.level"}
+{"say": "Steigt die Lahn?", "skill": "water.level"}
+{"say": "Gibt es Hochwasser?", "skill": "water.flood"}
+{"say": "Ist was mit Hochwasser?", "skill": "water.flood"}
+{"say": "Welche Tonne kommt morgen?", "skill": "waste.next"}
+{"say": "Wann kommt die gelbe Tonne?", "skill": "waste.next"}
+{"say": "Wann ist Sperrmüll?", "skill": "waste.next"}
+{"say": "Wann wird die Papiertonne geleert?", "skill": "waste.next"}
+{"say": "Was wird diese Woche abgeholt?", "skill": "waste.week"}
+{"say": "Wie hat die Eintracht gespielt?", "skill": "football.last"}
+{"say": "Wann spielt die Eintracht?", "skill": "football.next"}
+{"say": "Auf welchem Platz steht die Eintracht?", "skill": "football.table"}
+{"say": "Was gibt's Neues?", "skill": "news.headlines"}
+{"say": "Nachrichten?", "skill": "news.headlines"}
+{"say": "Was sind die Schlagzeilen?", "skill": "news.headlines"}
+{"say": "Schreib Milch auf die Einkaufsliste.", "skill": "notes.add"}
+{"say": "Notiz: Reifen wechseln", "skill": "notes.add"}
+{"say": "Setz Eier auf die Einkaufsliste", "skill": "notes.add"}
+{"say": "Was steht auf der Einkaufsliste?", "skill": "notes.read"}
+{"say": "Lies meine Notizen vor", "skill": "notes.read"}
+{"say": "Lösch die Einkaufsliste.", "skill": "notes.clear"}
 {"say": "Um wie viel Uhr fährt der Zug nach Frankfurt?", "skill": null}
 {"say": "Wann öffnet der Supermarkt?", "skill": null}
 {"say": "Um wie viel Uhr beginnt der Film?", "skill": null}
@@ -452,6 +483,9 @@
 {"say": "Ich brauche eine neue Jacke zum Geburtstag", "skill": null}
 {"say": "Die Heizung ist kaputt", "skill": null}
 {"say": "Mein Fahrrad hat einen Platten", "skill": null}
+{"say": "Der Müll stinkt schon wieder", "skill": null}
+{"say": "Ich habe 100 Euro im Lotto gewonnen", "skill": null}
+{"say": "Wie viel kostet ein Liter Milch", "skill": null}
 {"say": "Was soll ich zum Abendessen kochen", "skill": null}
 {"prior": ["Wie lange noch bis Weihnachten?"], "say": "Mehr Details", "skill": null}
 {"prior": ["Was kannst du?"], "say": "Mehr Details", "skill": "talk.details"}

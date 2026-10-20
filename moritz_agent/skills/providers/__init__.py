@@ -13,7 +13,7 @@ import contextlib
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 from zoneinfo import ZoneInfo
@@ -22,7 +22,19 @@ import httpx
 
 from moritz_agent.logging_setup import get_logger
 from moritz_agent.skills.geo.gazetteer import Place, fold
-from moritz_agent.skills.providers import brightsky, dwd, nina, open_meteo
+from moritz_agent.skills.providers import (
+    brightsky,
+    dwd,
+    ecb,
+    energy_charts,
+    ics,
+    news,
+    nina,
+    open_meteo,
+    openligadb,
+    pegelonline,
+    tankerkoenig,
+)
 from moritz_agent.skills.providers.brightsky import Warning
 from moritz_agent.skills.providers.cache import Cache
 from moritz_agent.skills.providers.http import HttpClient, HttpError
@@ -313,6 +325,158 @@ class Providers:
         if entry is not None:
             return Fetched(brightsky.parse_alerts(entry.value, tz), "dwd", "stale", entry.age_s)
         raise ProviderUnavailable("alerts", "offline")
+
+    async def _cached(
+        self,
+        service: str,
+        key: str,
+        *,
+        fresh_s: float,
+        stale_s: float,
+        fetch: Callable[[], Awaitable[Any]],
+        parse: Callable[[Any], T],
+        namespace: str | None = None,
+    ) -> Fetched[T]:
+        """Fresh cache → network → stale cache → ``ProviderUnavailable`` (one pattern for all)."""
+        space = namespace or service
+        entry = self.cache.get(space, key, fresh_s=fresh_s, stale_s=stale_s)
+        if entry is not None and entry.fresh:
+            try:
+                return Fetched(parse(entry.value), service, "hit", entry.age_s)
+            except HttpError:
+                entry = None
+        if self.online and not self._blocked(service):
+            try:
+                raw = await fetch()
+                parsed = parse(raw)
+            except HttpError as exc:
+                self._failed(service, exc)
+            else:
+                self._ok(service)
+                self.cache.put(space, key, raw)
+                return Fetched(parsed, service, "miss", 0.0)
+        if entry is not None:
+            try:
+                return Fetched(parse(entry.value), service, "stale", entry.age_s)
+            except HttpError:
+                pass
+        raise ProviderUnavailable(service, "disabled" if not self.online else "offline")
+
+    # -- money --------------------------------------------------------------------------------------
+    async def exchange_rates(self) -> Fetched[ecb.Rates]:
+        return await self._cached(
+            "ecb",
+            "daily",
+            fresh_s=6 * 3600,
+            stale_s=4 * 86400,
+            fetch=lambda: ecb.fetch(self.http),
+            parse=ecb.parse,
+        )
+
+    async def power_prices(self, day: date) -> Fetched[list[energy_charts.PricePoint]]:
+        zone = self.cfg.money.bidding_zone
+        tz = self.svc.timezone
+        return await self._cached(
+            "energy-charts",
+            f"{zone}:{day.isoformat()}",
+            fresh_s=2 * 3600,
+            stale_s=24 * 3600,
+            fetch=lambda: energy_charts.fetch(self.http, zone, day, day + timedelta(days=1)),
+            parse=lambda raw: energy_charts.hourly(raw, tz),
+        )
+
+    async def fuel(self, place: Place) -> Fetched[list[tankerkoenig.Station]]:
+        key = self.svc.secrets.get("tankerkoenig_api_key")
+        if not key:
+            raise ProviderUnavailable("tankerkoenig", "nokey")
+        cfg = self.cfg.money
+        return await self._cached(
+            "tankerkoenig",
+            f"{place.lat:.2f},{place.lon:.2f}:{cfg.fuel_type}:{cfg.fuel_radius_km:g}",
+            fresh_s=5 * 60,
+            stale_s=30 * 60,
+            fetch=lambda: tankerkoenig.fetch(
+                self.http, place.lat, place.lon, cfg.fuel_radius_km, cfg.fuel_type, key
+            ),
+            parse=tankerkoenig.stations,
+        )
+
+    # -- region ---------------------------------------------------------------------------------------
+    async def water_levels(self, place: Place) -> Fetched[list[pegelonline.Gauge]]:
+        river = self.cfg.water.river
+        tz = self.svc.timezone
+        return await self._cached(
+            "pegelonline",
+            river,
+            fresh_s=15 * 60,
+            stale_s=2 * 3600,
+            fetch=lambda: pegelonline.fetch(self.http, river),
+            parse=lambda raw: pegelonline.parse(raw, tz, place.lat, place.lon),
+        )
+
+    async def football_matches(self, day: date) -> Fetched[list[openligadb.Match]]:
+        cfg, tz = self.cfg.football, self.svc.timezone
+        season = openligadb.season_of(day)
+        return await self._cached(
+            "openligadb",
+            f"matches:{cfg.league}:{season}",
+            fresh_s=30 * 60,
+            stale_s=24 * 3600,
+            fetch=lambda: openligadb.fetch_matches(self.http, cfg.league, season),
+            parse=lambda raw: openligadb.matches_of(raw, cfg.team, tz),
+        )
+
+    async def football_table(self, day: date) -> Fetched[list[openligadb.TableRow]]:
+        cfg = self.cfg.football
+        season = openligadb.season_of(day)
+        return await self._cached(
+            "openligadb",
+            f"table:{cfg.league}:{season}",
+            fresh_s=30 * 60,
+            stale_s=24 * 3600,
+            fetch=lambda: openligadb.fetch_table(self.http, cfg.league, season),
+            parse=openligadb.table_of,
+            namespace="openligadb-table",
+        )
+
+    async def waste_calendar(self) -> Fetched[str]:
+        cfg = self.cfg.waste
+        if cfg.ics_file:
+            path = (self.svc.root / cfg.ics_file).resolve()
+            try:
+                return Fetched(
+                    path.read_text(encoding="utf-8", errors="replace"), "file", "hit", 0.0
+                )
+            except OSError as exc:
+                raise ProviderUnavailable("waste", "nofile") from exc
+        if not cfg.ics_url:
+            raise ProviderUnavailable("waste", "nosource")
+        host = ics.check_url(cfg.ics_url)
+        self.http.extra_hosts.add(host)
+        url = cfg.ics_url
+        return await self._cached(
+            "waste",
+            url,
+            fresh_s=24 * 3600,
+            stale_s=30 * 86400,
+            fetch=lambda: self._fetch_text(url),
+            parse=lambda raw: raw,
+        )
+
+    async def _fetch_text(self, url: str) -> str:
+        return (await self.http.get_bytes(url)).decode("utf-8", errors="replace")
+
+    async def headlines(self) -> Fetched[list[str]]:
+        limit = self.cfg.news.max_headlines
+        self.http.extra_hosts.add(news.HOST)
+        return await self._cached(
+            "news",
+            "homepage",
+            fresh_s=10 * 60,
+            stale_s=60 * 60,
+            fetch=lambda: news.fetch(self.http),
+            parse=lambda raw: news.headlines(raw, limit),
+        )
 
     # -- pollen, air, civil warnings --------------------------------------------------------------
     async def pollen(self, place: Place) -> Fetched[dwd.PollenForecast]:

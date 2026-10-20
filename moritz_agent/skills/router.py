@@ -41,6 +41,20 @@ _ORDINALS = {
     "dritte": 3, "dritten": 3, "drittes": 3, "3": 3, "vierte": 4, "vierten": 4, "4": 4,
     "letzte": -1, "letzten": -1,
 }  # fmt: skip
+_YES = {
+    "ja",
+    "jo",
+    "jawohl",
+    "klar",
+    "ok",
+    "okay",
+    "genau",
+    "mach das",
+    "ja bitte",
+    "ja klar",
+    "gerne",
+}
+_NO = {"nein", "nee", "nö", "lieber nicht", "bloß nicht", "nein danke", "auf keinen fall"}
 _CANCEL = re.compile(r"\b(vergiss es|abbrechen|egal|lass gut sein|nicht wichtig|schon gut|stopp)\b")
 
 
@@ -337,6 +351,15 @@ class Router:
 def resolve_option(utt: Utterance, pending: Clarification) -> Option | None:
     """Which option did the user choose? ("das erste", "die in hessen", "weinstraße")"""
     text = utt.text
+    spoken = text.strip(" .!?")
+    if spoken in _YES:
+        yes = next((o for o in pending.options if o.params.get("yes")), None)
+        if yes is not None:
+            return yes
+    if spoken in _NO:
+        no = next((o for o in pending.options if o.params.get("no")), None)
+        if no is not None:
+            return no
     for token in text.split():
         index = _ORDINALS.get(token)
         if index is not None:

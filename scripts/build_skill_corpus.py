@@ -423,7 +423,6 @@ POSITIVE.update(
         "warn.civil": [
             "Gibt es Warnungen im Landkreis?",
             "Gibt es eine Katastrophenwarnung?",
-            "Ist was mit Hochwasser?",
         ],
         "pollen.today": [
             "Wie ist der Pollenflug?",
@@ -495,6 +494,47 @@ POSITIVE.update(
     }
 )
 
+POSITIVE.update(
+    {
+        "money.fx": [
+            "Wie viel sind 100 Dollar in Euro?",
+            "Wie steht der Franken?",
+            "Euro in Pfund?",
+            "Wie ist der Dollarkurs?",
+            "Was sind 50 Kronen in Euro?",
+        ],
+        "money.power_price": [
+            "Wann ist Strom heute am billigsten?",
+            "Was kostet Strom an der Börse?",
+        ],
+        "money.fuel": [
+            "Was kostet E10 gerade?",
+            "Wo tanke ich am billigsten?",
+            "Wie teuer ist Diesel?",
+        ],
+        "water.level": ["Wie hoch steht die Lahn?", "Wasserstand Lahn?", "Steigt die Lahn?"],
+        "water.flood": ["Gibt es Hochwasser?", "Ist was mit Hochwasser?"],
+        "waste.next": [
+            "Welche Tonne kommt morgen?",
+            "Wann kommt die gelbe Tonne?",
+            "Wann ist Sperrmüll?",
+            "Wann wird die Papiertonne geleert?",
+        ],
+        "waste.week": ["Was wird diese Woche abgeholt?"],
+        "football.last": ["Wie hat die Eintracht gespielt?"],
+        "football.next": ["Wann spielt die Eintracht?"],
+        "football.table": ["Auf welchem Platz steht die Eintracht?"],
+        "news.headlines": ["Was gibt's Neues?", "Nachrichten?", "Was sind die Schlagzeilen?"],
+        "notes.add": [
+            "Schreib Milch auf die Einkaufsliste.",
+            "Notiz: Reifen wechseln",
+            "Setz Eier auf die Einkaufsliste",
+        ],
+        "notes.read": ["Was steht auf der Einkaufsliste?", "Lies meine Notizen vor"],
+        "notes.clear": ["Lösch die Einkaufsliste."],
+    }
+)
+
 # sentences no skill may answer: other topics, compound requests, near misses (SKILL-01, R23)
 NEGATIVE: list[str] = [
     "Um wie viel Uhr fährt der Zug nach Frankfurt?",
@@ -526,6 +566,9 @@ NEGATIVE: list[str] = [
     "Ich brauche eine neue Jacke zum Geburtstag",
     "Die Heizung ist kaputt",
     "Mein Fahrrad hat einen Platten",
+    "Der Müll stinkt schon wieder",
+    "Ich habe 100 Euro im Lotto gewonnen",
+    "Wie viel kostet ein Liter Milch",
     "Was soll ich zum Abendessen kochen",
 ]
 

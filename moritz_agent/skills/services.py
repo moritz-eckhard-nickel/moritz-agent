@@ -43,6 +43,9 @@ def build_services(
             svc.gazetteer.set_home(home.postal_code, home.name, home.latitude, home.longitude)
         except ModuleNotFoundError:
             svc.gazetteer = None
+    from moritz_agent.skills.store import NotesStore
+
+    svc.store = NotesStore(root / settings.general.data_dir / "skills-notes.db")
     if callable(providers):
         svc.providers = providers(svc)
     return svc

@@ -83,6 +83,8 @@ class PhoneWorker:
         self.responder: Responder = responder or SkillResponder(
             build_services(self.settings, root, providers=Providers), fallback=TestResponder()
         )
+        if isinstance(self.responder, SkillResponder):
+            self.responder.svc.secrets = dict(self.passwords.optional_services)
         self.vad: SileroVad | None = None
         self.stt: SpeechToText | None = None
         self.tts: TtsService | None = None
@@ -243,6 +245,7 @@ class PhoneWorker:
         self.settings, self.passwords = settings, passwords
         if isinstance(self.responder, SkillResponder):
             self.responder.svc.settings = settings
+            self.responder.svc.secrets = dict(passwords.optional_services)
             if isinstance(self.responder.svc.providers, Providers):
                 self.responder.svc.providers.refresh_config()
                 self._start_skills()

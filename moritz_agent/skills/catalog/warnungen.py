@@ -34,7 +34,7 @@ POLLEN_SOURCE = Source(
 )
 AIR_SOURCE = Source("Open-Meteo Luftqualität (CAMS)", "https://open-meteo.com/", "CC BY 4.0")
 
-_CIVIL = r"katastroph\w*|bevölkerungs\w*|hochwasser\w*|\bnina\b|katwarn|mowas|zivilschutz"
+_CIVIL = r"katastroph\w*|bevölkerungs\w*|\bnina\b|katwarn|mowas|zivilschutz"
 
 
 _KREIS_WARN = r"warn\w*.*\b(?:landkreis|kreis)\b|\b(?:landkreis|kreis)\b.*warn\w*"

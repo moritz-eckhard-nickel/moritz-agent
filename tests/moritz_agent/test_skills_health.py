@@ -176,7 +176,9 @@ def test_civil_protection_messages_skip_the_dwd_duplicate():
         == "Ja, es gibt eine Meldung für den Kreis: Hochwasserinformation Lahn: Pegel Leun über Meldegrenze."
     )
     assert session.last.skill_id == "warn.civil"
-    assert session.say("Ist was mit Hochwasser?").startswith("Ja, es gibt eine Meldung")
+    flood = session.say("Ist was mit Hochwasser?")
+    assert flood and "Der Bevölkerungsschutz meldet: Hochwasserinformation Lahn" in flood
+    assert session.last.skill_id == "water.flood"
 
 
 def test_no_civil_message():
