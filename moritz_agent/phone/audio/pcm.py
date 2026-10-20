@@ -92,6 +92,12 @@ def to_telephony(samples: np.ndarray, rate_in: int, target_dbfs: float = -20.0) 
     return float_to_pcm16(mono).tobytes()
 
 
+def apply_gain(pcm: bytes, gain_db: float) -> bytes:
+    """Scale PCM16 by ``gain_db`` (with clipping protection)."""
+    samples = pcm16_to_float(pcm) * (10 ** (gain_db / 20))
+    return float_to_pcm16(np.clip(samples, -1.0, 1.0)).tobytes()
+
+
 def duration_s(pcm: bytes | np.ndarray, rate: int = SAMPLE_RATE) -> float:
     n = len(pcm) // 2 if isinstance(pcm, bytes | bytearray) else int(pcm.size)
     return n / rate

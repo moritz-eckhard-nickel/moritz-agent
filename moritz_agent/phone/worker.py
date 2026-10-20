@@ -31,6 +31,8 @@ from moritz_agent.phone.control import PhoneControl
 from moritz_agent.phone.dialogue import CallSession, SessionDeps
 from moritz_agent.phone.responder import Responder, TestResponder
 from moritz_agent.phone.sip import SipCallMedia, SipPhone
+from moritz_agent.skills.responder import SkillResponder
+from moritz_agent.skills.services import build_services
 
 log = get_logger("phone")
 PROMPT_CATALOG = "assets/audio/prompts.de.toml"
@@ -68,7 +70,6 @@ class PhoneWorker:
     ) -> None:
         self.options = options
         self.root = root
-        self.responder: Responder = responder or TestResponder()
         self.settings: Settings = load_settings(options.config, root)
         self.passwords: Passwords = load_passwords(
             options.passwords or root / self.settings.general.passwords_file
@@ -77,6 +78,10 @@ class PhoneWorker:
             self.settings.phone.allowed_source_ips = options.allow
         if options.sip_port is not None:
             self.settings.phone.local_sip_port = options.sip_port
+        # instant answers first (time, calendar, weather, …); the test answer / the agent after them
+        self.responder: Responder = responder or SkillResponder(
+            build_services(self.settings, root), fallback=TestResponder()
+        )
         self.vad: SileroVad | None = None
         self.stt: SpeechToText | None = None
         self.tts: TtsService | None = None
@@ -233,6 +238,8 @@ class PhoneWorker:
         if self.options.sip_port is not None:
             settings.phone.local_sip_port = self.options.sip_port
         self.settings, self.passwords = settings, passwords
+        if isinstance(self.responder, SkillResponder):
+            self.responder.svc.settings = settings
         setup_logging(
             settings.logging.level, self.root / settings.logging.file, passwords.secret_values()
         )

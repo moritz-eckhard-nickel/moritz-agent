@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import time
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -118,7 +119,9 @@ class CallSession:
             min_speech_ms=deps.phone.vad.min_speech_ms,
             max_utterance_s=deps.phone.vad.max_utterance_s,
         )
-        self._context = TurnContext(call_id, deps.phone.assistant_name, deps.timezone)
+        self._context = TurnContext(
+            call_id, deps.phone.assistant_name, deps.timezone, started_at=time.monotonic()
+        )
         self._listening = False
         self._busy = False  # an item is being synthesized/played
         self._utterance = b""
@@ -357,7 +360,11 @@ class CallSession:
         await self._speak(prompt.text)
 
     async def _speak(self, text: str) -> None:
-        async for chunk in self.deps.tts.stream(text):
+        # "Sprich langsamer" / "Lauter bitte" change speed and volume for the rest of the call
+        skills = self._context.extras.get("skills")
+        speed = getattr(skills, "tempo", 1.0)
+        gain_db = getattr(skills, "loudness_db", 0.0)
+        async for chunk in self.deps.tts.stream(text, speed=speed, gain_db=gain_db):
             self._push(chunk)
 
     def _push(self, data: bytes) -> None:

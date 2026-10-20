@@ -10,7 +10,7 @@ chain telephone → speech recognition → answer → voice.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Protocol
+from typing import Any, Protocol
 
 from moritz_agent.agent import fastpath
 
@@ -20,6 +20,8 @@ class Reply:
     text: str | None = None
     prompt: str | None = None  # id of a pre-recorded announcement
     hangup: bool = False
+    result: Any = None  # the full SkillResult (card, buttons, sources …) for chat channels
+    skill_id: str | None = None
 
 
 @dataclass
@@ -30,6 +32,8 @@ class TurnContext:
     turn: int = 0
     last_reply: str | None = None
     history: list[tuple[str, str]] = field(default_factory=list)  # (caller, assistant)
+    started_at: float | None = None  # time.monotonic() when the call/chat started
+    extras: dict[str, Any] = field(default_factory=dict)  # per-conversation state of responders
 
 
 class ResponderUnavailable(RuntimeError):

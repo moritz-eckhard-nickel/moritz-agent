@@ -190,6 +190,142 @@ class Fastpaths(_Section):
     state: str = "HE"
 
 
+class SkillsHome(_Section):
+    postal_code: str = "35781"
+    name: str = "Weilburg"
+    state: str = "HE"
+    latitude: float = Field(0.0, ge=-90, le=90)  # 0 = take it from the gazetteer
+    longitude: float = Field(0.0, ge=-180, le=180)
+    region_places: list[str] = ["Limburg an der Lahn", "Wetzlar"]
+
+
+class SkillsTime(_Section):
+    spoken_style: Literal["digital", "umgangssprachlich"] = "digital"
+    quarter_dialect: bool = True
+
+
+class SkillsCalendar(_Section):
+    workdays: list[int] = [1, 2, 3, 4, 5]  # ISO weekdays
+
+
+class SkillsWeather(_Section):
+    provider: Literal["open-meteo"] = "open-meteo"
+    fallback_provider: Literal["brightsky", ""] = "brightsky"
+    open_meteo_url: str = "https://api.open-meteo.com"
+    brightsky_url: str = "https://api.brightsky.dev"
+    model: str = "best_match"
+    forecast_days: int = Field(10, ge=1, le=16)
+    past_days: int = Field(3, ge=0, le=7)
+    coordinate_decimals: int = Field(2, ge=0, le=4)
+    cache_current_minutes: int = Field(10, ge=1)
+    cache_forecast_minutes: int = Field(30, ge=1)
+    max_stale_hours: int = Field(6, ge=0)
+    prefetch_home: bool = True
+    prefetch_interval_minutes: int = Field(30, ge=5)
+    mention_source: Literal["always", "first", "on_request"] = "on_request"
+
+
+class SkillsWarnings(_Section):
+    enabled: bool = True
+    sources: list[Literal["dwd", "nina"]] = ["dwd", "nina"]
+    announce_on_greeting: Literal["off", "moderate", "severe", "extreme"] = "severe"
+    refresh_minutes: int = Field(10, ge=1)
+
+
+class SkillsPollen(_Section):
+    enabled: bool = True
+    dwd_partregion: str = "Nordhessen und hessische Mittelgebirge"
+    allergens: list[str] = []
+
+
+class SkillsToggle(_Section):
+    enabled: bool = True
+
+
+class SkillsWater(_Section):
+    enabled: bool = True
+    river: str = "LAHN"
+    station: str = "auto"
+
+
+class SkillsWaste(_Section):
+    enabled: bool = False
+    ics_url: str = ""
+    ics_file: str = ""
+
+
+class SkillsMoney(_Section):
+    currency: bool = True
+    electricity: bool = True
+    bidding_zone: str = "DE-LU"
+    fuel: bool = False
+    fuel_type: Literal["e5", "e10", "diesel"] = "e10"
+    fuel_radius_km: float = Field(5, gt=0, le=25)
+
+
+class SkillsFootball(_Section):
+    enabled: bool = False
+    team: str = "Eintracht Frankfurt"
+    league: str = "bl1"
+
+
+class SkillsNews(_Section):
+    enabled: bool = False
+    max_headlines: int = Field(3, ge=1, le=10)
+
+
+class SkillsNotes(_Section):
+    enabled: bool = False
+    retention_days: int = Field(30, ge=1)
+
+
+class SkillsSpelling(_Section):
+    alphabet: Literal["din5009", "traditionell"] = "din5009"
+
+
+class SkillsTimer(_Section):
+    enabled: bool = True
+    max_minutes: int = Field(15, ge=1, le=180)
+
+
+class Skills(_Section):
+    """Instant answers without the language model (docs/plan/13-sofortauskuenfte.md)."""
+
+    enabled: bool = True
+    disabled: list[str] = []
+    online: bool = True
+    http_connect_timeout_s: float = Field(1.5, gt=0)
+    http_timeout_s: float = Field(3.0, gt=0)
+    cache_dir: str = "data/cache/skills"
+    max_sentences: int = Field(3, ge=1, le=6)
+    answer_variation: bool = True
+    store_misses: bool = True
+    home: SkillsHome = SkillsHome()
+    time: SkillsTime = SkillsTime()
+    calendar: SkillsCalendar = SkillsCalendar()
+    weather: SkillsWeather = SkillsWeather()
+    warnings: SkillsWarnings = SkillsWarnings()
+    pollen: SkillsPollen = SkillsPollen()
+    air: SkillsToggle = SkillsToggle()
+    advice: SkillsToggle = SkillsToggle()
+    water: SkillsWater = SkillsWater()
+    waste: SkillsWaste = SkillsWaste()
+    money: SkillsMoney = SkillsMoney()
+    football: SkillsFootball = SkillsFootball()
+    news: SkillsNews = SkillsNews()
+    notes: SkillsNotes = SkillsNotes()
+    spelling: SkillsSpelling = SkillsSpelling()
+    fun: SkillsToggle = SkillsToggle()
+    timer: SkillsTimer = SkillsTimer()
+
+    @field_validator("calendar", mode="after")
+    @classmethod
+    def _workdays_valid(cls, value: SkillsCalendar) -> SkillsCalendar:
+        if not value.workdays or any(day < 1 or day > 7 for day in value.workdays):
+            raise ValueError("workdays must be ISO weekdays 1 (Monday) … 7 (Sunday)")
+        return value
+
+
 class Sandbox(_Section):
     connect_timeout_s: int = Field(10, ge=1)
 
@@ -204,6 +340,7 @@ class Settings(_Section):
     agent: Agent = Agent()
     storage: Storage = Storage()
     fastpaths: Fastpaths = Fastpaths()
+    skills: Skills = Skills()
     sandbox: Sandbox = Sandbox()
 
     def resolve(self, path: str, root: Path = REPO_ROOT) -> Path:

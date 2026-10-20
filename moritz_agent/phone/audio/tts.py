@@ -128,8 +128,11 @@ class TtsService:
         return ready[0] if ready else None
 
     # -- cache -------------------------------------------------------------------------
-    def _key(self, engine: TtsEngine, sentence: str) -> str:
-        raw = f"{CACHE_VERSION}|{engine.name}|{engine.voice_id}|{self.target_dbfs}|{sentence}"
+    def _key(self, engine: TtsEngine, sentence: str, speed: float = 1.0) -> str:
+        tempo = "" if abs(speed - 1.0) < 1e-6 else f"|x{speed:.2f}"
+        raw = (
+            f"{CACHE_VERSION}|{engine.name}|{engine.voice_id}|{self.target_dbfs}{tempo}|{sentence}"
+        )
         return hashlib.sha256(raw.encode()).hexdigest()
 
     def _disk_path(self, engine: TtsEngine, key: str) -> Path:
@@ -152,9 +155,16 @@ class TtsService:
 
     # -- synthesis ---------------------------------------------------------------------
     def _render_sentence(
-        self, engine: TtsEngine, sentence: str, persist: bool, cancellable: bool = False
+        self,
+        engine: TtsEngine,
+        sentence: str,
+        persist: bool,
+        cancellable: bool = False,
+        speed: float = 1.0,
     ) -> bytes:
-        key = self._key(engine, sentence)
+        if not getattr(engine, "supports_speed", False):
+            speed = 1.0  # fake and simple engines speak at their own pace
+        key = self._key(engine, sentence, speed)
         hit = self._lru.get(key)
         if hit is not None:
             return hit
@@ -168,7 +178,11 @@ class TtsService:
             raise TtsCancelled()
         started = time.monotonic()
         try:
-            samples, rate = engine.synthesize(sentence)
+            samples, rate = (
+                engine.synthesize(sentence, speed)  # type: ignore[call-arg]
+                if speed != 1.0
+                else engine.synthesize(sentence)
+            )
         except TtsError:
             raise
         except Exception as exc:
@@ -202,8 +216,14 @@ class TtsService:
             return b""
         return b"".join(self._render_sentence(engine, s, persist) for s in sentences)
 
-    async def stream(self, text: str, *, persist: bool = False) -> AsyncIterator[bytes]:
-        """Yield normalized PCM16 16 kHz audio sentence by sentence (first audio as early as possible)."""
+    async def stream(
+        self, text: str, *, persist: bool = False, speed: float = 1.0, gain_db: float = 0.0
+    ) -> AsyncIterator[bytes]:
+        """Yield normalized PCM16 16 kHz audio sentence by sentence (first audio as early as possible).
+
+        ``speed`` (> 1 faster) and ``gain_db`` change the speaking speed and volume for this call
+        only (SKILL "Sprich langsamer" / "Lauter bitte"); announcements keep their cached form.
+        """
         sentences = split_sentences(normalize_for_tts(text))
         if not sentences:
             return
@@ -215,7 +235,7 @@ class TtsService:
         for sentence in sentences:
             try:
                 data = await loop.run_in_executor(
-                    self._pool, self._render_sentence, engine, sentence, persist, True
+                    self._pool, self._render_sentence, engine, sentence, persist, True, speed
                 )
             except TtsError:
                 # try the next voice once if the chosen one failed mid-way
@@ -225,10 +245,10 @@ class TtsService:
                 log.warning("%s fehlgeschlagen – wechsle zu %s", engine.name, fallback)
                 engine = self.engines[fallback]
                 data = await loop.run_in_executor(
-                    self._pool, self._render_sentence, engine, sentence, persist, True
+                    self._pool, self._render_sentence, engine, sentence, persist, True, speed
                 )
             if data:
-                yield data
+                yield pcm.apply_gain(data, gain_db) if gain_db else data
 
     def cancel(self) -> None:
         """Abort running and pending syntheses (caller hung up)."""

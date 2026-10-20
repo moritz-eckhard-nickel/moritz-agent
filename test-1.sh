@@ -46,6 +46,11 @@ test-1.sh – Nikitas Telefon- und Stimmenteil testen (ohne Systeminstallation)
         Alle Ansagen vorrendern und im Cache ablegen (assets/audio/cache/).
   ./test-1.sh bench
         Geschwindigkeit von Spracherkennung und Stimme auf diesem Rechner messen.
+  ./test-1.sh ask "Frage" ["Folgefrage" …] [--explain] [--at 2026-10-18T19:12] [--offline] [--chat]
+        Sofortauskünfte (Uhrzeit, Datum, Wetter, Rechnen …) ohne Telefon ausprobieren: gleiche Antwort
+        wie am Telefon. --explain zeigt, wie die Frage verstanden wurde; --at tut so, als wäre es dann.
+  ./test-1.sh skills [help|corpus]
+        help: alle Sofortauskünfte mit Beispielen; corpus: den Testkorpus durchspielen.
   ./test-1.sh call [--quick] ["Satz" …]
         Testanruf ohne Telefonanlage: startet Nikita und ruft sich selbst an (Aufnahme in
         runtime/test-1/anruf.wav). --quick: nur Notstimme + festes Text-Skript, ohne Modelle.
@@ -275,6 +280,14 @@ main() {
 	bench)
 		need_env
 		phone bench "$@"
+		;;
+	ask)
+		need_env
+		PYTHONPATH="${ROOT}" "${VPY}" -m moritz_agent.skills ask "$@"
+		;;
+	skills)
+		need_env
+		PYTHONPATH="${ROOT}" "${VPY}" -m moritz_agent.skills "${@:-help}"
 		;;
 	call) cmd_call "$@" ;;
 	run)

@@ -1,0 +1,276 @@
+{"say": "Wie viel Uhr ist es?", "skill": "time.now"}
+{"say": "Wie spät ist es?", "skill": "time.now"}
+{"say": "Wie viel Uhr haben wir?", "skill": "time.now"}
+{"say": "Wie spät isses?", "skill": "time.now"}
+{"say": "Wie viel Uhr hammer?", "skill": "time.now"}
+{"say": "Uhrzeit?", "skill": "time.now"}
+{"say": "Welche Uhrzeit haben wir?", "skill": "time.now"}
+{"say": "Sag mir die Uhrzeit", "skill": "time.now"}
+{"say": "Kannst du mir sagen, wie spät es ist?", "skill": "time.now"}
+{"say": "Nikita, wie viel Uhr ist es?", "skill": "time.now"}
+{"say": "Weißt du, wie spät es ist?", "skill": "time.now"}
+{"say": "Wie spät ist es gerade?", "skill": "time.now"}
+{"say": "Wieviel Uhr ist es denn?", "skill": "time.now"}
+{"say": "Wie spät iss es?", "skill": "time.now"}
+{"say": "Hey Nikita wie spät ist es", "skill": "time.now"}
+{"say": "Sag mal, wie viel Uhr haben wir eigentlich?", "skill": "time.now"}
+{"say": "Ich möchte wissen, wie spät es ist", "skill": "time.now"}
+{"say": "Jetzt mal ehrlich, wie spät ist es?", "skill": "time.now"}
+{"say": "Datum und Uhrzeit?", "skill": "time.datetime"}
+{"say": "Uhrzeit und Datum bitte", "skill": "time.datetime"}
+{"say": "Sag mir Datum und Uhrzeit", "skill": "time.datetime"}
+{"say": "Wie spät ist es in New York?", "skill": "time.world"}
+{"say": "Uhrzeit in Tokio?", "skill": "time.world"}
+{"say": "Wie viel Uhr ist es in London?", "skill": "time.world"}
+{"say": "Wie spät ist es in Sydney gerade?", "skill": "time.world"}
+{"say": "Wie viel Uhr ist es in Madrid?", "skill": "time.world"}
+{"say": "Was ist die Uhrzeit in Los Angeles?", "skill": "time.world"}
+{"say": "Wie viel Zeitunterschied ist es nach Sydney?", "skill": "time.offset"}
+{"say": "Zeitverschiebung nach New York?", "skill": "time.offset"}
+{"say": "Wie spät ist es in drei Stunden?", "skill": "time.in_duration"}
+{"say": "Wie spät ist es in 90 Minuten?", "skill": "time.in_duration"}
+{"say": "Wann ist es in einer halben Stunde?", "skill": "time.in_duration"}
+{"say": "Wie lange noch bis 22 Uhr?", "skill": "time.until"}
+{"say": "Wie lange ist es noch bis Mitternacht?", "skill": "time.until"}
+{"say": "Wie lange noch bis 23:30?", "skill": "time.until"}
+{"say": "Haben wir gerade Sommerzeit?", "skill": "time.dst_now"}
+{"say": "Haben wir schon Winterzeit?", "skill": "time.dst_now"}
+{"say": "Wann wird die Uhr umgestellt?", "skill": "time.dst_next"}
+{"say": "Zeitumstellung?", "skill": "time.dst_next"}
+{"say": "Wann ist die nächste Zeitumstellung?", "skill": "time.dst_next"}
+{"say": "Wann wird die Uhr zurückgestellt?", "skill": "time.dst_next"}
+{"say": "Welches Datum ist heute?", "skill": "date.today"}
+{"say": "Der Wievielte ist heute?", "skill": "date.today"}
+{"say": "Welches Datum haben wir?", "skill": "date.today"}
+{"say": "Was hammer heit fürn Datum?", "skill": "date.today"}
+{"say": "Welches Datum haben wir heute?", "skill": "date.today"}
+{"say": "Sag mir das heutige Datum", "skill": "date.today"}
+{"say": "Den Wievielten haben wir heute?", "skill": "date.today"}
+{"say": "Welcher Tag ist heute?", "skill": "date.weekday"}
+{"say": "Welcher Wochentag ist heute?", "skill": "date.weekday"}
+{"say": "Was ist heute für ein Tag?", "skill": "date.weekday"}
+{"say": "Welchen Wochentag haben wir?", "skill": "date.weekday"}
+{"say": "Welcher Tag ist morgen?", "skill": "date.relative"}
+{"say": "Welches Datum ist morgen?", "skill": "date.relative"}
+{"say": "Welcher Tag war gestern?", "skill": "date.relative"}
+{"say": "Welcher Tag ist übermorgen?", "skill": "date.relative"}
+{"say": "Welcher Wochentag ist morgen?", "skill": "date.relative"}
+{"say": "Welches Datum war gestern?", "skill": "date.relative"}
+{"say": "Welcher Wochentag war vorgestern?", "skill": "date.relative"}
+{"say": "Was für ein Tag ist der 24. Dezember?", "skill": "date.weekday_of"}
+{"say": "Welcher Wochentag war der 3. Oktober 1990?", "skill": "date.weekday_of"}
+{"say": "Auf welchen Tag fällt der 1. Mai?", "skill": "date.weekday_of"}
+{"say": "Welches Datum ist in drei Wochen?", "skill": "date.offset"}
+{"say": "Welches Datum ist in 100 Tagen?", "skill": "date.offset"}
+{"say": "Welcher Tag ist in 2 Monaten?", "skill": "date.offset"}
+{"say": "Wie viele Tage noch bis Weihnachten?", "skill": "date.days_until"}
+{"say": "Wie viele Tage bis Silvester?", "skill": "date.days_until"}
+{"say": "Wie lange noch bis Weihnachten?", "skill": "date.days_until"}
+{"say": "Wie viele Tage bis zum Wochenende?", "skill": "date.days_until"}
+{"say": "Wie viele Tage sind es noch bis Ostern?", "skill": "date.days_until"}
+{"say": "Wie viele Tage bis zum 1. März?", "skill": "date.days_until"}
+{"say": "Wie viele Tage bis Neujahr?", "skill": "date.days_until"}
+{"say": "Wie viele Tage bis zu den Weihnachtsferien?", "skill": "date.days_until"}
+{"say": "Wie viele Wochen bis Weihnachten?", "skill": "date.days_until"}
+{"say": "Wie viele Tage noch bis zum ersten Advent?", "skill": "date.days_until"}
+{"say": "Noch wie viele Tage bis Heiligabend?", "skill": "date.days_until"}
+{"say": "Wie viele Tage sind seit Neujahr vergangen?", "skill": "date.days_since"}
+{"say": "Wie lange ist der 1. Mai her?", "skill": "date.days_since"}
+{"say": "Wie viele Tage liegen zwischen dem 1. März und dem 15. April?", "skill": "date.between"}
+{"say": "Wie viele Tage vom 1. Januar bis zum 1. März?", "skill": "date.between"}
+{"say": "Welche Kalenderwoche haben wir?", "skill": "date.calendar_week"}
+{"say": "Welche KW haben wir?", "skill": "date.calendar_week"}
+{"say": "In welcher Kalenderwoche sind wir?", "skill": "date.calendar_week"}
+{"say": "Welche Woche ist gerade?", "skill": "date.calendar_week"}
+{"say": "Wann ist KW 50?", "skill": "date.week_range"}
+{"say": "Kalenderwoche 10", "skill": "date.week_range"}
+{"say": "Der wievielte Tag des Jahres ist heute?", "skill": "date.day_of_year"}
+{"say": "Wie viele Tage hat das Jahr noch?", "skill": "date.day_of_year"}
+{"say": "Wie viele Tage hat der Februar 2028?", "skill": "date.month_info"}
+{"say": "Wie viele Tage hat der November?", "skill": "date.month_info"}
+{"say": "Ist 2028 ein Schaltjahr?", "skill": "date.leap_year"}
+{"say": "Ist dieses Jahr ein Schaltjahr?", "skill": "date.leap_year"}
+{"say": "Wie alt ist jemand, der am 12. Mai 1990 geboren ist?", "skill": "date.age"}
+{"say": "Wie alt bin ich, wenn ich 1995 geboren bin?", "skill": "date.age"}
+{"say": "Wann ist Muttertag?", "skill": "date.special"}
+{"say": "Wann ist der erste Advent?", "skill": "date.special"}
+{"say": "Wann ist Ostern 2027?", "skill": "date.special"}
+{"say": "Wann ist Rosenmontag?", "skill": "date.special"}
+{"say": "Wann ist Erntedank?", "skill": "date.special"}
+{"say": "Wann ist Vatertag?", "skill": "date.special"}
+{"say": "Wann ist der nächste Feiertag?", "skill": "holiday.next"}
+{"say": "Nächster Feiertag?", "skill": "holiday.next"}
+{"say": "Wann ist wieder Feiertag?", "skill": "holiday.next"}
+{"say": "Ist morgen ein Feiertag?", "skill": "holiday.is"}
+{"say": "Ist heute Feiertag?", "skill": "holiday.is"}
+{"say": "Haben wir morgen Feiertag?", "skill": "holiday.is"}
+{"say": "Ist der 3. Oktober ein Feiertag?", "skill": "holiday.is"}
+{"say": "Ist der 1. Mai in Hessen ein Feiertag?", "skill": "holiday.is"}
+{"say": "Ist Fronleichnam in Bayern ein Feiertag?", "skill": "holiday.is"}
+{"say": "Ist Allerheiligen in NRW ein Feiertag?", "skill": "holiday.is"}
+{"say": "Ist der Reformationstag in Sachsen ein Feiertag?", "skill": "holiday.is"}
+{"say": "Welche Feiertage gibt es im Dezember?", "skill": "holiday.list"}
+{"say": "Welche Feiertage haben wir noch?", "skill": "holiday.list"}
+{"say": "Feiertage 2027?", "skill": "holiday.list"}
+{"say": "Wann ist das nächste lange Wochenende?", "skill": "holiday.long_weekend"}
+{"say": "Brückentage?", "skill": "holiday.long_weekend"}
+{"say": "Wie viele Arbeitstage hat der November?", "skill": "holiday.workdays"}
+{"say": "Arbeitstage bis Weihnachten?", "skill": "holiday.workdays"}
+{"say": "Wann sind die nächsten Ferien?", "skill": "school.next"}
+{"say": "Wann sind Sommerferien?", "skill": "school.next"}
+{"say": "Wann sind die Weihnachtsferien?", "skill": "school.next"}
+{"say": "Wann beginnen die Osterferien 2027?", "skill": "school.next"}
+{"say": "Sind gerade Ferien?", "skill": "school.now"}
+{"say": "Haben wir Ferien?", "skill": "school.now"}
+{"say": "Sind morgen Ferien?", "skill": "school.now"}
+{"say": "Was ist 17 mal 23?", "skill": "calc.arith"}
+{"say": "144 geteilt durch 12", "skill": "calc.arith"}
+{"say": "2 hoch 10", "skill": "calc.arith"}
+{"say": "Wurzel aus 144", "skill": "calc.arith"}
+{"say": "Was ist 7 plus 8?", "skill": "calc.arith"}
+{"say": "Was ist 100 minus 37?", "skill": "calc.arith"}
+{"say": "Wie viel ist 12 mal 12", "skill": "calc.arith"}
+{"say": "Rechne 15 plus 27", "skill": "calc.arith"}
+{"say": "Was ist siebzehn mal dreiundzwanzig?", "skill": "calc.arith"}
+{"say": "3 zum Quadrat", "skill": "calc.arith"}
+{"say": "(3 plus 4) mal 5", "skill": "calc.arith"}
+{"say": "1000 geteilt durch 8", "skill": "calc.arith"}
+{"say": "Was sind 19 Prozent von 249?", "skill": "calc.percent"}
+{"say": "Wie viel Prozent sind 30 von 120?", "skill": "calc.percent"}
+{"say": "20 Prozent von 80", "skill": "calc.percent"}
+{"say": "Was sind 7 Prozent von 1200 Euro?", "skill": "calc.percent"}
+{"say": "15 % von 60", "skill": "calc.percent"}
+{"say": "Was sind 100 Euro netto brutto?", "skill": "calc.vat"}
+{"say": "Wie viel Mehrwertsteuer ist in 59,90 Euro?", "skill": "calc.vat"}
+{"say": "100 Euro brutto in netto", "skill": "calc.vat"}
+{"say": "Mehrwertsteuer auf 200 Euro", "skill": "calc.vat"}
+{"say": "10 Prozent Trinkgeld auf 43 Euro?", "skill": "calc.tip"}
+{"say": "Wie viel Trinkgeld bei 87 Euro?", "skill": "calc.tip"}
+{"say": "86 Euro durch 3 Personen", "skill": "calc.split"}
+{"say": "240 Euro durch 4 Leute", "skill": "calc.split"}
+{"say": "Was ist ein Drittel von 90?", "skill": "calc.fraction"}
+{"say": "Die Hälfte von 150", "skill": "calc.fraction"}
+{"say": "Ein Viertel von 200", "skill": "calc.fraction"}
+{"say": "Was kostet 80 Euro minus 25 Prozent?", "skill": "calc.discount"}
+{"say": "80 Euro mit 25 Prozent Rabatt", "skill": "calc.discount"}
+{"say": "Runde 3,14159 auf 2 Stellen", "skill": "calc.round"}
+{"say": "Wie viel sind 5 Meilen in Kilometer?", "skill": "convert.units"}
+{"say": "100 Fahrenheit in Celsius", "skill": "convert.units"}
+{"say": "Wie viele Gramm sind ein Pfund?", "skill": "convert.units"}
+{"say": "3 Esslöffel in Milliliter", "skill": "convert.units"}
+{"say": "50 Knoten in km/h", "skill": "convert.units"}
+{"say": "Wie viele Sekunden hat ein Tag?", "skill": "convert.units"}
+{"say": "10 Zoll in Zentimeter", "skill": "convert.units"}
+{"say": "2 Gigabyte in Megabyte", "skill": "convert.units"}
+{"say": "Wie viele Meter sind 3 Kilometer?", "skill": "convert.units"}
+{"say": "Was ist 2026 in römischen Zahlen?", "skill": "convert.numeral"}
+{"say": "42 in binär?", "skill": "convert.numeral"}
+{"say": "Buchstabier Weilburg", "skill": "spell.word"}
+{"say": "Wie buchstabiert man Lahn?", "skill": "spell.word"}
+{"say": "Buchstabiere mir Nikita", "skill": "spell.word"}
+{"say": "Wirf eine Münze", "skill": "random.coin"}
+{"say": "Kopf oder Zahl?", "skill": "random.coin"}
+{"say": "Würfel mal", "skill": "random.dice"}
+{"say": "Wirf zwei Würfel", "skill": "random.dice"}
+{"say": "Würfel einen W20", "skill": "random.dice"}
+{"say": "Nenn mir eine Zahl zwischen 1 und 100", "skill": "random.number"}
+{"say": "Zufallszahl", "skill": "random.number"}
+{"say": "Entscheide Pizza oder Döner", "skill": "random.choice"}
+{"say": "Erzähl einen Witz", "skill": "fun.joke"}
+{"say": "Kennst du einen Witz?", "skill": "fun.joke"}
+{"say": "Sag was Lustiges", "skill": "fun.joke"}
+{"say": "Sag was auf Hessisch", "skill": "fun.hessian"}
+{"say": "Was heißt Guude?", "skill": "fun.hessian"}
+{"say": "Zähl von 10 runter", "skill": "count.down"}
+{"say": "Stell einen Timer auf 3 Minuten", "skill": "timer.start"}
+{"say": "Eieruhr 7 Minuten", "skill": "timer.start"}
+{"say": "Timer für 10 Minuten", "skill": "timer.start"}
+{"say": "Tschüss", "skill": "talk.goodbye"}
+{"say": "Auf Wiederhören", "skill": "talk.goodbye"}
+{"say": "Danke, das war's", "skill": "talk.goodbye"}
+{"say": "Ade", "skill": "talk.goodbye"}
+{"say": "Tschau", "skill": "talk.goodbye"}
+{"say": "Bis bald", "skill": "talk.goodbye"}
+{"say": "Gute Nacht", "skill": "talk.goodbye"}
+{"say": "Auflegen", "skill": "talk.goodbye"}
+{"say": "Tschüss Nikita", "skill": "talk.goodbye"}
+{"say": "Guude!", "skill": "talk.greeting"}
+{"say": "Hallo", "skill": "talk.greeting"}
+{"say": "Moin", "skill": "talk.greeting"}
+{"say": "Servus", "skill": "talk.greeting"}
+{"say": "Hallo Nikita", "skill": "talk.greeting"}
+{"say": "Guten Tag", "skill": "talk.greeting"}
+{"say": "Danke", "skill": "talk.thanks"}
+{"say": "Vielen Dank", "skill": "talk.thanks"}
+{"say": "Super, danke", "skill": "talk.thanks"}
+{"say": "Danke schön", "skill": "talk.thanks"}
+{"say": "Merci", "skill": "talk.thanks"}
+{"say": "Wie geht's dir?", "skill": "talk.how_are_you"}
+{"say": "Wie geht es dir?", "skill": "talk.how_are_you"}
+{"say": "Alles klar bei dir?", "skill": "talk.how_are_you"}
+{"say": "Wie gehts", "skill": "talk.how_are_you"}
+{"say": "Wer bist du?", "skill": "talk.identity"}
+{"say": "Wie heißt du?", "skill": "talk.identity"}
+{"say": "Stell dich vor", "skill": "talk.identity"}
+{"say": "Bist du ein Mensch?", "skill": "talk.identity"}
+{"say": "Bist du eine KI?", "skill": "talk.identity"}
+{"say": "Was kannst du?", "skill": "talk.help"}
+{"say": "Hilfe", "skill": "talk.help"}
+{"say": "Was kann ich dich fragen?", "skill": "talk.help"}
+{"say": "Wobei kannst du helfen?", "skill": "talk.help"}
+{"say": "Was hast du gesagt?", "skill": "talk.repeat"}
+{"say": "Kannst du das wiederholen?", "skill": "talk.repeat"}
+{"say": "Nochmal bitte", "skill": "talk.repeat"}
+{"say": "Wie bitte?", "skill": "talk.repeat"}
+{"say": "Sprich langsamer", "skill": "talk.slower"}
+{"say": "Etwas schneller bitte", "skill": "talk.slower"}
+{"say": "Kannst du etwas langsamer sprechen", "skill": "talk.slower"}
+{"say": "Lauter bitte", "skill": "talk.louder"}
+{"say": "Leiser", "skill": "talk.louder"}
+{"say": "Wie lange telefonieren wir schon?", "skill": "talk.call_duration"}
+{"say": "Hörst du mich?", "skill": "talk.hear_me"}
+{"say": "Bist du noch da?", "skill": "talk.hear_me"}
+{"say": "Speicherst du das?", "skill": "talk.privacy"}
+{"say": "Nimmst du das auf?", "skill": "talk.privacy"}
+{"say": "Wird das aufgezeichnet?", "skill": "talk.privacy"}
+{"say": "Welche Version hast du?", "skill": "talk.version"}
+{"say": "Wie lange läufst du schon?", "skill": "talk.version"}
+{"say": "Läuft alles?", "skill": "talk.status"}
+{"say": "Systemstatus?", "skill": "talk.status"}
+{"say": "Vergiss es", "skill": "talk.cancel"}
+{"say": "Abbrechen", "skill": "talk.cancel"}
+{"say": "Guten Morgen", "skill": "briefing"}
+{"say": "Was steht heute an?", "skill": "briefing"}
+{"say": "Gib mir einen Überblick", "skill": "briefing"}
+{"say": "Um wie viel Uhr fährt der Zug nach Frankfurt?", "skill": null}
+{"say": "Wann öffnet der Supermarkt?", "skill": null}
+{"say": "Um wie viel Uhr beginnt der Film?", "skill": null}
+{"say": "Ich hab keine Zeit", "skill": null}
+{"say": "Das Wetter ist mir egal", "skill": null}
+{"say": "Wie war das Wetter im Urlaub?", "skill": null}
+{"say": "Erzähl mir etwas über die Geschichte von Hessen und was dort im Mittelalter passiert ist", "skill": null}
+{"say": "Wer war der erste Bundeskanzler", "skill": null}
+{"say": "Was ist die Hauptstadt von Australien", "skill": null}
+{"say": "Wie viele Einwohner hat Frankfurt", "skill": null}
+{"say": "Schreib mir eine E-Mail an meinen Chef", "skill": null}
+{"say": "Mach das Licht an", "skill": null}
+{"say": "Ruf bitte meine Mutter an", "skill": null}
+{"say": "Wie funktioniert ein Dieselmotor", "skill": null}
+{"say": "Ich habe gestern Abend im Fernsehen einen Beitrag über Wetterphänomene in Kanada gesehen", "skill": null}
+{"say": "Wie lang ist die Lahn", "skill": null}
+{"say": "Wie teuer ist ein Auto", "skill": null}
+{"say": "Was kostet ein Flug nach Rom", "skill": null}
+{"say": "Spiel mir ein Lied", "skill": null}
+{"say": "Wie wird man Millionär", "skill": null}
+{"say": "Wie spät kommt der Bus", "skill": null}
+{"say": "Um wie viel Uhr geht die Sonne unter", "skill": null}
+{"say": "Wann ist die Sonne weg", "skill": null}
+{"say": "Das ist mir zu laut", "skill": null}
+{"say": "Wie heißt die Hauptstadt von Hessen", "skill": null}
+{"say": "Wie hoch ist der Feldberg", "skill": null}
+{"prior": ["Wie lange noch bis Weihnachten?"], "say": "Mehr Details", "skill": null}
+{"prior": ["Was kannst du?"], "say": "Mehr Details", "skill": "talk.details"}
+{"prior": ["Wie spät ist es?"], "say": "Woher weißt du das?", "skill": "talk.source"}
+{"prior": ["Stell einen Timer auf 5 Minuten"], "say": "Wie lange noch?", "skill": "timer.left"}
+{"prior": ["Wie spät ist es?"], "say": "Kannst du das wiederholen?", "skill": "talk.repeat"}
+{"prior": ["Wie spät ist es?"], "say": "Was habe ich dich gerade gefragt?", "skill": "talk.last_question"}
