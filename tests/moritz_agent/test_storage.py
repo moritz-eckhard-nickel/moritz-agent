@@ -60,7 +60,7 @@ def test_a_failing_migration_rolls_back_completely(tmp_path):
         "CREATE TABLE b (y INTEGER);\nINSERT INTO nowhere VALUES (1);"
     )
     database = Database(tmp_path / "x.sqlite3", migrations=folder)
-    with pytest.raises(StorageError, match="0002_bad.sql"):
+    with pytest.raises(StorageError, match=r"0002_bad\.sql"):
         database.migrate()
     assert database.current_version() == 1
     names = {r["name"] for r in database.connect().execute("SELECT name FROM sqlite_master")}
