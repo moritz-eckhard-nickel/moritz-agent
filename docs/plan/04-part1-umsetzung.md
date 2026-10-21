@@ -857,3 +857,30 @@ Alles hier ist **ungeprüft** und gehört in die Abnahmen P1-18, P1-30, P1-32 un
    wegen fehlenden Internets nur als „übersprungen“ gesehen.
 5. KoboldCpp-Tool-Call-Vorlage und echtes Sprachmodell (Agent-Schleife hinter den Skills).
 6. SIP-Registrierung, Klingeln und Audio auf Sophie-1 (P1-18).
+
+### C.4 Fehlerdurchgang nach PR #8 (21.10.2026)
+
+Ein Prüfdurchgang über den ganzen Code (Kern, Telefon, Skripte, Sofortauskünfte, Wetter, Discord) hat
+rund 50 Fehler gefunden; alle bestätigten sind behoben und mit Regressionstests abgesichert. Was dabei
+**Verhalten oder Plan** ändert:
+
+- **Niederschlag und Sonnenschein** liefern Open-Meteo und Bright Sky als Summe des *vorangehenden*
+  Intervalls; beim Einlesen werden sie auf den Intervallbeginn verschoben („ab 6 Uhr Regen“ heißt jetzt
+  wirklich ab 6 Uhr). Die Test-Fixtures stempeln wie die echten Dienste.
+- **Pollen (DWD):** „heute/morgen/übermorgen“ zählen ab `last_update` der Datei; „-1“ heißt „keine
+  Vorhersage“ und wird ehrlich so gesagt.
+- **Pegel:** Werte älter als 3 Stunden oder „out-dated“ werden nicht als aktuell genannt.
+- **Abfallkalender (ICS):** EXDATE, RECURRENCE-ID, mehrere BYDAY, MONTHLY, COUNT/UNTIL, UTC/TZID.
+- **Discord-Postausgang:** fehlgeschlagene Nachrichten werden mit wachsender Pause erneut versucht
+  (20 s, verdoppelnd bis 30 min, höchstens 8 Versuche ≈ 42 min) statt nach 10 s verworfen; eine
+  geschlossene DM geht in den Standardkanal. Systemhinweise höchstens einmal pro Stunde und Ziel.
+- **Sprachkanal:** gehört werden nur Owner und Vertraute; eine Antwort läuft mit den geringeren Rechten
+  der zuletzt Gehörten (§9.2).
+- **Telefon/Hauptprozess:** ein Anruf ohne Ende-Meldung gilt nach `max_call_duration_s` + 5 min als
+  beendet; Datei-Überwachung (`config_poll_s`) lädt wie SIGHUP neu und benachrichtigt die Worker.
+- **Speicher:** die Aufbewahrungsfrist leert auch Tool-Argumente und -Zusammenfassungen (STORE-02).
+- **Installer/Updater:** `passwords.txt` und die Konfiguration werden als root bearbeitet (Besitzer und
+  Modus bleiben); `--keep-backups` muss mindestens 1 sein.
+- **Rechnen/Kalender:** kaufmännisches Runden (statt „Banker's Rounding“), Mehrwertsteuer „plus/auf/von“
+  rechnet drauf, Zeitrechnung über die Zeitumstellung in UTC, Mariä Himmelfahrt (15.8.) als eigener Tag.
+- **Orte:** „Wo liegt Gießen?“ beantwortet `geo.region_of` (nur bei sicher erkannten Namen).

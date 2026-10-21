@@ -89,7 +89,10 @@ def clean_text(text: object, limit: int = SNIPPET_CHARS) -> str:
 
 
 def domain_of(url: str) -> str:
-    host = (urlsplit(url).hostname or "").lower()
+    try:
+        host = (urlsplit(url).hostname or "").lower()
+    except ValueError:  # e.g. "https://[broken/x" – one odd hit must not break the search
+        return ""
     return host.removeprefix("www.")
 
 
@@ -163,6 +166,10 @@ class SearchService:
             except SearchError as exc:
                 outcome.errors[name] = exc.kind
                 log.warning("Suche: %s nicht erreichbar (%s)", name, exc.kind)
+                continue
+            except Exception as exc:  # an unexpected answer: try the next backend
+                outcome.errors[name] = "failed"
+                log.warning("Suche: %s fehlgeschlagen (%s)", name, type(exc).__name__)
                 continue
             hits = dedupe_by_domain(hits, limit)
             if not hits:

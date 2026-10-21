@@ -32,6 +32,7 @@ BRIEFING_WINDOW_H = 3
 WASTE_TIME = time(19, 0)
 LEVELS = {"moderate": 2, "severe": 3, "extreme": 4}
 DEFAULT_TARGET = "default"  # the default text channel
+RETRY_ASK_S = 300  # a briefing or waste hint that failed is tried again after five minutes
 
 Ask = Callable[[str, str], Awaitable[Any]]  # (user_id, text) → Outcome of the skills
 Alerts = Callable[[str], Awaitable[list[Any]]]  # user_id → warnings of the user's home
@@ -84,6 +85,7 @@ class Scheduler:
         self.ask = ask
         self.alerts = alerts
         self.timezone = timezone
+        self._retry_at: dict[str, datetime] = {}  # marker → not before (after a failed ask)
 
     # -- targets ----------------------------------------------------------------------------------------
     def _target(self, user_id: str) -> str:
@@ -216,21 +218,54 @@ class Scheduler:
             if sub["params"].get("weekdays") and now.weekday() >= 5:
                 continue
             marker = f"briefing:{user}"
-            if self.store.state(marker) == now.date().isoformat():
+            outcome = await self._ask_once(marker, user, "Morgenbriefing", now)
+            if outcome is None:
+                continue
+            result = getattr(outcome, "result", None)
+            if result is None or not result.text:
+                self._retry_later(marker, now)
+                continue
+            try:
+                queued = self.store.enqueue(
+                    "briefing",
+                    self._target(user),
+                    {"title": "☀️ Guten Morgen", "text": result.text, "mention": user},
+                    user_id=user,
+                    dedupe_key=f"briefing:{user}:{now.date().isoformat()}",
+                )
+            except Exception:
+                log.warning("Morgenbriefing für …%s nicht eingereiht", user[-4:], exc_info=True)
+                self._retry_later(marker, now)
                 continue
             self.store.set_state(marker, now.date().isoformat())
-            outcome = await self.ask(user, "Morgenbriefing")
-            if outcome is None or outcome.result is None or not outcome.result.text:
-                continue
-            self.store.enqueue(
-                "briefing",
-                self._target(user),
-                {"title": "☀️ Guten Morgen", "text": outcome.result.text, "mention": user},
-                user_id=user,
-                dedupe_key=f"briefing:{user}:{now.date().isoformat()}",
-            )
-            sent += 1
+            sent += 1 if queued else 0
         return sent
+
+    async def _ask_once(self, marker: str, user: str, text: str, now: datetime) -> Any | None:
+        """Ask the skills for a once-a-day message – unless done today or a retry is not due yet.
+
+        The day marker is only set after the message was queued, so a failure is tried again
+        (after ``RETRY_ASK_S``) instead of losing the day; one person's failure never stops the others.
+        """
+        if self.store.state(marker) == now.date().isoformat():
+            return None
+        retry = self._retry_at.get(marker)
+        if retry is not None and now < retry:
+            return None
+        try:
+            outcome = await self.ask(user, text)
+        except Exception as exc:
+            log.warning("„%s“ für …%s fehlgeschlagen (%s)", text, user[-4:], type(exc).__name__)
+            log.debug("Planer: Frage fehlgeschlagen", exc_info=True)
+            self._retry_later(marker, now)
+            return None
+        self._retry_at.pop(marker, None)
+        if outcome is None:
+            self._retry_later(marker, now)
+        return outcome
+
+    def _retry_later(self, marker: str, now: datetime) -> None:
+        self._retry_at[marker] = now + timedelta(seconds=RETRY_ASK_S)
 
     async def _waste(self, now: datetime) -> int:
         sent = 0
@@ -239,39 +274,57 @@ class Scheduler:
             if now.time() < WASTE_TIME or now.time() >= time(21, 0):
                 continue
             marker = f"waste:{user}"
-            if self.store.state(marker) == now.date().isoformat():
+            outcome = await self._ask_once(marker, user, "Welche Tonne kommt morgen?", now)
+            if outcome is None:
+                continue
+            result = getattr(outcome, "result", None)
+            if result is None:
+                self._retry_later(marker, now)
+                continue
+            if not (result.data or {}).get("pickups"):
+                self.store.set_state(marker, now.date().isoformat())  # nothing collected tomorrow
+                continue
+            try:
+                queued = self.store.enqueue(
+                    "waste",
+                    self._target(user),
+                    {"title": "🗑️ Müllabfuhr", "text": result.text, "mention": user},
+                    user_id=user,
+                    dedupe_key=f"waste:{user}:{now.date().isoformat()}",
+                )
+            except Exception:
+                log.warning("Müllhinweis für …%s nicht eingereiht", user[-4:], exc_info=True)
+                self._retry_later(marker, now)
                 continue
             self.store.set_state(marker, now.date().isoformat())
-            outcome = await self.ask(user, "Welche Tonne kommt morgen?")
-            result = getattr(outcome, "result", None)
-            if result is None or not (result.data or {}).get("pickups"):
-                continue
-            self.store.enqueue(
-                "waste",
-                self._target(user),
-                {"title": "🗑️ Müllabfuhr", "text": result.text, "mention": user},
-                user_id=user,
-                dedupe_key=f"waste:{user}:{now.date().isoformat()}",
-            )
-            sent += 1
+            sent += 1 if queued else 0
         return sent
 
     # -- events from elsewhere ----------------------------------------------------------------------------------
     def system_event(self, kind: str, text: str) -> int:
-        """A note for the owners ("Telefon seit 5 Minuten nicht registriert"): once per kind and hour."""
+        """A note for the owners ("Telefon seit 5 Minuten nicht registriert"): once per kind and hour.
+
+        Throttled per destination: every owner gets it in their DM, the default channel gets it
+        once – also when the previous note has already been delivered."""
         now = self.now()
+        hour = now.strftime("%Y%m%d%H")
         sent = 0
         for sub in self.store.subscriptions("system"):
             user = sub["user_id"]
+            target = self._target(user)
+            marker = f"system:{kind}:{target}"
+            if self.store.state(marker) == hour:
+                continue
             quiet = self._quiet(user, now)
             queued = self.store.enqueue(
                 "system",
-                self._target(user),
+                target,
                 {"title": "🔧 Hinweis", "text": text},
                 user_id=user,
-                dedupe_key=f"system:{kind}:{now.strftime('%Y%m%d%H')}",
+                dedupe_key=f"system:{kind}:{target}:{hour}",
                 not_before=quiet_end(now, quiet) if quiet else None,
             )
+            self.store.set_state(marker, hour)
             sent += 1 if queued else 0
         return sent
 

@@ -58,13 +58,14 @@ def _below_hundred(word: str) -> int | None:
     return None
 
 
-def _below_thousand(word: str) -> int | None:
+def _below_thousand(word: str, *, years: bool = False) -> int | None:
+    """Value below 1000; with ``years`` also "neunzehnhundertneunzig" (1990) style years."""
     if not word:
         return None
     if "hundert" in word:
         left, _, right = word.partition("hundert")
         multiplier = 1 if not left else _below_hundred(left)
-        if multiplier is None or not 1 <= multiplier <= 9:
+        if multiplier is None or not (1 <= multiplier <= 9 or (years and 11 <= multiplier <= 99)):
             return None
         rest = 0 if not right else _below_hundred(right)
         return None if rest is None else multiplier * 100 + rest
@@ -86,7 +87,7 @@ def parse_cardinal(word: str) -> int | None:
             return None
         rest = 0 if not right else _below_thousand(right)
         return None if rest is None else multiplier * 1000 + rest
-    return _below_thousand(word)
+    return _below_thousand(word, years=True)
 
 
 def parse_ordinal(word: str) -> int | None:
@@ -110,8 +111,18 @@ def parse_ordinal(word: str) -> int | None:
     return None
 
 
+_SPOKEN_DECIMAL = re.compile(r"(?<![\d.,])(-?\d+) komma (\d+)\b(?![.,]\d)")
+
+
 def words_to_digits(text: str) -> str:
-    """Replace number words by digits ("zwei tausend" is not joined; compound words are)."""
+    """Replace number words by digits ("zwei tausend" is not joined; compound words are).
+
+    A spoken decimal ("zwei komma fünf") becomes "2,5".
+    """
+    return _SPOKEN_DECIMAL.sub(r"\1,\2", _words_to_digits(text))
+
+
+def _words_to_digits(text: str) -> str:
     tokens = text.split()
     out: list[str] = []
     for index, token in enumerate(tokens):

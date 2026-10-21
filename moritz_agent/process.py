@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import os
+import re
 import signal
 import socket
 import time
@@ -19,6 +20,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from moritz_agent.logging_setup import get_logger
+
+MAX_LINE_BYTES = 8192  # longer output lines are logged in pieces
 
 HealthCheck = Callable[[], Awaitable[bool]]
 
@@ -85,6 +88,11 @@ class ManagedProcess:
     @property
     def running(self) -> bool:
         return self._proc is not None and self._proc.returncode is None
+
+    @property
+    def alive(self) -> bool:
+        """Supervised: the child runs or waits for its next restart (``stop()`` ends this)."""
+        return self._task is not None and not self._task.done()
 
     async def start(self) -> None:
         if self._task is None or self._task.done():
@@ -182,14 +190,28 @@ class ManagedProcess:
         self._status.pid = None
 
     async def _forward(self, proc: asyncio.subprocess.Process) -> None:
+        """Log the child's output line by line. Reads chunks (not ``readline``) so an overlong line
+        or a progress bar that only uses ``\r`` never stops the reader – the child would then block
+        on a full pipe."""
         assert proc.stdout is not None
+        pending = b""
         while True:
-            line = await proc.stdout.readline()
-            if not line:
+            chunk = await proc.stdout.read(65536)
+            if not chunk:
+                self._log_output(pending)
                 return
-            text = line.decode("utf-8", errors="replace").rstrip()
-            if text:
-                self.log.info("[%s] %s", self.name, text)
+            parts = re.split(rb"[\r\n]", pending + chunk)
+            pending = parts.pop()
+            if len(pending) > MAX_LINE_BYTES:
+                parts.append(pending)
+                pending = b""
+            for part in parts:
+                self._log_output(part)
+
+    def _log_output(self, raw: bytes) -> None:
+        text = raw[:MAX_LINE_BYTES].decode("utf-8", errors="replace").rstrip()
+        if text:
+            self.log.info("[%s] %s", self.name, text)
 
     async def _watch_health(self, proc: asyncio.subprocess.Process) -> None:
         assert self.health_check is not None

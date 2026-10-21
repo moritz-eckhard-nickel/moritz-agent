@@ -254,17 +254,29 @@ async def _pollen(req: Request) -> SkillResult | None:
         if exc.reason == "empty":
             return SkillResult(text=f"Für {place.spoken} habe ich keine Pollendaten.", serious=True)
         return unavailable(exc, "Pollendaten")
-    day_key, label = "today", "heute"
+    today = resolved.now.date()
+    day, label = today, "heute"
     when = req.overrides.get("when") or find_when(when_text(req.text), resolved.now)
     if when is not None and when.day is not None:
-        delta = (when.day - resolved.now.date()).days
+        delta = (when.day - today).days
         if delta < 0 or delta > 2:
             return SkillResult(
                 text="Den Pollenflug gibt der Deutsche Wetterdienst nur für heute und die nächsten zwei Tage an.",
                 serious=True,
             )
-        day_key = h.DAY_KEYS[delta]
+        day = when.day
         label = ("heute", "morgen", "übermorgen")[delta]
+    # the day keys of the file count from its issue date, not from today
+    day_key = fetched.data.day_key(day, today)
+    if day_key is None:
+        return SkillResult(
+            text=g.sentence(
+                f"Für {label} hat der Deutsche Wetterdienst noch keine Pollenvorhersage"
+            ),
+            detail=f"Stand der Pollendaten: {fetched.data.last_update}.",
+            sources=(POLLEN_SOURCE,),
+            serious=True,
+        )
     asked_names = [
         name
         for name in h.POLLEN_NAMES

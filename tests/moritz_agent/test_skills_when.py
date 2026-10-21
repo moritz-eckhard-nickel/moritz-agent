@@ -101,6 +101,57 @@ def test_find_dates_in_spoken_order():
     assert [d.isoformat() for d in dates] == ["2027-03-01", "2027-04-15"]
 
 
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # a date without a year lies in the year of the one before it
+        ("zwischen 1. oktober und 1. november", ["2027-10-01", "2027-11-01"]),
+        ("vom 1. november bis 1. oktober", ["2026-11-01", "2027-10-01"]),
+        ("vom 20. dezember bis 6. januar", ["2026-12-20", "2027-01-06"]),
+        ("vom 1.1.2020 bis 5. märz", ["2020-01-01", "2020-03-05"]),
+        # two-digit years: the 1900s once they lie more than ten years ahead
+        ("am 3.10.90", ["1990-10-03"]),
+        ("am 3.10.26", ["2026-10-03"]),
+        ("am 3.10.36", ["2036-10-03"]),
+        # a year right after a special day
+        ("weihnachten 2027", ["2027-12-24"]),
+        ("ostern 1990", ["1990-04-15"]),
+        ("ostern neunzehnhundertneunzig", ["1990-04-15"]),
+        ("ostern", ["2027-03-28"]),
+    ],
+)
+def test_find_dates_years(text, expected):
+    dates = find_dates(prepare(text).text, SUNDAY_EVENING)
+    assert [d.isoformat() for d in dates] == expected
+
+
+def test_special_day_with_year():
+    result = when("wie wird das wetter ostern 1990")
+    assert result is not None and result.day.isoformat() == "1990-04-15"
+
+
+@pytest.mark.parametrize(
+    ("now", "text", "expected"),
+    [
+        # elapsed time across the clock change (UTC arithmetic, not the wall clock)
+        (datetime(2026, 10, 25, 1, 0, tzinfo=BERLIN), "in 3 stunden", "2026-10-25 03:00+01:00"),
+        (datetime(2026, 10, 25, 1, 0, tzinfo=BERLIN), "in 90 minuten", "2026-10-25 02:30+02:00"),
+        (datetime(2026, 3, 29, 1, 0, tzinfo=BERLIN), "in 3 stunden", "2026-03-29 05:00+02:00"),
+        (datetime(2026, 3, 29, 1, 0, tzinfo=BERLIN), "in 90 minuten", "2026-03-29 03:30+02:00"),
+        # days stay calendar days
+        (datetime(2026, 10, 24, 23, 30, tzinfo=BERLIN), "in 2 tagen", "2026-10-26 23:30+01:00"),
+        # at night, "5 uhr" is the coming early morning; by day it is 17 Uhr
+        (datetime(2026, 10, 21, 1, 0, tzinfo=BERLIN), "um 5 uhr", "2026-10-21 05:00+02:00"),
+        (datetime(2026, 10, 21, 10, 0, tzinfo=BERLIN), "um 5 uhr", "2026-10-21 17:00+02:00"),
+        (datetime(2026, 10, 21, 20, 0, tzinfo=BERLIN), "um 3 uhr", "2026-10-22 15:00+02:00"),
+    ],
+)
+def test_times_ahead(now, text, expected):
+    result = when(text, now)
+    assert result is not None
+    assert result.start.isoformat(sep=" ", timespec="minutes") == expected
+
+
 def test_remove_spans_leaves_the_rest():
     text = prepare("wetter in limburg morgen früh").text
     result = find_when(text, SUNDAY_EVENING)

@@ -19,6 +19,7 @@ from moritz_agent.core.surface import Surface
 from moritz_agent.core.turn import Turn, TurnResult
 from moritz_agent.skills.providers.brightsky import Warning
 from moritz_agent.storage import Database, DiscordStore
+from moritz_agent.storage.discord import MAX_ATTEMPTS, retry_delay
 
 from .fake_model import text_chunks
 from .system_util import (
@@ -94,10 +95,27 @@ def test_outbox_dedupes_waits_and_gives_up(store):
     assert (
         store.enqueue("reminder", "default", {"text": "a"}, dedupe_key="k1") is not None
     )  # delivered: free again
-    for _ in range(5):
+    for _ in range(MAX_ATTEMPTS):
         store.ack(held, False, now)
-    assert held not in [i["id"] for i in store.pending(now + timedelta(hours=3))]
+    assert held not in [i["id"] for i in store.pending(now + timedelta(days=1))]
     assert store.purge_outbox(now + timedelta(days=30)) >= 2
+
+
+def test_a_failed_delivery_waits_longer_each_time_before_it_is_given_up(store):
+    now = at(18, 12)
+    item = store.enqueue("reminder", "dm:1", {"text": "a"})
+    moment, waits = now, []
+    for _ in range(MAX_ATTEMPTS):
+        assert [i["id"] for i in store.pending(moment)] == [item]
+        store.ack(item, False, moment)
+        assert store.pending(moment) == []  # not again at once (it used to be every 2 s)
+        wait = retry_delay(len(waits) + 1)
+        assert store.pending(moment + wait - timedelta(seconds=1)) == []
+        waits.append(wait)
+        moment += wait
+    assert waits == sorted(waits) and waits[0] == timedelta(seconds=20)
+    assert sum(waits, timedelta()) > timedelta(minutes=30)  # not dropped within seconds any more
+    assert store.pending(moment + timedelta(days=1)) == []  # given up after MAX_ATTEMPTS
 
 
 def test_state_lookup_is_exact_not_a_pattern(store):
@@ -322,6 +340,81 @@ def test_system_notes_are_throttled_and_wait_for_the_morning(store):
     waiting = [i for i in store.pending(at(18, 23, 30), 10) if i["kind"] == "system"]
     assert len(waiting) == 1  # the night one is not due before 07:00
     assert len(store.pending(at(19, 7, 1), 10)) == 2
+
+
+def test_a_system_note_comes_once_an_hour_even_after_it_was_delivered(store):
+    store.set_subscription("1", "system", {})
+    rig = Rig(store, at(18, 14))
+    assert rig.scheduler.system_event("phone", "Das Telefon ist gestört.") == 1
+    for item in store.pending(rig.moment, 10):
+        store.ack(item["id"], True, rig.moment)
+    for minute in range(1, 4):  # the watch calls every minute while the phone is down
+        rig.moment = at(18, 14, minute)
+        assert rig.scheduler.system_event("phone", "Das Telefon ist gestört.") == 0
+    rig.moment = at(18, 15, 1)
+    assert rig.scheduler.system_event("phone", "Das Telefon ist gestört.") == 1
+
+
+def test_a_system_note_reaches_every_owner_by_dm_but_the_channel_once(store):
+    store.set_subscription("1", "system", {})
+    store.set_subscription("2", "system", {})
+    rig = Rig(store, at(18, 14))
+    assert rig.scheduler.system_event("phone", "Das Telefon ist gestört.") == 1  # one channel
+    assert [i["target"] for i in rig.box("system")] == ["default"]
+    rig.cfg = rig.cfg.model_copy(
+        update={"notify": rig.cfg.notify.model_copy(update={"target": "dm"})}
+    )
+    assert rig.scheduler.system_event("phone", "Das Telefon ist gestört.") == 2
+    assert sorted(i["target"] for i in rig.box("system"))[-2:] == ["dm:1", "dm:2"]
+    assert rig.scheduler.system_event("phone", "Das Telefon ist gestört.") == 0
+
+
+def test_a_failing_briefing_neither_loses_the_day_nor_stops_the_others(store):
+    store.set_subscription("1", "briefing", {"time": "06:45"})
+    store.set_subscription("2", "briefing", {"time": "06:45"})
+    rig = Rig(store, at(19, 6, 50), answers={"Morgenbriefing": briefing_answer()})
+    plain_ask = rig.ask
+    broken = {"1"}
+
+    async def ask(user, text):
+        if user in broken:
+            raise RuntimeError("weather service down")
+        return await plain_ask(user, text)
+
+    rig.scheduler.ask = ask
+    assert run(rig.scheduler.tick()).briefings == 1  # the second person still gets it
+    assert [i["user_id"] for i in rig.box("briefing")] == ["2"]
+    rig.moment = at(19, 6, 52)
+    broken.clear()
+    assert run(rig.scheduler.tick()).briefings == 0  # waits a little before trying again
+    rig.moment = at(19, 6, 56)
+    assert run(rig.scheduler.tick()).briefings == 1  # and then it comes – the day was not lost
+    assert sorted(i["user_id"] for i in rig.box("briefing")) == ["1", "2"]
+    rig.moment = at(19, 7, 30)
+    assert run(rig.scheduler.tick()).briefings == 0  # once a day
+
+
+def test_an_empty_briefing_is_tried_again_and_a_broken_waste_hint_too(store):
+    store.set_subscription("1", "briefing", {"time": "06:45"})
+    store.set_subscription("1", "waste", {})
+    rig = Rig(store, at(19, 6, 50))  # no answer yet (the skills had nothing)
+    assert run(rig.scheduler.tick()).briefings == 0
+    rig.answers["Morgenbriefing"] = briefing_answer()
+    rig.moment = at(19, 7, 0)
+    assert run(rig.scheduler.tick()).briefings == 1
+
+    async def broken(user, text):
+        raise RuntimeError("no data")
+
+    rig.scheduler.ask = broken
+    rig.moment = at(19, 19, 5)
+    assert run(rig.scheduler.tick()).other == 0
+    rig.scheduler.ask = rig.ask
+    rig.answers["Welche Tonne kommt morgen?"] = SimpleNamespace(
+        text="Morgen wird die Biotonne abgeholt.", data={"pickups": 1}
+    )
+    rig.moment = at(19, 19, 11)
+    assert run(rig.scheduler.tick()).other == 1
 
 
 def test_call_notes_go_to_subscribers_only(store):

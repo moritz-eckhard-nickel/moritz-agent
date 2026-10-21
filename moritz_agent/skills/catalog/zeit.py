@@ -4,8 +4,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import UTC, datetime, timedelta
 
 from moritz_agent.skills.base import Request, SkillResult
 from moritz_agent.skills.calendar.special import dst_change
@@ -165,10 +164,31 @@ async def time_until(req: Request) -> SkillResult | None:
     target = when.start
     if "mitternacht" in req.text:
         target = (req.now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-    delta = target - req.now
+    delta = target.astimezone(UTC) - req.now.astimezone(UTC)  # elapsed time across a clock change
     if delta.total_seconds() <= 0:
         return None
     return say(f"Noch {g.duration(delta)}.")
+
+
+def _dst_moment(year: int, spring: bool) -> datetime:
+    """The moment of the (EU) clock change: 1 Uhr UTC – 2 Uhr in spring, 3 Uhr summer time in autumn."""
+    day = dst_change(year, spring)
+    return datetime(day.year, day.month, day.day, 1, tzinfo=UTC)
+
+
+def _next_dst(moment: datetime, spring: bool) -> datetime:
+    """The next change after ``moment`` (spring: clocks forward, else back), as UTC."""
+    now = moment.astimezone(UTC)
+    for year in (moment.year, moment.year + 1):
+        change = _dst_moment(year, spring)
+        if change > now:
+            return change
+    return _dst_moment(moment.year + 2, spring)
+
+
+def _dst_day(change: datetime, moment: datetime) -> str:
+    day = dst_change(change.year, change.month == 3)
+    return f"Sonntag, {g.date_plain(day, with_year=day.year != moment.year)}"
 
 
 @skill(
@@ -184,19 +204,17 @@ async def time_until(req: Request) -> SkillResult | None:
 async def time_dst_now(req: Request) -> SkillResult:
     moment = req.now
     summer = bool(moment.dst())
-    year = moment.year
     asked_summer = "sommer" in req.text and "winter" not in req.text.split("sommer")[0]
     if "winter" in req.text and "sommer" not in req.text:
         asked_summer = False
     if summer:
-        end = dst_change(year, False)
-        tail = f"bis Sonntag, {g.date_plain(end)}. Dann wird die Uhr eine Stunde zurückgestellt."
+        end = _dst_day(_next_dst(moment, False), moment)
+        tail = f"bis {end}. Dann wird die Uhr eine Stunde zurückgestellt."
         if asked_summer:
             return say(f"Ja, es gilt die Sommerzeit – {tail}")
         return say(f"Nein, noch gilt die Sommerzeit – {tail}")
-    day = dst_change(year, True)
-    start = day if moment.date() < day else dst_change(year + 1, True)
-    tail = f"Die Sommerzeit beginnt am Sonntag, {g.date_plain(start)}."
+    start = _dst_day(_next_dst(moment, True), moment)
+    tail = f"Die Sommerzeit beginnt am {start}."
     if asked_summer:
         return say(f"Nein, es gilt die Winterzeit. {tail}")
     return say(f"Ja, es gilt die Winterzeit. {tail}")
@@ -207,38 +225,35 @@ async def time_dst_now(req: Request) -> SkillResult:
     group="zeit",
     priority="M",
     help="die Zeitumstellung",
-    examples=("Wann wird die Uhr umgestellt?", "Zeitumstellung?"),
+    examples=("Wann wird die Uhr umgestellt?", "Zeitumstellung?", "Wann beginnt die Sommerzeit?"),
     patterns=(
         r"\bzeitumstellung\b",
         r"\buhr (?:wird |muss )?(?:umgestellt|umgedreht|vorgestellt|zurückgestellt)\b",
         r"\bwann (?:wird |muss )?(?:man )?(?:die |an der )?uhr(?:en)? (?:umgestellt|gedreht|umstellen|umdrehen|vorstellen|zurückstellen)\b",
-        r"\bwann (?:ist|kommt) (?:die )?(?:sommer|winter)zeit\b",
+        r"\bwann (?:ist|kommt|beginnt|startet|fängt|endet|ist wieder|kommt wieder) (?:die )?(?:sommer|winter)zeit\b",
         r"\bsommerzeit\b.*\bwann\b|\bwinterzeit\b.*\bwann\b",
     ),
     exclude=(r"\bhaben wir\b",),
 )
 async def time_dst_next(req: Request) -> SkillResult:
     moment = req.now
-    zone = ZoneInfo(req.svc.timezone)
-    for year in (moment.year, moment.year + 1):
-        for spring in (True, False):
-            day = dst_change(year, spring)
-            change = (
-                datetime(day.year, day.month, day.day, 3, tzinfo=zone)
-                if not spring
-                else datetime(day.year, day.month, day.day, 2, tzinfo=zone)
-            )
-            if change.date() >= moment.date() and change > moment:
-                if spring:
-                    return say(
-                        f"Am Sonntag, {g.date_plain(day)}, um 2 Uhr wird die Uhr auf 3 Uhr vorgestellt – "
-                        "eine Stunde weniger Schlaf."
-                    )
-                return say(
-                    f"Am Sonntag, {g.date_plain(day)}, um 3 Uhr wird die Uhr auf 2 Uhr zurückgestellt – "
-                    "eine Stunde länger schlafen."
-                )
-    return say("Das kann ich gerade nicht ausrechnen.")
+    text = req.text
+    ends_summer = re.search(r"\bsommerzeit\b.*\b(?:endet|ende|aufhört|vorbei)\b", text)
+    if "winterzeit" in text and "sommerzeit" not in text:
+        wanted: tuple[bool, ...] = (False,)
+    elif "sommerzeit" in text and "winterzeit" not in text:
+        wanted = (False,) if ends_summer else (True,)
+    else:
+        wanted = (True, False)
+    change = min(_next_dst(moment, spring) for spring in wanted)
+    day = _dst_day(change, moment)
+    if change.month == 3:
+        return say(
+            f"Am {day}, um 2 Uhr wird die Uhr auf 3 Uhr vorgestellt – eine Stunde weniger Schlaf."
+        )
+    return say(
+        f"Am {day}, um 3 Uhr wird die Uhr auf 2 Uhr zurückgestellt – eine Stunde länger schlafen."
+    )
 
 
 @skill(

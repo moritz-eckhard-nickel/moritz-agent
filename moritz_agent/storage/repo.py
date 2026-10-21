@@ -62,7 +62,7 @@ class Repo:
                 timings.get("llm_total"),
                 timings.get("tools"),
                 timings.get("tts_first"),
-                timings.get("total"),
+                timings.get("total_ms", timings.get("total")),
                 now_iso(),
             ),
         )
@@ -146,4 +146,10 @@ class Repo:
             misses = conn.execute(
                 "DELETE FROM skill_misses WHERE created_at < ?", (cutoff,)
             ).rowcount
-        return {"turns": turns, "misses": misses}
+            # tool arguments (a search query) and the summary (the answer) are transcript text too
+            tools = conn.execute(
+                "UPDATE tool_calls SET args_json = NULL, result_summary = NULL "
+                "WHERE created_at < ? AND (args_json IS NOT NULL OR result_summary IS NOT NULL)",
+                (cutoff,),
+            ).rowcount
+        return {"turns": turns, "misses": misses, "tools": tools}

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from moritz_agent.skills.base import Clarification, Option, Request, SkillResult, Source
 from moritz_agent.skills.providers import Providers, ProviderUnavailable, ics
@@ -46,6 +46,31 @@ def _level(cm: float) -> str:
 
 
 _TREND = {1: "steigend", -1: "fallend", 0: "gleichbleibend"}
+
+
+def _trend_part(gauge) -> str:
+    """ ", steigend" – nothing when PEGELONLINE does not know the trend."""
+    word = _TREND.get(gauge.trend) if gauge.trend is not None else None
+    return f", {word}" if word else ""
+
+
+def _measured_label(moment: datetime, now: datetime) -> str:
+    """ "von heute 7 Uhr" / "von gestern 7 Uhr" / "vom 2. Oktober, 7 Uhr"."""
+    clock = g.clock_digital(moment)
+    delta = (now.date() - moment.date()).days
+    if delta == 0:
+        return f"von heute {clock}"
+    if delta == 1:
+        return f"von gestern {clock}"
+    return f"vom {g.date_plain(moment.date())}, {clock}"
+
+
+def _no_current(gauge, now: datetime) -> str:
+    """ "Der Pegel Leun meldet gerade keinen aktuellen Wert, der letzte ist vom 2. Oktober, 7 Uhr"."""
+    text = f"Der Pegel {gauge.name} meldet gerade keinen aktuellen Wert"
+    if gauge.measured is not None:
+        text += f", der letzte ist {_measured_label(gauge.measured, now)}"
+    return text
 
 
 # -- water ----------------------------------------------------------------------------------------------
@@ -93,8 +118,21 @@ async def _water_level(req: Request) -> SkillResult | None:
     if problem is not None:
         return problem
     gauge, fetched = found
+    if gauge.is_stale(req.now):
+        # an old reading is no current level and its trend says nothing any more
+        text = f"{_no_current(gauge, req.now)}: {_level(gauge.value_cm)}"
+        mean = _vs_mean(gauge)
+        if mean:
+            text += f", {mean}"
+        return SkillResult(
+            text=g.sentence(text),
+            sources=(PEGEL_SOURCE,),
+            data={"gauge": gauge.name, "level_cm": gauge.value_cm, "stale": True},
+            followup=followup_state("water.level"),
+            serious=True,
+        )
     river = gauge.river or "Der Fluss"
-    text = f"Die {river.capitalize()} am Pegel {gauge.name} steht bei {_level(gauge.value_cm)}, {_TREND.get(gauge.trend, 'gleichbleibend')}"
+    text = f"Die {river.capitalize()} am Pegel {gauge.name} steht bei {_level(gauge.value_cm)}{_trend_part(gauge)}"
     mean = _vs_mean(gauge)
     if mean:
         text += f", {mean}"
@@ -147,14 +185,20 @@ async def _water_flood(req: Request) -> SkillResult | None:
         except ProviderUnavailable:
             messages = []
     high = gauge.state == "high" or (gauge.high_cm is not None and gauge.value_cm >= gauge.high_cm)
-    if high:
-        text = f"Ja, die Lahn am Pegel {gauge.name} ist mit {_level(gauge.value_cm)} deutlich erhöht, {_TREND.get(gauge.trend, 'gleichbleibend')}"
+    if gauge.is_stale(req.now):
+        text = f"{_no_current(gauge, req.now)}, da lag er bei {_level(gauge.value_cm)}"
+        if high:
+            text += ", über dem mittleren Hochwasser"
+    elif high:
+        text = f"Ja, die Lahn am Pegel {gauge.name} ist mit {_level(gauge.value_cm)} deutlich erhöht{_trend_part(gauge)}"
     else:
         text = f"Nein, die Lahn am Pegel {gauge.name} steht mit {_level(gauge.value_cm)} im üblichen Bereich"
     if messages:
         text += f". Der Bevölkerungsschutz meldet: {messages[0].title}"
     return SkillResult(
-        text=g.sentence(text), sources=(PEGEL_SOURCE,), serious=high or bool(messages)
+        text=g.sentence(text),
+        sources=(PEGEL_SOURCE,),
+        serious=high or bool(messages) or gauge.is_stale(req.now),
     )
 
 
@@ -362,7 +406,15 @@ async def _football(req: Request, mode: str) -> SkillResult | None:
         return unavailable(exc, "Fußballdaten")
     now = req.now
     if mode == "last":
-        played = [m for m in matches if m.finished and m.start <= now]
+        # a finished match without an entered result says nothing about the score: skip it
+        played = [
+            m
+            for m in matches
+            if m.finished
+            and m.start <= now
+            and m.goals_home is not None
+            and m.goals_away is not None
+        ]
         if not played:
             return SkillResult(
                 text="Ein abgeschlossenes Spiel finde ich gerade nicht.", serious=True

@@ -9,6 +9,7 @@ as audio too (Ogg/Opus). Nothing is stored; no attachment is ever run.
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from urllib.parse import urlparse
 
@@ -115,7 +116,8 @@ class VoiceMessages:
             return True
         async with sender.typing():
             try:
-                pcm = decode_to_pcm16k(await self.fetch(audio.url), max_seconds)
+                data = await self.fetch(audio.url)
+                pcm = await asyncio.to_thread(decode_to_pcm16k, data, max_seconds)
                 transcript = await self.speech.transcribe(pcm)
             except AudioError as exc:
                 await sender.send(OutMessage(content=str(exc)))
@@ -152,7 +154,7 @@ class VoiceMessages:
             return
         try:
             pcm = await self.speech.synthesize(text[:READ_ALOUD_MAX_CHARS])
-            data = encode_ogg_opus(pcm)
+            data = await asyncio.to_thread(encode_ogg_opus, pcm)
         except Exception:
             log.warning("Discord: Sprachantwort konnte nicht erzeugt werden", exc_info=True)
             return

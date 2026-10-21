@@ -127,6 +127,32 @@ def test_models_load_on_first_use_and_go_after_a_quiet_time():
     assert tts.closed and speech._stt is None and speech._tts is None
 
 
+def test_the_voice_check_never_waits_for_a_model_that_is_loading(tmp_path):
+    import threading
+    import time as clock
+
+    from moritz_agent.config.settings import Settings
+
+    speech = SpeechService(lambda: Settings(), tmp_path)
+    holder_ready, release = threading.Event(), threading.Event()
+
+    def loading():  # Whisper loads for seconds and holds the lock
+        with speech._lock:
+            holder_ready.set()
+            release.wait(5)
+
+    thread = threading.Thread(target=loading)
+    thread.start()
+    holder_ready.wait(5)
+    started = clock.monotonic()
+    try:
+        assert speech.tts_available() is True
+        assert clock.monotonic() - started < 0.5
+    finally:
+        release.set()
+        thread.join()
+
+
 # -- voice messages end to end -------------------------------------------------------------------------------------------
 def attachment(url="https://cdn.discordapp.com/attachments/1/2/voice-message.ogg", **extra):
     return SimpleNamespace(

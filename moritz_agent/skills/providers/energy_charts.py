@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -38,15 +38,23 @@ def hourly(raw: dict[str, Any], tz: str) -> list[PricePoint]:
     seconds, prices = raw["unix_seconds"], raw["price"]
     if len(seconds) != len(prices):
         raise HttpError("bad_data", "energy-charts: series of different length")
-    buckets: dict[datetime, list[float]] = {}
+    # bucket by UTC hour: on the night the clocks go back, the two local 02:00 hours stay apart
+    buckets: dict[int, list[float]] = {}
     for stamp, price in zip(seconds, prices, strict=True):
         if price is None:
             continue
         if not -1000 <= price <= 5000:
             raise HttpError("bad_data", "energy-charts: implausible price")
-        moment = datetime.fromtimestamp(stamp, zone).replace(minute=0, second=0, microsecond=0)
-        buckets.setdefault(moment, []).append(float(price))
-    return [PricePoint(m, sum(v) / len(v)) for m, v in sorted(buckets.items())]
+        buckets.setdefault(int(stamp) // 3600 * 3600, []).append(float(price))
+    return [
+        PricePoint(datetime.fromtimestamp(hour, zone), sum(v) / len(v))
+        for hour, v in sorted(buckets.items())
+    ]
+
+
+def _hours_apart(a: datetime, b: datetime) -> float:
+    """Real elapsed hours (aware datetimes of one zone subtract as wall-clock time)."""
+    return (b.timestamp() - a.timestamp()) / 3600
 
 
 def cheapest_window(
@@ -56,7 +64,7 @@ def cheapest_window(
     best: tuple[float, int] | None = None
     for i in range(len(points) - hours + 1):
         block = points[i : i + hours]
-        if any(block[j + 1].start - block[j].start != timedelta(hours=1) for j in range(hours - 1)):
+        if any(_hours_apart(block[j].start, block[j + 1].start) != 1 for j in range(hours - 1)):
             continue
         mean = sum(p.ct_per_kwh for p in block) / hours
         if best is None or mean < best[0]:
@@ -64,4 +72,5 @@ def cheapest_window(
     if best is None:
         return None
     start = points[best[1]].start
-    return start, start + timedelta(hours=hours), best[0]
+    end = (start.astimezone(UTC) + timedelta(hours=hours)).astimezone(start.tzinfo)
+    return start, end, best[0]

@@ -191,6 +191,10 @@ class ConfigManager:
         )
         return mtime(settings), mtime(passwords)
 
+    def changed(self) -> bool:
+        """A file changed since the last (successful or rejected) reload."""
+        return self._stat() != self._mtimes
+
     def poll(self) -> ReloadResult | None:
         """Reload if a file changed since the last look (optional, off by default)."""
         stamp = self._stat()

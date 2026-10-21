@@ -138,6 +138,7 @@ class SpeechService:
         self._vad: SileroVad | None = None
         self._announcements: AnnouncementStore | None = None
         self._lock = threading.Lock()
+        self._tts_ready: bool | None = None  # last answer of tts_available()
         self._last_used = clock()
         self.active = 0  # >0: a voice session needs the models, never unload
 
@@ -150,12 +151,25 @@ class SpeechService:
         ).is_file()
 
     def tts_available(self) -> bool:
+        """Never waits for a model that is loading: once known, the answer is remembered (the
+        voices do not change while running), and while the lock is taken it counts as yes."""
         if self._tts_factory is not None or self._tts is not None:
             return True
+        if self._tts_ready is not None:
+            return self._tts_ready
+        if not self._lock.acquire(blocking=False):
+            return True  # a model is being loaded right now – speech is installed
         try:
-            return bool(self._load_tts().best_available())
+            if self._tts is None:
+                from moritz_agent.phone.audio.factory import build_tts
+
+                self._tts = build_tts(self.settings(), self.root)
+            self._tts_ready = bool(self._tts.best_available())
         except Exception:
-            return False
+            self._tts_ready = False
+        finally:
+            self._lock.release()
+        return self._tts_ready
 
     # -- loading -----------------------------------------------------------------------------------------
     def _load_stt(self) -> SpeechToText:

@@ -135,8 +135,31 @@ _MASCULINE_E = {"name", "käse", "gedanke", "buchstabe", "friede", "glaube", "wi
 _HALF_UNITS = r"(?:Liter|Meter|Kilometer|Kilogramm|Stunden|Tage|Wochen|Jahre|Monate)"
 
 
+_FRACTIONS = {
+    "1/2": "ein halb",
+    "1/3": "ein Drittel",
+    "2/3": "zwei Drittel",
+    "1/4": "ein Viertel",
+    "3/4": "drei Viertel",
+    "1/8": "ein Achtel",
+    "3/8": "drei Achtel",
+}
+
+
+def _prepare_numbers(text: str) -> str:
+    """Before everything else: ISO dates as German dates, thousands dots out ("1.234,56" →
+    "1234,56", so the money/decimal/unit rules see one number), common fractions as words."""
+    text = re.sub(r"\b(\d{4})-(\d{2})-(\d{2})\b", r"\3.\2.\1", text)
+    text = re.sub(r"\b\d{1,3}(?:\.\d{3})+(?![\d.])", lambda m: m[0].replace(".", ""), text)
+    return re.sub(
+        r"(?<![\d/])([1-3])/([2348])(?![\d/])", lambda m: _FRACTIONS.get(m[0], m[0]), text
+    )
+
+
 def _expand_signs_and_ranges(text: str) -> str:
     """ "−3" → "minus 3", "12–15" → "12 bis 15" (also times: "12:30–13:00")."""
+    # a range that ends below zero: "-5–-2 °C" → "-5 bis -2 °C" (the signs follow below)
+    text = re.sub(r"(\d)\s?[–−]\s?(?=[−-]\d)", r"\1 bis ", text)
     number = r"(\d{1,2}[:.]\d{2}|\d{1,4}(?:,\d+)?)"
     text = re.sub(rf"(?<![\d\w,.:-]){number}\s?[–−-]\s?{number}(?![\d-])", r"\1 bis \2", text)
     return re.sub(r"(?<![\w.,:])[−–-]\s?(?=\d)", "minus ", text)
@@ -161,6 +184,8 @@ def _expand_postcodes_and_directions(text: str) -> str:
 
 def _half(match: re.Match[str]) -> str:
     whole = int(match[1])
+    if whole == 0:
+        return f"null Komma fünf {match[2]}"
     return (
         ("eineinhalb" if whole == 1 else f"{cardinal(whole, eins=False)}einhalb") + " " + match[2]
     )
@@ -316,7 +341,7 @@ def _expand_numbers(text: str) -> str:
                 return "ein"
         return cardinal(value)
 
-    text = re.sub(r"\b(\d+),(\d{1,3})\b", decimal, text)
+    text = re.sub(r"\b(\d+),(\d+)\b", decimal, text)
     text = re.sub(r"\b\d{1,3}(?:\.\d{3})+\b|\b\d+\b", integer, text)
     return text
 
@@ -325,6 +350,7 @@ def normalize_for_tts(text: str) -> str:
     """Return plain German words for ``text`` (no digits, no markup)."""
     text = _strip_noise(text)
     text = _pronounce(text)
+    text = _prepare_numbers(text)
     for pattern, replacement in _ABBREVIATIONS:
         text = re.sub(pattern, replacement, text, flags=re.IGNORECASE if "usw" in pattern else 0)
     text = _expand_postcodes_and_directions(text)

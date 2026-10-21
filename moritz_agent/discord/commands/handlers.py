@@ -18,7 +18,7 @@ from moritz_agent.discord.activities import KINDS, Activity
 from moritz_agent.discord.admin import AdminCommands
 from moritz_agent.discord.commands import spec as commands
 from moritz_agent.discord.core import CoreApi, CoreForbidden, CoreUnavailable
-from moritz_agent.discord.render import OutMessage, build_embed
+from moritz_agent.discord.render import MESSAGE_LIMIT, OutMessage, build_embed
 from moritz_agent.discord.sender import Origin, Sender
 from moritz_agent.discord.style import Styler
 
@@ -116,6 +116,15 @@ def _home_line(principal: dict[str, Any]) -> str:
 def format_due(value: str, timezone: str) -> str:
     moment = datetime.fromisoformat(value)
     return moment.astimezone(ZoneInfo(timezone)).strftime("%d.%m. %H:%M")
+
+
+REMINDER_LINE_CHARS = 80
+
+
+def _short(text: str, limit: int = REMINDER_LINE_CHARS) -> str:
+    """One line of a list: no line breaks, at most ``limit`` characters."""
+    flat = " ".join(str(text).split())
+    return flat if len(flat) <= limit else flat[: limit - 1].rstrip() + "…"
 
 
 def _local(value: str, timezone: str) -> datetime:
@@ -344,13 +353,22 @@ class LocalCommands:
             )
             return
         timezone = self.settings().general.timezone
-        lines = [
-            f"`{i['id']}` · {format_due(i['due_at'], timezone)} · {i['text']}" for i in items[:20]
-        ]
-        lines.append("\nZum Löschen: `/erinnerungen loeschen:<Nummer>`")
-        await sender.send(
-            OutMessage(content="**Deine Erinnerungen** ⏰\n" + "\n".join(lines), ephemeral=True)
-        )
+        head, foot = "**Deine Erinnerungen** ⏰", "\nZum Löschen: `/erinnerungen loeschen:<Nummer>`"
+        lines: list[str] = []
+        room = MESSAGE_LIMIT - len(head) - len(foot) - 40  # 40: room for "… und N weitere"
+        for index, item in enumerate(items[:20]):
+            line = (
+                f"`{item['id']}` · {format_due(item['due_at'], timezone)} · {_short(item['text'])}"
+            )
+            if room - len(line) - 1 < 0:
+                lines.append(f"… und {len(items) - index} weitere")
+                break
+            room -= len(line) + 1
+            lines.append(line)
+        else:
+            if len(items) > 20:
+                lines.append(f"… und {len(items) - 20} weitere")
+        await sender.send(OutMessage(content="\n".join([head, *lines, foot]), ephemeral=True))
 
     # -- /aktivitaet ------------------------------------------------------------------------------------------------
     async def _aktivitaet(self, values: dict[str, Any], origin: Origin, sender: Sender) -> None:

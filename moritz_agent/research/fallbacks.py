@@ -33,7 +33,7 @@ class KoboldWebSearch:
         for row in rows:
             url = str(row.get("url") or "")
             title = clean_text(row.get("title"), 160)
-            if not title or not url.startswith(("http://", "https://")):
+            if not title or not url.startswith(("http://", "https://")) or not domain_of(url):
                 continue
             hits.append(
                 SearchHit(

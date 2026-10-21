@@ -270,8 +270,8 @@ class Supervisor:
     async def _start_discord(self) -> None:
         """The Discord worker is a child like the phone, but only if it is switched on and has a
         token – otherwise nothing runs and nothing is logged about Discord (UPD-04)."""
-        if not self._discord_wanted() or (self.discord is not None and self.discord.running):
-            return
+        if not self._discord_wanted() or (self.discord is not None and self.discord.alive):
+            return  # one supervisor only – also while it waits to restart a crashed worker
         assert self.ctx is not None
         argv = self.discord_argv or [sys.executable, "-m", "moritz_agent.discord"]
         if self.discord_argv is None:
@@ -377,29 +377,32 @@ class Supervisor:
 
     async def _reload_discord(self, result: ReloadResult) -> None:
         """Switched on or a token appeared: start; switched off: stop; otherwise tell it to re-read."""
-        running = self.discord is not None and self.discord.running
         if not self._discord_wanted():
-            if running:
-                await self._stop_discord()
+            await self._stop_discord()  # also a worker that is only waiting to restart
             return
-        if not running:
+        if self.discord is None or not self.discord.alive:
             await self._start_discord()
             return
-        assert self.discord is not None
-        if result.changed & {"settings.discord", "passwords.discord"}:
-            pid = self.discord.status().pid
-            if pid:
-                with contextlib.suppress(ProcessLookupError):
-                    os.kill(pid, signal.SIGHUP)
+        if not result.changed & {"settings.discord", "passwords.discord"}:
+            return
+        pid = self.discord.status().pid if self.discord.running else None
+        if pid:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(pid, signal.SIGHUP)
+        else:  # crashed and waiting for its restart (e.g. a wrong token): start over with the new files
+            await self._stop_discord()
+            await self._start_discord()
 
     async def _maintenance(self) -> None:
         """Every minute: optional file polling; every hour: retention; every day: a backup."""
         last_purge = last_backup = 0.0
         while True:
-            await asyncio.sleep(MAINTENANCE_INTERVAL_S)
-            settings = self.config.settings
-            if settings.general.config_poll_s and self.config.poll():
-                self._setup_logging()
+            poll_s = self.config.settings.general.config_poll_s
+            await asyncio.sleep(
+                min(MAINTENANCE_INTERVAL_S, poll_s) if poll_s else MAINTENANCE_INTERVAL_S
+            )
+            if poll_s and self.config.changed():
+                await self.reload()  # like SIGHUP: the workers are told too
             now = time.monotonic()
             runtime = self.runtime
             if runtime is None or runtime.db is None:

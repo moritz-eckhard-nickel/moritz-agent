@@ -250,6 +250,9 @@ class Dispatcher:
         if not self.limiter.allow(origin.user_id, self.policy.role(origin.user_id)):
             await self._refuse(sender, "rate_limited", once_for=f"rate:{origin.user_id}")
             return
+        if self.draining():  # (an interaction always gets an answer, never a silent defer)
+            await sender.send(self.say("maintenance"))
+            return
         await self.ask(text[: self.cfg.max_message_chars], origin, sender)
 
     # -- buttons and menus ---------------------------------------------------------------------------------------
@@ -275,6 +278,9 @@ class Dispatcher:
         await sender.begin()
         if not self.limiter.allow(user, role):
             await self._refuse(sender, "rate_limited", once_for=f"rate:{user}")
+            return None
+        if self.draining() and decoded.kind in {components.ACTION, components.PICK}:
+            await sender.send(self.say("maintenance"))
             return None
         if decoded.kind == components.ACTION:
             await self.ask(decoded.payload, origin, sender)

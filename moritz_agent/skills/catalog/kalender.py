@@ -55,7 +55,23 @@ def _state(req: Request) -> str:
 
 
 def _where(state: str) -> str:
-    return "in Hessen" if state == "HE" else f"in {hol.state_names()[state]}"
+    return "in Hessen" if state == "HE" else _in_states([state])
+
+
+def _in_states(codes: list[str]) -> str:
+    """ "im Saarland", "in Brandenburg, Bremen, Hamburg und anderen"."""
+    names = [hol.state_names()[c] for c in codes]
+    names = [f"im {n}" if n == "Saarland" else n for n in names]
+    listed = g.join_and(names[:3]) if len(names) <= 3 else ", ".join(names[:3]) + " und anderen"
+    return listed if listed.startswith("im ") else f"in {listed}"
+
+
+# special day key → id of the public holiday it names, where the two differ
+_HOLIDAY_ID = {
+    "dreikoenige": "heilige_drei_koenige",
+    "ostern": "ostersonntag",
+    "pfingsten": "pfingstsonntag",
+}
 
 
 # ---------------------------------------------------------------------------------------------
@@ -89,7 +105,20 @@ def _where(state: str) -> str:
     ),
 )
 async def date_today(req: Request) -> SkillResult:
-    return say(f"Heute ist {g.date_long(req.now.date())}.")
+    today = req.now.date()
+    day = target_date(req)
+    if day is None or day == today:
+        return say(f"Heute ist {g.date_long(today)}.")
+    # "Welches Datum ist nächsten Freitag / Heiligabend / in einer Woche?" – the date asked for
+    verb = "war" if day < today else "ist"
+    special = find_special(req.text)
+    if special is not None and special[0] in SPECIAL_DAYS:
+        name = SPECIAL_DAYS[special[0]][0]
+        plain = g.date_plain(day, with_year=day.year != today.year)
+        return say(
+            f"{name[0].upper()}{name[1:]} {verb} am {WEEKDAYS_DE[day.weekday()]}, dem {plain}."
+        )
+    return say(f"Das {verb} {g.date_long(day, with_year=day.year != today.year)}.")
 
 
 @skill(
@@ -351,7 +380,7 @@ async def date_days_since(req: Request) -> SkillResult | None:
     priority="S",
     examples=("Wie viele Tage liegen zwischen dem 1. März und dem 15. April?",),
     patterns=(
-        r"\bwie viele? tage (?:liegen |sind es |ist es )?zwischen\b",
+        r"\bwie viele? tage (?:liegen |sind |sind es |ist es )?zwischen\b",
         r"\bwie viele? tage (?:sind es |ist es )?(?:vom|von) .* bis\b",
         r"\bwie viele? tage (?:dauert|geht) .* bis\b",
     ),
@@ -394,9 +423,20 @@ async def date_between(req: Request) -> SkillResult | None:
     ),
 )
 async def date_calendar_week(req: Request) -> SkillResult:
-    day = target_date(req) or req.now.date()
-    week = day.isocalendar().week
     today = req.now.date()
+    when = when_of(req)
+    if when is not None and when.granularity == "week" and when.label != "diese Woche":
+        # "Welche Kalenderwoche ist nächste Woche?"
+        monday = (when.end - timedelta(days=1)).date()
+        monday -= timedelta(days=monday.weekday())
+        iso = monday.isocalendar()
+        year = f" {iso.year}" if iso.year != today.isocalendar().year else ""
+        verb = "war" if monday < today else "ist"
+        return say(
+            f"{when.label[0].upper()}{when.label[1:]} {verb} Kalenderwoche {iso.week}{year}."
+        )
+    day = target_date(req) or today
+    week = day.isocalendar().week
     if day == today:
         return say(f"Wir haben Kalenderwoche {week}.")
     return say(
@@ -417,15 +457,28 @@ async def date_week_range(req: Request) -> SkillResult | None:
     if not m:
         return None
     week = int(m.group(1))
-    year_m = re.search(r"\b(20\d{2})\b", req.text)
-    year = int(year_m.group(1)) if year_m else req.now.year
+    year_m = re.search(r"\b((?:19|20)\d{2})\b", req.text)
+    today = req.now.date()
+    if year_m:
+        year = int(year_m.group(1))
+    else:  # the coming one: "KW 1" in October is the first week of next year
+        year = today.isocalendar().year
+        try:
+            if date.fromisocalendar(year, week, 7) < today:
+                year += 1
+        except ValueError:
+            year += 1
     try:
         monday = date.fromisocalendar(year, week, 1)
     except ValueError:
         return say(f"Das Jahr {year} hat keine Kalenderwoche {week}.")
     sunday = monday + timedelta(days=6)
+    named = f" im Jahr {year}" if year != today.isocalendar().year else ""
+    verb = "ging" if sunday < today else "geht"
     return say(
-        f"Kalenderwoche {week} geht von Montag, {g.date_plain(monday)}, bis Sonntag, {g.date_plain(sunday, with_year=sunday.year != req.now.year)}."
+        f"Kalenderwoche {week}{named} {verb} von Montag, "
+        f"{g.date_plain(monday, with_year=monday.year != year)}, "
+        f"bis Sonntag, {g.date_plain(sunday, with_year=sunday.year != year)}."
     )
 
 
@@ -618,7 +671,7 @@ async def date_special(req: Request) -> SkillResult | None:
     if not found:
         return None
     key, _ = found
-    year_m = re.search(r"\b(20\d{2})\b", req.text)
+    year_m = re.search(r"\b((?:19|20)\d{2})\b", req.text)
     today = req.now.date()
     day = special_date(key, int(year_m.group(1))) if year_m else next_occurrence(key, today)
     name = SPECIAL_DAYS[key][0]
@@ -684,13 +737,20 @@ async def holiday_is(req: Request) -> SkillResult | None:
     state = _state(req)
     today = req.now.date()
     found = find_special(req.text)
+    special_key: str | None = None
     if (
         found
         and found[0] in SPECIAL_DAYS
         and not re.search(r"\b(heute|morgen|übermorgen|gestern)\b", req.text)
     ):
-        day = next_occurrence(found[0], today)
-        subject = SPECIAL_DAYS[found[0]][0]
+        special_key = "weihnachtstag1" if found[0] == "weihnachten" else found[0]
+        year_m = re.search(r"\b((?:19|20)\d{2})\b", req.text)
+        day = (
+            special_date(special_key, int(year_m.group(1)))
+            if year_m
+            else next_occurrence(special_key, today)
+        )
+        subject = SPECIAL_DAYS[special_key][0]
     else:
         day = target_date(req)
         if day is None:
@@ -704,19 +764,32 @@ async def holiday_is(req: Request) -> SkillResult | None:
     where = _where(state)
     tense = "war" if day < today else "ist"
     holiday = hol.holiday_on(day, state)
+    others = hol.holiday_states_on(day)
+    same_day = [h for h in hol.holidays_in_year(day.year) if h.day == day]
+    if (
+        special_key
+        and same_day
+        and not any(h.id == _HOLIDAY_ID.get(special_key, special_key) for h in same_day)
+    ):
+        # "Ist Halloween ein Feiertag?" – no, but the Reformationstag falls on the same day
+        other = same_day[0]
+        states = [c for c in others if other.applies(c)]
+        lead = (
+            f"Nein, {subject} selbst {tense} kein Feiertag. Am selben Tag {tense} aber {other.name}"
+        )
+        if other.applies(state):
+            return say(f"{lead} – ein Feiertag {where}.")
+        return say(f"{lead} – ein Feiertag {_in_states(states)}.")
     if holiday:
-        if (
-            found
-            and found[0] in SPECIAL_DAYS
-            and holiday.name.lower().endswith(subject.lower()[-6:])
-        ):
+        if special_key and holiday.id == _HOLIDAY_ID.get(special_key, special_key):
             return say(f"Ja, {subject} {tense} {where} ein Feiertag.")
         return say(f"Ja, {subject} {tense} {holiday.name} – ein Feiertag {where}.")
-    others = hol.holiday_states_on(day)
     if others:
-        names = [hol.state_names()[c] for c in others]
-        listed = g.join_and(names[:3]) if len(names) <= 3 else ", ".join(names[:3]) + " und anderen"
-        return say(f"Nein, {subject} {tense} {where} kein Feiertag – aber in {listed}.")
+        notes = " ".join(h.note for h in same_day if h.note and not h.applies(state))
+        return say(
+            f"Nein, {subject} {tense} {where} kein Feiertag – aber {_in_states(others)}."
+            + (f" {notes}" if notes else "")
+        )
     return say(f"Nein, {subject} {tense} {where} kein Feiertag.")
 
 
@@ -771,7 +844,11 @@ async def holiday_list(req: Request) -> SkillResult:
 )
 async def holiday_long_weekend(req: Request) -> SkillResult | None:
     state = _state(req)
-    found = workdays.long_weekends(req.now.date(), state)
+    start = req.now.date()
+    year_m = re.search(r"\b(20\d{2})\b", req.text)
+    if year_m and int(year_m.group(1)) > start.year:
+        start = date(int(year_m.group(1)), 1, 1)
+    found = workdays.long_weekends(start, state, workdays=_workdays(req))
     if not found:
         return None
     nxt = found[0]

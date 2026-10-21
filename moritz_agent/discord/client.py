@@ -215,7 +215,13 @@ class NikitaClient(discord.Client):
         intents.members = False
         intents.presences = False
         super().__init__(
-            intents=intents, max_messages=None, member_cache_flags=discord.MemberCacheFlags.none()
+            intents=intents,
+            max_messages=None,
+            member_cache_flags=discord.MemberCacheFlags.none(),
+            # a safe default for every send that does not say otherwise: never @everyone or roles
+            allowed_mentions=discord.AllowedMentions(
+                everyone=False, roles=False, users=True, replied_user=False
+            ),
         )
         self.worker = worker
         self.tree = app_commands.CommandTree(self)
@@ -244,13 +250,12 @@ class NikitaClient(discord.Client):
             channel_id = source.channel.id
         in_thread = isinstance(channel, discord.Thread)
         if guild_id is None:
-            private_with_bot = (
-                isinstance(channel, discord.DMChannel)
-                and channel.recipient is not None
-                and self.user is not None
-                and channel.recipient.id == self.user.id
-            ) or channel is None
-            where = "DM" if private_with_bot or isinstance(source, discord.Message) else "U"
+            # The gateway only delivers messages of the bot's own direct chats; an interaction
+            # says where it happened (bot DM, or a private channel through the user installation).
+            if isinstance(source, discord.Message):
+                where = "DM"
+            else:
+                where = "DM" if self._in_bot_dm(source, channel) else "U"
         else:
             where = "S" if policy.guild_allowed(str(guild_id)) else "U"
         return Origin(
@@ -262,6 +267,24 @@ class NikitaClient(discord.Client):
             in_thread=in_thread,
             message_id=ident,
         )
+
+    def _in_bot_dm(self, interaction: discord.Interaction, channel: Any) -> bool:
+        """An interaction in the direct chat with the bot (not a group or someone else's DM)."""
+        context = getattr(interaction, "context", None)
+        if context is not None:
+            if getattr(context, "dm_channel", False):
+                return True
+            if getattr(context, "private_channel", False) or getattr(context, "guild", False):
+                return False
+        # Without a context (older payloads): in the bot's DM the one recipient is the person
+        # (or unknown); in a private channel of the user installation it is somebody else.
+        if channel is None:
+            return True
+        if not isinstance(channel, discord.DMChannel):
+            return False
+        recipient = channel.recipient
+        own = {interaction.user.id, self.user.id if self.user else None}
+        return recipient is None or recipient.id in own
 
     def info_of(self, message: discord.Message) -> MessageInfo:
         bot_id = self.user.id if self.user else 0

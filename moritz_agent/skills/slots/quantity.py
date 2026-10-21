@@ -192,11 +192,11 @@ def evaluate(expression: str) -> float:
 
 def format_result(value: float) -> tuple[str, bool]:
     """Speakable number and whether it had to be rounded ("etwa")."""
-    from moritz_agent.skills.render.german import number
+    from moritz_agent.skills.render.german import number, round_half_up
 
     if abs(value - round(value)) < 1e-9:
         return number(round(value), 0), False
-    rounded = round(value, 4)
+    rounded = float(round_half_up(value, 4))
     return number(rounded, 4), abs(rounded - value) > 1e-12
 
 

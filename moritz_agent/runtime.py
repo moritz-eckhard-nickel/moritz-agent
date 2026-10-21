@@ -49,6 +49,8 @@ from moritz_agent.tools.web_search import WebSearch
 
 log = get_logger("system")
 
+CALL_END_GRACE_S = 300.0  # a call without an end notice counts as over this long after the limit
+
 
 @dataclass
 class Component:
@@ -565,7 +567,18 @@ class Runtime:
 
     @property
     def active_calls(self) -> int:
+        self._expire_calls()
         return len(self._calls)
+
+    def _expire_calls(self) -> None:
+        """A call whose end never arrived (phone worker crashed or restarted mid-call) must not
+        count as active forever: no call outlives ``max_call_duration_s``."""
+        limit = self.settings.phone.max_call_duration_s + CALL_END_GRACE_S
+        now = time.monotonic()
+        for call_id, conversation in list(self._calls.items()):
+            if now - conversation.touched > limit:
+                log.warning("Anruf %s ohne Ende-Meldung – gilt als beendet", call_id)
+                self.call_ended(call_id, "abgelaufen")
 
     @property
     def generating(self) -> bool:

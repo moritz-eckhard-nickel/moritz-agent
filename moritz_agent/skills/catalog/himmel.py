@@ -22,6 +22,11 @@ def _line(*alternatives: str) -> str:
     return rf"^(?:.*\s)?(?:{'|'.join(alternatives)})(?:\s.*)?$"
 
 
+def _cap(text: str) -> str:
+    """First letter upper case, the rest untouched ("am Montag, dem 21. Juni" → "Am Montag, …")."""
+    return text[:1].upper() + text[1:]
+
+
 def _minute(moment: datetime) -> datetime:
     """Round to the nearest minute (the voice never says seconds)."""
     return (moment + timedelta(seconds=30)).replace(second=0, microsecond=0)
@@ -68,16 +73,12 @@ async def _sun_rise_set(req: Request) -> SkillResult | None:
     where = _in(resolved)
     if times.sunrise is None or times.sunset is None:
         polar = "Polartag" if times.noon_elevation > 0 else "Polarnacht"
-        return say(
-            f"{label.capitalize()} ist {where} {polar}: Die Sonne geht nicht auf und nicht unter."
-        )
+        return say(f"{_cap(label)} ist {where} {polar}: Die Sonne geht nicht auf und nicht unter.")
     rise, set_ = _clock(times.sunrise), _clock(times.sunset)
     today = day == now.date()
     if both:
         if not today or now < times.sunrise:
-            reply = (
-                f"{label.capitalize()} geht {where} die Sonne um {rise} auf und um {set_} unter."
-            )
+            reply = f"{_cap(label)} geht {where} die Sonne um {rise} auf und um {set_} unter."
         elif now < times.sunset:
             reply = f"Heute ist {where} die Sonne um {rise} aufgegangen und geht um {set_} unter."
         else:
@@ -90,7 +91,7 @@ async def _sun_rise_set(req: Request) -> SkillResult | None:
             )
     elif wants_rise:
         if not today or now < times.sunrise:
-            reply = f"{label.capitalize()} geht {where} die Sonne um {rise} auf."
+            reply = f"{_cap(label)} geht {where} die Sonne um {rise} auf."
         else:
             reply = f"Heute ist {where} die Sonne um {rise} aufgegangen."
             tomorrow = sun.sun_day(place.lat, place.lon, day + timedelta(days=1), place.tz)
@@ -98,7 +99,7 @@ async def _sun_rise_set(req: Request) -> SkillResult | None:
                 reply += f" Morgen geht sie um {_clock(tomorrow.sunrise)} auf."
     else:
         if not today or now < times.sunset:
-            reply = f"{label.capitalize()} geht {where} die Sonne um {set_} unter."
+            reply = f"{_cap(label)} geht {where} die Sonne um {set_} unter."
         else:
             reply = f"Heute ist {where} die Sonne um {set_} untergegangen."
             tomorrow = sun.sun_day(place.lat, place.lon, day + timedelta(days=1), place.tz)
@@ -172,15 +173,16 @@ async def _sun_dark(req: Request) -> SkillResult | None:
     text = req.text
     where = f" {_in(resolved)}" if resolved.where.kind != "home" else ""
     daylight = today.dawn <= now < today.dusk
-    if re.search(
-        r"\b(?:noch hell|schon dunkel|draußen hell|draußen dunkel|ist es hell|ist es dunkel)\b",
-        text,
-    ):
+    asked = re.search(
+        r"\b(?:noch|schon|draußen|ist es|es ist)(?: schon| noch| draußen)? (hell|dunkel)\b", text
+    )
+    if asked and not re.search(r"\b(?:wann|wie ?lange|wie ?viel uhr)\b", text):  # a yes/no question
+        yes, no = ("Ja", "Nein") if asked.group(1) == "hell" else ("Nein", "Ja")
         if daylight:
-            return say(f"Ja, es ist noch hell{where}, bis etwa {_clock(today.dusk)}.")
+            return say(f"{yes}, es ist noch hell{where}, bis etwa {_clock(today.dusk)}.")
         if now < today.dawn:
-            return say(f"Nein, es ist noch dunkel{where}, hell wird es gegen {_clock(today.dawn)}.")
-        return say(f"Nein, es ist schon dunkel{where}, seit etwa {_clock(today.dusk)}.")
+            return say(f"{no}, es ist noch dunkel{where}, hell wird es gegen {_clock(today.dawn)}.")
+        return say(f"{no}, es ist schon dunkel{where}, seit etwa {_clock(today.dusk)}.")
     if re.search(r"\bhell\b", text) and not re.search(r"\bdunkel\b", text):
         if now < today.dawn:
             return say(f"Es wird heute{where} gegen {_clock(today.dawn)} hell.")
@@ -223,7 +225,7 @@ async def _daylength(req: Request) -> SkillResult | None:
     minutes = round(today.daylight.total_seconds() / 60)
     hours, rest = divmod(minutes, 60)
     length = f"{g.plural(hours, 'Stunde', 'Stunden')} und {g.plural(rest, 'Minute', 'Minuten')}"
-    text = f"{_day_word(day, now.date()).capitalize()} ist es {_in(resolved)} {length} hell"
+    text = f"{_cap(_day_word(day, now.date()))} ist es {_in(resolved)} {length} hell"
     if before.daylight is not None:
         diff = round((today.daylight - before.daylight).total_seconds() / 60)
         than = "gestern" if day == now.date() else "am Tag davor"
@@ -258,7 +260,7 @@ async def _noon(req: Request) -> SkillResult | None:
     height = round(times.noon_elevation)
     return say(
         g.sentence(
-            f"{_day_word(day, now.date()).capitalize()} steht die Sonne {_in(resolved)} gegen "
+            f"{_cap(_day_word(day, now.date()))} steht die Sonne {_in(resolved)} gegen "
             f"{_clock(times.noon)} am höchsten, {height} Grad über dem Horizont"
         )
     )
@@ -288,7 +290,7 @@ async def _golden(req: Request) -> SkillResult | None:
         return say("Hier gibt es um diese Jahreszeit keine goldene Stunde.")
     return say(
         g.sentence(
-            f"{_day_word(day, now.date()).capitalize()} beginnt die goldene Stunde {_in(resolved)} gegen "
+            f"{_cap(_day_word(day, now.date()))} beginnt die goldene Stunde {_in(resolved)} gegen "
             f"{_clock(times.golden_start)} und endet mit dem Sonnenuntergang um {_clock(times.sunset)}"
         )
     )
@@ -517,12 +519,12 @@ async def _moon_rise_set(req: Request) -> SkillResult | None:
         when = next_set if wanted == "unter" else next_rise
         if when is not None:
             return say(
-                f"{label.capitalize()} geht der Mond {_in(resolved)} nicht {wanted}. "
+                f"{_cap(label)} geht der Mond {_in(resolved)} nicht {wanted}. "
                 f"Das passiert erst {g.day_label(later, now.date())} um etwa {_clock(when)}."
             )
     if not parts:
-        return say(f"{label.capitalize()} geht der Mond {_in(resolved)} weder auf noch unter.")
-    return say(g.sentence(f"{label.capitalize()} {' und '.join(parts)}"))
+        return say(f"{_cap(label)} geht der Mond {_in(resolved)} weder auf noch unter.")
+    return say(g.sentence(f"{_cap(label)} {' und '.join(parts)}"))
 
 
 skill(

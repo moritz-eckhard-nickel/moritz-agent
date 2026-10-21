@@ -308,7 +308,9 @@ phase_secrets() {
 	fi
 	# a passwords.txt from an older version gets the new [discord] section – appended, never re-written
 	if [[ ${SKIP_ENV} -eq 0 && ${DRY_RUN} -eq 0 ]]; then
-		runuser -u "${SERVICE_USER}" -- env -C "${PREFIX}" PYTHONPATH="${PREFIX}" \
+		# as root: the service user may not create files next to passwords.txt (the program tree is
+		# read-only for it); owner and mode of the file are kept
+		env -C "${PREFIX}" PYTHONPATH="${PREFIX}" \
 			"$(PY)" -m moritz_agent.setup --passwords "${file}" migrate || warn "passwords.txt konnte nicht ergänzt werden"
 	fi
 }
@@ -327,9 +329,11 @@ phase_config() {
 	fi
 }
 
-# setup CMD… – a step of the Discord setup as the service user (secrets only via stdin)
+# setup CMD… – a step of the Discord setup (secrets only via stdin). Runs as root like the rest of the
+# installer: it replaces passwords.txt and the config atomically, which needs a temporary file in their
+# directories – those belong to root; owner and mode of the edited files are kept.
 discord_setup() {
-	runuser -u "${SERVICE_USER}" -- env -C "${PREFIX}" PYTHONPATH="${PREFIX}" \
+	env -C "${PREFIX}" PYTHONPATH="${PREFIX}" \
 		"$(PY)" -m moritz_agent.setup --passwords "${PREFIX}/passwords.txt" \
 		--config "${PREFIX}/config/moritz-agent.toml" "$@"
 }

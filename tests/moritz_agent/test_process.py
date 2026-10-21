@@ -96,6 +96,34 @@ def test_output_goes_to_the_log_line_by_line(caplog):
     assert "[talker] eins" in text and "[talker] zwei" in text and "moritz.inference" in text
 
 
+def test_an_overlong_line_or_a_progress_bar_never_stalls_the_child(caplog, tmp_path):
+    caplog.set_level(logging.INFO, logger="moritz")
+    done = tmp_path / "done"
+    code = (
+        "import sys, time\n"
+        "sys.stdout.write('x' * 70000 + '\\n')\n"
+        "for i in range(5): sys.stdout.write(f'\\r{i * 20}%')\n"
+        "sys.stdout.write('\\n')\n"
+        "for i in range(2000): sys.stdout.write('y' * 100 + '\\n')\n"
+        "sys.stdout.flush()\n"
+        f"open({str(done)!r}, 'w').write('ok')\n"
+        "print('fertig', flush=True); time.sleep(30)\n"
+    )
+
+    async def scenario():
+        proc = ManagedProcess("chatty", script(code))
+        await proc.start()
+        for _ in range(100):
+            if done.exists() and "[chatty] fertig" in caplog.text:
+                break
+            await asyncio.sleep(0.05)
+        await proc.stop(2)
+
+    run(scenario())
+    assert done.exists()
+    assert "[chatty] 80%" in caplog.text and "[chatty] fertig" in caplog.text
+
+
 def test_stop_sends_sigterm_first_and_lets_the_child_finish():
     async def scenario(tmp):
         code = (

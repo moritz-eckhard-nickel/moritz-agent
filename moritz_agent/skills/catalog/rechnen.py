@@ -33,7 +33,46 @@ def _fmt(value: float) -> str:
 
 
 def _money(value: float) -> str:
-    return g.euro(round(value, 2))
+    return g.euro(value)
+
+
+_CENTS_AFTER = (
+    r"(?!\s*(?:[.,]\d|prozent|%|euro|€|personen|leute|leuten|mann|freunde|kollegen|stück|mal|"
+    r"minuten?|stunden?|tage?n?|wochen?|monate?n?|jahre?n?)\b)"
+)
+
+
+def _join_cents(text: str) -> str:
+    """ "3 euro 50" → "3,50 euro" (how prices are spoken)."""
+    return re.sub(
+        rf"\b(\d+) ?(?:euro|€) (\d{{1,2}})\b{_CENTS_AFTER}",
+        lambda m: f"{m.group(1)},{int(m.group(2)):02d} euro",
+        text,
+    )
+
+
+# A bare "5-7", "24/7" or "0171-1234567" is a range, a house number, a score or a phone number –
+# only a calculation if the sentence asks for one or consists of little else.
+_CALC_CUE = re.compile(
+    r"\b(?:was (?:ist|sind|ergibt|ergeben|macht|gibt)|wie ?viel (?:ist|sind|macht|ergibt|ergeben|gibt)|"
+    r"rechne\w*|berechne\w*|ausrechnen|ergibt|ergeben)\b"
+)
+_STRONG_OP = re.compile(
+    r"\b(?:plus|minus|mal|geteilt|durch|hoch|multipliziert|dividiert|wurzel|quadrat|klammer)\b"
+    r"|[+*^×÷]|\d ?x ?\d|\s[-/]|[-/]\s"
+)
+
+
+def _loose_calculation(text: str, expr: str) -> bool:
+    """True if ``expr`` only rests on an unspaced ``-`` or ``/`` that is likely not arithmetic."""
+    if _STRONG_OP.search(text) or not re.search(r"\d[-/]\d", text):
+        return False
+    if _CALC_CUE.search(text):
+        return False
+    if re.search(r"(?<![\d.,])0\d", expr):  # leading zero: a phone or area code
+        return True
+    rest = re.sub(r"[\d.,/()-]+", " ", text).split()
+    return len(rest) > 0
 
 
 # ---------------------------------------------------------------------------------------------
@@ -60,7 +99,7 @@ def _money(value: float) -> str:
 )
 async def calc_arith(req: Request) -> SkillResult | None:
     expr = extract_expression(req.text)
-    if not expr:
+    if not expr or _loose_calculation(req.text, expr):
         return None
     try:
         value = evaluate(expr)
@@ -111,7 +150,7 @@ def _speak_expression(text: str, expr: str) -> str:
     exclude=(r"\b(?:mehrwertsteuer|mwst|umsatzsteuer|brutto|netto|trinkgeld|zinsen?)\b",),
 )
 async def calc_percent(req: Request) -> SkillResult | None:
-    text = req.text
+    text = _join_cents(req.text)
     m = re.search(
         rf"\bwie ?viel prozent (?:sind|ist|wären) ({_NUM})(?: euro)? von ({_NUM})", text
     ) or re.search(rf"\b({_NUM})(?: euro)? (?:sind|ist) wie ?viel prozent von ({_NUM})", text)
@@ -159,33 +198,50 @@ async def calc_percent(req: Request) -> SkillResult | None:
     exclude=(r"\b(?:gehalt|lohn|einkommen|rente)\b",),
 )
 async def calc_vat(req: Request) -> SkillResult | None:
-    text = req.text
-    amounts = find_numbers(re.sub(r"\b\d+ ?(?:prozent|%)", "", text))
+    text = _join_cents(req.text)
+    amounts = find_numbers(re.sub(rf"{_NUM} ?(?:prozent|%)", "", text))
     if not amounts:
         return None
     amount = amounts[0]
-    rate = 7.0 if re.search(r"\b(?:ermäßigt\w*|7 ?(?:prozent|%)|sieben prozent)\b", text) else 19.0
-    net_pos, gross_pos = text.find("netto"), text.find("brutto")
-    if (
-        re.search(r"\b(?:mehrwertsteuer|mwst|umsatzsteuer|ust)\b", text)
-        and "netto" not in text
-        and "brutto" not in text
-    ):
-        tax = amount - amount / (1 + rate / 100)
+    rate_m = re.search(rf"({_NUM}) ?(?:prozent|%)", text)
+    if rate_m:
+        rate = parse_number(rate_m.group(1))
+    else:
+        rate = 7.0 if re.search(r"\b(?:ermäßigt\w*|sieben prozent)\b", text) else 19.0
+    tax_word = r"(?:mehrwertsteuer|mwst|umsatzsteuer|ust)"
+    pct = f"{_fmt(rate)} Prozent"
+    # "19 Prozent Mehrwertsteuer von 100 Euro", "Mehrwertsteuer auf 50 Euro": the tax on a net price
+    if re.search(rf"\b{tax_word} (?:von|auf|für|bei) (?:den |dem |einem )?{_NUM}", text):
+        tax = amount * rate / 100
         return say(
-            f"In {_money(amount)} stecken {_money(tax)} Mehrwertsteuer bei {_fmt(rate)} Prozent."
+            f"{pct} Mehrwertsteuer auf {_money(amount)} sind {_money(tax)} – "
+            f"zusammen {_money(amount + tax)}."
         )
-    if (net_pos >= 0 and (gross_pos < 0 or net_pos < gross_pos)) or (
-        gross_pos < 0 and net_pos >= 0
+    # "100 Euro plus / mit / zuzüglich Mehrwertsteuer": add the tax
+    if re.search(
+        rf"\b(?:plus|mit|zuzüglich|zzgl|und)(?: {_NUM} ?(?:prozent|%))? (?:der |die )?{tax_word}\b"
+        rf"|\b{tax_word} (?:drauf|dazu|draufrechnen|draufgerechnet|aufschlagen|aufgeschlagen)\b",
+        text,
     ):
         gross = amount * (1 + rate / 100)
         return say(
-            f"{_money(amount)} netto sind {_money(gross)} brutto bei {_fmt(rate)} Prozent Mehrwertsteuer."
+            f"{_money(amount)} plus {pct} Mehrwertsteuer sind {_money(gross)} – "
+            f"davon {_money(gross - amount)} Steuer."
         )
-    net = amount / (1 + rate / 100)
-    return say(
-        f"{_money(amount)} brutto sind {_money(net)} netto bei {_fmt(rate)} Prozent Mehrwertsteuer."
+    has_tax_word = re.search(rf"\b{tax_word}\b", text) is not None
+    extract = re.search(
+        r"\b(?:in|enthalten\w*|inklusive|inkl|stecken|steckt|drin|drinnen|abziehen|herausrechnen|raus)\b",
+        text,
     )
+    if has_tax_word and (extract or ("netto" not in text and "brutto" not in text)):
+        tax = amount - amount / (1 + rate / 100)
+        return say(f"In {_money(amount)} stecken {_money(tax)} Mehrwertsteuer bei {pct}.")
+    net_pos, gross_pos = text.find("netto"), text.find("brutto")
+    if net_pos >= 0 and (gross_pos < 0 or net_pos < gross_pos):
+        gross = amount * (1 + rate / 100)
+        return say(f"{_money(amount)} netto sind {_money(gross)} brutto bei {pct} Mehrwertsteuer.")
+    net = amount / (1 + rate / 100)
+    return say(f"{_money(amount)} brutto sind {_money(net)} netto bei {pct} Mehrwertsteuer.")
 
 
 @skill(
@@ -197,13 +253,12 @@ async def calc_vat(req: Request) -> SkillResult | None:
     patterns=(r"\btrinkgeld\b",),
 )
 async def calc_tip(req: Request) -> SkillResult | None:
-    nums = find_numbers(req.text)
-    pct_m = re.search(rf"({_NUM}) ?(?:prozent|%)", req.text)
+    text = _join_cents(req.text)
+    pct_m = re.search(rf"({_NUM}) ?(?:prozent|%)", text)
     percent = parse_number(pct_m.group(1)) if pct_m else 10.0
-    rest = find_numbers(re.sub(rf"{_NUM} ?(?:prozent|%)", "", req.text))
+    rest = find_numbers(re.sub(rf"{_NUM} ?(?:prozent|%)", "", text))
     if not rest:
         return None
-    _ = nums
     amount = rest[0]
     tip = amount * percent / 100
     total = amount + tip
@@ -229,7 +284,7 @@ async def calc_tip(req: Request) -> SkillResult | None:
 async def calc_split(req: Request) -> SkillResult | None:
     m = re.search(
         rf"({_NUM})(?: ?(?:euro|€))?.*?(\d+) (?:personen|leute|leuten|mann|freunde|kollegen)",
-        req.text,
+        _join_cents(req.text),
     )
     if not m:
         return None
@@ -303,7 +358,7 @@ async def calc_fraction(req: Request) -> SkillResult | None:
     exclude=(r"\b(?:mehrwertsteuer|mwst|brutto|netto|trinkgeld)\b",),
 )
 async def calc_discount(req: Request) -> SkillResult | None:
-    text = req.text
+    text = _join_cents(req.text)
     nums = find_numbers(re.sub(r"(?<=\d) ?(?:prozent|%)", " P", text))
     if len(nums) < 2:
         return None
@@ -339,7 +394,7 @@ async def calc_round(req: Request) -> SkillResult | None:
         digits = int(m.group(1))
     elif m and m.group(1) == "eine":
         digits = 1
-    value = round(nums[0], digits)
+    value = float(g.round_half_up(nums[0], digits))
     return say(f"Gerundet sind das {g.number(value, digits)}.")
 
 
@@ -353,15 +408,16 @@ def _unit_regex() -> str:
 def _say_conversion(value: float, source: Unit, target: Unit) -> str:
     result = convert(value, source, target)
     magnitude = abs(result)
-    if abs(result - round(result)) < 1e-9 * max(1.0, magnitude):
+    if abs(result - round(result)) < 1e-7 * max(1.0, magnitude):
         spoken, approx = g.number(round(result), 0), False
     else:
         digits = 0 if magnitude >= 100 else 1 if magnitude >= 10 else 2 if magnitude >= 1 else 3
-        shown = round(result, digits)
-        spoken, approx = g.number(shown, digits), abs(shown - result) > 1e-9 * max(1.0, magnitude)
+        shown = float(g.round_half_up(result, digits))
+        spoken, approx = g.number(shown, digits), abs(shown - result) > 1e-7 * max(1.0, magnitude)
     src = source.name if value == 1 else source.plural
     dst = target.name if abs(result) == 1 else target.plural
     in_words = g.number(value, 3)
+    in_words = in_words[0].upper() + in_words[1:]
     return f"{in_words} {src} {'sind' if value != 1 else 'ist'} {'etwa ' if approx else ''}{spoken} {dst}."
 
 
@@ -390,12 +446,14 @@ def _say_conversion(value: float, source: Unit, target: Unit) -> str:
 async def convert_units(req: Request) -> SkillResult | None:
     text = req.text
     names = _unit_regex()
-    number = rf"(?P<n>{_NUM}|ein|eine|einen|einem|zwei)"
+    number = rf"(?:(?P<neg>(?<![\d.,])-|\bminus ) ?)?(?P<n>{_NUM}|ein|eine|einen|einem|zwei)"
 
-    def num_value(raw: str) -> float:
-        return {"ein": 1.0, "eine": 1.0, "einen": 1.0, "einem": 1.0, "zwei": 2.0}.get(
+    def num_value(m: re.Match[str]) -> float:
+        raw = m.group("n")
+        value = {"ein": 1.0, "eine": 1.0, "einen": 1.0, "einem": 1.0, "zwei": 2.0}.get(
             raw
         ) or parse_number(raw)
+        return -value if m.group("neg") else value
 
     m = re.search(
         rf"{number} ?(?P<src>{names})\b (?:in|zu|nach|auf|zu den)\s+(?P<dst>{names})\b", text
@@ -404,7 +462,7 @@ async def convert_units(req: Request) -> SkillResult | None:
         source, target = find_unit(m.group("src")), find_unit(m.group("dst"))
         if source and target:
             try:
-                return say(_say_conversion(num_value(m.group("n")), source, target))
+                return say(_say_conversion(num_value(m), source, target))
             except CalcError as exc:
                 return say(str(exc))
     m = re.search(
@@ -415,7 +473,7 @@ async def convert_units(req: Request) -> SkillResult | None:
         source, target = find_unit(m.group("src")), find_unit(m.group("dst"))
         if source and target:
             try:
-                return say(_say_conversion(num_value(m.group("n")), source, target))
+                return say(_say_conversion(num_value(m), source, target))
             except CalcError as exc:
                 return say(str(exc))
     m = re.search(

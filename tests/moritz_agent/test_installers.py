@@ -387,6 +387,13 @@ def test_update_keeps_only_the_newest_backups(machine, tmp_path):
     assert len(names) == 2 and "20200101-000000" not in names
 
 
+def test_keeping_no_backup_is_refused(machine, tmp_path):
+    installed(machine, tmp_path)
+    new = make_source(tmp_path / "new", "2.0")
+    result = update(machine, new, *UPDATE_ARGS, "--keep-backups", "0")
+    assert result.returncode == 2 and "ab 1" in result.stdout + result.stderr
+
+
 def test_update_without_installation_is_refused(machine, tmp_path):
     new = make_source(tmp_path / "new", "2.0")
     result = update(machine, new, *UPDATE_ARGS)

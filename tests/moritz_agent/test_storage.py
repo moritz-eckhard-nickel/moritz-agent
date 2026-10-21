@@ -163,11 +163,11 @@ def test_retention_blanks_old_transcripts_and_deletes_misses(db):
     old = (datetime.now(UTC) - timedelta(hours=30)).isoformat(timespec="seconds")
     db.execute("UPDATE call_turns SET created_at = ? WHERE idx = 1", (old,))
     db.execute("UPDATE skill_misses SET created_at = ? WHERE text = 'alte frage'", (old,))
-    assert repo.purge(24) == {"turns": 1, "misses": 1}
+    assert repo.purge(24) == {"turns": 1, "misses": 1, "tools": 0}
     rows = db.query("SELECT idx, user_text FROM call_turns ORDER BY idx")
     assert [(r["idx"], r["user_text"]) for r in rows] == [(1, None), (2, "neu")]
     assert [m["text"] for m in repo.recent_misses()] == ["neue frage"]
-    assert repo.purge(24) == {"turns": 0, "misses": 0}
+    assert repo.purge(24) == {"turns": 0, "misses": 0, "tools": 0}
 
 
 def test_backup_is_a_consistent_copy(db, tmp_path):
@@ -181,3 +181,22 @@ def test_backup_is_a_consistent_copy(db, tmp_path):
     finally:
         copy.close()
     assert not list((tmp_path / "backup").glob("*.tmp"))
+
+
+def test_retention_also_blanks_tool_arguments_and_summaries(db):
+    repo = Repo(db)
+    repo.add_tool_call("web_search", args={"query": "geheime frage"}, ok=True, summary="antwort")
+    repo.add_tool_call("web_search", args={"query": "neue frage"}, ok=True, summary="neu")
+    old = (datetime.now(UTC) - timedelta(hours=30)).isoformat(timespec="seconds")
+    db.execute("UPDATE tool_calls SET created_at = ? WHERE id = 1", (old,))
+    assert repo.purge(24)["tools"] == 1
+    rows = db.query("SELECT args_json, result_summary FROM tool_calls ORDER BY id")
+    assert (rows[0]["args_json"], rows[0]["result_summary"]) == (None, None)
+    assert "neue frage" in rows[1]["args_json"] and rows[1]["result_summary"] == "neu"
+
+
+def test_the_total_turn_time_is_stored(db):
+    repo = Repo(db)
+    repo.start_call("c")
+    repo.add_turn("c", 1, user_text="x", agent_text="y", path="skill", timings={"total_ms": 840})
+    assert db.query("SELECT t_total_ms FROM call_turns")[0]["t_total_ms"] == 840

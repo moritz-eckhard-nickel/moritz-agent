@@ -452,6 +452,36 @@ def test_a_stranger_in_the_channel_is_neither_heard_nor_a_reason_to_start(tmp_pa
     assert mode is VoiceMode.WAITING and humans == [] and later == [int(TRUSTED_ID)]
 
 
+def test_guests_are_not_heard_in_the_voice_channel_even_with_guest_mode(tmp_path):
+    async def body(room: Room):
+        room.worker.config.settings.discord.guest_mode = "skills"  # everybody else is a guest
+        await room.join()
+        room.enter(STRANGER_ID)
+        await asyncio.sleep(0.2)
+        return room.session.mode, room.session.humans(), room.session.allowed(int(STRANGER_ID))
+
+    mode, humans, allowed = room_test(tmp_path, body)
+    assert mode is VoiceMode.WAITING and humans == [] and not allowed
+
+
+def test_with_two_people_the_answer_runs_with_the_fewer_rights(tmp_path):
+    async def body(room: Room):
+        await room.join()
+        session = room.session
+        session.speaker_id = OWNER_ID
+        session.on_audio(int(TRUSTED_ID), b"\0" * 640)  # the trusted person starts …
+        session.on_audio(int(OWNER_ID), b"\0" * 640)  # … the owner chimes in (last packet)
+        both = session.speaker()[0]
+        session.on_audio(int(OWNER_ID), b"\0" * 640)
+        owner_alone = session.speaker()[0]  # a new utterance: heard since the last answer only
+        session.on_audio(int(STRANGER_ID), b"\0" * 640)  # never counts
+        nobody_new = session.speaker()[0]
+        return both, owner_alone, nobody_new
+
+    both, owner_alone, nobody_new = room_test(tmp_path, body)
+    assert both == TRUSTED_ID and owner_alone == OWNER_ID and nobody_new == OWNER_ID
+
+
 def test_leaving_the_channel_ends_the_conversation_like_hanging_up(tmp_path):
     async def body(room: Room):
         await room.join()

@@ -646,3 +646,17 @@ def test_a_timer_request_reaches_the_phone_in_the_reply(tmp_path):
     timer, plain = scenario(tmp_path, body)
     assert timer["type"] == "reply" and timer["timer"][0] == 600
     assert plain["timer"] is None
+
+
+def test_a_call_whose_end_never_arrives_does_not_stay_active(tmp_path):
+    async def body(system):
+        runtime = system.runtime
+        runtime.call_started("lost-call", "sip:20", "G722")
+        active_before = runtime.active_calls
+        # the phone worker died mid-call: no call_ended ever comes
+        runtime._calls["lost-call"].touched -= runtime.settings.phone.max_call_duration_s + 301
+        rows = runtime.db.query("SELECT end_reason FROM calls WHERE id = 'lost-call'")
+        return active_before, runtime.active_calls, rows
+
+    before, after, _rows = scenario(tmp_path, body)
+    assert (before, after) == (1, 0)

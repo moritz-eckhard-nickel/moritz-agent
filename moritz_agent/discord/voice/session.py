@@ -41,6 +41,8 @@ START_DELAY_S = 1.0  # after somebody arrives: the audio stands, then the greeti
 CHECK_EVERY_S = 5.0
 CONNECT_TIMEOUT_S = 20.0
 REST_MAX_PENDING = 1
+HEARD_WINDOW_S = 35.0  # who spoke within this time counts for the next answer (> one utterance)
+VOICE_ROLES = frozenset({Role.OWNER, Role.TRUSTED})  # only they are heard (§9.2)
 
 
 class VoiceMode(StrEnum):
@@ -115,6 +117,9 @@ class VoiceSession:
         self._greeted = False
         self._conversations = 0
         self._closing = False
+        self._heard: dict[
+            int, tuple[float, float]
+        ] = {}  # user → (first, last) audio since the last answer
         self._loop = asyncio.get_running_loop()
 
     # -- people --------------------------------------------------------------------------------------
@@ -125,13 +130,29 @@ class VoiceSession:
         return [
             user_id
             for user_id in getattr(self.channel, "voice_states", {})
-            if user_id != bot_id and policy.role(str(user_id)) is not Role.UNKNOWN
+            if user_id != bot_id and policy.role(str(user_id)) in VOICE_ROLES
         ]
 
     def allowed(self, user_id: int) -> bool:
-        return self.manager.policy.role(str(user_id)) is not Role.UNKNOWN
+        return self.manager.policy.role(str(user_id)) in VOICE_ROLES
 
     def speaker(self) -> tuple[str, str]:
+        """Whose question the next answer is (called once per utterance by the responder).
+
+        Audio of everybody is mixed into one conversation, so the answer runs as the person with
+        the *fewest* rights among those heard since the last answer (on equal rights: whoever
+        started) – a trusted person's question never runs with the owner's rights."""
+        now = time.monotonic()
+        heard = [
+            (uid, first)
+            for uid, (first, last) in self._heard.items()
+            if now - last <= HEARD_WINDOW_S
+        ]
+        self._heard.clear()
+        if heard:
+            policy = self.manager.policy
+            chosen = min(heard, key=lambda item: (policy.role(str(item[0])).rank, item[1]))[0]
+            self.speaker_id = str(chosen)
         member = getattr(self.channel, "voice_states", {}).get(int(self.speaker_id))
         name = getattr(getattr(member, "member", None), "display_name", "") or ""
         return self.speaker_id, name
@@ -189,7 +210,11 @@ class VoiceSession:
 
     def on_audio(self, user_id: int, pcm: bytes) -> None:
         """Mono 16 kHz audio of an allowed person, on the event loop thread."""
-        self.speaker_id = str(user_id)
+        if not self.allowed(user_id):
+            return  # (the listener filters already; a changed role counts at once)
+        now = time.monotonic()
+        first, _ = self._heard.get(user_id, (now, now))
+        self._heard[user_id] = (first, now)
         if self.mode is VoiceMode.TALKING and self.call is not None:
             speaking = self.media.pending_ms() > 0 or bool(self.vc.is_playing())
             heard = self.detector.feed(pcm, speaking) if self.detector else None

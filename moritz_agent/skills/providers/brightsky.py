@@ -13,7 +13,14 @@ from zoneinfo import ZoneInfo
 from moritz_agent.config.settings import SkillsWeather
 from moritz_agent.skills.geo.gazetteer import Place
 from moritz_agent.skills.providers.http import HttpClient, HttpError
-from moritz_agent.skills.weather.model import Current, DayPoint, HourPoint, WeatherPack
+from moritz_agent.skills.weather.model import (
+    HOUR_INTERVAL_FIELDS,
+    Current,
+    DayPoint,
+    HourPoint,
+    WeatherPack,
+    interval_start,
+)
 
 # Bright Sky icon → WMO weather code (the precipitation amount refines rain)
 _ICON_CODE = {
@@ -25,19 +32,31 @@ _ICON_CODE = {
     "fog": 45,
     "wind": 3,
     "rain": 63,
-    "sleet": 67,
+    "sleet": 71,  # Schneeregen: never freezing rain (66/67), see _code()
     "snow": 73,
     "hail": 96,
     "thunderstorm": 95,
 }
 
 
-def _code(icon: str | None, precipitation: float | None) -> int | None:
+def _rain_code(precipitation: float | None) -> int:
+    if precipitation is None:
+        return 63
+    return 61 if precipitation < 0.5 else 65 if precipitation >= 4 else 63
+
+
+def _code(
+    icon: str | None, precipitation: float | None, temperature: float | None = None
+) -> int | None:
     if icon is None:
         return None
     code = _ICON_CODE.get(icon)
     if icon == "rain" and precipitation is not None:
-        code = 61 if precipitation < 0.5 else 65 if precipitation >= 4 else 63
+        code = _rain_code(precipitation)
+    elif icon == "sleet":
+        # the WMO table has no rain/snow mix: light snow when it is near freezing, rain otherwise
+        # (the Open-Meteo freezing-rain codes 66/67 would wrongly mean "Glatteis")
+        code = 71 if temperature is None or temperature <= 1.0 else _rain_code(precipitation)
     return code
 
 
@@ -110,7 +129,7 @@ def _parse_weather(raw: dict[str, Any], fetched_at: datetime, tz: str, place: Pl
                 dew_point=row.get("dew_point"),
                 precip_prob=row.get("precipitation_probability"),
                 precipitation=precipitation,
-                code=_code(icon, precipitation),
+                code=_code(icon, precipitation, temp),
                 cloud_cover=row.get("cloud_cover"),
                 visibility=row.get("visibility"),
                 pressure=row.get("pressure_msl"),
@@ -123,6 +142,8 @@ def _parse_weather(raw: dict[str, Any], fetched_at: datetime, tz: str, place: Pl
         )
     if not pack.hours:
         raise HttpError("bad_data", "brightsky: no hourly values")
+    # precipitation, its probability and sunshine are "previous 60 minutes" (model.interval_start)
+    pack.hours = interval_start(pack.hours, timedelta(hours=1), HOUR_INTERVAL_FIELDS)
     by_day: dict[date, list[HourPoint]] = {}
     for hour in pack.hours:
         by_day.setdefault(hour.time.date(), []).append(hour)
@@ -153,7 +174,17 @@ def _parse_weather(raw: dict[str, Any], fetched_at: datetime, tz: str, place: Pl
 
 
 def parse_current(raw: Any, tz: str) -> tuple[Current | None, str, float | None]:
-    """Latest station measurement of ``/current_weather``: (values, station name, km away)."""
+    """Latest station measurement of ``/current_weather``: (values, station name, km away).
+
+    A broken answer gives ``(None, "", None)`` – it must never spoil the forecast.
+    """
+    try:
+        return _parse_current(raw, tz)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return None, "", None
+
+
+def _parse_current(raw: Any, tz: str) -> tuple[Current | None, str, float | None]:
     zone = ZoneInfo(tz)
     if not isinstance(raw, dict) or not isinstance(raw.get("weather"), dict):
         return None, "", None
@@ -165,7 +196,7 @@ def parse_current(raw: Any, tz: str) -> tuple[Current | None, str, float | None]
         humidity=row.get("relative_humidity"),
         is_day=not (row.get("icon") or "").endswith("night"),
         precipitation=precipitation,
-        code=_code(row.get("icon"), precipitation),
+        code=_code(row.get("icon"), precipitation, row.get("temperature")),
         cloud_cover=row.get("cloud_cover"),
         pressure=row.get("pressure_msl"),
         wind=row.get("wind_speed_10") or row.get("wind_speed"),
