@@ -508,3 +508,10 @@ def test_the_responder_reports_an_unreachable_model():
     rig.model.script = [503]
     with pytest.raises(ResponderUnavailable):
         run(AgentResponder(rig.loop).respond("Hallo", TurnContext(call_id="c")))
+
+
+def test_a_date_at_the_start_of_a_line_is_not_a_list_marker():
+    from moritz_agent.agent.speakable import clean
+
+    assert clean("3. Oktober ist der Tag der Deutschen Einheit.").startswith("3. Oktober")
+    assert clean("1. Erst das\n2. Dann das") == "Erst das. Dann das"

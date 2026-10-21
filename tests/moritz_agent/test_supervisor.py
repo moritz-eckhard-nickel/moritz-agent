@@ -427,3 +427,66 @@ def test_a_new_token_signals_the_worker_and_a_new_installation_starts_it(tmp_pat
     result, before, after, stopped = run(scenario())
     assert result.ok and "passwords.discord" in result.changed
     assert before == after == 1 and stopped
+
+
+def test_a_reload_while_the_worker_waits_to_restart_keeps_one_worker(tmp_path):
+    tree = make_tree(tmp_path, discord=True)
+
+    async def scenario():
+        sup = make(tree, start_phone=False)
+        sup.discord_argv = [sys.executable, "-c", "import sys; sys.exit(3)"]  # a crashing worker
+        await sup.start()
+        try:
+            await until(lambda: "Neustart" in sup.discord.status().message)
+            first = sup.discord
+            passwords = tree / "passwords.txt"
+            text = passwords.read_text(encoding="utf-8")
+            passwords.write_text(text.replace(BOT_TOKEN, BOT_TOKEN + "-fixed"), encoding="utf-8")
+            await sup.reload()
+            second = sup.discord
+            replaced = second is not first and not first.alive and second.alive
+            await sup.reload()  # nothing changed: still the same single supervisor
+            same = sup.discord is second and second.alive
+            # switched off while it waits for the restart: nothing keeps running
+            passwords.write_text(text.replace(BOT_TOKEN, ""), encoding="utf-8")
+            await sup.reload()
+            return replaced, same, sup.discord is None and not second.alive
+        finally:
+            await sup.shutdown()
+
+    assert run(scenario()) == (True, True, True)
+
+
+def test_file_polling_reloads_like_sighup(tmp_path, monkeypatch):
+    import moritz_agent.supervisor as supervisor_module
+
+    tree = make_tree(tmp_path, discord=True)
+    path = tree / "config" / "moritz-agent.toml"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace("config_poll_s = 0", "config_poll_s = 1")
+    )
+    monkeypatch.setattr(supervisor_module, "MAINTENANCE_INTERVAL_S", 0.2)
+
+    async def scenario():
+        sup = make(tree, start_phone=False)
+        calls = []
+        original = sup.reload
+
+        async def reload():
+            calls.append(1)
+            return await original()
+
+        sup.reload = reload
+        await sup.start()
+        try:
+            await asyncio.sleep(0.5)
+            before = len(calls)
+            passwords = tree / "passwords.txt"
+            text = passwords.read_text(encoding="utf-8")
+            passwords.write_text(text.replace(BOT_TOKEN, BOT_TOKEN + "-new"), encoding="utf-8")
+            await until(lambda: len(calls) > before, timeout=4)
+            return before
+        finally:
+            await sup.shutdown()
+
+    assert run(scenario()) == 0

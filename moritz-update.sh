@@ -84,7 +84,8 @@ parse_args() {
 			shift 2
 			;;
 		--keep-backups)
-			[[ $# -ge 2 && "$2" =~ ^[0-9]+$ ]] || die "${EXIT_USAGE}" "--keep-backups braucht eine Zahl"
+			# at least 1: the backup of this very update is what a rollback needs
+			[[ $# -ge 2 && "$2" =~ ^[1-9][0-9]*$ ]] || die "${EXIT_USAGE}" "--keep-backups braucht eine Zahl ab 1"
 			KEEP_BACKUPS="$2"
 			shift 2
 			;;
@@ -188,7 +189,9 @@ phase_backup() {
 	# rotation: keep the newest KEEP_BACKUPS
 	local old
 	while IFS= read -r old; do
-		[[ -n "${old}" ]] && rm -rf -- "${PREFIX}/backups/${old}"
+		if [[ -n "${old}" && "${PREFIX}/backups/${old}" != "${BACKUP_DIR}" ]]; then
+			rm -rf -- "${PREFIX}/backups/${old}"
+		fi
 	done < <(find "${PREFIX}/backups" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null |
 		LC_ALL=C sort -r | tail -n +$((KEEP_BACKUPS + 1)))
 }

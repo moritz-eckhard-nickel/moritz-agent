@@ -175,3 +175,22 @@ def test_a_missing_pronunciation_file_changes_nothing(tmp_path):
     from moritz_agent.phone.audio.textnorm import _pronunciations
 
     assert _pronunciations(tmp_path / "gibt-es-nicht.toml") == ()
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("10.000,00 €", "zehntausend Euro"),
+        ("1.234,56 €", "tausendzweihundertvierunddreißig Euro sechsundfünfzig"),
+        ("12.345,6 km", "zwölftausenddreihundertfünfundvierzig Komma sechs Kilometer"),
+        ("1.234,5 kg", "tausendzweihundertvierunddreißigeinhalb Kilogramm"),
+        ("0,5 Stunden", "null Komma fünf Stunden"),
+        ("3,14159", "drei Komma eins vier eins fünf neun"),
+        ("3/4 Liter", "drei Viertel Liter"),
+        ("-5–-2 °C", "minus fünf bis minus zwei Grad Celsius"),
+        ("Am 2024-10-21", "Am einundzwanzigsten Oktober zweitausendvierundzwanzig"),
+        ("Am 1.10.2026", "Am ersten Oktober zweitausendsechsundzwanzig"),
+    ],
+)
+def test_thousands_fractions_negative_ranges_and_iso_dates(text, spoken):
+    assert normalize_for_tts(text) == spoken

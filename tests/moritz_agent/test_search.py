@@ -453,3 +453,18 @@ def test_real_searxng_answers_healthz_and_json(tmp_path):
 
     hits = run(scenario())
     assert all(h.url.startswith("http") for h in hits)
+
+
+def test_a_hit_with_a_broken_address_is_skipped_not_fatal():
+    from moritz_agent.research.searxng_client import parse_results
+
+    hits = parse_results(
+        {
+            "results": [
+                {"url": "https://[broken/x", "title": "Kaputt", "content": "x"},
+                {"url": "https://example.org/a", "title": "Gut", "content": "y"},
+            ]
+        },
+        5,
+    )
+    assert [h.title for h in hits] == ["Gut"]

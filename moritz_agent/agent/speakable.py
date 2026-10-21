@@ -17,7 +17,14 @@ _INLINE_CODE = re.compile(r"`([^`]*)`")
 _LINK = re.compile(r"\[([^\]]+)\]\((?:https?://)?[^)\s]*\)")
 _URL = re.compile(r"(?:https?://|www\.)\S+", re.IGNORECASE)
 _HEADING = re.compile(r"^\s{0,3}#{1,6}\s*", re.MULTILINE)
-_BULLET = re.compile(r"^\s*(?:[-*•]|\d{1,2}[.)])\s+", re.MULTILINE)
+_MONTH_NAMES = (
+    "Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember"
+    "|Jan|Feb|Mär|Apr|Jun|Jul|Aug|Sep|Sept|Okt|Nov|Dez"
+)
+# "1. " starts a list item – but "3. Oktober" at the start of a line is a date, not a list marker
+_BULLET = re.compile(
+    rf"^\s*(?:[-*•]|\d{{1,2}}\)|\d{{1,2}}\.(?!\s*(?:{_MONTH_NAMES})\b))\s+", re.MULTILINE
+)
 _EMPHASIS = re.compile(r"(\*\*|__|\*|(?<!\w)_|_(?!\w))")
 _SPACES = re.compile(r"[ \t]+")
 _EMOJI = re.compile(r"[\U0001f000-\U0001faff\u2600-\u27bf\U0001f1e6-\U0001f1ff\ufe0f\u200d]")
