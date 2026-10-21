@@ -32,8 +32,10 @@ from moritz_agent.discord.dispatch import Dispatcher
 from moritz_agent.discord.presence import ActivityManager
 from moritz_agent.discord.render import OutMessage, mention_for, render_notification
 from moritz_agent.discord.setup import invite_links
+from moritz_agent.discord.speech import SpeechService
 from moritz_agent.discord.status import write_status
 from moritz_agent.discord.style import Styler
+from moritz_agent.discord.voice_messages import VoiceMessages
 from moritz_agent.logging_setup import get_logger, setup_logging
 from moritz_agent.phone.control import DRAIN_FILE, run_dir
 
@@ -76,7 +78,8 @@ class DiscordWorker:
         self.dispatcher: Dispatcher
         self.activity: ActivityManager
         self.voice: VoiceControl | None = None
-        self.speech: Any | None = None  # read aloud / voice messages (voice_messages.py)
+        self.speech_service: SpeechService | None = None
+        self.voice_messages: VoiceMessages | None = None  # voice messages and "Vorlesen"
         self.stop_event = asyncio.Event()
         self.default_channel: discord.abc.Messageable | None = None
         self.state = "starting"
@@ -104,7 +107,7 @@ class DiscordWorker:
 
     def features(self) -> commands.Features:
         return commands.Features.from_settings(
-            self.settings(), voice=self.voice is not None, speech=self.speech is not None
+            self.settings(), voice=self.voice is not None, speech=self.voice_messages is not None
         )
 
     # -- build ------------------------------------------------------------------------------------------------
@@ -194,6 +197,7 @@ class DiscordWorker:
         self._spawn(self._heartbeat())
         self._spawn(self._outbox_pump())
         self._spawn(self._presence_loop())
+        self._spawn(self._housekeeping())
         try:
             await self.stop_event.wait()
         finally:
@@ -201,8 +205,20 @@ class DiscordWorker:
         return 0
 
     def _attach_voice(self) -> None:
-        """Voice channel and voice messages are optional parts; without their libraries the commands
-        are simply not registered (docs/plan/14 §9.5)."""
+        """Voice messages and the voice channel are optional parts; where Whisper or Piper are not
+        installed the commands are simply not registered (docs/plan/14 §9.5)."""
+        if self.cfg.voice_messages.enabled:
+            self.speech_service = SpeechService(self.settings, self.root)
+            if self.speech_service.stt_available():
+                self.voice_messages = VoiceMessages(
+                    self.dispatcher,
+                    self.speech_service,
+                    lambda message: self.client.info_of(message),  # type: ignore[union-attr]
+                )
+            else:
+                log.info("Discord: Spracherkennung nicht installiert – keine Sprachnachrichten")
+        if self.dispatcher.local is not None:
+            self.dispatcher.local.voice = self.voice
 
     async def _open_core(self) -> CoreApi:
         core = CoreApi.from_environment()
@@ -443,6 +459,13 @@ class DiscordWorker:
         while True:
             write_status(self.state_root, self.status_payload())
             await asyncio.sleep(HEARTBEAT_EVERY_S)
+
+    async def _housekeeping(self) -> None:
+        """Once a minute: let go of the speech models when nobody needs them."""
+        while True:
+            await asyncio.sleep(60)
+            if self.speech_service is not None:
+                self.speech_service.unload_if_idle(self.cfg.voice.unload_after_minutes)
 
     async def _presence_loop(self) -> None:
         while True:

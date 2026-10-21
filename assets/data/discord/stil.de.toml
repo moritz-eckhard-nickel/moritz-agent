@@ -50,6 +50,7 @@ generic = "Hoppla, da ist etwas schiefgegangen 🙈 Versuch’s bitte nochmal."
 rate_limited = "Nicht so schnell, ich komm kaum hinterher 🐾 Gleich wieder."
 maintenance = "Ich werde gerade aktualisiert, gleich bin ich wieder da."
 forbidden = "Mit dir darf ich leider nicht reden."
+not_understood = "Das habe ich leider nicht verstanden 🙉 Sprich nochmal etwas deutlicher?"
 too_long = "Das ist mir zu lang geraten – ich hab es gekürzt."
 
 [phrases]

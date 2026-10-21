@@ -220,7 +220,7 @@ class NikitaClient(discord.Client):
         self.worker = worker
         self.tree = app_commands.CommandTree(self)
         self.tree.on_error = self._on_command_error  # type: ignore[assignment]
-        self.voice_messages: VoiceMessageHandler | None = None
+        self.voice_messages: VoiceMessageHandler | None = worker.voice_messages
 
     # -- helpers -------------------------------------------------------------------------------------------
     @property
@@ -370,8 +370,8 @@ class NikitaClient(discord.Client):
         sender = InteractionSender(
             interaction, ephemeral_for(None, origin, cfg) or name == "Vorlesen"
         )
-        if name == "Vorlesen" and self.worker.speech is not None:
-            await self.worker.speech.read_aloud(message, origin, sender)
+        if name == "Vorlesen" and self.worker.voice_messages is not None:
+            await self.worker.voice_messages.read_aloud(message, origin, sender)
             return
         await self.dispatcher.context_menu(name, message.content or "", origin, sender)
 

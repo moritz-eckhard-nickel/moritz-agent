@@ -58,6 +58,17 @@ test-1.sh – Nikitas Telefon- und Stimmenteil testen (ohne Systeminstallation)
         Nikita starten, bei der Telefonanlage anmelden (passwords.txt, [sip]) und Anrufe annehmen.
   ./test-1.sh models [status|fetch] [--groups stt,piper] [--yes]
         Modell-Download verwalten.
+  ./test-1.sh discord token|channel|pin|check|invite|channels|profile|say "Text"|run
+        Discord-Bot einrichten und ausprobieren (ohne LXC, ohne Telefon). Anleitung: docs/discord-einrichtung.md
+        token     Bot-Token eingeben (die Eingabe bleibt unsichtbar), prüfen und in passwords.txt speichern
+        channel   Standard-Textkanal wählen (Nummer oder Kanal-ID)
+        pin       PIN für gefährliche Admin-Befehle setzen (optional)
+        check     Token, Einstellungen im Developer Portal, Server und Kanal prüfen; zeigt die Einladungslinks
+        invite    Einladungslinks ausgeben       channels  Textkanäle auflisten
+        profile   Avatar und Beschreibung des Bots setzen
+        say TEXT  Testnachricht in den Standardkanal schicken
+        run       Bot im Vordergrund starten (Strg+C beendet); Befehle und Sofortauskünfte laufen,
+                  das Sprachmodell nicht
 
 Umgebungsvariablen: MORITZ_PYTHON (Python-Interpreter), MORITZ_JOBS (Build-Prozesse),
 MORITZ_TEST_SIP_PORT (Port für „call“, Standard 5062).
@@ -86,6 +97,8 @@ need_env() {
 }
 
 phone() { PYTHONPATH="${ROOT}" "${VPY}" -m moritz_agent.phone "$@"; }
+discord() { PYTHONPATH="${ROOT}" "${VPY}" -m moritz_agent.discord "$@"; }
+setup_py() { PYTHONPATH="${ROOT}" "${VPY}" -m moritz_agent.setup "$@"; }
 
 check_prereqs() {
 	local python="$1" missing_apt=() optional_apt=()
@@ -181,6 +194,52 @@ stop_agent() {
 		kill -KILL "${agent_pid}" 2>/dev/null || true
 	fi
 	agent_pid=""
+}
+
+# read_secret PROMPT – a hidden line from the terminal into $SECRET (never an argument, never exported)
+read_secret() {
+	[[ -r /dev/tty ]] || die "dafür brauche ich ein Terminal (Eingabe ohne Anzeige)"
+	SECRET=""
+	read -r -s -p "$1" SECRET </dev/tty || SECRET=""
+	printf '\n'
+	[[ -n "${SECRET}" ]] || die "nichts eingegeben"
+}
+
+cmd_discord() {
+	local sub="${1:-help}"
+	[[ $# -gt 0 ]] && shift
+	if [[ "${sub}" == help || "${sub}" == -h || "${sub}" == --help ]]; then
+		usage | sed -n '/test-1.sh discord/,/das Sprachmodell nicht/p'
+		return 0
+	fi
+	need_env
+	ensure_user_files
+	setup_py migrate >/dev/null
+	case "${sub}" in
+	token)
+		log "Bot-Token aus dem Developer Portal (Anwendung → Bot → Reset Token)"
+		read_secret "Bot-Token (unsichtbar): "
+		# the token goes through the pipe to the program – not as an argument, not in the environment
+		printf '%s\n' "${SECRET}" | setup_py discord-token
+		SECRET=""
+		;;
+	channel)
+		local rc=0 answer=""
+		setup_py discord-channel "$@" || rc=$?
+		if [[ ${rc} -eq 3 ]]; then
+			read -r -p "Nummer des Standardkanals (oder Kanal-ID): " answer </dev/tty || answer=""
+			printf '%s\n' "${answer}" | setup_py discord-channel --answer
+		fi
+		;;
+	pin)
+		read_secret "PIN für /admin neustart (unsichtbar, mindestens 4 Zeichen): "
+		printf '%s\n' "${SECRET}" | setup_py discord-pin
+		SECRET=""
+		;;
+	check | invite | channels | profile | say) discord "${sub}" "$@" ;;
+	run) exec env PYTHONPATH="${ROOT}" "${VPY}" -m moritz_agent.discord run --standalone "$@" ;;
+	*) die "unbekannter Discord-Befehl: ${sub} (./test-1.sh discord help)" ;;
+	esac
 }
 
 cmd_call() {
@@ -290,6 +349,7 @@ main() {
 		PYTHONPATH="${ROOT}" "${VPY}" -m moritz_agent.skills "${@:-help}"
 		;;
 	call) cmd_call "$@" ;;
+	discord) cmd_discord "$@" ;;
 	run)
 		need_env
 		ensure_user_files

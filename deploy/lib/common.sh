@@ -103,7 +103,7 @@ sync_code() {
 env_hash() {
 	# everything that decides whether the virtual environment / PJSIP build must be redone
 	{
-		cat "$1/requirements/core.lock" "$1/requirements/phone.lock" \
+		cat "$1/requirements/core.lock" "$1/requirements/phone.lock" "$1/requirements/discord.lock" \
 			"$1/third_party/pjproject/version.mak" "$1/scripts/build-pjsip.sh"
 		python3 --version
 	} | sha256sum | cut -d' ' -f1
