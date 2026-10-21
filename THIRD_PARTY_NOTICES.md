@@ -37,8 +37,10 @@ Unmodified copies; provenance and versions in [third_party/VENDORED.md](third_pa
 | --- | --- | --- |
 | SearXNG (commit 8252c0bf) | `third_party/searxng/` | AGPL-3.0 |
 | pjproject / PJSIP 2.17 | `third_party/pjproject/` | GPL-2.0-or-later; bundled sub-components in `third_party/pjproject/third_party/` keep their own licenses |
-| Python packages (installed from PyPI, pinned in `requirements/*.lock`) | not vendored | per package (FastAPI, Starlette, Pydantic: MIT; Uvicorn, HTTPX, Granian: BSD-3-Clause; faster-whisper, CTranslate2, ONNX Runtime: MIT; NumPy (BSD-3-Clause), PyAV (BSD-3-Clause), Piper (GPL-3.0), python-soxr (LGPL-2.1-or-later), boto3 (Apache-2.0), Flask (BSD-3-Clause), lxml (BSD-3-Clause), …) |
+| Python packages (installed from PyPI, pinned in `requirements/*.lock`) | not vendored | per package (FastAPI, Starlette, Pydantic: MIT; Uvicorn, HTTPX, Granian: BSD-3-Clause; faster-whisper, CTranslate2, ONNX Runtime: MIT; NumPy (BSD-3-Clause), PyAV (BSD-3-Clause), Piper (GPL-3.0), python-soxr (LGPL-2.1-or-later), boto3 (Apache-2.0), Flask (BSD-3-Clause), lxml (BSD-3-Clause), discord.py (MIT), davey (MIT), PyNaCl (Apache-2.0), aiohttp (Apache-2.0 AND MIT), audioop-lts (PSF-2.0), …) |
 | Silero VAD v6.2.3 | `assets/models/vad/` | MIT |
+| Own astronomy code (sun, moon, seasons), formulas after NOAA and Meeus' *Astronomical Algorithms* | `moritz_agent/skills/astro/` | MSOL 1.1 (formulas are not copyrightable) |
+| Own place lists (hand-kept seed set, approximate values) | `assets/data/geo/seed-places.tsv`, `world-cities.tsv`, `plz-bereiche.tsv` | MSOL 1.1 |
 | m-agent logo (M + Scribbles) | `assets/branding/`, `niko.ico`, `nikogreen.ico` | contains the Scribbles artwork, see below |
 | **Scribbles** – mascot of LayerNX and moritz-agent | `assets/branding/scribbles/` (original drawing + traced SVG/PNG) | © LayerNX / Moritz Eckhard Nickel. **All rights reserved.** Not covered by MSOL or AGPL |
 
@@ -50,3 +52,23 @@ Unmodified copies; provenance and versions in [third_party/VENDORED.md](third_pa
 | OpenAI Whisper small (faster-whisper conversion by Systran) | speech-to-text | MIT |
 | Thorsten-Voice „Hessisch“ Piper model (`Thorsten-Voice/Hessisch`, `…_Piper_high-Oct2023.onnx`) | Nikita's voice | CC0-1.0 (Thorsten-Voice) – verify per model card |
 | espeak-ng (system package, optional) | last-resort voice and test caller | GPL-3.0-or-later (used as a separate program) |
+
+## Data services used at run time (not stored in this repository)
+
+Only free services without an account; hosts and URLs are configurable in `config/moritz-agent.toml`
+(`[skills.*]`). Nikita names the source when asked (SKILL-14).
+
+| Service | Purpose | Terms |
+| --- | --- | --- |
+| Open-Meteo (`api.open-meteo.com`, air quality, geocoding) | weather, air quality, place lookup for unknown places | CC BY 4.0 data, free for non-commercial use; software AGPL-3.0 (own instance possible) |
+| Bright Sky (`api.brightsky.dev`) | fallback weather, DWD stations and warnings | MIT software; DWD open data (GeoNutzV) |
+| DWD Open Data (`opendata.dwd.de`) | pollen forecast | GeoNutzV, source: Deutscher Wetterdienst |
+| NINA / BBK (`warnung.bund.de`) | civil protection warnings | open data of the Bundesamt für Bevölkerungsschutz und Katastrophenhilfe |
+| PEGELONLINE (`pegelonline.wsv.de`) | river water levels | Datenlizenz Deutschland – Zero 2.0 |
+| ECB euro reference rates (`ecb.europa.eu`) | exchange rates | free reuse with source |
+| Energy-Charts (`api.energy-charts.info`) | day-ahead electricity price | CC BY 4.0 (Fraunhofer ISE) |
+| OpenLigaDB (`api.openligadb.de`) | football results (optional) | open database |
+| Tagesschau API (`tagesschau.de/api2u`) | headlines (optional, off by default) | see tagesschau.de terms |
+| Tankerkönig (optional, off by default, needs a key in `passwords.txt [optional_services]`) | fuel prices | CC BY 4.0 |
+| GeoNames (`scripts/build_geodata.py`, optional installer phase `geodata`) | all German postcodes and places | CC BY 4.0, https://www.geonames.org/ |
+| Discord API | the bot itself (official bot account only, ADR-033) | Discord Developer Terms of Service |

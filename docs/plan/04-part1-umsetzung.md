@@ -193,7 +193,7 @@ P1-03 (Konfiguration) und P1-06 (Speicher) werden nur so weit vorgezogen, wie Bl
 
 - **Dateien:** `moritz_agent/tools/{registry.py,base.py,time_tool.py,web_search.py}`.
 - **Aufgaben:** `Tool`-Protokoll (Name, Beschreibung **deutsch**, JSON-Schema, `async run`),
-  Validierung der Argumente (jsonschema/pydantic), Ergebnisobjekt
+  Validierung der Argumente (jsonschema/pydantic – *umgesetzt mit einem kleinen eigenen Validator, Anhang C.2*), Ergebnisobjekt
   `{ok, data | error, sources?, speakable?}`, Registry mit Profil-Freigaben (PHONE-45),
   Ausgabe-Größenlimit, Protokollierung in `tool_calls`.
   - `get_current_time(kind: "time"|"date"|"datetime")` → nutzt `time_tool.py` (Gerüst
@@ -456,7 +456,7 @@ Datenquelle **vor** dem ersten Abruf.
   Laden im Hintergrund, Indizes (PLZ, Name, ohne Zusätze, Ortsteil, phonetisch); Auflösung nach 13 §4.4
   (Heimat-Wörter, PLZ, Namen, Mehrdeutigkeit, Ausland, Online-Rückfall über Open-Meteo-Geocoding);
   Heimatort 35781 auflösen und in Status/Log zeigen (13 §5, Gemeindeschlüssel/Ortsteile gegen amtliche
-  Quelle prüfen); Skills aus 13 §6.10; neue Abhängigkeit `rapidfuzz` (Lock neu erzeugen, ADR-019).
+  Quelle prüfen); Skills aus 13 §6.10; neue Abhängigkeit `rapidfuzz` (Lock neu erzeugen, ADR-019). *Umgesetzt ohne `rapidfuzz`: `difflib` + Kölner Phonetik (Anhang C.2).*
 - **Tests:** 35781 → Weilburg, 60311 → Frankfurt am Main, unbekannte PLZ, PLZ mit mehreren Orten,
   Ortsteile, „Limburg a. d. Lahn“, „Weilborg“, Frankfurt/Neustadt-Mehrdeutigkeit, Ausland,
   Ladezeit ≤ 300 ms, RAM gemessen (06 §2.2).
@@ -502,7 +502,7 @@ Datenquelle **vor** dem ersten Abruf.
 ## P1-25 – Sonne, Mond, Jahreszeiten
 
 - **Dateien:** `skills/astro/{sun,moon,seasons}.py`, `skills/catalog/astro.py`; neue Abhängigkeit
-  `astral` (Apache-2.0).
+  `astral` (Apache-2.0). *Umgesetzt als eigene Rechnung in `skills/astro/` (Anhang C.2).*
 - **Aufgaben:** Skills aus 13 §6.9; Meeus Kap. 27/49 für Jahreszeiten und Mondphasen; Polarfälle;
   Ort aus P1-21.
 - **Tests:** Referenzwerte (12 Daten Weilburg/Frankfurt, Mondphasen und Jahreszeiten 2026–2028, ± 2 min).
@@ -523,7 +523,7 @@ Datenquelle **vor** dem ersten Abruf.
 ## P1-27 – Region und Alltag
 
 - **Dateien:** `skills/providers/{pegelonline,ics,openligadb,news}.py`, `skills/catalog/{region,notes}.py`;
-  neue Abhängigkeit `icalendar` (BSD-2-Clause).
+  neue Abhängigkeit `icalendar` (BSD-2-Clause). *Umgesetzt mit einem kleinen eigenen ICS-Leser (Anhang C.2).*
 - **Aufgaben:** Lahn-Pegel (Station aus `stations.json?waters=LAHN` bestimmen, Trend, Kennwerte), Hochwasser
   mit NINA; Abfallkalender (iCal-Link/-Datei, nur `https://`, keine privaten Adressen, Kategorien
   normalisieren); Fußball, Schlagzeilen (Nutzungsbedingungen prüfen, Standard aus); Notizen/Einkaufsliste
@@ -737,3 +737,123 @@ das Telefon unberührt (Test: Worker beenden während eines Testanrufs).
 ## Anhang B – Konfigurationsschlüssel Part 1
 
 Vollständig und kommentiert in [`config/moritz-agent.example.toml`](../../config/moritz-agent.example.toml).
+
+## Anhang C – Umsetzungsstand und Abweichungen (Stand 21.10.2026)
+
+Dieser Anhang ist die Quelle der Wahrheit dafür, was in Part 1 gebaut ist, was davon **nur im Code und
+in Tests** belegt ist und was **noch auf echter Hardware oder gegen echte Dienste geprüft** werden muss.
+„Gebaut“ heißt: Code und automatische Tests sind grün (`pytest`, `ruff`, `shellcheck`); es heißt nicht,
+dass die Abnahme auf Sophie-1 bzw. gegen echte Dienste schon stattgefunden hat.
+
+Letzter Lauf (21.10.2026): `pytest` 2316 bestanden (6 abgewählte Tests brauchen Internet, `-m network`),
+`ruff check`, `ruff format --check` und `shellcheck` sauber.
+
+### C.1 Stand je Ticket
+
+| Ticket | Stand | Anmerkung |
+| --- | --- | --- |
+| P1-00, P1-00b | fertig | Repo-Grundlage, Rebranding, Fremdkomponenten |
+| P1-01 | **offen** (manuell) | Infrastruktur Sophie-1 – nicht Teil dieses Repos |
+| P1-02 | **offen** | KoboldCpp-Build und Modellwahl brauchen die GPU; der Installer kündigt die Phase nur an |
+| P1-03 | gebaut | `config/validate.py`, `reload.py`; Reload atomar mit Diff |
+| P1-04 | gebaut | `ManagedProcess` (Backoff, Health), `supervisor.py` startet Telefon und Discord als Kindprozesse |
+| P1-05 … P1-09 | gebaut | Inference-Client, Speicher (SQLite), Suche (SearXNG → KoboldCpp → Wikipedia), Tools, Agent-Schleife; **nicht gegen ein echtes Modell geprüft** (siehe C.3) |
+| P1-10 … P1-13 | gebaut, läuft bei Moritz | Audio, SIP, Phone-Worker, Ansagen |
+| P1-14 | gebaut | Web-Oberfläche (Login, Statusseite), interne API für die Kindprozesse |
+| P1-15 … P1-17 | gebaut | Installer, Updater, systemd; neue Phasen `discord` und `geodata` |
+| P1-18 | **offen** | Abnahme auf Sophie-1 |
+| P1-19 … P1-28 | gebaut | Skill-Framework und alle Sofortauskünfte aus [13](13-sofortauskuenfte.md) |
+| P1-29 | gebaut, Messung offen | Aussprache-Liste, Whisper-`initial_prompt`, Korpus mit 803 Äußerungen (`tests/moritz_agent/data/skills.de.jsonl`, erzeugt von `scripts/build_skill_corpus.py`) – **Hörtest und Vergleich `initial_prompt` gegen `hotwords` stehen aus** |
+| P1-30 | **offen** | Abnahme: Protokoll [`docs/abnahme/sofortauskuenfte-vorlage.md`](../abnahme/sofortauskuenfte-vorlage.md) ausfüllen; das Netz-Wächter-Testset (`pytest -m network`) läuft nur mit Internet |
+| P1-31 … P1-35 | gebaut | Kanal-Kern, Worker, Text-Chat, Befehle; **nie gegen das echte Discord-Gateway gelaufen** (C.3) |
+| P1-32 | **offen** | Spike-Protokoll [`docs/abnahme/p1-32-discord-spike.md`](../abnahme/p1-32-discord-spike.md); der Code beherrscht beide Ausgänge |
+| P1-36 | gebaut | `/joinvc` als Anruf (`DiscordMedia` + `CallSession`); Empfang nur mit optionalem `discord-ext-voice-recv`, sonst „nur sprechen“ |
+| P1-37 … P1-41, P1-43 | gebaut | Sprachnachrichten, Erinnerungen und Abos, Telefon ↔ Discord, Admin, Einrichtung, Persönlichkeit |
+| P1-42 | **offen** | Abnahme: [`docs/abnahme/discord-vorlage.md`](../abnahme/discord-vorlage.md) |
+
+### C.2 Abweichungen vom Plan (und warum)
+
+**Abhängigkeiten – eigener Code statt Paket** (weniger Fremdcode, keine Lizenzfragen, offline testbar):
+
+| Geplant | Gebaut | Ort |
+| --- | --- | --- |
+| `astral` (Sonne), Meeus (Mond/Jahreszeiten) | eigene Rechnung nach NOAA/Meeus; Tests gegen bekannte Werte | `skills/astro/` |
+| `icalendar` (Müllkalender) | kleiner eigener ICS-Leser (nur `VEVENT`, `RRULE` einfacher Fälle) | `skills/providers/ics.py` |
+| `rapidfuzz` (Ortsnamen) | `difflib` (Schwelle 0,88) plus Kölner Phonetik | `skills/geo/gazetteer.py` |
+| `jsonschema` (Tool-Argumente) | kleiner Validator für die benutzten Schlüsselwörter | `tools/schema.py` |
+
+Dadurch entfallen `astral`, `icalendar`, `rapidfuzz` und `jsonschema` in `requirements/*.in`; die
+Hinweise in [13 §6/§11](13-sofortauskuenfte.md) und ADR-031 („neue Abhängigkeit `rapidfuzz`“) gelten
+nicht mehr.
+
+**Daten:** Das Repository enthält nur die handgepflegte **Grundmenge** (`assets/data/geo/seed-places.tsv`,
+`plz-bereiche.tsv`, `world-cities.tsv`; Näherungswerte). Die **vollständigen** GeoNames-Listen
+(`de-places.tsv`, `de-postcodes.tsv`) erzeugt `scripts/build_geodata.py`; der Installer ruft es in der
+neuen Phase `geodata` auf (übersprungen mit `--skip-models`, Fehler sind nicht fatal). In der
+Entwicklungsumgebung war GeoNames nicht erreichbar, die Skripte sind deshalb **nur gegen Testdateien
+geprüft**. ADR-031 („≈ 6–7 MB im Repository“) ist damit überholt: die Daten kommen beim Einrichten.
+
+**Skill-Zuschnitt:** `weather.place` ist in `weather.*` aufgegangen (Ort optional), `holiday.other_state`
+in `holiday.*` (Bundesland als Slot); einige Gruppen heißen anders als in 13 §6 (`gespraech`, `orte`,
+`himmel`, `ratschlaege`, `helfer`, …) – die Skill-IDs sind unverändert.
+
+**Prozess- und API-Aufbau:**
+
+- Der Supervisor ([02](02-architektur.md)) startet Telefon- **und** Discord-Worker als `ManagedProcess`
+  (Discord mit `nice 5`, Gesundheit über Statusdatei `data/run/discord-status.json`). Ein Absturz des
+  Discord-Workers lässt das Telefon unberührt.
+- Die Worker sprechen mit dem Hauptprozess über eine **interne Loopback-API** (`/internal/…`, Header
+  `X-Internal-Token`, NDJSON-Ströme für gestreamte Antworten) – `api/internal.py`,
+  `api/internal_discord.py`. Proaktive Nachrichten laufen über die Tabelle `outbox`, die der
+  Discord-Worker abfragt (`pump_once`), nicht über einen Push.
+- **API-02:** Ohne Web-Login wird die Oberfläche nicht an eine Netzwerkadresse gebunden, der Start
+  **gelingt aber** (nur Loopback, mit Warnung) statt zu verweigern – das Telefon soll auch bei einer
+  vergessenen Einstellung laufen.
+- TLS-Zertifikat der Weboberfläche erzeugt `api/tls.py` mit `openssl req` (EC prime256v1, Schlüssel
+  `0600`) statt mit einer Python-Bibliothek.
+- `data/run/phone-status.json` bleibt als Statusdatei des Telefons erhalten (Plan: eine gemeinsame
+  Statusdatei); der Hauptprozess führt sie in `/api/system/status` zusammen.
+
+**Telefon:**
+
+- `phone/media.py` führt die Schnittstelle `CallMedia` (Alias `MediaChannel`, ADR-036) ein; `SipMedia`
+  und `DiscordMedia` implementieren sie. `CallSession` kennt kein PJSUA2 mehr.
+- Neue Ereignisse im Zustandsautomaten: `BargeIn` (Reinsprechen mit `CallSession.barge_in(heard)`),
+  `TimerAlarm` (Eieruhr, Ansage `timer_done`) und die Ansage `first_prompt`.
+- **Eieruhr am Telefon:** `SkillResult.start_timer` → `Reply.meta["timer"]` →
+  `CallSession._arm_kitchen_timer` → Signalton + `timer_done`.
+- Whisper bekommt einen `initial_prompt` aus der Kontextliste (Standard ersetzt, in
+  `config/moritz-agent.example.toml` dokumentiert); `hotwords` ist **nicht** gemessen.
+- `assets/data/sprache/aussprache.toml` (Tabellen `woerter`, `buchstaben`, `ausdruecke`) steuert die
+  Aussprache für Piper; Einheiten, Minus, Bereiche, Geldbeträge (Decimal-Rundung), Postleitzahlen
+  (Ziffern) und „ein/eine“ nach Geschlecht stehen in `phone/audio/textnorm.py`.
+
+**Discord:**
+
+- Befehle werden **global** registriert (Gilde und global gleichzeitig würden Duplikate erzeugen);
+  der Fingerabdruck der Befehlsliste liegt über die interne API in der Datenbank, damit nicht bei jedem
+  Start neu synchronisiert wird (`python -m moritz_agent.discord sync-commands` erzwingt es). Befehle für
+  inaktive Funktionen werden nicht registriert.
+- Sprachnachrichten werden als **OGG-Audiodatei** gesendet; das native „Sprachnachricht“-Flag ist
+  nicht verifiziert (nur im Spike prüfbar, C.3).
+- `discord.voice`-Überschreibungen aus [14 §9](14-discord.md#9-sprachkanal) (z. B. Schwellen) sind nicht
+  umgesetzt; die Werte stehen im Code als Konstanten (`BargeInDetector` ≥ 300 ms usw.).
+- `discord-ext-voice-recv` ist **nicht** in `requirements/discord.lock` (DAVE-Entschlüsselung dort
+  unverifiziert); wer es testet, installiert es von Hand ([`requirements/README.md`](../../requirements/README.md)).
+- ADR-036 behält den Status „vorläufig – Spike P1-32 offen“.
+- Das Profilbild `assets/branding/discord-avatar.png` erzeugt `scripts/build_branding.py`.
+
+### C.3 Nicht in der Entwicklungsumgebung prüfbar
+
+Alles hier ist **ungeprüft** und gehört in die Abnahmen P1-18, P1-30, P1-32 und P1-42:
+
+1. Verbindung zum echten Discord-Gateway, Registrierung der Slash-Befehle, Benutzer-Installation,
+   Sichtbarkeit von Antworten (ephemeral).
+2. Sprachkanal: Senden mit DAVE, **Empfangen** mit DAVE (Spike P1-32), Dauerlauf 60 min.
+3. Whisper und Piper in echt: Wortfehlerrate, Hörtest der Aussprache-Liste, `initial_prompt` gegen
+   `hotwords`, Latenzen ([09 §4](09-tests-abnahme.md)) – die Latenztabelle ist **ungemessen**.
+4. Echte Dienste: Open-Meteo, Bright Sky, DWD, NINA, PEGELONLINE, EZB, Energy-Charts, OpenLigaDB,
+   GeoNames – das Netz-Wächter-Testset (`pytest -m network`) prüft Form und Plausibilität, wurde aber
+   wegen fehlenden Internets nur als „übersprungen“ gesehen.
+5. KoboldCpp-Tool-Call-Vorlage und echtes Sprachmodell (Agent-Schleife hinter den Skills).
+6. SIP-Registrierung, Klingeln und Audio auf Sophie-1 (P1-18).

@@ -70,3 +70,8 @@ Durchführung auf Sophie-1, Ergebnis in `docs/abnahme/part1-<datum>.md`.
 | 3 | agent + web_search | | | | | | |
 
 Feste Geschwindigkeitsversprechen gibt es nicht; die Ziele aus NFR-03 dienen der Bewertung.
+
+**Stand 21.10.2026: ungemessen.** Es gibt noch keine Messwerte aus dem Betrieb (kein Sophie-1, keine echten
+Modelle in der Entwicklungsumgebung). Die Abnahmevorlagen [`sofortauskuenfte-vorlage.md`](../abnahme/sofortauskuenfte-vorlage.md)
+und [`discord-vorlage.md`](../abnahme/discord-vorlage.md) enthalten die Tabelle zum Ausfüllen. Tests, die echtes
+Internet brauchen, tragen den Marker `network` (`pytest -m network`) und laufen nicht im Standardlauf.

@@ -14,7 +14,8 @@ Slash-Befehlen, auf Sprachnachrichten – und im Sprachkanal (`/joinvc`) wie in 
 Öffne <https://discord.com/developers/applications> (mit deinem Discord-Konto; **2FA am Konto
 einschalten** wird dringend empfohlen).
 
-1. **New Application** → Name `Nikita`. Als Bild passt `assets/branding/` (Scribbles, weiß auf dunkel).
+1. **New Application** → Name `Nikita`. Als Bild passt `assets/branding/discord-avatar.png` (Scribbles, weiß auf
+   dunkel) – oder später `./test-1.sh discord profile`, das Profilbild und Beschreibung des Bots setzt.
 2. Links **Bot**:
    * **Public Bot: aus** – sonst könnte jeder Nikita auf seinen Server holen.
    * **Message Content Intent: an** – ohne ihn sieht Nikita den Text deiner Nachrichten nicht.
@@ -52,6 +53,7 @@ zeigt die **Einladungslinks** und lässt dich den Standardkanal aus einer Liste 
 ./test-1.sh discord check         # prüft Token, Portal-Einstellungen, Server, Kanal; zeigt Einladungslinks
 #  → den Server-Link öffnen und Nikita auf deinen Server holen
 ./test-1.sh discord channel       # Standardkanal aus der Liste wählen (oder Kanal-ID eingeben)
+./test-1.sh discord profile       # Profilbild (Scribbles) und Beschreibung des Bots setzen
 ./test-1.sh discord run           # Bot starten (Strg+C beendet); Befehle und Sofortauskünfte gehen,
                                   # das Sprachmodell nicht (das gehört zum Dienst)
 ./test-1.sh discord say "Guude!"  # Testnachricht in den Standardkanal

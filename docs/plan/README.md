@@ -60,9 +60,15 @@ Stand: 20.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, 
 | P1-12 Phone-Worker (ohne LLM, `TestResponder`) | ✅ |
 | P1-13 Vorbereitete Ansagen | ✅ |
 | P1-15 / P1-16 / P1-17 Installer, Updater, systemd (inkl. `install.sh`/`update.sh` am Proxmox-Host) | ✅ gebaut; KoboldCpp-/SearXNG-/TLS-Phasen folgen |
-| **Block S: P1-19 … P1-30 Sofortauskünfte** | geplant ([13](13-sofortauskuenfte.md)) – **als Nächstes, vor dem LLM** |
-| **Block D: P1-31 … P1-43 Discord-Bot** | geplant ([14](14-discord.md)) – nach P1-19, parallel zu Block S |
-| P1-01 … P1-09, P1-14, P1-18 | offen |
+| P1-03 … P1-09, P1-14 Konfiguration, Supervisor, Inference-Client, Speicher, Suche, Tools, Agent, Weboberfläche | ✅ gebaut (Stand 21.10.2026); nie gegen ein echtes Modell gelaufen |
+| **Block S: P1-19 … P1-29 Sofortauskünfte** | ✅ gebaut ([13](13-sofortauskuenfte.md)); Korpus mit 803 Äußerungen als Text; Hörtest und echte Dienste offen |
+| P1-30 Abnahme Sofortauskünfte | offen ([Vorlage](../abnahme/sofortauskuenfte-vorlage.md)) |
+| **Block D: P1-31 … P1-41, P1-43 Discord-Bot** | ✅ gebaut ([14](14-discord.md)); gegen Fake-Discord getestet, echtes Discord offen |
+| P1-32 Discord-Spike (DAVE-Empfang), P1-42 Abnahme Discord | offen ([Spike](../abnahme/p1-32-discord-spike.md), [Vorlage](../abnahme/discord-vorlage.md)) |
+| P1-01, P1-02, P1-18 Infrastruktur, KoboldCpp/Modell, Abnahme Sophie-1 | offen (Hardware) |
+
+Genauer – inklusive aller Abweichungen vom Plan und der Liste dessen, was nicht in der Entwicklungsumgebung
+geprüft werden konnte: [04, Anhang C](04-part1-umsetzung.md#anhang-c--umsetzungsstand-und-abweichungen-stand-21102026).
 
 ## Pflege
 

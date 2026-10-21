@@ -1,6 +1,6 @@
 # 14 – Discord: Nikita als Discord-Bot mit allen Funktionen
 
-Stand: 20.10.2026 · Tickets: [04 Block D](04-part1-umsetzung.md#block-d--discord-bot) (P1-31 … P1-43) ·
+Stand: 20.10.2026 (Umsetzungsstand und Abweichungen: [04 Anhang C](04-part1-umsetzung.md#anhang-c--umsetzungsstand-und-abweichungen-stand-21102026)) · Tickets: [04 Block D](04-part1-umsetzung.md#block-d--discord-bot) (P1-31 … P1-43) ·
 Anforderungen: [01 §2a](01-anforderungen.md#2a-discord-discord) (DISCORD-01 … DISCORD-47) ·
 Entscheidungen: ADR-033 … ADR-037 ([03](03-entscheidungen.md)).
 

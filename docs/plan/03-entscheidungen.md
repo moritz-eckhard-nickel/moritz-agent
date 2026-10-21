@@ -478,13 +478,15 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   aus **GeoNames** (CC BY 4.0) werden per `scripts/build_geodata.py` in kompakte TSV-Dateien unter
   `assets/data/geo/` umgewandelt und mitgeliefert (Herkunft und Prüfsummen in
   `third_party/VENDORED.md`, nur per Skript zu ändern). Auflösung: exakt → ohne Zusätze → Ortsteile →
-  unscharf (`rapidfuzz`) → phonetisch (Kölner Phonetik); mehrdeutig → Einwohner- und Nähe-Score,
+  unscharf (`difflib`) → phonetisch (Kölner Phonetik); mehrdeutig → Einwohner- und Nähe-Score,
   sonst Rückfrage. Nur unbekannte (meist ausländische) Orte gehen online an das Open-Meteo-Geocoding.
 - **Alternativen:** Nominatim/OSM online je Frage (Nutzungsrichtlinie max. 1 Anfrage/s, Netzabhängigkeit),
   Google Geocoding (Schlüssel, Kosten), nur Postleitzahlen ohne Ortsnamen (zu wenig).
-- **Konsequenzen:** ≈ 6–7 MB Daten im Repo, ≈ 40–80 MB RAM; neue Abhängigkeit `rapidfuzz` (MIT);
-  CLAUDE.md nennt `assets/data/geo/` bei den Fremdkomponenten.
-- **Status:** beschlossen (Plan).
+- **Konsequenzen:** ≈ 40–80 MB RAM; CLAUDE.md nennt `assets/data/geo/` bei den Daten.
+- **Stand 21.10.2026 (Abweichung):** Das Repository enthält nur die handgepflegte Grundmenge; die vollständigen
+  GeoNames-Listen (≈ 6–7 MB) erzeugt `scripts/build_geodata.py` beim Einrichten (Installer-Phase `geodata`).
+  Statt `rapidfuzz` wird `difflib` benutzt, daher keine neue Abhängigkeit.
+- **Status:** beschlossen (Plan), umgesetzt mit der Abweichung oben.
 
 ## ADR-032 – Externe Datenabrufe aus dem LXC
 
@@ -600,6 +602,8 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   Node-Worker mit @discordjs/voice (hat eigene DAVE-Empfangsprobleme, zweite Laufzeit); nur
   Sprachnachrichten ohne Sprachkanal (zu wenig).
 - **Konsequenzen:** Risiko R27; DISCORD-23 ist SOLL, DISCORD-24 (Rückfall) MUSS.
+- **Stand 21.10.2026:** Der Code unterstützt beide Ausgänge (Empfang über die optionale Erweiterung, sonst „nur
+  sprechen“); der Spike P1-32 ist **offen** ([Protokoll](../abnahme/p1-32-discord-spike.md)).
 - **Status:** vorläufig – bestätigt oder geändert durch P1-32.
 
 ## ADR-037 – Nikita auf Discord: ein bisschen süß, mit schelmischen Aktivitäten
