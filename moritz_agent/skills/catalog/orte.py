@@ -187,6 +187,7 @@ async def distance(req: Request) -> SkillResult | None:
     patterns=(
         (r"^(?:.*\s)?(?:in )?welche[mn]? (?:bundesland|kreis|landkreis|land|staat)\b.*$", 1.0),
         (r"^(?:.*\s)?zu welche[mn]? (?:kreis|landkreis|bundesland|land)\b.*$", 1.0),
+        (r"^wo (?:liegt|ist) (?!\d)\S+(?: \S+){0,3}$", 0.9),  # "Wo liegt Gießen?"
     ),
 )
 async def region_of(req: Request) -> SkillResult | None:
@@ -196,6 +197,8 @@ async def region_of(req: Request) -> SkillResult | None:
     named = [w for w in _named(req) if w.place is not None and w.named]
     if not named:
         return None
+    if req.text.startswith("wo ") and named[0].how in {"fuzzy", "phonetic"}:
+        return None  # "Wo ist Moritz?" is not Moers – only a name we really know
     place = named[0].place
     assert place is not None
     if not place.domestic:

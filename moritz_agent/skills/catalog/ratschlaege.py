@@ -108,7 +108,7 @@ _register(
     r"gießen",
     r"bewässern",
     examples=("Muss ich den Garten gießen?",),
-    exclude=(r"\b(?:in|nach|aus|von|bei|für) gießen\b",),  # the town
+    exclude=(r"\b(?:in|nach|aus|von|bei|für|liegt|ist) gießen\b",),  # the town
 )
 _register(
     "advice.mow",

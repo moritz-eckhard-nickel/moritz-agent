@@ -416,6 +416,10 @@ def test_build_geodata_and_load_the_result(tmp_path, monkeypatch):
             "Wie weit ist es nach Neustadt?",
             "Welches Neustadt meinst du – Neustadt an der Weinstraße oder Neustadt in Hessen?",
         ),
+        ("Wo liegt Gießen?", "Gießen gehört zum Landkreis Gießen in Hessen."),
+        ("Wo liegt Paris?", "Paris liegt in Frankreich."),
+        ("Wo ist Moritz?", None),  # not "Moers": only names Nikita really knows
+        ("Wo ist mein Schlüssel?", None),
     ],
 )
 def test_place_skills(question, answer):
