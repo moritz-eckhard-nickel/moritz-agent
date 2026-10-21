@@ -618,3 +618,27 @@ def test_reminders_and_briefings_are_cards():
 
 def test_random_import_is_deterministic():
     assert random.Random(5).random() == random.Random(5).random()
+
+
+def test_a_saying_with_a_control_character_is_refused_and_a_broken_file_stops_nothing(tmp_path):
+    import asyncio
+
+    from moritz_agent.discord.presence import LOCAL_FILE, ActivityManager
+
+    async def nothing(*args):
+        return {}
+
+    manager = ActivityManager(
+        ROOT, tmp_path, lambda: Settings().discord, lambda: "Europe/Berlin", nothing, nothing
+    )
+    for bad in ("Spielt\x7fVerstecken", "Spielt\x85Fangen", "Tab\tweg"):
+        assert "Steuerzeichen" in (manager.suggest("playing", bad) or "")
+    assert manager.suggest("playing", 'Backslash \\ und "Zitat"') is None
+    assert manager.picker() is not None  # what was written is valid TOML
+    local = tmp_path / LOCAL_FILE
+    local.write_text('[[base]]\nkind = "playing"\ntext = "kaputt\x7f"\n', encoding="utf-8")
+    manager.reload()
+    assert manager.picker().pick({}, noon()).text  # the shipped list keeps the rotation going
+    assert asyncio.run(manager.change()) is not None
+    assert "kaputt" in (manager.suggest("playing", "noch einer") or "")  # no overwrite, a hint
+    assert "kaputt" in local.read_text(encoding="utf-8")

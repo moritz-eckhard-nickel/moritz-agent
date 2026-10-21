@@ -330,6 +330,61 @@ def test_the_origin_distinguishes_our_server_direct_chats_and_foreign_places(tmp
     assert mine.message_id == 424242 and mine.name == "Moritz"
 
 
+def interaction_origin(channel: dict | None, context: int | None):
+    """The origin of a real ``discord.Interaction`` built from a gateway payload."""
+    from moritz_agent.config.settings import Settings
+    from moritz_agent.discord.access import AccessPolicy
+
+    async def go():
+        cfg = Settings().discord.model_copy(update={"owner_user_ids": [OWNER_ID]})
+        policy = AccessPolicy(cfg, default_channel_id=CHANNEL_ID, default_guild_id=GUILD_ID)
+        policy.bot_id = "5000"
+        client = NikitaClient(SimpleNamespace(policy=policy, voice_messages=None))
+        bot = {"id": "5000", "username": "Nikita", "discriminator": "0", "avatar": None}
+        client._connection.user = discord.ClientUser(state=client._connection, data=bot)
+        user = {"id": OWNER_ID, "username": "moritz", "discriminator": "0", "avatar": None}
+        data = {
+            "id": "1",
+            "type": 2,
+            "token": "t",
+            "version": 1,
+            "application_id": "5000",
+            "attachment_size_limit": 8_000_000,
+            "channel_id": "900",
+            "data": {"id": "2", "name": "admin", "type": 1},
+        }
+        if channel is not None:
+            data["channel"] = channel
+        if context is not None:
+            data["context"] = context
+        data["user"] = user
+        origin = client.origin_of(discord.Interaction(data=data, state=client._connection))
+        spec = commands.find("status", "admin")
+        assert spec is not None
+        return origin, policy.command_allowed(OWNER_ID, spec.rule, origin.where)
+
+    return asyncio.run(go())
+
+
+def test_an_interaction_in_the_bot_dm_is_a_direct_chat_and_allows_admin():
+    owner = {"id": OWNER_ID, "username": "moritz", "discriminator": "0", "avatar": None}
+    friend = {"id": "4242", "username": "freund", "discriminator": "0", "avatar": None}
+    for channel in ({"id": "900", "type": 1, "recipients": [owner]}, {"id": "900", "type": 1}):
+        origin, admin = interaction_origin(channel, context=1)
+        assert origin.where == "DM" and not origin.foreign and admin
+        assert origin.conversation == f"discord:dm:{OWNER_ID}"
+    # through the user installation in somebody else's DM or a group: a foreign place
+    origin, admin = interaction_origin({"id": "901", "type": 1, "recipients": [friend]}, context=2)
+    assert origin.where == "U" and origin.foreign and not admin
+    origin, _ = interaction_origin({"id": "902", "type": 3, "recipients": [friend]}, context=2)
+    assert origin.where == "U"
+    # older payloads without a context: the recipients decide
+    origin, _ = interaction_origin({"id": "900", "type": 1, "recipients": [owner]}, context=None)
+    assert origin.where == "DM"
+    origin, _ = interaction_origin({"id": "901", "type": 1, "recipients": [friend]}, context=None)
+    assert origin.where == "U"
+
+
 def test_the_message_info_knows_mentions_replies_and_own_threads(tmp_path):
     async def body(system, worker, client):
         plain = client.info_of(fake_message())
@@ -598,10 +653,85 @@ def test_a_message_that_cannot_be_delivered_is_tried_again_later(tmp_path):
         )
         failed = await worker.pump_once()
         channel.send.side_effect = None
+        at_once = await worker.pump_once()  # not again within seconds: it waits a little
+        system.runtime.svc.clock.advance(seconds=30)
         later = await worker.pump_once()
-        return failed, later
+        return failed, at_once, later
 
-    assert wired(tmp_path, body) == (0, 1)
+    assert wired(tmp_path, body) == (0, 0, 1)
+
+
+def test_a_closed_dm_goes_to_the_home_channel_with_a_mention(tmp_path):
+    async def body(system, worker, client):
+        channel = home_channel()
+        stub = stub_client(channel)
+        stub.user_stub.send.side_effect = discord.Forbidden(
+            MagicMock(status=403, reason="x"), "Cannot send messages to this user"
+        )
+        worker.client, worker.default_channel = stub, channel
+        system.runtime.discord_store.enqueue(
+            "reminder",
+            f"dm:{OWNER_ID}",
+            {"title": "⏰ Erinnerung", "text": "Privat"},
+            user_id=OWNER_ID,
+        )
+        return await worker.pump_once(), channel
+
+    sent, channel = wired(tmp_path, body)
+    assert sent == 1
+    kwargs = channel.send.await_args.kwargs
+    assert kwargs["content"] == f"<@{OWNER_ID}>" and kwargs["embed"].description == "Privat"
+    assert kwargs["allowed_mentions"].everyone is False
+
+
+def test_a_network_error_neither_kills_the_outbox_pump_nor_loses_the_message(tmp_path, monkeypatch):
+    import aiohttp
+
+    from moritz_agent.discord import worker as worker_module
+
+    async def body(system, worker, client):
+        channel = home_channel()
+        channel.send.side_effect = aiohttp.ClientOSError(110, "Connection timed out")
+        worker.client, worker.default_channel = stub_client(channel), channel
+        store = system.runtime.discord_store
+        store.enqueue("system", "default", {"title": "🔧 Hinweis", "text": "x"}, user_id=OWNER_ID)
+        assert await worker.pump_once() == 0  # a failure, not an exception
+        (row,) = store.db.query("SELECT attempts FROM outbox")
+        assert row["attempts"] == 1
+        # and even an unexpected error inside the loop does not end it
+        calls = 0
+
+        async def flaky():
+            nonlocal calls
+            calls += 1
+            raise ConnectionResetError("gone")
+
+        monkeypatch.setattr(worker, "pump_once", flaky)
+        monkeypatch.setattr(worker_module, "OUTBOX_EVERY_S", 0.001)
+        task = asyncio.ensure_future(worker._outbox_pump())
+        await asyncio.sleep(0.05)
+        alive = not task.done()
+        task.cancel()
+        return alive, calls
+
+    alive, calls = wired(tmp_path, body)
+    assert alive and calls > 3
+
+
+def test_notes_into_the_home_channel_never_ping_anybody(tmp_path):
+    async def body(system, worker, client):
+        channel = home_channel()
+        worker.default_channel = channel
+        foreign = MagicMock(spec=discord.Guild)
+        foreign.id, foreign.name, foreign.leave = 9999, "@everyone", AsyncMock()
+        await worker.guild_joined(stub_client(channel), foreign)
+        return channel
+
+    channel = wired(tmp_path, body)
+    mentions = channel.send.await_args.kwargs["allowed_mentions"]
+    assert mentions.everyone is False and mentions.roles is False and mentions.users is False
+    client_default = NikitaClient(SimpleNamespace(voice_messages=None)).allowed_mentions
+    assert client_default.everyone is False and client_default.roles is False
 
 
 def test_the_status_file_has_no_token_and_no_content(tmp_path):
@@ -816,3 +946,40 @@ def test_the_command_line_has_all_commands():
         ["profile"],
     ):
         assert parser.parse_args(argv).func
+
+
+def test_sync_commands_registers_what_the_worker_would_and_remembers_it(tmp_path, monkeypatch):
+    from discord import app_commands
+
+    from moritz_agent.discord import core as core_module
+    from moritz_agent.discord import worker as worker_module
+    from moritz_agent.discord.speech import SpeechService
+    from moritz_agent.storage import Database, DiscordStore
+
+    from .system_util import make_tree
+
+    tree = make_tree(tmp_path, discord=True)
+    Database(tmp_path / "db.sqlite3").ensure()  # an installation that has run before
+    monkeypatch.delenv(core_module.ENV_URL, raising=False)
+    monkeypatch.setattr(SpeechService, "stt_available", lambda self: True)
+    monkeypatch.setattr(NikitaClient, "login", AsyncMock())
+    monkeypatch.setattr(NikitaClient, "close", AsyncMock())
+    synced = AsyncMock(return_value=[])
+    monkeypatch.setattr(app_commands.CommandTree, "sync", synced)
+    built: list[list[dict]] = []
+    original = NikitaClient.build_commands
+
+    def build(self, features):
+        built.append(original(self, features))
+        return built[-1]
+
+    monkeypatch.setattr(NikitaClient, "build_commands", build)
+    options = WorkerOptions(
+        config=tree / "config" / "moritz-agent.toml", passwords=tree / "passwords.txt"
+    )
+    assert asyncio.run(worker_module.sync_once(options, ROOT)) == 0
+    synced.assert_awaited_once()
+    names = {payload["name"] for payload in built[0]}
+    assert {"joinvc", "leavevc", "Vorlesen"} <= names  # the voice parts are not forgotten
+    stored = DiscordStore(Database(tmp_path / "db.sqlite3")).registered_hash()
+    assert stored == commands.digest(built[0])  # the worker will not register a smaller set again

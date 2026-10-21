@@ -120,6 +120,22 @@ def test_maintenance_mode_tells_why(tmp_path):
     assert "aktualisiert" in run_in(tmp_path, body).text
 
 
+def test_maintenance_mode_also_holds_back_menus_and_buttons(tmp_path):
+    async def body(b):
+        b.draining[0] = True
+        menu = Recorder(ephemeral=True)
+        await b.dispatcher.context_menu("Nikita fragen", "Wie spät ist es?", b.origin(), menu)
+        button = Recorder()
+        custom_id = components.encode_action(OWNER_ID, "Wie spät ist es?")
+        await b.dispatcher.component(custom_id, [], b.origin(), button)
+        pick = Recorder()
+        await b.dispatcher.component(components.encode_pick(OWNER_ID), ["1:Eins"], b.origin(), pick)
+        return menu, button, pick
+
+    for sent in run_in(tmp_path, body):
+        assert "aktualisiert" in sent.text and "19 Uhr" not in sent.text
+
+
 def test_too_long_input_is_cut_and_said(tmp_path):
     async def body(b):
         b.system.config.settings.discord.max_message_chars = 100
@@ -492,6 +508,26 @@ def test_reminders_can_be_listed_and_deleted(tmp_path):
     listed, gone, none, missing = run_in(tmp_path, body)
     assert "Zahnarzt" in listed.text and "08:00" in listed.text
     assert "Gelöscht" in gone.text and "keine offenen" in none.text and "nicht" in missing.text
+
+
+def test_a_long_list_of_reminders_fits_into_one_message(tmp_path):
+    from datetime import UTC, datetime, timedelta
+
+    from moritz_agent.discord.render import MESSAGE_LIMIT
+
+    async def body(b):
+        store = b.system.runtime.discord_store
+        due = datetime(2026, 10, 19, 8, 0, tzinfo=UTC)
+        for n in range(25):
+            store.add_reminder(OWNER_ID, "default", due + timedelta(hours=n), f"{n}\n" + "x" * 480)
+        return await b.command("erinnerungen")
+
+    listed = run_in(tmp_path, body)
+    (message,) = listed.sent
+    lines = message.content.splitlines()
+    assert len(message.content) <= MESSAGE_LIMIT
+    assert all(len(line) < 120 for line in lines) and any("…" in line for line in lines)
+    assert "weitere" in message.content and "/erinnerungen loeschen" in message.content
 
 
 def test_calls_are_listed_without_content(tmp_path):

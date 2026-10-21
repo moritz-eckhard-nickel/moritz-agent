@@ -11,7 +11,16 @@ from typing import Any
 from moritz_agent.storage.db import Database
 
 OUTBOX_KEEP_DAYS = 7
-MAX_ATTEMPTS = 5
+MAX_ATTEMPTS = 8
+RETRY_FIRST_S = (
+    20  # a failed delivery waits 20 s, 40 s, 80 s … (at most RETRY_MAX_S) – ~40 min in all
+)
+RETRY_MAX_S = 30 * 60
+
+
+def retry_delay(attempts: int) -> timedelta:
+    """The pause after the ``attempts``-th failed delivery (exponential, capped)."""
+    return timedelta(seconds=min(RETRY_FIRST_S * 2 ** max(attempts - 1, 0), RETRY_MAX_S))
 
 
 def iso(moment: datetime) -> str:
@@ -168,7 +177,15 @@ class DiscordStore:
                 "UPDATE outbox SET delivered_at = ? WHERE id = ?", (iso(now), outbox_id)
             )
         else:
-            self.db.execute("UPDATE outbox SET attempts = attempts + 1 WHERE id = ?", (outbox_id,))
+            rows = self.db.query("SELECT attempts FROM outbox WHERE id = ?", (outbox_id,))
+            if not rows:
+                return
+            attempts = int(rows[0]["attempts"]) + 1
+            # the next try waits (not_before is past anyway once an item was handed out)
+            self.db.execute(
+                "UPDATE outbox SET attempts = ?, not_before = ? WHERE id = ?",
+                (attempts, iso(now + retry_delay(attempts)), outbox_id),
+            )
 
     def purge_outbox(self, now: datetime) -> int:
         cutoff = iso(now - timedelta(days=OUTBOX_KEEP_DAYS))

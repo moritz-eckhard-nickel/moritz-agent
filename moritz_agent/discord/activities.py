@@ -17,7 +17,10 @@ from pathlib import Path
 from typing import Any
 
 from moritz_agent.config.settings import DiscordActivities
+from moritz_agent.logging_setup import get_logger
 from moritz_agent.skills.calendar.holidays import easter
+
+log = get_logger("discord")
 
 ACTIVITY_FILE = "assets/data/discord/aktivitaeten.de.toml"
 MIN_CHANGE = timedelta(minutes=5)
@@ -38,8 +41,14 @@ def load(root: Path, local: Path | None = None) -> dict[str, Any]:
     with (root / ACTIVITY_FILE).open("rb") as handle:
         data = tomllib.load(handle)
     if local is not None and local.is_file():  # /aktivitaet vorschlag: the owner's own sayings
-        with local.open("rb") as handle:
-            data["base"] = [*data.get("base", []), *tomllib.load(handle).get("base", [])]
+        try:
+            with local.open("rb") as handle:
+                own = list(tomllib.load(handle).get("base", []))
+        except (tomllib.TOMLDecodeError, OSError) as exc:
+            # a broken own file must not stop the rotation: the shipped list alone
+            log.warning("Aktivitäten: eigene Sprüche nicht lesbar (%s)", type(exc).__name__)
+            own = []
+        data["base"] = [*data.get("base", []), *own]
     return data
 
 

@@ -12,6 +12,7 @@ import asyncio
 import contextlib
 import os
 import signal
+import sqlite3
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -205,23 +206,43 @@ class DiscordWorker:
     def _attach_voice(self) -> None:
         """Voice messages and the voice channel are optional parts; where Whisper or Piper are not
         installed the commands are simply not registered (docs/plan/14 §9.5)."""
-        if self.cfg.voice_messages.enabled or self.cfg.voice.enabled:
-            self.speech_service = SpeechService(self.settings, self.root)
-            if self.cfg.voice_messages.enabled and self.speech_service.stt_available():
+        self.speech_service = self._speech_service()
+        messages, channel = self._voice_parts(self.speech_service)
+        if self.cfg.voice_messages.enabled:
+            if messages:
                 self.voice_messages = VoiceMessages(
                     self.dispatcher,
-                    self.speech_service,
+                    self.speech_service,  # type: ignore[arg-type]
                     lambda message: self.client.info_of(message),  # type: ignore[union-attr]
                 )
             else:
                 log.info("Discord: Spracherkennung nicht installiert – keine Sprachnachrichten")
         if self.cfg.voice.enabled and self.speech_service is not None:
-            if self.speech_service.stt_available() or self.speech_service.tts_available():
+            if channel:
                 self.voice = VoiceManager(self)
             else:
                 log.info("Discord: keine Sprachmodelle – kein Sprachkanal")
         if self.dispatcher.local is not None:
             self.dispatcher.local.voice = self.voice
+
+    def _speech_service(self) -> SpeechService | None:
+        if self.cfg.voice_messages.enabled or self.cfg.voice.enabled:
+            return SpeechService(self.settings, self.root)
+        return None
+
+    def _voice_parts(self, speech: SpeechService | None) -> tuple[bool, bool]:
+        """Which optional parts can run: (voice messages, voice channel)."""
+        if speech is None:
+            return False, False
+        stt = speech.stt_available()
+        messages = self.cfg.voice_messages.enabled and stt
+        channel = self.cfg.voice.enabled and (stt or speech.tts_available())
+        return messages, channel
+
+    def standalone_features(self) -> commands.Features:
+        """The features the running worker would register – without building it (``sync-commands``)."""
+        messages, channel = self._voice_parts(self._speech_service())
+        return commands.Features.from_settings(self.settings(), voice=channel, speech=messages)
 
     async def _open_core(self) -> CoreApi:
         core = CoreApi.from_environment()
@@ -418,17 +439,23 @@ class DiscordWorker:
 
     async def say_in_default_channel(self, client: NikitaClient, text: str) -> bool:
         """Into the home channel; without one as a direct message to the owner."""
-        out = OutMessage(content=text)
+        kwargs = _plain(OutMessage(content=text))
+        # nobody is pinged – the text may carry a server name like "@everyone"
+        kwargs["allowed_mentions"] = discord.AllowedMentions.none()
         try:
             if self.default_channel is not None:
-                await self.default_channel.send(**_plain(out))
+                await self.default_channel.send(**kwargs)
                 return True
             owner = next(iter(self.cfg.owner_user_ids), None)
             if owner:
-                await (await client.fetch_user(int(owner))).send(**_plain(out))
+                await (await client.fetch_user(int(owner))).send(**kwargs)
                 return True
         except discord.HTTPException as exc:
             log.warning("Discord: Nachricht an den Standardkanal fehlgeschlagen (%s)", exc.status)
+        except (OSError, TimeoutError) as exc:
+            log.warning(
+                "Discord: Nachricht an den Standardkanal fehlgeschlagen (%s)", type(exc).__name__
+            )
         return False
 
     async def guild_joined(self, client: NikitaClient, guild: discord.Guild) -> None:
@@ -488,7 +515,12 @@ class DiscordWorker:
         """Messages the main process wants to send: reminders, warnings, briefing, notes (§11)."""
         while True:
             await asyncio.sleep(OUTBOX_EVERY_S)
-            await self.pump_once()
+            try:
+                await self.pump_once()
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:  # a network hiccup must not end the pump for good
+                log.warning("Discord: Ausgang fehlgeschlagen (%s)", type(exc).__name__)
 
     async def pump_once(self) -> int:
         client = self.client
@@ -512,20 +544,40 @@ class DiscordWorker:
             destination = await self._destination(client, target, item.get("user_id"))
             if destination is None:
                 return False
-            mention = mention_for(item) if not target.startswith("dm:") else None
-            out = render_notification(item, secrets=self.secrets(), mention=mention)
-            kwargs = _plain(out)
-            user_id = item.get("user_id") or ""
-            kwargs["allowed_mentions"] = discord.AllowedMentions(
-                everyone=False,
-                roles=False,
-                users=[discord.Object(int(user_id))] if str(user_id).isdigit() else False,
-            )
-            await destination.send(**kwargs)
+            try:
+                await self._send_item(destination, item, dm=target.startswith("dm:"))
+            except discord.Forbidden:
+                # direct messages closed (or blocked): the home channel, with a mention
+                if not target.startswith("dm:") or self.default_channel is None:
+                    raise
+                log.info(
+                    "Discord: %s-Nachricht per DM verweigert, in den Standardkanal", item["kind"]
+                )
+                await self._send_item(self.default_channel, item, dm=False)
             return True
         except discord.HTTPException as exc:
             log.warning("Discord: %s-Nachricht nicht zugestellt (%s)", item["kind"], exc.status)
             return False
+        except (OSError, TimeoutError) as exc:  # aiohttp's connection errors are OSErrors
+            log.warning(
+                "Discord: %s-Nachricht nicht zugestellt (%s)", item["kind"], type(exc).__name__
+            )
+            return False
+
+    async def _send_item(
+        self, destination: discord.abc.Messageable, item: dict[str, Any], *, dm: bool
+    ) -> None:
+        mention = None if dm else mention_for(item)
+        out = render_notification(item, secrets=self.secrets(), mention=mention)
+        kwargs = _plain(out)
+        user_id = item.get("user_id") or ""
+        kwargs["allowed_mentions"] = discord.AllowedMentions(
+            everyone=False,
+            roles=False,
+            replied_user=False,
+            users=[discord.Object(int(user_id))] if str(user_id).isdigit() else False,
+        )
+        await destination.send(**kwargs)
 
     async def _destination(
         self, client: NikitaClient, target: str, user_id: Any
@@ -556,8 +608,10 @@ def run(options: WorkerOptions) -> int:
 
 
 async def sync_once(options: WorkerOptions, root: Path = REPO_ROOT) -> int:
-    """``sync-commands``: log in (no gateway), register the commands, leave. The running worker
-    compares its own fingerprint with the stored one at the next start and registers again if it differs."""
+    """``sync-commands``: log in (no gateway), register the commands, leave.
+
+    It registers what the worker would (voice commands and "Vorlesen" included) and stores the
+    fingerprint, so the running worker registers again at its next start if its own one differs."""
     worker = DiscordWorker(options, root)
     try:
         worker.config.load()
@@ -572,7 +626,7 @@ async def sync_once(options: WorkerOptions, root: Path = REPO_ROOT) -> int:
     client = NikitaClient(worker)
     try:
         await client.login(token.reveal())
-        payloads = client.build_commands(worker.features())
+        payloads = client.build_commands(worker.standalone_features())
         await client.tree.sync()
     except discord.LoginFailure:
         print("Der Bot-Token wurde abgelehnt.")
@@ -583,7 +637,37 @@ async def sync_once(options: WorkerOptions, root: Path = REPO_ROOT) -> int:
     finally:
         await client.close()
     print(f"{len(payloads)} Befehle registriert.")
+    await _remember_digest(worker, commands.digest(payloads))
     return 0
+
+
+async def _remember_digest(worker: DiscordWorker, digest: str) -> bool:
+    """Store the fingerprint of what was just registered (main process, or else the database)."""
+    core = CoreApi.from_environment()
+    if core is not None:
+        try:
+            await core.set_commands_hash(digest)
+            return True
+        except (CoreUnavailable, CoreForbidden):
+            pass
+        finally:
+            with contextlib.suppress(Exception):
+                await core.aclose()
+    settings = worker.settings()
+    path = settings.resolve(settings.storage.database, worker.state_root)
+    if not path.is_file():
+        return False  # no database yet: the worker registers at its first start anyway
+    from moritz_agent.storage import Database, DiscordStore, StorageError
+
+    db = Database(path)
+    try:
+        DiscordStore(db).save_registered_hash(digest)
+        return True
+    except (StorageError, sqlite3.Error, OSError) as exc:
+        print(f"Hinweis: Stand der Befehle nicht gespeichert ({type(exc).__name__}).")
+        return False
+    finally:
+        db.close()
 
 
 def nice_self() -> None:

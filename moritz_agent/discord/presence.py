@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import time
 import tomllib
+import unicodedata
 from collections.abc import Awaitable, Callable
 from datetime import datetime
 from pathlib import Path
@@ -51,17 +52,27 @@ class ActivityManager:
         self.enabled = True
         self._seed = seed
         self._picker: ActivityPicker | None = None
+        self._last_picker: ActivityPicker | None = None
         self._cached: tuple[float, dict[str, Any]] = (0.0, {})
         self._shown: Activity | None = None
 
     # -- picker --------------------------------------------------------------------------------------
     def picker(self) -> ActivityPicker:
         if self._picker is None:
-            data = activities.load(self.root, self.local)
+            try:
+                data = activities.load(self.root, self.local)
+            except (tomllib.TOMLDecodeError, OSError) as exc:
+                # the shipped list is broken (or unreadable): keep what is shown, try again later
+                log.warning("Aktivitäten: Liste nicht lesbar (%s)", type(exc).__name__)
+                if self._last_picker is not None:
+                    return self._last_picker
+                raise
+            self._last_picker = None
             problems = activities.validate(data)
             if problems:
                 log.warning("Aktivitäten: %s", "; ".join(problems[:3]))
             self._picker = ActivityPicker(data, self.cfg().activities, seed=self._seed)
+            self._last_picker = self._picker
         return self._picker
 
     def reload(self) -> None:
@@ -117,14 +128,18 @@ class ActivityManager:
         """Keep an own saying of the owner (``data/discord/aktivitaeten.local.toml``)."""
         if kind not in activities.KINDS:
             return "Die Art kenne ich nicht."
-        if any(ord(c) < 32 for c in text):
+        if any(unicodedata.category(c) in {"Cc", "Cs"} for c in text):  # incl. U+007F
             return "Der Spruch darf keine Steuerzeichen enthalten."
         if not text or len(text) > activities.MAX_TEXT:
             return f"Der Spruch darf höchstens {activities.MAX_TEXT} Zeichen haben."
         existing: list[dict[str, str]] = []
         if self.local.is_file():
-            with self.local.open("rb") as handle:
-                existing = list(tomllib.load(handle).get("base", []))
+            try:
+                with self.local.open("rb") as handle:
+                    existing = list(tomllib.load(handle).get("base", []))
+            except (tomllib.TOMLDecodeError, OSError) as exc:
+                log.warning("Aktivitäten: eigene Sprüche nicht lesbar (%s)", type(exc).__name__)
+                return "Die Datei mit den eigenen Sprüchen ist kaputt – bitte von Hand prüfen."
         if len(existing) >= MAX_OWN:
             return "Das sind schon ziemlich viele eigene Sprüche."
         if any(e["text"] == text for e in existing):
@@ -142,5 +157,13 @@ class ActivityManager:
 
 
 def _toml_string(text: str) -> str:
-    escaped = text.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{escaped}"'
+    """A TOML basic string; control characters are escaped (TOML forbids them raw)."""
+    out = []
+    for char in text:
+        if char in {"\\", '"'}:
+            out.append("\\" + char)
+        elif unicodedata.category(char) == "Cc":
+            out.append(f"\\u{ord(char):04X}")
+        else:
+            out.append(char)
+    return '"' + "".join(out) + '"'
