@@ -1,0 +1,255 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+"""Conversations of the chat channels (Discord, web) with the core (P1-31).
+
+One ``ChatService`` serves every conversation: a DM, a text channel, a thread, a voice session.
+It keeps the skill context per conversation (follow-ups, open questions), applies the person's
+role and home town, runs skills first and the language model behind them, keeps reminders and
+returns a ``TurnResult`` – plain data the channel renders as it likes.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import time
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
+
+from moritz_agent.core.principal import Principal, Role
+from moritz_agent.core.surface import Surface
+from moritz_agent.core.turn import Turn, TurnResult, from_skill
+from moritz_agent.logging_setup import get_logger
+from moritz_agent.phone.responder import Reply, ResponderUnavailable, TurnContext
+from moritz_agent.skills.geo.gazetteer import Place
+
+if TYPE_CHECKING:
+    from moritz_agent.runtime import Runtime
+
+log = get_logger("system")
+
+CONVERSATION_TTL_S = 3600
+CONVERSATIONS_MAX = 200
+HISTORY_TURNS = 12
+
+
+class AccessDenied(PermissionError):
+    """The person has no right to talk to Nikita (unknown role)."""
+
+
+@dataclass
+class _Conversation:
+    context: TurnContext
+    touched: float
+    task: asyncio.Task[Reply] | None = None
+
+
+class ChatService:
+    def __init__(self, runtime: Runtime) -> None:
+        self.runtime = runtime
+        self._conversations: dict[str, _Conversation] = {}
+
+    # -- people -----------------------------------------------------------------------------------
+    def principal(
+        self, user_id: str, role: Role, name: str = "", channel: str = "discord"
+    ) -> Principal:
+        """The person with the settings saved for them (home town, quiet hours, voice reply)."""
+        saved = (
+            self.runtime.discord_store.principal(user_id) if self.runtime.discord_store else None
+        )
+        if saved is None:
+            return Principal(f"{channel}:{user_id}", role, channel, name)
+        return Principal(
+            f"{channel}:{user_id}",
+            role,
+            channel,
+            name,
+            saved.get("home_postal_code"),
+            saved.get("home_name"),
+            saved.get("quiet_hours"),
+            saved.get("voice_reply"),
+        )
+
+    def home_of(self, principal: Principal) -> Place | None:
+        """Personal home town; ``None`` means the household's (``skills.home``)."""
+        gazetteer = self.runtime.svc.gazetteer if self.runtime.svc else None
+        if gazetteer is None:
+            return None
+        if principal.home_postal_code:
+            place = gazetteer.by_postcode(principal.home_postal_code)
+            if place is not None:
+                return place
+        if principal.home_name:
+            found = gazetteer.find(principal.home_name, limit=1).best
+            if found is not None:
+                return found.place
+        return None
+
+    # -- conversations ---------------------------------------------------------------------------------
+    def _conversation(self, turn: Turn) -> _Conversation:
+        self._expire()
+        conversation = self._conversations.get(turn.conversation_id)
+        if conversation is None:
+            context = TurnContext(
+                call_id=turn.conversation_id,
+                assistant_name=self.runtime.settings.phone.assistant_name,
+                timezone=self.runtime.settings.general.timezone,
+                started_at=time.monotonic(),
+            )
+            conversation = self._conversations[turn.conversation_id] = _Conversation(
+                context, time.monotonic()
+            )
+        conversation.touched = time.monotonic()
+        return conversation
+
+    def _expire(self) -> None:
+        now = time.monotonic()
+        for key in [
+            k for k, c in self._conversations.items() if now - c.touched > CONVERSATION_TTL_S
+        ]:
+            del self._conversations[key]
+        while len(self._conversations) > CONVERSATIONS_MAX:
+            oldest = min(self._conversations, key=lambda k: self._conversations[k].touched)
+            del self._conversations[oldest]
+
+    def end(self, conversation_id: str) -> None:
+        conversation = self._conversations.pop(conversation_id, None)
+        if conversation is not None and conversation.task is not None:
+            conversation.task.cancel()
+
+    def cancel(self, conversation_id: str) -> bool:
+        conversation = self._conversations.get(conversation_id)
+        if conversation is not None and conversation.task is not None:
+            conversation.task.cancel()
+            return True
+        return False
+
+    def forget_home(self, user_id: str) -> None:
+        """A changed home town applies to the next question of every open conversation."""
+        for conversation in self._conversations.values():
+            skills = conversation.context.extras.get("skills")
+            if skills is not None and skills.user_id == user_id:
+                skills.home = None
+
+    # -- one exchange --------------------------------------------------------------------------------------
+    def _prepare(self, turn: Turn) -> _Conversation:
+        if turn.principal.role is Role.UNKNOWN:
+            raise AccessDenied(turn.principal.short())
+        responder = self.runtime.skill_responder
+        if responder is None:
+            raise ResponderUnavailable("runtime not started")
+        conversation = self._conversation(turn)
+        context = conversation.context
+        context.extras.update(
+            surface=turn.surface.value, channel=turn.principal.channel, principal=turn.principal
+        )
+        skills = responder.context_for(context)
+        skills.role = turn.principal.role.value
+        skills.user_id = turn.principal.user_id
+        skills.home = self.home_of(turn.principal)
+        return conversation
+
+    async def events(self, turn: Turn) -> AsyncIterator[dict[str, Any]]:
+        """``thinking`` / ``partial`` while the answer is made, then ``result``."""
+        conversation = self._prepare(turn)
+        context = conversation.context
+        responder = self.runtime.skill_responder
+        assert responder is not None
+        chunks: list[str] = []
+        context.extras["on_text"] = chunks.append if turn.surface is Surface.CHAT else None
+        started = time.monotonic()
+        task = asyncio.ensure_future(responder.respond(turn.text, context))
+        conversation.task = task
+        sent_thinking: str | None = None
+        sent_len = 0
+        try:
+            while not task.done():
+                await asyncio.wait({task}, timeout=0.05)
+                skills = context.extras.get("skills")
+                prompt = getattr(skills, "thinking_prompt", None)
+                if prompt and prompt != sent_thinking:
+                    sent_thinking = prompt
+                    yield {"type": "thinking", "prompt": prompt}
+                text = "".join(chunks)
+                if len(text) > sent_len and not task.done():
+                    sent_len = len(text)
+                    yield {"type": "partial", "text": text}
+        except asyncio.CancelledError:
+            task.cancel()
+            raise
+        finally:
+            conversation.task = None
+            context.extras.pop("on_text", None)
+        if task.cancelled():
+            yield {"type": "cancelled"}
+            return
+        reply = task.result()
+        result = self._result(reply, turn, round((time.monotonic() - started) * 1000))
+        self._remember(context, turn, reply)
+        self._keep_reminder(turn, reply, result)
+        self.runtime.record_chat_turn(turn, reply, result)
+        yield {"type": "result", "result": result}
+
+    async def run(self, turn: Turn) -> TurnResult:
+        result: TurnResult | None = None
+        async for event in self.events(turn):
+            if event["type"] == "result":
+                result = event["result"]
+        if result is None:
+            raise ResponderUnavailable("answer cancelled")
+        return result
+
+    # -- details ------------------------------------------------------------------------------------------------
+    @staticmethod
+    def _result(reply: Reply, turn: Turn, ms: int) -> TurnResult:
+        skill_result = reply.result
+        if skill_result is not None:
+            return from_skill(skill_result, reply.skill_id, ms=ms, surface=turn.surface)
+        meta = reply.meta or {}
+        return TurnResult(
+            text=reply.text or "",
+            markdown=reply.text or "",
+            prompt=reply.prompt,
+            hangup=reply.hangup,
+            tools=list(meta.get("tools", [])),
+            sources=list(meta.get("sources", [])),
+            ms=ms,
+        )
+
+    @staticmethod
+    def _remember(context: TurnContext, turn: Turn, reply: Reply) -> None:
+        context.turn += 1
+        context.last_reply = reply.text or context.last_reply
+        context.history.append((turn.text, reply.text or reply.prompt or ""))
+        del context.history[:-HISTORY_TURNS]
+
+    def _keep_reminder(self, turn: Turn, reply: Reply, result: TurnResult) -> None:
+        """Reminders and timers of a chat live in the database and are delivered where asked."""
+        skill_result = reply.result
+        store = self.runtime.discord_store
+        if skill_result is None or store is None or turn.principal.channel != "discord":
+            return
+        due: datetime | None = None
+        text = ""
+        if skill_result.reminder is not None:
+            due, text = skill_result.reminder
+        elif skill_result.start_timer is not None:
+            seconds, label = skill_result.start_timer
+            due = self.runtime.svc.now() + _seconds(seconds)
+            text = f"Der Timer ({label}) ist abgelaufen."
+        if due is None:
+            return
+        reminder_id = store.add_reminder(
+            turn.principal.user_id, turn.reply_target, due.astimezone(UTC), text
+        )
+        result.reminder = {
+            "id": reminder_id,
+            "due": due.isoformat(timespec="seconds"),
+            "text": text,
+        }
+
+
+def _seconds(value: float):
+    from datetime import timedelta
+
+    return timedelta(seconds=value)

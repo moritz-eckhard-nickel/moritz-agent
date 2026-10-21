@@ -14,6 +14,8 @@
 | Shell | shellcheck | ja | `moritz-agent`, `install.sh`, `update.sh`, `moritz-*.sh` |
 | Sofortauskünfte | pytest + Korpus + Fixtures | ja | Router-Korpus ≥ 800 Äußerungen, Golden-Antworten mit fester Uhr, Provider über `httpx.MockTransport`, Dialog/Folgefragen, Latenz p95 ≤ 20 ms ([13 §14](13-sofortauskuenfte.md#14-tests)) |
 | Datendienst-Schema | pytest `-m network` | nein | echte Abrufe aller Datendienste, prüfen nur Schema/Plausibilität (erkennt API-Änderungen) |
+| Discord | pytest + Fake-Discord | ja | Zugriffsmatrix, Befehlsbaum, Rendern/Aufteilen, Mentions, Secret-Filter, Planer, Sprach-Kette ohne Netz ([14 §18](14-discord.md#18-tests)) |
+| Discord live | `-m discord`, privater Test-Server | nein | echte Interaktionen, Sprachkanal, DAVE-Spike |
 | Lint/Format | ruff | ja | `moritz_agent/`, `tests/moritz_agent/`, `scripts/` |
 
 CI-Workflow: `.github/workflows/moritz-ci.yaml` (Python 3.12 und 3.13). Die Upstream-
@@ -55,6 +57,7 @@ Durchführung auf Sophie-1, Ergebnis in `docs/abnahme/part1-<datum>.md`.
 | 11 | Ohne Sandbox | Sandbox-VM aus → Telefon voll funktionsfähig | – | ☐ |
 | 12 | Dauerlauf | 30 Anrufe in Folge, kein Neustart nötig (NFR-04) | Fehlerquote | ☐ |
 | 13 | Sofortauskünfte | Abnahme nach [13 §17](13-sofortauskuenfte.md#17-abnahme-am-telefon): Wetter ohne Ort = Weilburg 35781, PLZ/Ort genannt, Folgefragen, Netz weg → ehrlich, Kalender/Rechnen korrekt | Latenz Cache/Netz | ☐ |
+| 14 | Discord | Abnahme nach [14 §21](14-discord.md#21-abnahme): Setup mit Token, Standardkanal/DM/Befehle/Benutzer-App, Fremde ignoriert, `/joinvc` wie ein Anruf (bzw. „nur sprechen“), süßer Stil und Aktivitäten, Telefon parallel unbeeinträchtigt, kein Token in Logs | Latenz Text/Sprache | ☐ |
 
 ## 4. Latenz-Messprotokoll (je Turn, aus LOG-03)
 
@@ -67,3 +70,8 @@ Durchführung auf Sophie-1, Ergebnis in `docs/abnahme/part1-<datum>.md`.
 | 3 | agent + web_search | | | | | | |
 
 Feste Geschwindigkeitsversprechen gibt es nicht; die Ziele aus NFR-03 dienen der Bewertung.
+
+**Stand 21.10.2026: ungemessen.** Es gibt noch keine Messwerte aus dem Betrieb (kein Sophie-1, keine echten
+Modelle in der Entwicklungsumgebung). Die Abnahmevorlagen [`sofortauskuenfte-vorlage.md`](../abnahme/sofortauskuenfte-vorlage.md)
+und [`discord-vorlage.md`](../abnahme/discord-vorlage.md) enthalten die Tabelle zum Ausfüllen. Tests, die echtes
+Internet brauchen, tragen den Marker `network` (`pytest -m network`) und laufen nicht im Standardlauf.

@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Aussprache für Piper (docs/plan/13 §9.3, P1-29): Wörter, die die Stimme falsch liest, werden vor
+# der Sprachausgabe ersetzt. Gilt nur für Gesprochenes (Telefon, Sprachkanal), nie für Text auf Discord.
+#
+# [woerter]   exakte Wörter oder Namen (Wortgrenzen, Groß-/Kleinschreibung beachten)
+# [buchstaben]  Abkürzungen, die Buchstabe für Buchstabe gesprochen werden ("DWD" → "D W D")
+# [ausdruecke]  reguläre Ausdrücke → Ersetzung (ohne Beachtung der Groß-/Kleinschreibung)
+#
+# Hinweis: Die Liste ist ein Startwert aus Lesetests mit der Notstimme; der Hörtest mit dem echten
+# Piper-Modell (./test-1.sh speak) steht noch aus und ergänzt sie (docs/abnahme/sofortauskuenfte).
+
+[woerter]
+"Open-Meteo" = "Open Meteo"
+"Bright Sky" = "Brait Skai"
+"Brightsky" = "Brait Skai"
+"DWD" = "Deutscher Wetterdienst"
+"NINA" = "Nina"
+"BBK" = "Bundesamt für Bevölkerungsschutz"
+"Pegelonline" = "Pegel Online"
+"PEGELONLINE" = "Pegel Online"
+"Tankerkönig" = "Tanker König"
+"Tankerkoenig" = "Tanker König"
+"SearXNG" = "Searx Eng"
+"OpenStreetMap" = "Open Street Map"
+"GeoNames" = "Geo Nehms"
+"EZB" = "Europäische Zentralbank"
+"Piper" = "Peiper"
+"Discord" = "Diskord"
+"WLAN" = "Wlan"
+"LXC" = "L X C"
+
+[buchstaben]
+words = ["UV", "KI", "SMS", "PIN", "WC", "TV", "USB", "GPS"]
+
+[ausdruecke]
+"\\bUV-Index\\b" = "U V Index"
+"\\bCC BY\\b" = "C C by"
+"\\bE10\\b" = "E zehn"
+"\\bE5\\b" = "E fünf"
+"\\bCO2\\b" = "C O zwei"
+"\\bPM ?2[.,]5\\b" = "P M zwei Komma fünf"
+"\\bPM ?10\\b" = "P M zehn"

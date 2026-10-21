@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Der süße Stil von Nikita auf Discord (docs/plan/14 §8.2, ADR-037): Emojis, Kaomojis und Floskeln.
+# Der Zucker kommt drumherum, nie in die Zahlen. Bei Warnungen, Fehlern und Admin-Sachen bleibt es sachlich.
+
+[emoji]            # nach Skill-Gruppe (Anfang der Skill-ID); "default" für alles andere
+weather = ["🌤️", "🌦️"]
+pollen = ["🌸"]
+air = ["🍃"]
+advice = ["🧥", "🌂"]
+sun = ["☀️"]
+moon = ["🌙"]
+season = ["🍂", "🌱"]
+sky = ["✨"]
+date = ["🗓️"]
+time = ["⏰"]
+holiday = ["🎉"]
+school = ["🎒"]
+calc = ["🧮"]
+convert = ["🧮"]
+money = ["💶"]
+water = ["🌊"]
+waste = ["🗑️"]
+football = ["⚽"]
+news = ["📰"]
+remind = ["⏰"]
+timer = ["⏳"]
+notes = ["📝"]
+geo = ["📍"]
+fun = ["😄"]
+talk = ["💛"]
+default = ["✨", "🐾"]
+
+[emoji_text]       # nach Stichwörtern im Text (hat Vorrang)
+"reg(?:en|net|nen|nerisch)|schauer|nass" = "☔"
+"schnee" = "❄️"
+"sonnig|sonne scheint|heiter" = "☀️"
+"gewitter" = "⛈️"
+"frost|glatt" = "🧊"
+"nebel" = "🌫️"
+
+[kaomoji]
+happy = ["(｡•̀ᴗ-)✧", "(≧◡≦)", "ʕ•ᴥ•ʔ", "(๑˃ᴗ˂)ﻭ", "(◕‿◕)♡"]
+sorry = ["(｡•́︿•̀｡)", "(´• ω •`)", "(；′⌒`)"]
+
+[errors]           # charmant, aber klar
+unavailable = "Uff, an die Daten komm ich gerade nicht ran 🙈 Versuch’s gleich nochmal."
+model_down = "Mein Sprachmodell ist gerade nicht erreichbar 🙈 Sofortauskünfte gehen trotzdem – frag mich zum Beispiel nach dem Wetter."
+starting = "Ich wache gerade erst auf 💤 Gib mir eine Minute."
+generic = "Hoppla, da ist etwas schiefgegangen 🙈 Versuch’s bitte nochmal."
+rate_limited = "Nicht so schnell, ich komm kaum hinterher 🐾 Gleich wieder."
+maintenance = "Ich werde gerade aktualisiert, gleich bin ich wieder da."
+forbidden = "Mit dir darf ich leider nicht reden."
+not_understood = "Das habe ich leider nicht verstanden 🙉 Sprich nochmal etwas deutlicher?"
+too_long = "Das ist mir zu lang geraten – ich hab es gekürzt."
+
+[phrases]
+thinking = ["Ein Momentchen, ich schau nach 👀", "Hmm, einen Augenblick …", "Ich guck mal kurz 🔍"]
+startup = ["Bin wieder wach ✨", "Guude, da bin ich wieder ✨", "Frisch ausgeschlafen und startklar 🐾"]
+joined_voice = "Bin unterwegs in 🔊 {channel} ✨"
+left_voice = "Bin wieder raus aus 🔊 {channel} 👋"
+saved = ["Hab ich notiert", "Gemerkt", "Erledigt"]
+input_cut = "Das war ziemlich lang – ich habe nur die ersten {n} Zeichen gelesen."
+thanks = ["Gern geschehen 💛", "Immer wieder gern 🐾", "Klar doch ✨"]

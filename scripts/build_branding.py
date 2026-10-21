@@ -4,7 +4,8 @@
 
 Input:  assets/branding/scribbles/scribbles-original.png (white strokes on transparency)
 Output: Scribbles as PNG/SVG in black and white, the m-agent logo (M + Scribbles) as
-        SVG/PNG/ICO, and the KoboldCpp icon files niko.ico / nikogreen.ico.
+        SVG/PNG/ICO, the KoboldCpp icon files niko.ico / nikogreen.ico and the Discord
+        profile picture discord-avatar.png (white Scribbles on dark, 512 x 512).
 
 Developer tool only (not part of the runtime):
     pip install pillow numpy potracer cairosvg
@@ -97,6 +98,22 @@ def logo_svg(width: int, height: int, path: str) -> str:
 """
 
 
+def avatar_svg(width: int, height: int, path: str) -> str:
+    """Discord profile picture: white Scribbles centred on a dark square (Discord crops it round)."""
+    size = 512.0
+    scale = size * 0.62 / max(width, height)
+    left = (size - width * scale) / 2
+    top = (size - height * scale) / 2
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Nikita">
+  <title>Nikita</title>
+  <rect x="0" y="0" width="512" height="512" fill="#1b1b1f"/>
+  <g transform="translate({left:.2f} {top:.2f}) scale({scale:.5f})">
+    <path fill="#ffffff" fill-rule="evenodd" stroke="#ffffff" stroke-width="{SCRIBBLES_LOGO_STROKE / scale * 0.5:.2f}" stroke-linejoin="round" d="{path}"/>
+  </g>
+</svg>
+"""
+
+
 def render(svg: Path, png: Path, width: int, height: int | None = None) -> None:
     cairosvg.svg2png(url=str(svg), write_to=str(png), output_width=width, output_height=height)
 
@@ -115,6 +132,11 @@ def main() -> None:
     logo.write_text(logo_svg(width, height, path), encoding="utf-8")
     for size in (512, 192, 64):
         render(logo, BRANDING / f"m-agent-logo-{size}.png", size, size)
+
+    avatar = BRANDING / "discord-avatar.svg"
+    avatar.write_text(avatar_svg(width, height, path), encoding="utf-8")
+    render(avatar, BRANDING / "discord-avatar.png", 512, 512)
+    avatar.unlink()  # only the PNG is used (Discord takes no SVG)
 
     big = BRANDING / ".m-agent-logo-1024.png"
     render(logo, big, 1024, 1024)

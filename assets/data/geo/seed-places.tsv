@@ -1,0 +1,218 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Handgepflegte Grundmenge deutscher Orte (docs/plan/13-sofortauskuenfte.md §11, ADR-031).
+# Näherungswerte (± wenige km), reichen für Wetter/Sonne; die vollständigen Daten (alle PLZ, alle Orte)
+# erzeugt scripts/build_geodata.py aus GeoNames (CC BY 4.0) beim Setup und ergänzt/ersetzt diese Datei.
+# Spalten: name<TAB>plz<TAB>kreis<TAB>land<TAB>breite<TAB>länge<TAB>einwohner<TAB>gehört_zu
+Berlin	10115		BE	52.5200	13.4050	3670000
+Hamburg	20095		HH	53.5511	9.9937	1850000
+München	80331		BY	48.1351	11.5820	1490000
+Köln	50667		NW	50.9375	6.9603	1080000
+Frankfurt am Main	60311		HE	50.1109	8.6821	760000
+Stuttgart	70173		BW	48.7758	9.1829	630000
+Düsseldorf	40213		NW	51.2277	6.7735	620000
+Leipzig	04109		SN	51.3397	12.3731	600000
+Dortmund	44135		NW	51.5136	7.4653	590000
+Essen	45127		NW	51.4556	7.0116	580000
+Bremen	28195		HB	53.0793	8.8017	570000
+Dresden	01067		SN	51.0504	13.7373	560000
+Hannover	30159		NI	52.3759	9.7320	540000
+Nürnberg	90402		BY	49.4521	11.0767	520000
+Duisburg	47051		NW	51.4344	6.7623	500000
+Bochum	44787		NW	51.4818	7.2162	365000
+Wuppertal	42103		NW	51.2562	7.1508	355000
+Bielefeld	33602		NW	52.0302	8.5325	335000
+Bonn	53111		NW	50.7374	7.0982	330000
+Münster	48143		NW	51.9607	7.6261	315000
+Karlsruhe	76131		BW	49.0069	8.4037	308000
+Mannheim	68159		BW	49.4875	8.4660	310000
+Augsburg	86150		BY	48.3705	10.8978	300000
+Wiesbaden	65183	Wiesbaden	HE	50.0826	8.2400	280000
+Gelsenkirchen	45879		NW	51.5177	7.0857	260000
+Mönchengladbach	41061		NW	51.1805	6.4428	260000
+Braunschweig	38100		NI	52.2689	10.5268	250000
+Kiel	24103		SH	54.3233	10.1228	247000
+Chemnitz	09111		SN	50.8278	12.9214	245000
+Aachen	52062		NW	50.7753	6.0839	250000
+Halle (Saale)	06108		ST	51.4828	11.9697	240000
+Magdeburg	39104		ST	52.1205	11.6276	240000
+Freiburg im Breisgau	79098		BW	47.9990	7.8421	230000
+Krefeld	47798		NW	51.3388	6.5853	227000
+Lübeck	23552		SH	53.8655	10.6866	217000
+Mainz	55116		RP	50.0000	8.2711	220000
+Erfurt	99084		TH	50.9848	11.0299	214000
+Rostock	18055		MV	54.0924	12.0991	209000
+Kassel	34117	Kassel	HE	51.3127	9.4797	200000
+Hagen	58095		NW	51.3671	7.4633	190000
+Saarbrücken	66111		SL	49.2402	6.9969	180000
+Potsdam	14467		BB	52.3906	13.0645	185000
+Ludwigshafen am Rhein	67059		RP	49.4774	8.4452	170000
+Oldenburg	26122		NI	53.1435	8.2146	170000
+Osnabrück	49074		NI	52.2799	8.0472	165000
+Leverkusen	51373		NW	51.0459	6.9840	165000
+Heidelberg	69115		BW	49.3988	8.6724	160000
+Darmstadt	64283	Darmstadt	HE	49.8728	8.6512	160000
+Solingen	42651		NW	51.1652	7.0671	160000
+Regensburg	93047		BY	49.0134	12.1016	155000
+Würzburg	97070		BY	49.7913	9.9534	128000
+Ingolstadt	85049		BY	48.7665	11.4258	138000
+Ulm	89073		BW	48.3984	9.9916	126000
+Göttingen	37073		NI	51.5413	9.9158	118000
+Wolfsburg	38440		NI	52.4227	10.7865	124000
+Trier	54290		RP	49.7499	6.6371	111000
+Koblenz	56068		RP	50.3569	7.5890	114000
+Siegen	57072		NW	50.8748	8.0243	101000
+Gießen	35390	Gießen	HE	50.5841	8.6784	90000
+Marburg	35037	Marburg-Biedenkopf	HE	50.8019	8.7667	77000
+Fulda	36037	Fulda	HE	50.5558	9.6808	68000
+Hanau	63450	Main-Kinzig-Kreis	HE	50.1264	8.9283	100000
+Offenbach am Main	63065	Offenbach	HE	50.0956	8.7761	130000
+Rüsselsheim am Main	65428	Groß-Gerau	HE	49.9951	8.4113	66000
+Bad Homburg vor der Höhe	61348	Hochtaunuskreis	HE	50.2268	8.6181	55000
+Oberursel (Taunus)	61440	Hochtaunuskreis	HE	50.2000	8.5800	47000
+Friedberg (Hessen)	61169	Wetteraukreis	HE	50.3350	8.7550	30000
+Bad Nauheim	61231	Wetteraukreis	HE	50.3640	8.7500	32000
+Butzbach	35510	Wetteraukreis	HE	50.4350	8.6700	25000
+Wetzlar	35576	Lahn-Dill-Kreis	HE	50.5561	8.5017	54000
+Dillenburg	35683	Lahn-Dill-Kreis	HE	50.7292	8.2886	24000
+Herborn	35745	Lahn-Dill-Kreis	HE	50.6793	8.3050	21000
+Haiger	35708	Lahn-Dill-Kreis	HE	50.7400	8.2100	19000
+Aßlar	35614	Lahn-Dill-Kreis	HE	50.5900	8.4700	14000
+Braunfels	35619	Lahn-Dill-Kreis	HE	50.5167	8.3833	11000
+Leun	35638	Lahn-Dill-Kreis	HE	50.5472	8.3822	6000
+Solms	35606	Lahn-Dill-Kreis	HE	50.5500	8.4300	14000
+Limburg an der Lahn	65549	Limburg-Weilburg	HE	50.3836	8.0679	35000
+Weilburg	35781	Limburg-Weilburg	HE	50.4844	8.2569	13000
+Runkel	65594	Limburg-Weilburg	HE	50.4083	8.1625	9000
+Villmar	65606	Limburg-Weilburg	HE	50.3889	8.2000	6500
+Hadamar	65589	Limburg-Weilburg	HE	50.4478	8.0418	12500
+Elz	65604	Limburg-Weilburg	HE	50.4000	8.0300	8500
+Bad Camberg	65520	Limburg-Weilburg	HE	50.2956	8.2653	14000
+Hünfelden	65597	Limburg-Weilburg	HE	50.3550	8.1500	11000
+Löhnberg	35792	Limburg-Weilburg	HE	50.4900	8.3000	4500
+Weilmünster	35789	Limburg-Weilburg	HE	50.4000	8.3800	8800
+Merenberg	35799	Limburg-Weilburg	HE	50.5233	8.2217	3700
+Mengerskirchen	35794	Limburg-Weilburg	HE	50.5530	8.0950	4000
+Beselich	65614	Limburg-Weilburg	HE	50.4833	8.1500	6200
+Brechen	65611	Limburg-Weilburg	HE	50.3300	8.1900	6500
+Selters (Taunus)	65618	Limburg-Weilburg	HE	50.3500	8.2800	7500
+Waldbrunn (Westerwald)	65620	Limburg-Weilburg	HE	50.5500	8.0400	5800
+Idstein	65510	Rheingau-Taunus-Kreis	HE	50.2192	8.2667	25000
+Taunusstein	65232	Rheingau-Taunus-Kreis	HE	50.1450	8.1550	30000
+Bad Schwalbach	65307	Rheingau-Taunus-Kreis	HE	50.1400	8.0700	11000
+Rüdesheim am Rhein	65385	Rheingau-Taunus-Kreis	HE	49.9800	7.9300	10000
+Eltville am Rhein	65343	Rheingau-Taunus-Kreis	HE	50.0300	8.1200	17000
+Usingen	61250	Hochtaunuskreis	HE	50.3350	8.5350	14000
+Königstein im Taunus	61462	Hochtaunuskreis	HE	50.1800	8.4700	16000
+Kronberg im Taunus	61476	Hochtaunuskreis	HE	50.1800	8.5200	18000
+Bad Soden am Taunus	65812	Main-Taunus-Kreis	HE	50.1450	8.5000	23000
+Hofheim am Taunus	65719	Main-Taunus-Kreis	HE	50.0900	8.4500	40000
+Eschborn	65760	Main-Taunus-Kreis	HE	50.1400	8.5700	22000
+Dreieich	63303	Offenbach	HE	50.0200	8.6900	42000
+Neu-Isenburg	63263	Offenbach	HE	50.0500	8.6900	38000
+Langen (Hessen)	63225	Offenbach	HE	49.9900	8.6600	38000
+Bensheim	64625	Bergstraße	HE	49.6800	8.6200	40000
+Lauterbach (Hessen)	36341	Vogelsbergkreis	HE	50.6400	9.3900	14000
+Alsfeld	36304	Vogelsbergkreis	HE	50.7500	9.2700	16000
+Bad Hersfeld	36251	Hersfeld-Rotenburg	HE	50.8700	9.7000	29000
+Eschwege	37269	Werra-Meißner-Kreis	HE	51.1900	10.0500	19000
+Korbach	34497	Waldeck-Frankenberg	HE	51.2700	8.8700	24000
+Frankenberg (Eder)	35066	Waldeck-Frankenberg	HE	51.0600	8.8000	18000
+Montabaur	56410	Westerwaldkreis	RP	50.4400	7.8300	13000
+Diez	65582	Rhein-Lahn-Kreis	RP	50.3700	8.0100	11000
+Bad Ems	56130	Rhein-Lahn-Kreis	RP	50.3300	7.7100	9000
+Lahnstein	56112	Rhein-Lahn-Kreis	RP	50.3000	7.6100	18000
+Westerburg	56457	Westerwaldkreis	RP	50.5600	7.9800	6000
+Worms	67547		RP	49.6341	8.3507	84000
+Kaiserslautern	67655		RP	49.4432	7.7689	100000
+Bamberg	96047		BY	49.8917	10.8870	77000
+Bayreuth	95444		BY	49.9427	11.5761	74000
+Passau	94032		BY	48.5667	13.4319	53000
+Rosenheim	83022		BY	47.8564	12.1289	64000
+Konstanz	78462		BW	47.6633	9.1753	86000
+Pforzheim	75172		BW	48.8922	8.6946	125000
+Heilbronn	74072		BW	49.1427	9.2109	126000
+Reutlingen	72764		BW	48.4914	9.2043	116000
+Tübingen	72070		BW	48.5216	9.0576	91000
+Flensburg	24937		SH	54.7937	9.4469	90000
+Greifswald	17489		MV	54.0865	13.3924	59000
+Schwerin	19053		MV	53.6355	11.4012	96000
+Cottbus	03046		BB	51.7563	14.3329	99000
+Jena	07743		TH	50.9271	11.5892	111000
+Weimar	99423		TH	50.9795	11.3235	65000
+Zwickau	08056		SN	50.7189	12.4920	88000
+Görlitz	02826		SN	51.1527	14.9885	56000
+Bremerhaven	27568		HB	53.5396	8.5809	113000
+Lüneburg	21335		NI	53.2464	10.4115	78000
+Hildesheim	31134		NI	52.1508	9.9511	101000
+Celle	29221		NI	52.6226	10.0805	70000
+Paderborn	33098		NW	51.7189	8.7544	152000
+Siegburg	53721		NW	50.8000	7.2000	42000
+Sylt (Westerland)	25980		SH	54.9070	8.3070	9000
+Helgoland	27498		SH	54.1800	7.8900	1400
+Zugspitze	82475		BY	47.4210	10.9850	0
+Feldberg (Schwarzwald)	79868		BW	47.8742	8.0042	1800
+Brocken	38875		ST	51.7990	10.6190	0
+Fichtelberg	09484		SN	50.4290	12.9540	0
+Ahausen	35781	Limburg-Weilburg	HE	50.5000	8.2700	600	Weilburg
+Bermbach	35781	Limburg-Weilburg	HE	50.4700	8.2300	500	Weilburg
+Drommershausen	35781	Limburg-Weilburg	HE	50.4300	8.2700	900	Weilburg
+Gaudernbach	35781	Limburg-Weilburg	HE	50.4700	8.3200	1600	Weilburg
+Hasselbach	35781	Limburg-Weilburg	HE	50.4400	8.2300	1000	Weilburg
+Hirschhausen	35781	Limburg-Weilburg	HE	50.4800	8.2300	800	Weilburg
+Kirschhofen	35781	Limburg-Weilburg	HE	50.4700	8.3000	1100	Weilburg
+Kubach	35781	Limburg-Weilburg	HE	50.4700	8.2000	1300	Weilburg
+Odersbach	35781	Limburg-Weilburg	HE	50.5100	8.2800	800	Weilburg
+Waldhausen	35781	Limburg-Weilburg	HE	50.4500	8.3200	1400	Weilburg
+Frankfurt (Oder)	15230		BB	52.3471	14.5506	58000
+Neustadt (Hessen)	35279	Marburg-Biedenkopf	HE	50.8500	9.1167	9500
+Neustadt an der Weinstraße	67433		RP	49.3500	8.1383	53000
+Neustadt an der Aisch	91413	Neustadt a.d.Aisch-Bad Windsheim	BY	49.5833	10.6167	13000
+Neustadt am Rübenberge	31535	Region Hannover	NI	52.5000	9.4667	45000
+Neustadt in Holstein	23730	Ostholstein	SH	54.1028	10.8147	16000
+Kirchheim (Hessen)	36275	Hersfeld-Rotenburg	HE	50.8500	9.5667	4000
+Kirchheim unter Teck	73230	Esslingen	BW	48.6486	9.4528	41000
+Kirchheim bei München	85551	München	BY	48.1767	11.7517	14000
+Mühlheim am Main	63165	Offenbach	HE	50.1219	8.8444	27000
+Mülheim an der Ruhr	45468		NW	51.4275	6.8828	170000
+Offenbach an der Queich	76877	Südliche Weinstraße	RP	49.2000	8.1833	5500
+Landau in der Pfalz	76829		RP	49.2000	8.1167	47000
+Landshut	84028		BY	48.5372	12.1522	73000
+Oldenburg in Holstein	23758	Ostholstein	SH	54.2917	10.8833	9000
+Hamm	59063		NW	51.6806	7.8208	180000
+Herne	44623		NW	51.5369	7.2192	157000
+Oberhausen	46045		NW	51.4963	6.8637	210000
+Neuss	41460		NW	51.1980	6.6853	153000
+Gütersloh	33330		NW	51.9064	8.3786	101000
+Bergisch Gladbach	51465	Rheinisch-Bergischer Kreis	NW	50.9922	7.1297	112000
+Remscheid	42853		NW	51.1798	7.1925	112000
+Moers	47441	Wesel	NW	51.4515	6.6409	103000
+Recklinghausen	45657	Recklinghausen	NW	51.6141	7.1979	111000
+Bottrop	46236		NW	51.5239	6.9289	117000
+Salzgitter	38226		NI	52.1500	10.3333	104000
+Wilhelmshaven	26382		NI	53.5300	8.1067	76000
+Emden	26721		NI	53.3667	7.2064	50000
+Neubrandenburg	17033	Mecklenburgische Seenplatte	MV	53.5575	13.2603	64000
+Stralsund	18439		MV	54.3096	13.0818	59000
+Brandenburg an der Havel	14770		BB	52.4125	12.5316	72000
+Frankfurt-Höchst	65929		HE	50.1000	8.5400	15000	Frankfurt am Main
+Wittenberg	06886	Wittenberg	ST	51.8667	12.6500	46000
+Dessau-Roßlau	06844		ST	51.8333	12.2417	80000
+Plauen	08523	Vogtlandkreis	SN	50.4967	12.1381	64000
+Bad Kreuznach	55543	Bad Kreuznach	RP	49.8433	7.8672	51000
+Neuwied	56564	Neuwied	RP	50.4281	7.4611	66000
+Speyer	67346		RP	49.3175	8.4311	50000
+Zweibrücken	66482		RP	49.2467	7.3700	34000
+Villingen-Schwenningen	78050	Schwarzwald-Baar-Kreis	BW	48.0600	8.4600	85000
+Baden-Baden	76530		BW	48.7606	8.2397	57000
+Offenburg	77652	Ortenaukreis	BW	48.4700	7.9400	60000
+Friedrichshafen	88045	Bodenseekreis	BW	47.6500	9.4800	61000
+Garmisch-Partenkirchen	82467	Garmisch-Partenkirchen	BY	47.4917	11.0958	27000
+Berchtesgaden	83471	Berchtesgadener Land	BY	47.6306	13.0036	8000
+Kempten (Allgäu)	87435		BY	47.7267	10.3139	70000
+Memmingen	87700		BY	47.9833	10.1833	45000
+Aschaffenburg	63739		BY	49.9769	9.1500	71000
+Schweinfurt	97421		BY	50.0492	10.2194	54000
+Hof	95028		BY	50.3167	11.9167	46000
+Coburg	96450	Coburg	BY	50.2600	10.9628	41000
+Erlangen	91052		BY	49.5897	11.0078	113000
+Fürth	90762		BY	49.4772	10.9886	131000

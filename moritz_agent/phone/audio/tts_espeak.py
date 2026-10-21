@@ -20,6 +20,7 @@ from moritz_agent.phone.audio.tts import TtsError
 
 class EspeakEngine:
     name = "espeak"
+    supports_speed = True
 
     def __init__(self, settings: EspeakSettings) -> None:
         self.settings = settings
@@ -29,7 +30,7 @@ class EspeakEngine:
     def available(self) -> bool:
         return self.binary is not None
 
-    def synthesize(self, text: str) -> tuple[np.ndarray, int]:
+    def synthesize(self, text: str, speed: float = 1.0) -> tuple[np.ndarray, int]:
         if self.binary is None:
             raise TtsError("espeak-ng ist nicht installiert (apt install espeak-ng)")
         try:
@@ -39,7 +40,7 @@ class EspeakEngine:
                     "-v",
                     self.settings.voice,
                     "-s",
-                    str(self.settings.speed_wpm),
+                    str(round(self.settings.speed_wpm * speed)),
                     "--stdout",
                     text,
                 ],

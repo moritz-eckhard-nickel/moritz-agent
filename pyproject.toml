@@ -37,8 +37,11 @@ moritz_agent = ["agent/prompts/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/moritz_agent"]
-addopts = "--import-mode=importlib"
+addopts = "--import-mode=importlib -m 'not network'"
 pythonpath = ["."]
+markers = [
+    "network: needs the internet or a locally installed service (run with -m network)",
+]
 
 [tool.ruff]
 # Only lint moritz-agent code; KoboldCpp upstream files are out of scope (ADR-001).
@@ -50,3 +53,7 @@ target-version = "py311"
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
 # E501: long lines are left to the formatter; RUF001-003: German typography uses en dashes.
 ignore = ["E501", "RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI dependencies are declared as parameter defaults.
+extend-immutable-calls = ["fastapi.Depends"]

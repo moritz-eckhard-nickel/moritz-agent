@@ -233,3 +233,101 @@ def test_events_that_do_not_apply_are_ignored():
     assert m.state is State.LISTENING
     greeting = CallStateMachine()
     assert greeting.handle(UtteranceEnded()) == []
+
+
+# -- Discord voice: first prompt, going quiet, being talked over (docs/plan/14 §9) ------------------------------
+def test_the_first_prompt_can_be_something_else_than_the_greeting():
+    from moritz_agent.phone.state_machine import CallAnswered, CallStateMachine, PlayPrompt
+
+    machine = CallStateMachine()
+    actions = machine.handle(CallAnswered("yes"))
+    assert PlayPrompt("yes") in actions
+    assert PlayPrompt("greeting") in CallStateMachine().handle(CallAnswered())
+
+
+def test_silence_ends_with_the_configured_last_words():
+    from moritz_agent.phone.state_machine import (
+        CallAnswered,
+        CallStateMachine,
+        MachineConfig,
+        PlaybackDone,
+        PlayPrompt,
+        TimerFired,
+    )
+
+    machine = CallStateMachine(MachineConfig(silence_goodbye="going_quiet"))
+    machine.handle(CallAnswered())
+    machine.handle(PlaybackDone())
+    machine.handle(TimerFired("silence"))  # "Bist du noch da?"
+    machine.handle(PlaybackDone())
+    actions = machine.handle(TimerFired("silence"))
+    assert PlayPrompt("going_quiet") in actions
+
+
+def test_talking_over_nikita_stops_the_playback_and_listens():
+    from moritz_agent.phone.state_machine import (
+        ArmTimer,
+        BargeIn,
+        CallAnswered,
+        CallStateMachine,
+        PlaybackDone,
+        StartListening,
+        State,
+        StopPlayback,
+    )
+
+    machine = CallStateMachine()
+    machine.handle(CallAnswered())
+    assert machine.state is State.GREETING
+    assert machine.handle(BargeIn()) == []  # the greeting is not interrupted
+    machine.handle(PlaybackDone())
+    machine.state = State.SPEAKING
+    actions = machine.handle(BargeIn())
+    assert actions[0] == StopPlayback() and StartListening() in actions
+    assert any(isinstance(a, ArmTimer) and a.name == "silence" for a in actions)
+    assert machine.state is State.LISTENING
+    assert machine.handle(BargeIn()) == []  # already listening
+
+
+# -- the kitchen timer (SKILL "Eieruhr") ------------------------------------------------------------------------------
+def test_a_timer_that_runs_out_while_listening_is_announced_at_once():
+    from moritz_agent.phone.state_machine import (
+        CallAnswered,
+        CallStateMachine,
+        PlaybackDone,
+        PlayPrompt,
+        State,
+        TimerAlarm,
+    )
+
+    machine = CallStateMachine()
+    machine.handle(CallAnswered())
+    machine.handle(PlaybackDone())
+    assert machine.state is State.LISTENING
+    actions = machine.handle(TimerAlarm("Eier"))
+    assert PlayPrompt("timer_done") in actions and machine.state is State.SPEAKING
+    again = machine.handle(PlaybackDone())  # afterwards the conversation goes on
+    assert machine.state is State.LISTENING and any(
+        type(a).__name__ == "StartListening" for a in again
+    )
+
+
+def test_a_timer_that_runs_out_while_busy_waits_for_its_turn():
+    from moritz_agent.phone.state_machine import (
+        CallAnswered,
+        CallStateMachine,
+        PlaybackDone,
+        PlayPrompt,
+        State,
+        TimerAlarm,
+    )
+
+    machine = CallStateMachine()
+    machine.handle(CallAnswered())
+    assert machine.handle(TimerAlarm()) == []  # during the greeting: later
+    actions = machine.handle(PlaybackDone())
+    assert actions == [PlayPrompt("timer_done")] and machine.state is State.SPEAKING
+    machine.handle(PlaybackDone())
+    assert machine.state is State.LISTENING
+    machine.state = State.ENDING
+    assert machine.handle(TimerAlarm()) == []  # the call is over: nobody to tell

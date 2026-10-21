@@ -92,6 +92,12 @@ def to_telephony(samples: np.ndarray, rate_in: int, target_dbfs: float = -20.0) 
     return float_to_pcm16(mono).tobytes()
 
 
+def apply_gain(pcm: bytes, gain_db: float) -> bytes:
+    """Scale PCM16 by ``gain_db`` (with clipping protection)."""
+    samples = pcm16_to_float(pcm) * (10 ** (gain_db / 20))
+    return float_to_pcm16(np.clip(samples, -1.0, 1.0)).tobytes()
+
+
 def duration_s(pcm: bytes | np.ndarray, rate: int = SAMPLE_RATE) -> float:
     n = len(pcm) // 2 if isinstance(pcm, bytes | bytearray) else int(pcm.size)
     return n / rate
@@ -99,6 +105,19 @@ def duration_s(pcm: bytes | np.ndarray, rate: int = SAMPLE_RATE) -> float:
 
 def silence(ms: int, rate: int = SAMPLE_RATE) -> bytes:
     return bytes(2 * rate * ms // 1000)
+
+
+def beep(ms: int = 220, freq: float = 880.0, count: int = 2, rate: int = SAMPLE_RATE) -> bytes:
+    """A short double beep (the sound before "Die Zeit ist um.")."""
+    n = rate * ms // 1000
+    t = np.arange(n) / rate
+    envelope = np.minimum(1.0, np.minimum(t, t[::-1] + 1 / rate) * 200)  # no clicks
+    tone = (0.35 * np.sin(2 * np.pi * freq * t) * envelope).astype(np.float32)
+    gap = np.zeros(rate * 90 // 1000, dtype=np.float32)
+    parts: list[np.ndarray] = []
+    for _ in range(count):
+        parts += [tone, gap]
+    return float_to_pcm16(np.concatenate(parts)).tobytes()
 
 
 def chunk_frames(pcm: bytes, frame_bytes: int = FRAME_BYTES) -> Iterator[bytes]:

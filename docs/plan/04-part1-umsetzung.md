@@ -17,6 +17,9 @@ aktualisierbar per `moritz-update.sh`, beobachtbar über eine minimale Statussei
   4. Keine Secrets in Code, Tests, Logs, Fixtures (Test-Secrets nur offensichtlich falsch,
      z. B. `test-password-123`).
   5. Abweichungen vom Plan → Plan-Dokument im selben PR aktualisiert.
+  6. **Kanal-Parität** (ADR-034, DISCORD-12): Eine neue Nikita-Funktion ist im selben PR auf allen
+     Kanälen nutzbar (Telefon, Discord, später WebUI) – oder die Ausnahme ist in der Matrix
+     [14 §6](14-discord.md#6-funktionsumfang-alle-funktionen-auf-allen-kanälen) begründet.
 - Hardware-abhängige Schritte (GPU, SIP-Anlage) werden mit einem **Testprotokoll** im PR
   belegt (Vorlage: [`09-tests-abnahme.md`](09-tests-abnahme.md)).
 
@@ -59,6 +62,19 @@ P1-19 Skill-Framework ─┬─► P1-20 Zeit & Kalender ───────�
                                                      P1-25 Sonne/Mond ◄┘   P1-27 Region & Alltag
 P1-29 Erkennung, Aussprache, Korpus (begleitend ab P1-19) ─► P1-30 Abnahme Sofortauskünfte
 danach: P1-02, P1-05, P1-07 (übernimmt skills/tools.py), P1-09 (Agent hinter den Skills), P1-08, P1-14, P1-18
+```
+
+**Block D – Discord (ADR-033 … ADR-037, [14](14-discord.md)):** Nikita als Discord-Bot mit allen
+Funktionen. Startet nach P1-19 mit dem Kanal-Kern (P1-31) und dem Spike (P1-32) und läuft parallel zu
+den späteren Wellen von Block S; LLM-Funktionen kommen mit P1-09 automatisch dazu.
+
+```text
+P1-19 ─► P1-31 Kanal-Kern ─► P1-32 Spike ─► P1-33 Worker ─┬─► P1-34 Text + Sofortauskünfte ─┬─► P1-38 Proaktiv/Erinnerungen
+                                                          ├─► P1-35 Befehle/Benutzer-App    ├─► P1-39 Telefon ↔ Discord
+                                                          ├─► P1-41 Einrichtung             └─► P1-40 Admin
+                                                          ├─► P1-36 Sprachkanal (/joinvc wie Anruf), P1-37 Sprachnachrichten (nach Spike)
+                                                          └─► P1-43 Persönlichkeit + Aktivitäten
+                                                                                 alles ─► P1-42 Abnahme Discord
 ```
 
 Wellen: **A** P1-19, P1-20, P1-26 (offline), P1-28 · **B** P1-21, P1-22 · **C** P1-23, P1-24, P1-25 ·
@@ -177,7 +193,7 @@ P1-03 (Konfiguration) und P1-06 (Speicher) werden nur so weit vorgezogen, wie Bl
 
 - **Dateien:** `moritz_agent/tools/{registry.py,base.py,time_tool.py,web_search.py}`.
 - **Aufgaben:** `Tool`-Protokoll (Name, Beschreibung **deutsch**, JSON-Schema, `async run`),
-  Validierung der Argumente (jsonschema/pydantic), Ergebnisobjekt
+  Validierung der Argumente (jsonschema/pydantic – *umgesetzt mit einem kleinen eigenen Validator, Anhang C.2*), Ergebnisobjekt
   `{ok, data | error, sources?, speakable?}`, Registry mit Profil-Freigaben (PHONE-45),
   Ausgabe-Größenlimit, Protokollierung in `tool_calls`.
   - `get_current_time(kind: "time"|"date"|"datetime")` → nutzt `time_tool.py` (Gerüst
@@ -440,7 +456,7 @@ Datenquelle **vor** dem ersten Abruf.
   Laden im Hintergrund, Indizes (PLZ, Name, ohne Zusätze, Ortsteil, phonetisch); Auflösung nach 13 §4.4
   (Heimat-Wörter, PLZ, Namen, Mehrdeutigkeit, Ausland, Online-Rückfall über Open-Meteo-Geocoding);
   Heimatort 35781 auflösen und in Status/Log zeigen (13 §5, Gemeindeschlüssel/Ortsteile gegen amtliche
-  Quelle prüfen); Skills aus 13 §6.10; neue Abhängigkeit `rapidfuzz` (Lock neu erzeugen, ADR-019).
+  Quelle prüfen); Skills aus 13 §6.10; neue Abhängigkeit `rapidfuzz` (Lock neu erzeugen, ADR-019). *Umgesetzt ohne `rapidfuzz`: `difflib` + Kölner Phonetik (Anhang C.2).*
 - **Tests:** 35781 → Weilburg, 60311 → Frankfurt am Main, unbekannte PLZ, PLZ mit mehreren Orten,
   Ortsteile, „Limburg a. d. Lahn“, „Weilborg“, Frankfurt/Neustadt-Mehrdeutigkeit, Ausland,
   Ladezeit ≤ 300 ms, RAM gemessen (06 §2.2).
@@ -486,7 +502,7 @@ Datenquelle **vor** dem ersten Abruf.
 ## P1-25 – Sonne, Mond, Jahreszeiten
 
 - **Dateien:** `skills/astro/{sun,moon,seasons}.py`, `skills/catalog/astro.py`; neue Abhängigkeit
-  `astral` (Apache-2.0).
+  `astral` (Apache-2.0). *Umgesetzt als eigene Rechnung in `skills/astro/` (Anhang C.2).*
 - **Aufgaben:** Skills aus 13 §6.9; Meeus Kap. 27/49 für Jahreszeiten und Mondphasen; Polarfälle;
   Ort aus P1-21.
 - **Tests:** Referenzwerte (12 Daten Weilburg/Frankfurt, Mondphasen und Jahreszeiten 2026–2028, ± 2 min).
@@ -507,7 +523,7 @@ Datenquelle **vor** dem ersten Abruf.
 ## P1-27 – Region und Alltag
 
 - **Dateien:** `skills/providers/{pegelonline,ics,openligadb,news}.py`, `skills/catalog/{region,notes}.py`;
-  neue Abhängigkeit `icalendar` (BSD-2-Clause).
+  neue Abhängigkeit `icalendar` (BSD-2-Clause). *Umgesetzt mit einem kleinen eigenen ICS-Leser (Anhang C.2).*
 - **Aufgaben:** Lahn-Pegel (Station aus `stations.json?waters=LAHN` bestimmen, Trend, Kennwerte), Hochwasser
   mit NINA; Abfallkalender (iCal-Link/-Datei, nur `https://`, keine privaten Adressen, Kategorien
   normalisieren); Fußball, Schlagzeilen (Nutzungsbedingungen prüfen, Standard aus); Notizen/Einkaufsliste
@@ -545,6 +561,156 @@ Datenquelle **vor** dem ersten Abruf.
 
 ---
 
+## Block D – Discord-Bot
+
+Plan: [14-discord.md](14-discord.md) · Anforderungen DISCORD-01 … DISCORD-47 · Entscheidungen
+ADR-033 … ADR-037 · Bedrohungen T25–T32. Gemeinsame DoD zusätzlich: Fake-Discord-Tests ohne Netz,
+keine Inhalte/Token im Log (Test sucht den Testtoken), Rollenmatrix getestet, Discord-Ausfall lässt
+das Telefon unberührt (Test: Worker beenden während eines Testanrufs).
+
+## P1-31 – Kanal-Kern und Ausgabeprofile
+
+- **Dateien:** `moritz_agent/core/{turn,principal,surface,profiles}.py` (neu), `skills/base.py`
+  (`markdown`, `card`, `actions`), `phone/responder.py` (`TurnContext` → Kern-Turn), Storage-Spalte
+  `channel` (bzw. Log-Feld bis P1-06).
+- **Aufgaben:** Turn-Modell mit `principal`, `channel`, `surface`; Ausgabeprofile `phone`,
+  `discord_voice`, `discord_chat`; Skills liefern zusätzlich Markdown, Karte und Folgeaktionen;
+  Rückfragen des Kerns als strukturierte Optionen (für Auswahllisten); persönliche Einstellungen je
+  Principal (Heimatort-Standard 35781 Weilburg). Telefon verhält sich danach **bit-genau gleich**.
+- **Tests:** alle Telefon- und Skill-Tests unverändert grün; Golden-Antworten je Surface.
+- **Anforderungen:** DISCORD-12, DISCORD-15, DISCORD-29, ADR-034.
+
+## P1-32 – Discord-Spike (Bot, Befehle, DAVE)
+
+- **Ziel:** auf einem privaten Test-Server klären, bevor gebaut wird: (1) Gateway + Intents +
+  Slash-Befehle + Benutzer-Installation mit discord.py ≥ 2.7; (2) **Sprache senden** mit DAVE
+  (davey); (3) **Sprache empfangen** mit DAVE – Kandidaten: DAVE-fähige Fassungen von
+  `discord-ext-voice-recv`, Python-Bindung an `libdave`; Kriterien: 60 min ohne Abbruch,
+  Sprecherwechsel, Schlüsselwechsel (jemand kommt/geht), Reconnect, CPU-Last; (4) dürfen Bots echte
+  Sprachnachrichten senden; (5) tatsächliche Upload-Grenze ohne Boost; (6) Wheels für Python 3.12–3.14
+  (`davey`, PyNaCl).
+- **Ergebnis:** Protokoll im PR, ADR-036 bestätigt oder geändert, Lock-Datei `requirements/discord.lock`.
+- **Anforderungen:** DISCORD-23, DISCORD-24, DISCORD-38.
+
+## P1-33 – Discord-Worker: Grundgerüst
+
+- **Dateien:** `moritz_agent/discord/{__main__,worker,client,access,sessions}.py`,
+  `moritz_agent/config/{settings,secrets}.py` (`[discord]`), `cli.py` (`moritz-agent run` startet beide
+  Worker mit Neustart-Backoff), `config/moritz-agent.example.toml`.
+- **Aufgaben:** Verbindung, Wiederverbindung, Intents, Statusdatei `data/run/discord-status.json`,
+  Wartungsmodus, Reload mit Token-Wechsel, `nice +5`; Zugriff nach ADR-035 (Rollen, Server-Allowlist mit
+  automatischem Verlassen, Unbekannte ignorieren, Rate-Limits); Log `[Discord]` ohne Inhalte;
+  Ausgabefilter für Secrets; `allowed_mentions`.
+- **Tests:** Rollenmatrix, fremder Server, Bots ignoriert, Rate-Limit, Secret-Filter, Token-Suche in
+  Logs/Status, Telefon läuft bei abstürzendem Discord-Worker weiter.
+- **Anforderungen:** DISCORD-01, -03, -04, -05, -08, -09, -10, -11, -20, -21, -33, -36.
+
+## P1-34 – Text-Chat und Sofortauskünfte auf Discord
+
+- **Dateien:** `discord/{render,components}.py`, `discord/sessions.py`.
+- **Aufgaben:** Antworten in DMs, bei Erwähnung, auf Antworten, in Nikita-Threads/-Kanälen und auf
+  „Nikita, …“; Rendern als Text/Karte mit Quelle, Folgeknöpfe, Auswahllisten für Rückfragen,
+  Aufteilen/Datei, Tippanzeige, Reaktionen (✅, 👍/👎-Feedback); ab P1-09: LLM-Antworten gestreamt,
+  Websuche mit Quellenlinks, Threads für lange Gespräche; `/hilfe datenschutz`.
+- **Anforderungen:** DISCORD-13, -14, -15, -18, -19, -34, -35, -40.
+
+## P1-35 – Slash-Befehle, Kontextmenüs, Autovervollständigung, Benutzer-App
+
+- **Dateien:** `discord/commands/*`, `discord/__main__.py` (`sync-commands`).
+- **Aufgaben:** Befehle aus [14 §7](14-discord.md#7-befehle-slash-befehle-kontextmenüs-autovervollständigung)
+  für alle aktiven Funktionen, Kontexte (Server/DM/Benutzer-App), Autovervollständigung für Orte aus dem
+  Gazetteer, `/joinvc` und `/leavevc`, Kontextmenüs „Nikita fragen“ und „Vorlesen“, ephemere Antworten in fremden Servern,
+  Registrierung nur bei geändertem Befehlsbaum; `/abo`, `/einstellungen`, `/hilfe`.
+- **Tests:** Befehlsbaum gültig (Namen, Längen, Anzahl), nur aktive Funktionen, Interaktion-Fakes.
+- **Anforderungen:** DISCORD-02, -16, -17, -29.
+
+## P1-36 – Sprachkanal: `/joinvc` wie ein Anruf
+
+- **Dateien:** `discord/voice/{session,receive,pipeline,playback}.py`; `phone/media.py` (neu:
+  Schnittstelle `MediaChannel`), `phone/dialogue.py` und `phone/sip.py` auf `MediaChannel` umgestellt
+  (ohne Verhaltensänderung am Telefon); gemeinsame Audio-Bausteine aus `phone/audio/` (VAD, STT, TTS,
+  Resampling) als Bibliothek nutzbar.
+- **Aufgaben:** `/joinvc`/`/leavevc`, Auto-Join optional, eine Sitzung; Zustände Wartet → Im Gespräch
+  → Ruht (14 §9.1): Moritz betritt den Kanal = Anruf angenommen (Begrüßung wie PHONE-21), Verlassen =
+  Auflegen, „Tschüss“ = Abschied und gehen, Stille = Ruhe-Modus oder gehen (`on_silence`), Weckwort nur
+  zum Aufwecken; keine Sprecherauswahl (Privatserver), Fremde verworfen; Empfang (Ergebnis P1-32) oder
+  Modus „nur sprechen“; Barge-in ≤ 300 ms, Zwischenansage, Ansagen aus dem Telefon-Cache; Modelle ab
+  `/joinvc` laden, danach entladen; Priorität `VOICE`; RAM- und Latenzmessung (06 §2.2, 09 §4).
+- **Tests:** alle `test_dialogue.py`/`test_state_machine.py`-Fälle laufen zusätzlich über einen
+  Fake-Sprachkanal (`MediaChannel`); Audio-Kette ohne Netz (Opus ↔ PCM, 48 ↔ 16 kHz, VAD, Unterbrechen);
+  Zustandswechsel Betreten/Verlassen/Stille/Ruhe; Live-Protokoll; Telefon parallel unbeeinträchtigt.
+- **Anforderungen:** DISCORD-22, -23, -24, -25, -46, ADR-036.
+
+## P1-37 – Sprachnachrichten
+
+- **Dateien:** `discord/voice_messages.py`.
+- **Aufgaben:** Empfangen (Grenzen, Dekodieren mit PyAV, Whisper, Transkript sichtbar), Antwort als
+  Text und je nach `reply_with_voice` als Sprachnachricht/Audiodatei (OGG/Opus 48 kHz, Wellenform);
+  Kontextmenü „Vorlesen“.
+- **Anforderungen:** DISCORD-26.
+
+## P1-38 – Proaktive Nachrichten, Erinnerungen, Timer
+
+- **Dateien:** `discord/notify.py`, Planer im Kern (`core/scheduler.py`), Speicher `data/discord/` bzw.
+  Tabellen aus 14 §16.
+- **Aufgaben:** `/erinnere`, `/timer`, natürliche Sprache („erinnere mich morgen um 8 …“), neustartfest,
+  Nachholen ≤ 12 h; Abos Warnungen/Morgenbriefing/Müll/Systemhinweise mit Ruhezeiten und Drosselung;
+  Ziel Standardkanal (`notify.target`), Startmeldung im Standardkanal.
+- **Tests:** feste Uhr, Sommerzeitwechsel, Neustart dazwischen, Drosselung, Ruhezeit-Ausnahme Unwetter.
+- **Anforderungen:** DISCORD-27, -28, -47.
+
+## P1-39 – Telefon ↔ Discord
+
+- **Aufgaben:** `/anrufe` (Status, letzte Anrufe ohne Inhalte), Anrufhinweise per Abo, Themen/Transkript
+  nur per `call_summaries`, „schick mir das auf Discord“ am Telefon (Nebenstelle → Discord-ID über
+  `phone_extensions`, sonst an den Owner); Präsenz „im Gespräch“.
+- **Anforderungen:** DISCORD-30, DISCORD-35.
+
+## P1-40 – Admin-Befehle
+
+- **Dateien:** `discord/admin.py`.
+- **Aufgaben:** `/admin status|version|logs|neu-laden|wartung|neustart` nach 14 §13, nur Owner, nur DM/
+  ephemeral, Bestätigungsknöpfe, optionale PIN aus `passwords.txt` (`[discord] admin_pin`) mit
+  Fehlversuchssperre; Logs redigiert als Datei.
+- **Tests:** Owner/Vertraut/Gast, PIN-Sperre, Logs ohne Secrets, Neustart verweigert bei laufendem Anruf.
+- **Anforderungen:** DISCORD-31, T30.
+
+## P1-41 – Einrichtung: Installer, `passwords.txt`, `./test-1.sh discord`, Doku
+
+- **Dateien:** `moritz-install.sh` (Phase `discord`), `moritz_agent/setup` (`set-discord-token`,
+  `set-discord-channel`, Prüfung gegen die API, App-Infos, Einladungslinks, Kanalauswahl, Avatar/Banner/Bio),
+  `config/passwords.template.txt` (`[discord]` mit `bot_token`, `channel_id`, `admin_pin`),
+  Updater-`migrate` (Abschnitt/Schlüssel anhängen), `test-1.sh` (`discord token|channel|check|invite|run|say`),
+  `scripts/build_branding.py` (Avatar 512 × 512, Banner), `docs/discord-einrichtung.md` (Developer Portal
+  Schritt für Schritt, Token-Reset, Datenschutz), `requirements/discord.in`/`.lock`,
+  `THIRD_PARTY_NOTICES.md`, `deploy/payload.txt`.
+- **Tests:** `test_installers.py`: Phase mit Testtoken über stdin (nie in Argumenten/Log), zweiter Lauf
+  unverändert, `--non-interactive` überspringt; Updater hängt `[discord]` an, Bestandswerte
+  byte-identisch; shellcheck.
+- **Anforderungen:** DISCORD-05, -06, -07, -37, -38, -42, -45, INST-05, CFG-09.
+
+## P1-43 – Nikitas Discord-Persönlichkeit: süßer Stil und schelmische Aktivitäten
+
+- **Dateien:** `discord/{style,activities}.py`, `assets/data/discord/{stil,aktivitaeten}.de.toml`,
+  `discord/commands/` (`/aktivitaet`), LLM-Profil `discord_chat` (Stilzeile, ab P1-09).
+- **Aufgaben:** Stil-Renderer nach [14 §8.2](14-discord.md#82-persönlichkeit-nikita-ein-bisschen-süß-adr-037)
+  mit Ernst-Modus; Aktivitäten nach [14 §8.5](14-discord.md#85-aktivitäten-schelmisch-und-funny-adr-037):
+  Grundliste, lagebezogene Aktivitäten (Anruf, Sprachkanal, Nacht, Wetter aus dem Cache, Sonderdaten,
+  Wartung, Unwetter), Rotation 7–15 min ohne Wiederholung, Präsenz-Limits, `/aktivitaet neu|aus|an|vorschlag`;
+  Bio-Text; `/hilfe datenschutz`-Satz „ich spiele nicht wirklich mit deinen Daten“.
+- **Tests:** Stil deterministisch je Nachrichten-ID, nie mehr als 2 Emojis, Zahlen unverändert,
+  Ernst-Modus bei Warnungen/Admin/Fehlern; Aktivitäten: Rotation, Vorrang der Lage, keine Wiederholung
+  unter 10, Inhaltsprüfung der Liste (keine Vorfall-Wörter wie „hackt“, „gelöscht“, „kaputt“).
+- **Anforderungen:** DISCORD-32, -43, -44, ADR-037.
+
+## P1-42 – Abnahme Discord
+
+- Durchführung nach [14 §21](14-discord.md#21-abnahme), Protokoll `docs/abnahme/discord-<datum>.md`;
+  offene Fragen F-29 … F-40 geklärt oder Defaults bestätigt; README und `docs/telefon-test-1.md`
+  ergänzt.
+
+---
+
 ## Anhang A – Ansagenkatalog (Part 1)
 
 | ID | Text | Verwendung |
@@ -562,7 +728,132 @@ Datenquelle **vor** dem ersten Abruf.
 | `thinking_weather` | Moment, ich schaue nach dem Wetter. | Wetterabruf ohne Cache-Treffer (P1-22) |
 | `skills_offline` | Ich komme gerade nicht an die Daten. Versuch es bitte gleich noch einmal. | Datendienst nicht erreichbar, kein Cache (P1-22) |
 | `timer_done` | Die Zeit ist um! | Eieruhr während des Gesprächs (P1-28), davor ein kurzer Ton |
+| `voice_join` | Guude, ich bin da. | Nikita betritt einen Discord-Sprachkanal, in dem Moritz noch nicht ist (P1-36); kommt Moritz dazu, folgt `greeting` |
+| `voice_rest` | Ich bin dann mal still. Sag einfach Nikita, wenn du mich brauchst. | Sprachkanal: Ruhe-Modus nach Stille (P1-36) |
+| `voice_wake` | Ja? | Sprachkanal: aus dem Ruhe-Modus geweckt (P1-36) |
+| `voice_waking` | Einen Moment, ich wache auf. | Sprachmodelle im Discord-Worker werden noch geladen (P1-36) |
+| `voice_leave` | Ich bin dann mal weg. Bis bald! | Nikita verlässt den Sprachkanal (P1-36) |
 
 ## Anhang B – Konfigurationsschlüssel Part 1
 
 Vollständig und kommentiert in [`config/moritz-agent.example.toml`](../../config/moritz-agent.example.toml).
+
+## Anhang C – Umsetzungsstand und Abweichungen (Stand 21.10.2026)
+
+Dieser Anhang ist die Quelle der Wahrheit dafür, was in Part 1 gebaut ist, was davon **nur im Code und
+in Tests** belegt ist und was **noch auf echter Hardware oder gegen echte Dienste geprüft** werden muss.
+„Gebaut“ heißt: Code und automatische Tests sind grün (`pytest`, `ruff`, `shellcheck`); es heißt nicht,
+dass die Abnahme auf Sophie-1 bzw. gegen echte Dienste schon stattgefunden hat.
+
+Letzter Lauf (21.10.2026): `pytest` 2316 bestanden (6 abgewählte Tests brauchen Internet, `-m network`),
+`ruff check`, `ruff format --check` und `shellcheck` sauber.
+
+### C.1 Stand je Ticket
+
+| Ticket | Stand | Anmerkung |
+| --- | --- | --- |
+| P1-00, P1-00b | fertig | Repo-Grundlage, Rebranding, Fremdkomponenten |
+| P1-01 | **offen** (manuell) | Infrastruktur Sophie-1 – nicht Teil dieses Repos |
+| P1-02 | **offen** | KoboldCpp-Build und Modellwahl brauchen die GPU; der Installer kündigt die Phase nur an |
+| P1-03 | gebaut | `config/validate.py`, `reload.py`; Reload atomar mit Diff |
+| P1-04 | gebaut | `ManagedProcess` (Backoff, Health), `supervisor.py` startet Telefon und Discord als Kindprozesse |
+| P1-05 … P1-09 | gebaut | Inference-Client, Speicher (SQLite), Suche (SearXNG → KoboldCpp → Wikipedia), Tools, Agent-Schleife; **nicht gegen ein echtes Modell geprüft** (siehe C.3) |
+| P1-10 … P1-13 | gebaut, läuft bei Moritz | Audio, SIP, Phone-Worker, Ansagen |
+| P1-14 | gebaut | Web-Oberfläche (Login, Statusseite), interne API für die Kindprozesse |
+| P1-15 … P1-17 | gebaut | Installer, Updater, systemd; neue Phasen `discord` und `geodata` |
+| P1-18 | **offen** | Abnahme auf Sophie-1 |
+| P1-19 … P1-28 | gebaut | Skill-Framework und alle Sofortauskünfte aus [13](13-sofortauskuenfte.md) |
+| P1-29 | gebaut, Messung offen | Aussprache-Liste, Whisper-`initial_prompt`, Korpus mit 803 Äußerungen (`tests/moritz_agent/data/skills.de.jsonl`, erzeugt von `scripts/build_skill_corpus.py`) – **Hörtest und Vergleich `initial_prompt` gegen `hotwords` stehen aus** |
+| P1-30 | **offen** | Abnahme: Protokoll [`docs/abnahme/sofortauskuenfte-vorlage.md`](../abnahme/sofortauskuenfte-vorlage.md) ausfüllen; das Netz-Wächter-Testset (`pytest -m network`) läuft nur mit Internet |
+| P1-31 … P1-35 | gebaut | Kanal-Kern, Worker, Text-Chat, Befehle; **nie gegen das echte Discord-Gateway gelaufen** (C.3) |
+| P1-32 | **offen** | Spike-Protokoll [`docs/abnahme/p1-32-discord-spike.md`](../abnahme/p1-32-discord-spike.md); der Code beherrscht beide Ausgänge |
+| P1-36 | gebaut | `/joinvc` als Anruf (`DiscordMedia` + `CallSession`); Empfang nur mit optionalem `discord-ext-voice-recv`, sonst „nur sprechen“ |
+| P1-37 … P1-41, P1-43 | gebaut | Sprachnachrichten, Erinnerungen und Abos, Telefon ↔ Discord, Admin, Einrichtung, Persönlichkeit |
+| P1-42 | **offen** | Abnahme: [`docs/abnahme/discord-vorlage.md`](../abnahme/discord-vorlage.md) |
+
+### C.2 Abweichungen vom Plan (und warum)
+
+**Abhängigkeiten – eigener Code statt Paket** (weniger Fremdcode, keine Lizenzfragen, offline testbar):
+
+| Geplant | Gebaut | Ort |
+| --- | --- | --- |
+| `astral` (Sonne), Meeus (Mond/Jahreszeiten) | eigene Rechnung nach NOAA/Meeus; Tests gegen bekannte Werte | `skills/astro/` |
+| `icalendar` (Müllkalender) | kleiner eigener ICS-Leser (nur `VEVENT`, `RRULE` einfacher Fälle) | `skills/providers/ics.py` |
+| `rapidfuzz` (Ortsnamen) | `difflib` (Schwelle 0,88) plus Kölner Phonetik | `skills/geo/gazetteer.py` |
+| `jsonschema` (Tool-Argumente) | kleiner Validator für die benutzten Schlüsselwörter | `tools/schema.py` |
+
+Dadurch entfallen `astral`, `icalendar`, `rapidfuzz` und `jsonschema` in `requirements/*.in`; die
+Hinweise in [13 §6/§11](13-sofortauskuenfte.md) und ADR-031 („neue Abhängigkeit `rapidfuzz`“) gelten
+nicht mehr.
+
+**Daten:** Das Repository enthält nur die handgepflegte **Grundmenge** (`assets/data/geo/seed-places.tsv`,
+`plz-bereiche.tsv`, `world-cities.tsv`; Näherungswerte). Die **vollständigen** GeoNames-Listen
+(`de-places.tsv`, `de-postcodes.tsv`) erzeugt `scripts/build_geodata.py`; der Installer ruft es in der
+neuen Phase `geodata` auf (übersprungen mit `--skip-models`, Fehler sind nicht fatal). In der
+Entwicklungsumgebung war GeoNames nicht erreichbar, die Skripte sind deshalb **nur gegen Testdateien
+geprüft**. ADR-031 („≈ 6–7 MB im Repository“) ist damit überholt: die Daten kommen beim Einrichten.
+
+**Skill-Zuschnitt:** `weather.place` ist in `weather.*` aufgegangen (Ort optional), `holiday.other_state`
+in `holiday.*` (Bundesland als Slot); einige Gruppen heißen anders als in 13 §6 (`gespraech`, `orte`,
+`himmel`, `ratschlaege`, `helfer`, …) – die Skill-IDs sind unverändert.
+
+**Prozess- und API-Aufbau:**
+
+- Der Supervisor ([02](02-architektur.md)) startet Telefon- **und** Discord-Worker als `ManagedProcess`
+  (Discord mit `nice 5`, Gesundheit über Statusdatei `data/run/discord-status.json`). Ein Absturz des
+  Discord-Workers lässt das Telefon unberührt.
+- Die Worker sprechen mit dem Hauptprozess über eine **interne Loopback-API** (`/internal/…`, Header
+  `X-Internal-Token`, NDJSON-Ströme für gestreamte Antworten) – `api/internal.py`,
+  `api/internal_discord.py`. Proaktive Nachrichten laufen über die Tabelle `outbox`, die der
+  Discord-Worker abfragt (`pump_once`), nicht über einen Push.
+- **API-02:** Ohne Web-Login wird die Oberfläche nicht an eine Netzwerkadresse gebunden, der Start
+  **gelingt aber** (nur Loopback, mit Warnung) statt zu verweigern – das Telefon soll auch bei einer
+  vergessenen Einstellung laufen.
+- TLS-Zertifikat der Weboberfläche erzeugt `api/tls.py` mit `openssl req` (EC prime256v1, Schlüssel
+  `0600`) statt mit einer Python-Bibliothek.
+- `data/run/phone-status.json` bleibt als Statusdatei des Telefons erhalten (Plan: eine gemeinsame
+  Statusdatei); der Hauptprozess führt sie in `/api/system/status` zusammen.
+
+**Telefon:**
+
+- `phone/media.py` führt die Schnittstelle `CallMedia` (Alias `MediaChannel`, ADR-036) ein; `SipMedia`
+  und `DiscordMedia` implementieren sie. `CallSession` kennt kein PJSUA2 mehr.
+- Neue Ereignisse im Zustandsautomaten: `BargeIn` (Reinsprechen mit `CallSession.barge_in(heard)`),
+  `TimerAlarm` (Eieruhr, Ansage `timer_done`) und die Ansage `first_prompt`.
+- **Eieruhr am Telefon:** `SkillResult.start_timer` → `Reply.meta["timer"]` →
+  `CallSession._arm_kitchen_timer` → Signalton + `timer_done`.
+- Whisper bekommt einen `initial_prompt` aus der Kontextliste (Standard ersetzt, in
+  `config/moritz-agent.example.toml` dokumentiert); `hotwords` ist **nicht** gemessen.
+- `assets/data/sprache/aussprache.toml` (Tabellen `woerter`, `buchstaben`, `ausdruecke`) steuert die
+  Aussprache für Piper; Einheiten, Minus, Bereiche, Geldbeträge (Decimal-Rundung), Postleitzahlen
+  (Ziffern) und „ein/eine“ nach Geschlecht stehen in `phone/audio/textnorm.py`.
+
+**Discord:**
+
+- Befehle werden **global** registriert (Gilde und global gleichzeitig würden Duplikate erzeugen);
+  der Fingerabdruck der Befehlsliste liegt über die interne API in der Datenbank, damit nicht bei jedem
+  Start neu synchronisiert wird (`python -m moritz_agent.discord sync-commands` erzwingt es). Befehle für
+  inaktive Funktionen werden nicht registriert.
+- Sprachnachrichten werden als **OGG-Audiodatei** gesendet; das native „Sprachnachricht“-Flag ist
+  nicht verifiziert (nur im Spike prüfbar, C.3).
+- `discord.voice`-Überschreibungen aus [14 §9](14-discord.md#9-sprachkanal) (z. B. Schwellen) sind nicht
+  umgesetzt; die Werte stehen im Code als Konstanten (`BargeInDetector` ≥ 300 ms usw.).
+- `discord-ext-voice-recv` ist **nicht** in `requirements/discord.lock` (DAVE-Entschlüsselung dort
+  unverifiziert); wer es testet, installiert es von Hand ([`requirements/README.md`](../../requirements/README.md)).
+- ADR-036 behält den Status „vorläufig – Spike P1-32 offen“.
+- Das Profilbild `assets/branding/discord-avatar.png` erzeugt `scripts/build_branding.py`.
+
+### C.3 Nicht in der Entwicklungsumgebung prüfbar
+
+Alles hier ist **ungeprüft** und gehört in die Abnahmen P1-18, P1-30, P1-32 und P1-42:
+
+1. Verbindung zum echten Discord-Gateway, Registrierung der Slash-Befehle, Benutzer-Installation,
+   Sichtbarkeit von Antworten (ephemeral).
+2. Sprachkanal: Senden mit DAVE, **Empfangen** mit DAVE (Spike P1-32), Dauerlauf 60 min.
+3. Whisper und Piper in echt: Wortfehlerrate, Hörtest der Aussprache-Liste, `initial_prompt` gegen
+   `hotwords`, Latenzen ([09 §4](09-tests-abnahme.md)) – die Latenztabelle ist **ungemessen**.
+4. Echte Dienste: Open-Meteo, Bright Sky, DWD, NINA, PEGELONLINE, EZB, Energy-Charts, OpenLigaDB,
+   GeoNames – das Netz-Wächter-Testset (`pytest -m network`) prüft Form und Plausibilität, wurde aber
+   wegen fehlenden Internets nur als „übersprungen“ gesehen.
+5. KoboldCpp-Tool-Call-Vorlage und echtes Sprachmodell (Agent-Schleife hinter den Skills).
+6. SIP-Registrierung, Klingeln und Audio auf Sophie-1 (P1-18).

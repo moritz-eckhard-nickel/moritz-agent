@@ -1,0 +1,142 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Gesetzliche Feiertage in Deutschland je Bundesland (docs/plan/13-sofortauskuenfte.md §8.1).
+# rule: fixed:MM-TT | easter:<Tage ab Ostersonntag> | buss (Mittwoch vor dem 23. November)
+# states: "all" oder Liste der Länderkürzel. Hessen nach dem Hessischen Feiertagsgesetz
+# (inkl. Oster- und Pfingstsonntag, die immer auf einen Sonntag fallen).
+# Vor Inbetriebnahme gegen den amtlichen Kalender prüfen; Änderungen per PR mit Test.
+
+[states]
+BW = "Baden-Württemberg"
+BY = "Bayern"
+BE = "Berlin"
+BB = "Brandenburg"
+HB = "Bremen"
+HH = "Hamburg"
+HE = "Hessen"
+MV = "Mecklenburg-Vorpommern"
+NI = "Niedersachsen"
+NW = "Nordrhein-Westfalen"
+RP = "Rheinland-Pfalz"
+SL = "Saarland"
+SN = "Sachsen"
+ST = "Sachsen-Anhalt"
+SH = "Schleswig-Holstein"
+TH = "Thüringen"
+
+[[holiday]]
+id = "neujahr"
+name = "Neujahr"
+rule = "fixed:01-01"
+states = "all"
+
+[[holiday]]
+id = "heilige_drei_koenige"
+name = "Heilige Drei Könige"
+rule = "fixed:01-06"
+states = ["BW", "BY", "ST"]
+
+[[holiday]]
+id = "frauentag"
+name = "der Internationale Frauentag"
+rule = "fixed:03-08"
+states = ["BE", "MV"]
+
+[[holiday]]
+id = "karfreitag"
+name = "Karfreitag"
+rule = "easter:-2"
+states = "all"
+
+[[holiday]]
+id = "ostersonntag"
+name = "Ostersonntag"
+rule = "easter:0"
+states = ["BB", "HE"]
+sunday = true
+
+[[holiday]]
+id = "ostermontag"
+name = "Ostermontag"
+rule = "easter:1"
+states = "all"
+
+[[holiday]]
+id = "tag_der_arbeit"
+name = "der Tag der Arbeit"
+rule = "fixed:05-01"
+states = "all"
+
+[[holiday]]
+id = "himmelfahrt"
+name = "Christi Himmelfahrt"
+rule = "easter:39"
+states = "all"
+
+[[holiday]]
+id = "pfingstsonntag"
+name = "Pfingstsonntag"
+rule = "easter:49"
+states = ["BB", "HE"]
+sunday = true
+
+[[holiday]]
+id = "pfingstmontag"
+name = "Pfingstmontag"
+rule = "easter:50"
+states = "all"
+
+[[holiday]]
+id = "fronleichnam"
+name = "Fronleichnam"
+rule = "easter:60"
+states = ["BW", "BY", "HE", "NW", "RP", "SL"]
+note = "In Teilen von Sachsen und Thüringen gilt er nur in einigen Gemeinden."
+
+[[holiday]]
+id = "mariae_himmelfahrt"
+name = "Mariä Himmelfahrt"
+rule = "fixed:08-15"
+states = ["SL"]
+note = "In Bayern nur in Gemeinden mit überwiegend katholischer Bevölkerung."
+
+[[holiday]]
+id = "weltkindertag"
+name = "der Weltkindertag"
+rule = "fixed:09-20"
+states = ["TH"]
+
+[[holiday]]
+id = "einheit"
+name = "der Tag der Deutschen Einheit"
+rule = "fixed:10-03"
+states = "all"
+
+[[holiday]]
+id = "reformationstag"
+name = "der Reformationstag"
+rule = "fixed:10-31"
+states = ["BB", "HB", "HH", "MV", "NI", "SN", "ST", "SH", "TH"]
+
+[[holiday]]
+id = "allerheiligen"
+name = "Allerheiligen"
+rule = "fixed:11-01"
+states = ["BW", "BY", "NW", "RP", "SL"]
+
+[[holiday]]
+id = "buss_und_bettag"
+name = "der Buß- und Bettag"
+rule = "buss"
+states = ["SN"]
+
+[[holiday]]
+id = "weihnachtstag1"
+name = "der erste Weihnachtstag"
+rule = "fixed:12-25"
+states = "all"
+
+[[holiday]]
+id = "weihnachtstag2"
+name = "der zweite Weihnachtstag"
+rule = "fixed:12-26"
+states = "all"

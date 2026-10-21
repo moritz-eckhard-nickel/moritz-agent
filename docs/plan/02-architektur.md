@@ -18,6 +18,7 @@ Begründungen der hier getroffenen Entscheidungen stehen in
 │  ├─ Storage (SQLite WAL)                         in-process                        │
 │  │                                                                                 │
 │  ├─► Child: Phone-Worker  (PJSUA2, VAD, STT, TTS)  SIP :5060/udp, RTP 40000-40199  │
+│  ├─► Child: Discord-Worker (discord.py, Sprache)    nur ausgehend: TCP 443, UDP    │
 │  ├─► Child: Inference-Worker (koboldcpp.py, CUDA)  127.0.0.1:<dyn>                 │
 │  └─► Child: Search-Worker (SearXNG)                127.0.0.1:<dyn>                 │
 └────────────────────────────────────────────┬───────────────────────────────────────┘
@@ -106,6 +107,7 @@ moritz-agent/                      (Repo-Wurzel = Installationsverzeichnis /opt/
 | **Inference-Worker** (`koboldcpp.py --skiplauncher …`) | Supervisor | `127.0.0.1:<dyn>` | Backoff 2 s → 60 s, unbegrenzt | Phone: Fehleransage; API: 503 |
 | **Search-Worker** (SearXNG aus `third_party/searxng` via `granian`) | Supervisor | `127.0.0.1:<dyn>` | Backoff 2 s → 60 s | Fallback-Kette: KoboldCpp-Websuche → Wikipedia → ehrliche Ansage (ADR-020) |
 | **Phone-Worker** (`python -m moritz_agent.phone.worker`) | Supervisor | SIP `0.0.0.0:5060/udp`, RTP 40000–40199/udp | Backoff 2 s → 60 s; nie während aktivem Anruf neu starten (außer bei Crash) | Kein Anruf möglich; Status „Phone down“ |
+| **Discord-Worker** (`python -m moritz_agent.discord run`, [14](14-discord.md)) | Supervisor (bis P1-04: `moritz-agent run`) | nur ausgehend: Gateway/REST TCP 443, Sprache UDP | Backoff 2 s → 60 s; `nice +5` | Discord nicht erreichbar; Telefon unberührt; Status „Discord down“ |
 | *(Part 6)* Remote-Browser-Client | Agent bei Bedarf | – | on demand | Tool „unavailable“ |
 
 **Kommunikation:**
@@ -231,7 +233,8 @@ laufen; die harte Grenze setzt der LXC (`cores: 18`), nicht die Konfiguration.
 
 ## 6. Inference-Warteschlange
 
-- `asyncio.PriorityQueue` mit Prioritäten `PHONE=0`, `INTERACTIVE=1`, `BACKGROUND=2`.
+- `asyncio.PriorityQueue` mit Prioritäten `PHONE=0`, `VOICE=1` (Discord-Sprachkanal, DISCORD-10),
+  `INTERACTIVE=2` (Discord-Text, WebUI), `BACKGROUND=3`.
 - KoboldCPP läuft mit `--parallelrequests 1` (Default) → eine Generierung gleichzeitig.
 - Kommt ein PHONE-Request, während ein BACKGROUND-Request **läuft**: `abort`, Background
   wird mit Markierung „unterbrochen“ neu eingereiht. Läuft ein INTERACTIVE-Request: warten
@@ -304,6 +307,10 @@ skill_misses(id INTEGER PRIMARY KEY, text TEXT, best_skill TEXT NULL, score REAL
 Bis zur Datenbank (P1-06) stehen Skill-Aufrufe im Log und Notizen/Fehltreffer in `data/` (JSON, 0600).
 Wettercaches liegen als Dateien unter `data/cache/skills/` (13 §3.6), nicht in SQLite.
 
+Discord (Block D): `call_turns` und `tool_calls` bekommen eine Spalte `channel` (`phone|discord|web`);
+neue Tabellen `discord_principals`, `discord_subscriptions`, `reminders`, `command_registry`
+([14 §16](14-discord.md#16-daten-und-logs)). Bis zur Datenbank liegen Abos und Erinnerungen in `data/discord/` (JSON, 0600).
+
 Spätere Tabellen (Part 3+): `conversations`, `messages`, `agents`, `tasks`,
 `research_runs`, `sources`, `files`, `memories`, `settings`, `models`.
 
@@ -335,6 +342,7 @@ bei jedem Start neu erzeugt), nicht über das Web-Passwort.
 | SIP | `0.0.0.0:5060` | UDP | nur Registrar `192.168.1.176` (Firewall + PHONE-09) |
 | RTP/RTCP | `0.0.0.0:40000–40199` | UDP | Asterisk (bei `direct_media=no`) |
 | SSH → Sandbox | ausgehend | TCP 22 | Redemption-1 (Part 4) |
+| Discord ([14](14-discord.md)) | ausgehend | TCP 443 (Gateway WSS, REST, CDN), UDP zu Discords Sprachservern | kein eingehender Port, keine öffentliche Adresse (DISCORD-11) |
 | Datendienste der Sofortauskünfte | ausgehend | TCP 443 (HTTPS) | nur Hosts der Allowlist im HTTP-Client (ADR-032): `api.open-meteo.com`, `air-quality-api.open-meteo.com`, `geocoding-api.open-meteo.com`, `api.brightsky.dev`, `opendata.dwd.de`, `warnung.bund.de`, `www.pegelonline.wsv.de`, `www.ecb.europa.eu`, `api.energy-charts.info`, `creativecommons.tankerkoenig.de`, `api.openligadb.de`, Nachrichtenquelle, iCal-Host – je nach Aktivierung |
 
 ## 11. Fehlerisolierung (Matrix)
@@ -349,6 +357,8 @@ bei jedem Start neu erzeugt), nicht über das Web-Passwort.
 | Ansagen-Cache fehlt/kaputt | Worker-Self-Test | **nicht registrieren**, Status rot (ADR-011) | nicht erreichbar |
 | Sandbox offline | SSH-Test | Tool „unavailable“ | keine Auswirkung |
 | Wetter-/Datendienst nicht erreichbar oder unplausibel | Timeout 3 s / HTTP-Fehler / Schemaprüfung | Rückfallquelle, Cache bis 6 h, Backoff; Status `degraded` | Antwort aus Cache mit Altersangabe oder ehrliche Absage (13 §3.7); Anruf läuft weiter |
+| Discord-Worker crasht / Gateway weg | Prozess-Exit / Gateway-Heartbeat | Neustart mit Backoff, Wiederaufnahme der Sitzung | keine Auswirkung |
+| DAVE-Sprachempfang fehlerhaft | Entschlüsselungsfehler, häufige Reconnects | Sprachkanal im Modus „nur sprechen“ (ADR-036) | keine Auswirkung |
 | Gazetteer/Datendateien fehlen oder kaputt | Selbsttest beim Start | Orts-Skills `failed`, Rest läuft | „Orte kann ich gerade nicht auflösen“; Wetter für den Heimatort aus den konfigurierten Koordinaten, falls gesetzt |
 | Main crasht | systemd | Neustart aller Worker | Anruf bricht ab |
 

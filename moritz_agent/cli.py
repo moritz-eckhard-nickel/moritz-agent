@@ -8,30 +8,35 @@ import sys
 from pathlib import Path
 
 from moritz_agent import __version__
-from moritz_agent.config.secrets import PasswordsFileError, load_passwords
 
 
 def _check_config(args: argparse.Namespace) -> int:
-    """Validate passwords.txt without printing any values (P1-03 extends this to TOML)."""
-    try:
-        passwords = load_passwords(Path(args.passwords))
-    except PasswordsFileError as exc:
-        print(f"passwords.txt: FEHLER – {exc}", file=sys.stderr)
+    """Validate config/moritz-agent.toml and passwords.txt – without printing any value (CFG-05)."""
+    from moritz_agent.config.settings import REPO_ROOT
+    from moritz_agent.config.validate import format_report, validate_files
+
+    config = Path(args.config) if args.config else None
+    report = validate_files(config, Path(args.passwords), REPO_ROOT, fix_permissions=False)
+    for line in format_report(report):
+        print(line, file=sys.stderr if report.errors else sys.stdout)
+    if not report.ok:
+        print("Konfiguration: FEHLER – bitte die Meldungen oben beheben.", file=sys.stderr)
         return 1
-    print("passwords.txt: OK")
+    settings, passwords = report.settings, report.passwords
+    assert settings is not None and passwords is not None
+    print("Konfiguration: OK")
     print(f"  SIP-Konto gesetzt, Registrar {passwords.sip.registrar}:{passwords.sip.port}")
     print(f"  Web-Login: {'aktiv' if passwords.web_login.enabled else 'nicht eingerichtet'}")
     print(f"  Sandbox-SSH: {'aktiv' if passwords.sandbox_ssh.enabled else 'deaktiviert'}")
-    if passwords.sip.password.reveal() == "agent":
-        print("  WARNUNG: SIP-Passwort ist der Startwert – starkes Passwort empfohlen.")
+    print(f"  Weboberfläche: {settings.server.host}:{settings.server.port}")
     return 0
 
 
 def _run(_args: argparse.Namespace) -> int:
-    """Start the service. Until the supervisor (P1-04) exists, that is the phone worker."""
-    from moritz_agent.phone.__main__ import main as phone_main
+    """Start the service: main process with the phone worker, search and model as children."""
+    from moritz_agent.supervisor import run
 
-    return phone_main(["run"])
+    return run()
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -44,6 +49,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     check = sub.add_parser("check-config", help="Konfiguration prüfen, ohne Werte auszugeben")
     check.add_argument("--passwords", default="passwords.txt", help="Pfad zu passwords.txt")
+    check.add_argument("--config", default=None, help="Pfad zu config/moritz-agent.toml")
     check.set_defaults(func=_check_config)
 
     # Handled in main() before parsing: everything after "phone" belongs to moritz_agent.phone.

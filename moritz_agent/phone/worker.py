@@ -21,7 +21,7 @@ from moritz_agent import __version__
 from moritz_agent.config.secrets import Passwords, PasswordsFileError, load_passwords
 from moritz_agent.config.settings import REPO_ROOT, Settings, SettingsError, load_settings
 from moritz_agent.logging_setup import get_logger, setup_logging
-from moritz_agent.phone import dialogue
+from moritz_agent.phone import dialogue, remote
 from moritz_agent.phone.audio.announcements import AnnouncementStore, load_catalog
 from moritz_agent.phone.audio.factory import build_stt, build_tts, build_vad
 from moritz_agent.phone.audio.stt import SpeechToText, Transcript
@@ -31,6 +31,9 @@ from moritz_agent.phone.control import PhoneControl
 from moritz_agent.phone.dialogue import CallSession, SessionDeps
 from moritz_agent.phone.responder import Responder, TestResponder
 from moritz_agent.phone.sip import SipCallMedia, SipPhone
+from moritz_agent.skills.providers import Providers
+from moritz_agent.skills.responder import SkillResponder
+from moritz_agent.skills.services import build_services
 
 log = get_logger("phone")
 PROMPT_CATALOG = "assets/audio/prompts.de.toml"
@@ -68,7 +71,6 @@ class PhoneWorker:
     ) -> None:
         self.options = options
         self.root = root
-        self.responder: Responder = responder or TestResponder()
         self.settings: Settings = load_settings(options.config, root)
         self.passwords: Passwords = load_passwords(
             options.passwords or root / self.settings.general.passwords_file
@@ -77,6 +79,18 @@ class PhoneWorker:
             self.settings.phone.allowed_source_ips = options.allow
         if options.sip_port is not None:
             self.settings.phone.local_sip_port = options.sip_port
+        # Started by the supervisor: every utterance goes to the main process (instant answers,
+        # search, language model). Started alone (./test-1.sh): instant answers first (time,
+        # calendar, weather, …), then the test answer.
+        self.responder: Responder = (
+            responder
+            or remote.from_environment()
+            or SkillResponder(
+                build_services(self.settings, root, providers=Providers), fallback=TestResponder()
+            )
+        )
+        if isinstance(self.responder, SkillResponder):
+            self.responder.svc.secrets = dict(self.passwords.optional_services)
         self.vad: SileroVad | None = None
         self.stt: SpeechToText | None = None
         self.tts: TtsService | None = None
@@ -168,6 +182,7 @@ class PhoneWorker:
                 self.settings.phone.local_sip_port,
             )
         log.info("Nikita ist bereit (Strg+C beendet).")
+        self._start_skills()
 
         heartbeat = asyncio.ensure_future(self._heartbeat())
         try:
@@ -204,6 +219,7 @@ class PhoneWorker:
             if self.sip is None:
                 continue
             state = self.sip.status()
+            state["skills"] = self._skills_status()
             await asyncio.to_thread(self.control.write_status, state)
             if self.control.draining() != draining:
                 draining = not draining
@@ -233,6 +249,12 @@ class PhoneWorker:
         if self.options.sip_port is not None:
             settings.phone.local_sip_port = self.options.sip_port
         self.settings, self.passwords = settings, passwords
+        if isinstance(self.responder, SkillResponder):
+            self.responder.svc.settings = settings
+            self.responder.svc.secrets = dict(passwords.optional_services)
+            if isinstance(self.responder.svc.providers, Providers):
+                self.responder.svc.providers.refresh_config()
+                self._start_skills()
         setup_logging(
             settings.logging.level, self.root / settings.logging.file, passwords.secret_values()
         )
@@ -240,7 +262,41 @@ class PhoneWorker:
             self.sip.reload(passwords.sip, settings.phone)
         log.info("Konfiguration neu geladen")
 
+    def _start_skills(self) -> None:
+        """Keep the home weather and warnings warm in the background (docs/plan/13 §3.5)."""
+        if not isinstance(self.responder, SkillResponder):
+            return
+        providers = self.responder.svc.providers
+        if isinstance(providers, Providers) and self.settings.skills.online:
+            providers.start_prefetch()
+
+    def _skills_status(self) -> dict:
+        """What the status file says about the instant answers: home place and data services."""
+        if not isinstance(self.responder, SkillResponder):
+            return {}
+        from moritz_agent.skills.slots.where import home_place
+
+        svc = self.responder.svc
+        home = home_place(svc)
+        providers = svc.providers
+        return {
+            "home": {
+                "name": home.name,
+                "postal_code": home.postal_codes[0] if home.postal_codes else "",
+                "latitude": round(home.lat, 2),
+                "longitude": round(home.lon, 2),
+            },
+            "online": self.settings.skills.online,
+            "services": providers.snapshot() if isinstance(providers, Providers) else {},
+        }
+
     async def _shutdown(self) -> None:
+        if isinstance(self.responder, remote.RemoteResponder):
+            await self.responder.aclose()
+        if isinstance(self.responder, SkillResponder) and isinstance(
+            self.responder.svc.providers, Providers
+        ):
+            await self.responder.svc.providers.aclose()
         if self.sip is not None:
             await asyncio.to_thread(self.sip.stop)
             await asyncio.to_thread(self.control.write_stopped)

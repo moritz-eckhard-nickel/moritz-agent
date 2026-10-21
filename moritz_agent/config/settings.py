@@ -10,9 +10,17 @@ from __future__ import annotations
 
 import tomllib
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 LOCAL_CONFIG_NAME = "moritz-agent.toml"
@@ -33,6 +41,7 @@ class General(_Section):
     data_dir: str = "data"
     models_dir: str = "models"
     passwords_file: str = "passwords.txt"
+    config_poll_s: int = Field(0, ge=0)
 
 
 class Server(_Section):
@@ -55,6 +64,7 @@ class Logging(_Section):
 
 
 class Inference(_Section):
+    enabled: bool = True
     koboldcpp_script: str = "koboldcpp.py"
     model: str = "models/llm/Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"
     context_size: int = Field(4096, ge=512)
@@ -79,6 +89,10 @@ class Search(_Section):
     max_results: int = Field(5, ge=1, le=20)
     language: str = "de-DE"
     safesearch: int = Field(0, ge=0, le=2)
+    searxng_venv: str = "runtime/searxng-venv"
+    searxng_source: str = "third_party/searxng"
+    searxng_settings: str = "config/searxng/settings.yml"
+    searxng_startup_timeout_s: float = Field(90, gt=0)
 
 
 class Vad(_Section):
@@ -99,7 +113,7 @@ class Stt(_Section):
     cpu_threads: int = Field(8, ge=0)
     no_speech_threshold: float = 0.6
     min_avg_logprob: float = -1.0
-    initial_prompt: str = "Nikita, Moritz, Hessen, Frankfurt."
+    initial_prompt: str = "Nikita, Moritz, Weilburg, Limburg, Lahn, Wetzlar, Hessen, Frankfurt, Wetter, Postleitzahl, Grad."
 
 
 class PiperSettings(_Section):
@@ -171,7 +185,23 @@ class AgentPhone(_Section):
     max_tool_steps: int = Field(3, ge=1)
     max_answer_tokens: int = Field(160, ge=16)
     temperature: float = Field(0.3, ge=0, le=2)
-    tools: list[str] = ["get_current_time", "web_search"]
+    deadline_s: float = Field(15, gt=0)
+    max_sentences: int = Field(3, ge=1, le=6)
+    tools: list[str] = [
+        "get_current_time",
+        "web_search",
+        "get_weather",
+        "get_warnings",
+        "get_pollen",
+        "get_air_quality",
+        "get_sun_moon",
+        "calendar_info",
+        "calculate",
+        "money_info",
+        "regional_info",
+        "place_info",
+        "everyday_advice",
+    ]
     system_prompt_file: str = "moritz_agent/agent/prompts/phone.de.md"
 
 
@@ -190,8 +220,228 @@ class Fastpaths(_Section):
     state: str = "HE"
 
 
+class SkillsHome(_Section):
+    postal_code: str = "35781"
+    name: str = "Weilburg"
+    state: str = "HE"
+    latitude: float = Field(0.0, ge=-90, le=90)  # 0 = take it from the gazetteer
+    longitude: float = Field(0.0, ge=-180, le=180)
+    region_places: list[str] = ["Limburg an der Lahn", "Wetzlar"]
+
+
+class SkillsTime(_Section):
+    spoken_style: Literal["digital", "umgangssprachlich"] = "digital"
+    quarter_dialect: bool = True
+
+
+class SkillsCalendar(_Section):
+    workdays: list[int] = [1, 2, 3, 4, 5]  # ISO weekdays
+
+
+class SkillsWeather(_Section):
+    provider: Literal["open-meteo"] = "open-meteo"
+    fallback_provider: Literal["brightsky", ""] = "brightsky"
+    open_meteo_url: str = "https://api.open-meteo.com"
+    brightsky_url: str = "https://api.brightsky.dev"
+    model: str = "best_match"
+    forecast_days: int = Field(10, ge=1, le=16)
+    past_days: int = Field(3, ge=0, le=7)
+    coordinate_decimals: int = Field(2, ge=0, le=4)
+    cache_current_minutes: int = Field(10, ge=1)
+    cache_forecast_minutes: int = Field(30, ge=1)
+    max_stale_hours: int = Field(6, ge=0)
+    prefetch_home: bool = True
+    prefetch_interval_minutes: int = Field(30, ge=5)
+    mention_source: Literal["always", "first", "on_request"] = "on_request"
+
+
+class SkillsWarnings(_Section):
+    enabled: bool = True
+    sources: list[Literal["dwd", "nina"]] = ["dwd", "nina"]
+    announce_on_greeting: Literal["off", "moderate", "severe", "extreme"] = "severe"
+    refresh_minutes: int = Field(10, ge=1)
+    nina_ars: str = Field("065330000000", pattern=r"^(\d{12})?$")  # district key for NINA, "" = off
+
+
+class SkillsPollen(_Section):
+    enabled: bool = True
+    dwd_partregion: str = "Nordhessen und hessische Mittelgebirge"
+    allergens: list[str] = []
+
+
+class SkillsToggle(_Section):
+    enabled: bool = True
+
+
+class SkillsWater(_Section):
+    enabled: bool = True
+    river: str = "LAHN"
+    station: str = "auto"
+
+
+class SkillsWaste(_Section):
+    enabled: bool = False
+    ics_url: str = ""
+    ics_file: str = ""
+
+
+class SkillsMoney(_Section):
+    currency: bool = True
+    electricity: bool = True
+    bidding_zone: str = "DE-LU"
+    fuel: bool = False
+    fuel_type: Literal["e5", "e10", "diesel"] = "e10"
+    fuel_radius_km: float = Field(5, gt=0, le=25)
+
+
+class SkillsFootball(_Section):
+    enabled: bool = False
+    team: str = "Eintracht Frankfurt"
+    league: str = "bl1"
+
+
+class SkillsNews(_Section):
+    enabled: bool = False
+    max_headlines: int = Field(3, ge=1, le=10)
+
+
+class SkillsNotes(_Section):
+    enabled: bool = False
+    retention_days: int = Field(30, ge=1)
+
+
+class SkillsSpelling(_Section):
+    alphabet: Literal["din5009", "traditionell"] = "din5009"
+
+
+class SkillsTimer(_Section):
+    enabled: bool = True
+    max_minutes: int = Field(15, ge=1, le=180)
+
+
+class Skills(_Section):
+    """Instant answers without the language model (docs/plan/13-sofortauskuenfte.md)."""
+
+    enabled: bool = True
+    disabled: list[str] = []
+    online: bool = True
+    http_connect_timeout_s: float = Field(1.5, gt=0)
+    http_timeout_s: float = Field(3.0, gt=0)
+    cache_dir: str = "data/cache/skills"
+    max_sentences: int = Field(3, ge=1, le=6)
+    answer_variation: bool = True
+    store_misses: bool = True
+    home: SkillsHome = SkillsHome()
+    time: SkillsTime = SkillsTime()
+    calendar: SkillsCalendar = SkillsCalendar()
+    weather: SkillsWeather = SkillsWeather()
+    warnings: SkillsWarnings = SkillsWarnings()
+    pollen: SkillsPollen = SkillsPollen()
+    air: SkillsToggle = SkillsToggle()
+    advice: SkillsToggle = SkillsToggle()
+    water: SkillsWater = SkillsWater()
+    waste: SkillsWaste = SkillsWaste()
+    money: SkillsMoney = SkillsMoney()
+    football: SkillsFootball = SkillsFootball()
+    news: SkillsNews = SkillsNews()
+    notes: SkillsNotes = SkillsNotes()
+    spelling: SkillsSpelling = SkillsSpelling()
+    fun: SkillsToggle = SkillsToggle()
+    timer: SkillsTimer = SkillsTimer()
+
+    @field_validator("calendar", mode="after")
+    @classmethod
+    def _workdays_valid(cls, value: SkillsCalendar) -> SkillsCalendar:
+        if not value.workdays or any(day < 1 or day > 7 for day in value.workdays):
+            raise ValueError("workdays must be ISO weekdays 1 (Monday) … 7 (Sunday)")
+        return value
+
+
 class Sandbox(_Section):
     connect_timeout_s: int = Field(10, ge=1)
+
+
+def _ids(value: object) -> object:
+    """Discord ids are numbers too big for some tools: accept numbers, always keep text."""
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): str(item) for key, item in value.items()}
+    return value
+
+
+_TIME_RANGE = r"^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$"
+IdList = Annotated[list[str], BeforeValidator(_ids)]
+
+
+class DiscordRateLimits(_Section):
+    owner_per_minute: int = Field(30, ge=1)
+    trusted_per_minute: int = Field(10, ge=1)
+    guest_per_minute: int = Field(3, ge=1)
+
+
+class DiscordActivities(_Section):
+    enabled: bool = True
+    rotate_minutes: list[int] = [7, 15]
+    situational: bool = True
+    night: str = Field("23:00-06:00", pattern=_TIME_RANGE)
+
+    @field_validator("rotate_minutes")
+    @classmethod
+    def _range(cls, value: list[int]) -> list[int]:
+        if len(value) != 2 or value[0] < 5 or value[1] < value[0]:
+            raise ValueError("rotate_minutes: [von, bis] mit mindestens 5 Minuten")
+        return value
+
+
+class DiscordVoice(_Section):
+    enabled: bool = True
+    default_channel_id: str = ""
+    auto_join: bool = False
+    greeting: Literal["phone"] = "phone"
+    after_goodbye: Literal["leave", "stay"] = "leave"
+    on_silence: Literal["rest", "leave"] = "rest"
+    idle_leave_minutes: int = Field(10, ge=1)
+    barge_in: bool = True
+    max_session_minutes: int = Field(120, ge=1)
+    stt_threads: int = Field(4, ge=1)
+    unload_after_minutes: int = Field(10, ge=1)
+    stage_fallback: bool = False
+
+
+class DiscordVoiceMessages(_Section):
+    enabled: bool = True
+    reply_with_voice: Literal["mirror", "always", "never"] = "mirror"
+    max_seconds: int = Field(300, ge=5, le=900)
+
+
+class DiscordNotify(_Section):
+    target: Literal["channel", "dm"] = "channel"
+    warnings_default_level: Literal["moderate", "severe", "extreme"] = "severe"
+    system_alerts: bool = True
+
+
+class Discord(_Section):
+    enabled: bool = False
+    owner_user_ids: IdList = []
+    trusted_user_ids: IdList = []
+    allowed_guild_ids: IdList = []
+    chat_channel_ids: IdList = []
+    style: Literal["cute", "normal"] = "cute"
+    startup_message: bool = True
+    name_trigger: bool = True
+    guest_mode: Literal["off", "skills"] = "off"
+    unknown_users: Literal["ignore", "notice"] = "ignore"
+    ephemeral_in_foreign_guilds: bool = True
+    call_summaries: Literal["off", "topics", "transcript"] = "off"
+    phone_extensions: Annotated[dict[str, str], BeforeValidator(_ids)] = {}
+    quiet_hours: str = Field("22:00-07:00", pattern=_TIME_RANGE)
+    max_message_chars: int = Field(4000, ge=100, le=20000)
+    rate_limits: DiscordRateLimits = DiscordRateLimits()
+    activities: DiscordActivities = DiscordActivities()
+    voice: DiscordVoice = DiscordVoice()
+    voice_messages: DiscordVoiceMessages = DiscordVoiceMessages()
+    notify: DiscordNotify = DiscordNotify()
 
 
 class Settings(_Section):
@@ -204,7 +454,9 @@ class Settings(_Section):
     agent: Agent = Agent()
     storage: Storage = Storage()
     fastpaths: Fastpaths = Fastpaths()
+    skills: Skills = Skills()
     sandbox: Sandbox = Sandbox()
+    discord: Discord = Discord()
 
     def resolve(self, path: str, root: Path = REPO_ROOT) -> Path:
         """Resolve a configured path relative to the installation directory."""

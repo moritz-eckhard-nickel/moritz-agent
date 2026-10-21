@@ -1,6 +1,6 @@
 # 13 – Sofortauskünfte: Uhrzeit, Datum, Wetter & Co. ohne Sprachmodell
 
-Stand: 18.10.2026 · Tickets: [04 Block S](04-part1-umsetzung.md#block-s--sofortauskünfte-vor-dem-sprachmodell)
+Stand: 18.10.2026 (Umsetzungsstand und Abweichungen: [04 Anhang C](04-part1-umsetzung.md#anhang-c--umsetzungsstand-und-abweichungen-stand-21102026)) · Tickets: [04 Block S](04-part1-umsetzung.md#block-s--sofortauskünfte-vor-dem-sprachmodell)
 (P1-19 … P1-30) · Anforderungen: [01 §6a](01-anforderungen.md#6a-sofortauskünfte-skill) (SKILL-01 … SKILL-35) ·
 Entscheidungen: ADR-029 … ADR-032 ([03](03-entscheidungen.md)).
 
@@ -176,7 +176,7 @@ moritz_agent/skills/
 │   ├── openligadb.py  Fußball
 │   ├── news.py        Schlagzeilen (optional)
 │   └── ics.py         Abfallkalender (iCal-Datei/-Link)
-├── astro/             Sonne (astral), Mond, Jahreszeiten (Meeus)
+├── astro/             Sonne, Mond, Jahreszeiten (eigene Rechnung nach NOAA/Meeus, kein `astral`)
 ├── calendar/          Feiertage DE/Länder, Schulferien HE, Arbeits-/Brückentage, Sonderdaten
 ├── render/            deutsche Formulierungen: Wetter, Zeiträume, Listen, Rundung, Variation
 ├── catalog/           die Skills selbst, gruppiert wie §6 (time.py, calendar.py, weather.py, …)
@@ -216,6 +216,9 @@ class SkillResult:
     followup: FollowupState | None = None    # was eine Folgefrage erben darf
     detail: str | None = None                # Antwort auf „Mehr Details“
     stale_s: int | None = None               # Datenalter, falls aus altem Cache
+    markdown: str | None = None              # geschriebene Form für Discord/WebUI (ab P1-31, 14 §4.1)
+    card: Card | None = None                 # strukturierte Karte (Titel, Felder, Farbe, Quelle) → Embed
+    actions: tuple[Action, ...] = ()         # Folgeaktionen („Morgen“, „Wochenende“) → Knöpfe
 ```
 
 `SkillResponder.respond()` liefert das bestehende `Reply` (Text, Ansage, Auflegen) – die
@@ -381,7 +384,7 @@ abhängt; sonst plausibelste Deutung **mit Nennung** in der Antwort.
    „Frankfurt am Main“, „Limburg an der Lahn“, „Bad Homburg vor der Höhe“).
    - Abgleich in dieser Reihenfolge: exakt → ohne Zusätze („an der Lahn“, „a. d. Lahn“, „(Lahn)“,
      „Bad“, „Sankt/St.“, „im Taunus“) → Ortsteile (GeoNames-Ortsteile, z. B. „Kubach“ → Weilburg-Kubach)
-     → **unscharf** (rapidfuzz ≥ 88) → **phonetisch** (Kölner Phonetik gleich und Länge ± 2).
+     → **unscharf** (`difflib` ≥ 0,88; kein `rapidfuzz`) → **phonetisch** (Kölner Phonetik gleich und Länge ± 2).
    - Unscharfe/phonetische Treffer werden **nie** stillschweigend genommen: Antwort mit Nennung
      („Ich nehme an, du meinst Weilburg: …“) oder Rückfrage, wenn mehrere ähnlich gut sind.
 4. **Mehrdeutige Namen** (Frankfurt, Neustadt, Kirchheim, Limburg …): Score = Namensgleichheit ×
@@ -922,10 +925,10 @@ Sommerzeit (zoneinfo), Jahreszeiten (§8.5).
 
 ### 8.5 Astronomie
 
-- **Sonne:** `astral` (Apache-2.0): Dämmerung (bürgerlich), Auf-/Untergang, Mittag, Höhe, goldene
+- **Sonne:** eigene Rechnung nach NOAA (statt `astral`, siehe 04 Anhang C.2): Dämmerung (bürgerlich), Auf-/Untergang, Mittag, Höhe, goldene
   Stunde; Polarfälle („Dort geht die Sonne heute nicht unter.“).
 - **Mond:** Phasen-Zeitpunkte nach Meeus, *Astronomical Algorithms*, Kap. 49 (Genauigkeit wenige
-  Minuten), Phasenname aus dem Alter; Auf-/Untergang mit `astral`.
+  Minuten), Phasenname aus dem Alter; Auf-/Untergang wie bei der Sonne.
 - **Jahreszeiten:** Tagundnachtgleichen/Sonnenwenden nach Meeus Kap. 27 (Genauigkeit ≈ 1 min);
   meteorologische Jahreszeiten fest (1.3., 1.6., 1.9., 1.12.).
 - Tests gegen veröffentlichte Werte (Sonnenzeiten Weilburg/Frankfurt für 12 Daten, Mondphasen und
@@ -1137,7 +1140,7 @@ erwartet, protokolliert der HTTP-Client grundsätzlich **keine Query-Strings** (
 | `assets/data/geo/de-postcodes.tsv` | PLZ, Ort, Land, Kreis, lat, lon | GeoNames Postal Codes DE, CC BY 4.0 | ≈ 1 MB | `scripts/build_geodata.py` |
 | `assets/data/geo/de-places.tsv` | bewohnte Orte DE mit Einwohnern, Ortsteil → Gemeinde, Kölner Phonetik | GeoNames DE, CC BY 4.0 | ≈ 3–4 MB | dto. |
 | `assets/data/geo/world-cities.tsv` | Städte ≥ 15.000 Einwohner, deutscher Name, Land, Zeitzone, lat, lon | GeoNames cities15000, CC BY 4.0 | ≈ 2 MB | dto. |
-| `assets/data/geo/aliases.de.toml` | eigene Aliasse („Malle“ → Palma, „Mainhattan“ → Frankfurt am Main, Länder → Hauptstadt) | eigen | klein | Hand |
+| `assets/data/geo/aliases.de.toml` | eigene Aliasse („Malle“ → Palma, „Mainhattan“ → Frankfurt am Main, Länder → Hauptstadt; die Antwort nennt dann den Ort: „In Paris …“) | eigen | klein | Hand |
 | `assets/data/kalender/feiertage-de.toml` | Feiertagsregeln je Land | eigen (aus Gesetzen) | klein | Hand + Tests |
 | `assets/data/kalender/schulferien-he.toml` | Ferien Hessen | Hessisches Kultusministerium | klein | Hand, jährlich |
 | `assets/data/wetter/wmo-codes.de.toml` | Wettercodes → Deutsch | eigen | klein | Hand |
@@ -1152,9 +1155,8 @@ erwartet, protokolliert der HTTP-Client grundsätzlich **keine Query-Strings** (
   CLAUDE.md nennt `assets/data/geo/` dann bei den Fremdkomponenten (P1-21).
 - Eigene Datendateien bekommen eine Kopfzeile `# SPDX-License-Identifier: LicenseRef-MSOL-1.1`.
 - Neue Python-Pakete (ADR-019, `requirements/core.in` + Lock mit Hashes, Lizenz in
-  `THIRD_PARTY_NOTICES.md`): `astral` (Apache-2.0, P1-25), `rapidfuzz` (MIT, P1-21), `icalendar`
-  (BSD-2-Clause, P1-27). `httpx` und `pydantic` sind schon da. Wheels für Python 3.12–3.14 werden vor
-  der Aufnahme geprüft (NFR-06).
+  `THIRD_PARTY_NOTICES.md`): **keine** – `astral`, `rapidfuzz` und `icalendar` sind durch eigenen Code
+  ersetzt (siehe [04 Anhang C.2](04-part1-umsetzung.md#c2-abweichungen-vom-plan-und-warum)).
 - RAM: Gazetteer + Indizes ≈ 40–80 MB (in 06 §2.2 nachgetragen, gemessen in P1-21).
 
 ## 12. Datenschutz und Sicherheit
@@ -1263,11 +1265,11 @@ Protokoll `docs/abnahme/sofortauskuenfte-<datum>.md`, Anruf an 999 über die ech
 | --- | --- |
 | Bus/Bahn (RMV, DB) | später mit Schlüssel und Haltestellen von Moritz (Part 7+), eigener Plan |
 | Kalender/Termine (CalDAV) | Part 8+ („Tools später: calendar“, 05) |
-| Erinnerung/Weckruf per Rückruf | **nein** ohne eigene Freigabe: Nikita ruft nie selbst an (PHONE-10) |
+| Erinnerung/Weckruf per Rückruf | **nein** ohne eigene Freigabe: Nikita ruft nie selbst an (PHONE-10) – **auf Discord als Direktnachricht: ja** ([14 §11](14-discord.md#11-proaktive-nachrichten-und-erinnerungen)) |
 | Smart Home („Mach das Licht an“) | **nein** per Telefon (PHONE-46, Caller-ID ist keine Berechtigung) |
 | Regenradar „regnet es in 10 Minuten?“ | KANN: Bright-Sky-Radar (DWD RADOLAN) als Nowcasting, nach Welle C |
 | Wetterkarte, Diagramme | WebUI (Part 2) aus denselben Wetterpaketen |
-| Morgen-Anruf mit Wetter | nein (ausgehend); stattdessen `briefing` bei „Guten Morgen“ |
+| Morgen-Anruf mit Wetter | nein (ausgehend); stattdessen `briefing` bei „Guten Morgen“ und als abonnierbares Morgenbriefing auf Discord (14 §11) |
 | Namenstage, Horoskope | Horoskope nein (unseriös); Namenstage KANN mit gepflegter Liste |
 | Persönliche Orte („bei Oma“, „im Büro“) | Part 8 (Memory), mit Bestätigung |
 | Geburtstage („Wann hat Lisa Geburtstag?“) | Part 8 (Memory) |

@@ -1,0 +1,97 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Schulferien Hessen: erster und letzter Ferientag (docs/plan/13-sofortauskuenfte.md §8.4).
+# Quelle: Hessisches Kultusministerium, https://kultus.hessen.de/schulsystem/ferien/ferientermine
+# (Stand der Übernahme: 20.10.2026, Werte aus Veröffentlichungen, die das Ministerium wiedergeben;
+# bitte vor dem Verlass gegen die Ministeriumsseite prüfen). Bewegliche Ferientage einzelner Schulen
+# sind nicht enthalten. Hessen hat keine Winter- und Pfingstferien.
+# Fehlt ein Zeitraum, antwortet Nikita ehrlich, dass sie dafür noch keine Termine hat.
+
+[[ferien]]
+art = "ostern"
+von = 2026-03-30
+bis = 2026-04-10
+
+[[ferien]]
+art = "sommer"
+von = 2026-06-29
+bis = 2026-08-07
+
+[[ferien]]
+art = "herbst"
+von = 2026-10-05
+bis = 2026-10-17
+
+[[ferien]]
+art = "weihnachten"
+von = 2026-12-23
+bis = 2027-01-12
+
+[[ferien]]
+art = "ostern"
+von = 2027-03-22
+bis = 2027-04-02
+
+[[ferien]]
+art = "sommer"
+von = 2027-06-28
+bis = 2027-08-06
+
+[[ferien]]
+art = "herbst"
+von = 2027-10-04
+bis = 2027-10-16
+
+[[ferien]]
+art = "weihnachten"
+von = 2027-12-23
+bis = 2028-01-11
+
+[[ferien]]
+art = "ostern"
+von = 2028-04-03
+bis = 2028-04-14
+
+[[ferien]]
+art = "sommer"
+von = 2028-07-03
+bis = 2028-08-11
+
+[[ferien]]
+art = "herbst"
+von = 2028-10-09
+bis = 2028-10-20
+
+[[ferien]]
+art = "weihnachten"
+von = 2028-12-27
+bis = 2029-01-12
+
+[[ferien]]
+art = "ostern"
+von = 2029-03-29
+bis = 2029-04-13
+
+[[ferien]]
+art = "sommer"
+von = 2029-07-16
+bis = 2029-08-24
+
+[[ferien]]
+art = "herbst"
+von = 2029-10-15
+bis = 2029-10-26
+
+[[ferien]]
+art = "weihnachten"
+von = 2029-12-24
+bis = 2030-01-11
+
+[[ferien]]
+art = "ostern"
+von = 2030-04-08
+bis = 2030-04-22
+
+[[ferien]]
+art = "sommer"
+von = 2030-07-22
+bis = 2030-08-30

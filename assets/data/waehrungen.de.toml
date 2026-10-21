@@ -1,0 +1,120 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Währungen der EZB-Referenzkurse mit gesprochenen Namen und Aliassen (docs/plan/13 §6.12).
+# `name`: so spricht Nikita die Währung (gilt für Einzahl und Mehrzahl); `aliases`: so nennt man sie.
+# `ambiguous`: Wörter, die mehrere Währungen meinen können – es folgt eine Rückfrage.
+
+[ambiguous]
+krone = ["SEK", "NOK", "DKK", "CZK"]
+kronen = ["SEK", "NOK", "DKK", "CZK"]
+
+[currencies.EUR]
+name = "Euro"
+aliases = ["euro", "euros", "eur", "€"]
+
+[currencies.USD]
+name = "US-Dollar"
+aliases = ["dollar", "dollars", "us-dollar", "us dollar", "amerikanische dollar", "usd", "$", "buck", "bucks"]
+
+[currencies.GBP]
+name = "Pfund"
+aliases = ["pfund", "britische pfund", "englische pfund", "pfund sterling", "gbp", "£"]
+
+[currencies.CHF]
+name = "Schweizer Franken"
+aliases = ["franken", "schweizer franken", "chf", "schweizer"]
+
+[currencies.JPY]
+name = "Yen"
+aliases = ["yen", "japanische yen", "jpy"]
+
+[currencies.CNY]
+name = "Yuan"
+aliases = ["yuan", "renminbi", "chinesische yuan", "cny"]
+
+[currencies.PLN]
+name = "Zloty"
+aliases = ["zloty", "złoty", "polnische zloty", "pln"]
+
+[currencies.CZK]
+name = "Tschechische Kronen"
+aliases = ["tschechische krone", "tschechische kronen", "czk"]
+
+[currencies.SEK]
+name = "Schwedische Kronen"
+aliases = ["schwedische krone", "schwedische kronen", "sek"]
+
+[currencies.NOK]
+name = "Norwegische Kronen"
+aliases = ["norwegische krone", "norwegische kronen", "nok"]
+
+[currencies.DKK]
+name = "Dänische Kronen"
+aliases = ["dänische krone", "dänische kronen", "dkk"]
+
+[currencies.HUF]
+name = "Forint"
+aliases = ["forint", "ungarische forint", "huf"]
+
+[currencies.TRY]
+name = "Türkische Lira"
+aliases = ["lira", "türkische lira", "try"]
+
+[currencies.CAD]
+name = "Kanadische Dollar"
+aliases = ["kanadische dollar", "kanada dollar", "cad"]
+
+[currencies.AUD]
+name = "Australische Dollar"
+aliases = ["australische dollar", "australien dollar", "aud"]
+
+[currencies.NZD]
+name = "Neuseeland-Dollar"
+aliases = ["neuseeland dollar", "neuseeland-dollar", "nzd"]
+
+[currencies.INR]
+name = "Rupien"
+aliases = ["rupie", "rupien", "indische rupie", "indische rupien", "inr"]
+
+[currencies.BRL]
+name = "Real"
+aliases = ["real", "brasilianische real", "brl"]
+
+[currencies.ZAR]
+name = "Rand"
+aliases = ["rand", "südafrikanische rand", "zar"]
+
+[currencies.KRW]
+name = "Won"
+aliases = ["won", "südkoreanische won", "krw"]
+
+[currencies.MXN]
+name = "Mexikanische Pesos"
+aliases = ["peso", "pesos", "mexikanische pesos", "mxn"]
+
+[currencies.SGD]
+name = "Singapur-Dollar"
+aliases = ["singapur dollar", "singapur-dollar", "sgd"]
+
+[currencies.HKD]
+name = "Hongkong-Dollar"
+aliases = ["hongkong dollar", "hongkong-dollar", "hkd"]
+
+[currencies.THB]
+name = "Baht"
+aliases = ["baht", "thailändische baht", "thb"]
+
+[currencies.ILS]
+name = "Schekel"
+aliases = ["schekel", "israelische schekel", "ils"]
+
+[currencies.RON]
+name = "Rumänische Leu"
+aliases = ["leu", "rumänische leu", "ron"]
+
+[currencies.BGN]
+name = "Lew"
+aliases = ["lew", "bulgarische lew", "bgn"]
+
+[currencies.ISK]
+name = "Isländische Kronen"
+aliases = ["isländische krone", "isländische kronen", "isk"]

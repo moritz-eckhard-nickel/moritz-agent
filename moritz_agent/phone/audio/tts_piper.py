@@ -21,6 +21,7 @@ log = get_logger("tts")
 
 class PiperEngine:
     name = "piper"
+    supports_speed = True
 
     def __init__(self, settings: PiperSettings, repo_root: Path, threads: int = 4) -> None:
         path = Path(settings.voice)
@@ -63,14 +64,14 @@ class PiperEngine:
     def available(self) -> bool:
         return self._voice is not None
 
-    def synthesize(self, text: str) -> tuple[np.ndarray, int]:
+    def synthesize(self, text: str, speed: float = 1.0) -> tuple[np.ndarray, int]:
         if self._voice is None:
             raise TtsError(self._error or "Piper nicht geladen")
         from piper import SynthesisConfig
 
         chunks, rate = [], 22050
         for chunk in self._voice.synthesize(
-            text, syn_config=SynthesisConfig(length_scale=self.length_scale)
+            text, syn_config=SynthesisConfig(length_scale=self.length_scale / max(0.3, speed))
         ):
             chunks.append(chunk.audio_int16_array)
             rate = chunk.sample_rate

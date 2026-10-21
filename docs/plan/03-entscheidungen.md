@@ -478,13 +478,15 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   aus **GeoNames** (CC BY 4.0) werden per `scripts/build_geodata.py` in kompakte TSV-Dateien unter
   `assets/data/geo/` umgewandelt und mitgeliefert (Herkunft und Prüfsummen in
   `third_party/VENDORED.md`, nur per Skript zu ändern). Auflösung: exakt → ohne Zusätze → Ortsteile →
-  unscharf (`rapidfuzz`) → phonetisch (Kölner Phonetik); mehrdeutig → Einwohner- und Nähe-Score,
+  unscharf (`difflib`) → phonetisch (Kölner Phonetik); mehrdeutig → Einwohner- und Nähe-Score,
   sonst Rückfrage. Nur unbekannte (meist ausländische) Orte gehen online an das Open-Meteo-Geocoding.
 - **Alternativen:** Nominatim/OSM online je Frage (Nutzungsrichtlinie max. 1 Anfrage/s, Netzabhängigkeit),
   Google Geocoding (Schlüssel, Kosten), nur Postleitzahlen ohne Ortsnamen (zu wenig).
-- **Konsequenzen:** ≈ 6–7 MB Daten im Repo, ≈ 40–80 MB RAM; neue Abhängigkeit `rapidfuzz` (MIT);
-  CLAUDE.md nennt `assets/data/geo/` bei den Fremdkomponenten.
-- **Status:** beschlossen (Plan).
+- **Konsequenzen:** ≈ 40–80 MB RAM; CLAUDE.md nennt `assets/data/geo/` bei den Daten.
+- **Stand 21.10.2026 (Abweichung):** Das Repository enthält nur die handgepflegte Grundmenge; die vollständigen
+  GeoNames-Listen (≈ 6–7 MB) erzeugt `scripts/build_geodata.py` beim Einrichten (Installer-Phase `geodata`).
+  Statt `rapidfuzz` wird `difflib` benutzt, daher keine neue Abhängigkeit.
+- **Status:** beschlossen (Plan), umgesetzt mit der Abweichung oben.
 
 ## ADR-032 – Externe Datenabrufe aus dem LXC
 
@@ -503,4 +505,128 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   (06 §5), die Liste wird in der Anwendung durchgesetzt.
 - **Konsequenzen:** neue Bedrohungen T19–T24 in [08](08-sicherheit.md); Netztests nur mit
   `@pytest.mark.network`; `skills.online = false` schaltet alle Abrufe ab.
+- **Status:** beschlossen (Plan).
+
+## ADR-033 – Discord-Kanal: offizieller Bot, Server- und Benutzer-Installation, eigener Worker mit discord.py
+
+- **Kontext (Moritz, 20.10.2026):** „Plane eine komplette Discord-User-Integration mit allen Features,
+  die Nikita jemals hat, und mach ihn zu einem Bot. Beim Setup gibt man den Token ein oder auch in die
+  TXT.“ Plan: [14-discord.md](14-discord.md).
+- **Entscheidung:**
+  1. Nikita ist der **Bot** einer eigenen Discord-Anwendung. „Public Bot“ aus, Server-Installation
+     (eigene Server: Chat, Sprache, Threads) **und** Benutzer-Installation (Befehle überall, wo Moritz
+     ist). Ein Benutzer-Token („Self-Bot“) wird nie verwendet – verstößt gegen Discords
+     Nutzungsbedingungen und gefährdet Moritz’ Konto.
+  2. Eigener Prozess **Discord-Worker** (`python -m moritz_agent.discord run`), vom Supervisor
+     verwaltet (bis P1-04 von `moritz-agent run`), `nice +5`, Statusdatei, Wartungsmodus wie das
+     Telefon. Nur ausgehende Verbindungen: Gateway/REST über TCP 443, Sprache über UDP – kein
+     eingehender Port, kein Webhook-Endpunkt.
+  3. Bibliothek **discord.py ≥ 2.7 mit `[voice]`** (MIT; Gateway, Slash-Befehle, Komponenten, Sprache
+     senden mit DAVE über `davey`). Lock-Gruppe `requirements/discord.lock` (ADR-019).
+  4. Token **und Standard-Textkanal-ID** in `passwords.txt` (`[discord] bot_token`, `channel_id`;
+     Moritz: „beim Setup oder in der TXT“); Setup-Phase `discord` im Installer mit verdeckter
+     Token-Eingabe über stdin, Prüfung gegen die API, Einladungslinks und Kanalauswahl; Updater hängt
+     den Abschnitt leer an.
+  5. **Privatserver** (Nachtrag 20.10.2026): Nikitas Server enthält nur Moritz und Nikita. Der
+     Standard-Textkanal ist ihr Zuhause (Antwort auf alles, Ziel aller Hinweise); der Server dieses
+     Kanals ist automatisch erlaubt.
+- **Alternativen:** Self-Bot (verboten), Interactions-Endpunkt per HTTPS-Webhook (bräuchte eine
+  öffentliche Adresse und eingehenden Port – verworfen), Pycord (Sprache senden mit DAVE seit 2.8,
+  Empfang laut Doku mit Vorbehalt; kein Vorteil gegenüber discord.py), hikari (keine eingebaute
+  Sprache), discord.js/Node-Worker (zweite Laufzeit im LXC, Audio-Bausteine sind Python),
+  Matrix/Telegram statt Discord (nicht gewünscht).
+- **Konsequenzen:** Block D (P1-31 … P1-43) in [04](04-part1-umsetzung.md); neue Bedrohungen T25–T32;
+  neue Anforderungen DISCORD-01 … DISCORD-47.
+- **Status:** beschlossen (Plan); Umsetzung offen.
+
+## ADR-034 – Kanalunabhängiger Kern und Ausgabeprofile je Oberfläche
+
+- **Kontext:** Nikita soll auf Discord **alles** können, was sie irgendwo kann – heute und in jedem
+  späteren Part. Zwei Implementierungen derselben Funktion würden auseinanderlaufen.
+- **Entscheidung:** Ein Nikita-Kern (SkillResponder → Agent, Tools, Gedächtnis, Aufgaben) bekommt
+  Turns mit `principal` (wer, Rolle, persönliche Einstellungen), `channel` (`phone|discord|web`, Ort)
+  und `surface` (`spoken|chat`). Kanäle sind dünne Adapter. Skills liefern gesprochenen Text **und**
+  `markdown`, `card` und `actions` ([13 §3.3](13-sofortauskuenfte.md#33-schnittstellen)); das LLM-Profil
+  wird je Surface gewählt (`phone`, `discord_voice`, `discord_chat`). **Kanal-Parität** wird DoD-Punkt
+  jedes Tickets: neue Funktionen kommen im selben Ticket auf alle Kanäle oder die Ausnahme wird
+  begründet (Matrix [14 §6](14-discord.md#6-funktionsumfang-alle-funktionen-auf-allen-kanälen)).
+- **Alternativen:** Discord-eigene Logik (doppelter Code, Abweichungen), alles über das LLM (langsam,
+  verliert die deterministischen Sofortauskünfte).
+- **Konsequenzen:** Ticket P1-31 (Kanal-Kern) vor allen Discord-Tickets; `TurnContext` wird
+  erweitert; `call_turns`/`tool_calls` bekommen eine Spalte `channel`.
+- **Status:** beschlossen (Plan).
+
+## ADR-035 – Zugriffsmodell auf Discord
+
+- **Kontext:** Das Telefon ist nur im LAN erreichbar, Discord aus dem Internet. Discord-Identitäten
+  sind besser geschützt als eine Rufnummer, aber Konten können übernommen werden.
+- **Entscheidung:** Standard **verweigern**. Rollen an der unveränderlichen Discord-Benutzer-ID:
+  Owner (aus dem Besitzer der Anwendung übernommen), Vertraut (Liste), Gast (Standard: ignoriert;
+  optional nur Sofortauskünfte in freigegebenen Kanälen). Weil der Server ein Privatserver ist, gibt es
+  im Gespräch **keine** Personenauswahl und kein Weckwort; die Rollen wirken nur als Sicherheitsnetz
+  gegen Fremde (die ignoriert und einmal gemeldet werden). Server-Allowlist, fremde Server werden
+  verlassen. Rate-Limits je Rolle. Admin-Befehle nur Owner, nur DM/ephemeral, Zustandsänderungen mit
+  Bestätigungsknopf, optional PIN aus `passwords.txt`. Nie: Shell im LXC, Updates, Dateizugriff,
+  Secrets. Sandbox/Browser (Part 4/6) nur Owner mit Bestätigung je riskanter Aktion. `allowed_mentions`
+  nie `@everyone`/`@here`/Rollen. Inhalte Dritter sind Daten, keine Anweisungen.
+- **Alternativen:** Discord-Serverrollen als Berechtigung (Serveradmins könnten sich selbst Rechte
+  geben – verworfen), offener Bot mit Moderation (unnötiges Risiko).
+- **Konsequenzen:** T25–T31 in [08](08-sicherheit.md); Tests der vollständigen Rollenmatrix.
+- **Status:** beschlossen (Plan).
+
+## ADR-036 – Discord-Sprache: DAVE-Pflicht, Empfang erst nach Spike, Rückfallwege
+
+- **Kontext:** Seit März 2026 verlangt Discord Ende-zu-Ende-Verschlüsselung (DAVE) für alle Sprach- und
+  Videoanrufe (Bühnenkanäle ausgenommen). discord.py ≥ 2.7 kann mit `davey` **senden**; Audio
+  **empfangen** kann discord.py nicht selbst, und die Erweiterung `discord-ext-voice-recv`
+  entschlüsselt DAVE in der veröffentlichten Fassung nicht – es gibt mehrere Forks/PRs dafür.
+- **Entscheidung:**
+  1. Sprache senden mit discord.py + davey (gesetzt).
+  2. Sprache empfangen: **Spike P1-32** vergleicht die DAVE-fähigen Fassungen von
+     `discord-ext-voice-recv` und die Python-Bindung an Discords `libdave` (Kriterien: 60 min ohne
+     Abbruch, Sprecher- und Schlüsselwechsel, Reconnect, CPU-Last). Stabil → von PyPI, sonst als
+     dokumentierte Fremdkomponente in `third_party/` (ADR-021).
+  3. Nicht stabil → Modus **„nur sprechen“** (Text im Sprachkanal-Chat oder Sprachnachricht rein,
+     gesprochene Antwort raus) und optional Bühnenkanal ohne E2EE; Spike wird wiederholt, sobald eine
+     Bibliothek DAVE-Empfang offiziell unterstützt.
+  4. Audio-Kette mit den Bausteinen des Telefons (VAD, Whisper, Piper, Resampling), aber im
+     Discord-Worker und **nur während Sprachsitzungen geladen** (ab `/joinvc`); höchstens eine Sitzung;
+     Barge-in erlaubt (kein Echo im Discord-Audio).
+  5. **`/joinvc` = Anruf** (Nachtrag 20.10.2026): Der Sprachkanal benutzt dieselbe `CallSession` und
+     denselben Zustandsautomaten wie das Telefon über eine gemeinsame Schnittstelle `MediaChannel`
+     (SIP-Anruf bzw. Discord-Sprachkanal). Moritz betritt den Kanal = Anruf angenommen (Begrüßung wie
+     PHONE-21), verlässt ihn = aufgelegt; „Tschüss“ = Abschied und Nikita geht; lange Stille = Ruhe-Modus
+     (still im Kanal, „Nikita“ weckt) oder wie am Telefon gehen (`on_silence`).
+- **Alternativen:** gemeinsamer Sprachdienst für Telefon und Discord (spart ≈ 1 GB RAM, koppelt aber
+  Discord an den Telefon-Prozess – „verworfen für jetzt“, neu bewerten nach der RAM-Messung in P1-36);
+  Node-Worker mit @discordjs/voice (hat eigene DAVE-Empfangsprobleme, zweite Laufzeit); nur
+  Sprachnachrichten ohne Sprachkanal (zu wenig).
+- **Konsequenzen:** Risiko R27; DISCORD-23 ist SOLL, DISCORD-24 (Rückfall) MUSS.
+- **Stand 21.10.2026:** Der Code unterstützt beide Ausgänge (Empfang über die optionale Erweiterung, sonst „nur
+  sprechen“); der Spike P1-32 ist **offen** ([Protokoll](../abnahme/p1-32-discord-spike.md)).
+- **Status:** vorläufig – bestätigt oder geändert durch P1-32.
+
+## ADR-037 – Nikita auf Discord: ein bisschen süß, mit schelmischen Aktivitäten
+
+- **Kontext (Moritz, 20.10.2026):** „Mache den User bitte bissl cutey. Er soll als Aktivitäten coole
+  Sachen haben wie ‚spielt mit deinen Daten‘ – schelmisch, funny.“
+- **Entscheidung:**
+  1. **Stil** `discord.style = "cute"` (Standard): Die Kern-Antwort bleibt neutral und exakt; ein
+     Stil-Renderer im Discord-Adapter ergänzt höchstens 1–2 passende Emojis, gelegentlich ein Kaomoji
+     und herzliche Floskeln aus eigenen Textlisten (`assets/data/discord/stil.de.toml`), deterministisch
+     je Nachricht. **Ernst-Modus** ohne Späße bei Warnungen ab Stufe 2, Katastrophen, Admin,
+     Sicherheit und Fehlern mit Datenverlust. Gesprochene Antworten bleiben wie am Telefon.
+  2. **Aktivitäten:** rotierende, schelmisch-lustige Aktivitäten („Spielt mit deinen Daten 😈“, „Hört
+     deinem Kühlschrank zu“, „Schaut Wolken über Weilburg zu“ …) aus
+     `assets/data/discord/aktivitaeten.de.toml`, alle 7–15 min, keine Wiederholung unter 10; lagebezogene
+     Aktivitäten haben Vorrang (Anruf, Sprachkanal, Nacht, Wetter, Sonderdaten, Wartung, Unwetter im
+     Ernst-Modus). Nie Texte, die wie echte Vorfälle wirken; `/aktivitaet` zum Wechseln, Abschalten und
+     für eigene Sprüche.
+  3. **Profil:** Name „Nikita“, Bio im gleichen Ton, Avatar und Banner aus Scribbles **monochrom** über
+     `scripts/build_branding.py` (Branding-Regeln: keine Farben, nicht neu zeichnen – eine niedlichere
+     Pose kann nur Moritz zeichnen).
+- **Alternativen:** neutraler Ton (nicht gewünscht); Stil im LLM allein (nicht deterministisch, gilt
+  nicht für Sofortauskünfte); farbiger Kawaii-Avatar (verstößt gegen die Branding-Regeln).
+- **Konsequenzen:** DISCORD-43, DISCORD-44, Ticket P1-43, Risiko R34; `/hilfe datenschutz` stellt klar,
+  dass Nikita nicht wirklich mit Daten spielt.
 - **Status:** beschlossen (Plan).

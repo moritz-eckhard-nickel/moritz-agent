@@ -1,15 +1,15 @@
 # moritz-agent – Projektplan
 
-Stand: 18.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, RTX 3070 8 GB) ·
+Stand: 20.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, RTX 3070 8 GB) ·
 **Höchste Priorität: intern anrufbarer Telefon-Agent ab Part 1.** Der Assistent heißt **Nikita** (ADR-026).
 
 | Dokument | Inhalt |
 | --- | --- |
 | [00-originalplan.md](00-originalplan.md) | Originalplan von Moritz (unverändert, Referenz) |
-| [01-anforderungen.md](01-anforderungen.md) | Nummerierte, prüfbare Anforderungen (PRD, PHONE, CFG, INST, UPD, INF, AGENT, SKILL, SEARCH, API, UI, STORE, LOG, NFR, SBX) |
+| [01-anforderungen.md](01-anforderungen.md) | Nummerierte, prüfbare Anforderungen (PRD, PHONE, DISCORD, CFG, INST, UPD, INF, AGENT, SKILL, SEARCH, API, UI, STORE, LOG, NFR, SBX) |
 | [02-architektur.md](02-architektur.md) | Repo-Layout, Prozessmodell, Startablauf, Telefon-Zustandsautomat, Datenmodell, API, Ports, Fehlerisolierung |
-| [03-entscheidungen.md](03-entscheidungen.md) | Architekturentscheidungen (ADR-001 … ADR-032) |
-| [04-part1-umsetzung.md](04-part1-umsetzung.md) | **Ticketplan Part 1** (P1-00, P1-00b … P1-18, Block S: P1-19 … P1-30), Reihenfolge, DoD, Ansagenkatalog |
+| [03-entscheidungen.md](03-entscheidungen.md) | Architekturentscheidungen (ADR-001 … ADR-037) |
+| [04-part1-umsetzung.md](04-part1-umsetzung.md) | **Ticketplan Part 1** (P1-00, P1-00b … P1-18, Block S: P1-19 … P1-30, Block D: P1-31 … P1-43), Reihenfolge, DoD, Ansagenkatalog |
 | [05-roadmap.md](05-roadmap.md) | Part 2 – 9, Version 1.0, 1.1+ |
 | [06-infrastruktur.md](06-infrastruktur.md) | Inventar, RAM/VRAM-Budget, LXC, NVIDIA-Treiber am Host, GPU-Zugriff, Firewall, Sandbox-VM |
 | [07-installation-update.md](07-installation-update.md) | Spezifikation Installer und Updater, Exit-Codes, Versions-Lock |
@@ -19,6 +19,7 @@ Stand: 18.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, 
 | [11-suchoptionen.md](11-suchoptionen.md) | Suchoptionen und Fallback-Kette (R4) |
 | [12-fast-paths.md](12-fast-paths.md) | Vordefinierte Antworten für einfache Infos (F-13), aufgegangen in 13 |
 | [13-sofortauskuenfte.md](13-sofortauskuenfte.md) | **Sofortauskünfte vor dem LLM:** Uhrzeit, Kalender, **Wetter für Weilburg 35781** (oder genannte PLZ/Ort), Warnungen, Pollen, Sonne/Mond, Rechnen, Region – rund 180 Auskünfte, Architektur, Datenquellen, Tests, Wellen |
+| [14-discord.md](14-discord.md) | **Discord-Bot:** Nikita mit allen Funktionen auf Discord, ein bisschen süß, mit schelmischen Aktivitäten – Standard-Textkanal, Slash-Befehle, Benutzer-App, `/joinvc` = Sprachkanal wie ein Anruf (DAVE), Sprachnachrichten, Erinnerungen, Abos, Admin, Sicherheit, Setup mit Token, Tests, Abnahme |
 | [../proxmox-installation.md](../proxmox-installation.md) | `install.sh`/`update.sh`: LXC auf dem Proxmox-Host anlegen und aktualisieren |
 | [../telefon-test-1.md](../telefon-test-1.md) | `./test-1.sh`: Telefon und Stimme ohne LXC ausprobieren |
 | [../asterisk-konfiguration.md](../asterisk-konfiguration.md) | Komplette Asterisk-Konfiguration für Nebenstelle 999 / Konto `agent` |
@@ -44,6 +45,9 @@ Stand: 18.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, 
 - **Sofortauskünfte vor dem LLM (ADR-029):** Uhrzeit, Kalender, Wetter (Standard **35781 Weilburg**,
   sonst die genannte PLZ bzw. der genannte Ort), Warnungen, Pollen, Sonne/Mond, Rechnen und mehr –
   deterministisch, mit Cache und ehrlich bei Ausfall; später dieselben Funktionen als LLM-Tools.
+- **Discord (ADR-033):** Nikita auch als Discord-Bot – alle Funktionen auf allen Kanälen
+  (Kanal-Parität), Token und Standardkanal beim Setup oder in `passwords.txt`, `/joinvc` wie ein
+  Anruf, süßer Stil mit schelmischen Aktivitäten, kein offener Port, Telefon hat Vorrang.
 
 ## Status
 
@@ -56,8 +60,15 @@ Stand: 18.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, 
 | P1-12 Phone-Worker (ohne LLM, `TestResponder`) | ✅ |
 | P1-13 Vorbereitete Ansagen | ✅ |
 | P1-15 / P1-16 / P1-17 Installer, Updater, systemd (inkl. `install.sh`/`update.sh` am Proxmox-Host) | ✅ gebaut; KoboldCpp-/SearXNG-/TLS-Phasen folgen |
-| **Block S: P1-19 … P1-30 Sofortauskünfte** | geplant ([13](13-sofortauskuenfte.md)) – **als Nächstes, vor dem LLM** |
-| P1-01 … P1-09, P1-14, P1-18 | offen |
+| P1-03 … P1-09, P1-14 Konfiguration, Supervisor, Inference-Client, Speicher, Suche, Tools, Agent, Weboberfläche | ✅ gebaut (Stand 21.10.2026); nie gegen ein echtes Modell gelaufen |
+| **Block S: P1-19 … P1-29 Sofortauskünfte** | ✅ gebaut ([13](13-sofortauskuenfte.md)); Korpus mit 803 Äußerungen als Text; Hörtest und echte Dienste offen |
+| P1-30 Abnahme Sofortauskünfte | offen ([Vorlage](../abnahme/sofortauskuenfte-vorlage.md)) |
+| **Block D: P1-31 … P1-41, P1-43 Discord-Bot** | ✅ gebaut ([14](14-discord.md)); gegen Fake-Discord getestet, echtes Discord offen |
+| P1-32 Discord-Spike (DAVE-Empfang), P1-42 Abnahme Discord | offen ([Spike](../abnahme/p1-32-discord-spike.md), [Vorlage](../abnahme/discord-vorlage.md)) |
+| P1-01, P1-02, P1-18 Infrastruktur, KoboldCpp/Modell, Abnahme Sophie-1 | offen (Hardware) |
+
+Genauer – inklusive aller Abweichungen vom Plan und der Liste dessen, was nicht in der Entwicklungsumgebung
+geprüft werden konnte: [04, Anhang C](04-part1-umsetzung.md#anhang-c--umsetzungsstand-und-abweichungen-stand-21102026).
 
 ## Pflege
 

@@ -1,0 +1,105 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Einheiten für „Wie viel sind 5 Meilen in Kilometer?“ (docs/plan/13-sofortauskuenfte.md §6.11).
+# faktor = Wert in der Basiseinheit der Kategorie (Länge: m, Masse: g, Volumen: l, Fläche: m²,
+# Geschwindigkeit: m/s, Zeit: s, Daten: Byte, Energie: J, Leistung: W, Druck: Pa).
+# Temperatur: Basis ist Kelvin, basis = (wert + offset) * faktor.
+# "Pfund" ist im Deutschen 500 g (Alltagsgebrauch); das englische Pfund heißt "englisches pfund".
+
+[kategorie.laenge]
+mm = { name = "Millimeter", faktor = 0.001, alias = ["millimeter"] }
+cm = { name = "Zentimeter", faktor = 0.01, alias = ["zentimeter"] }
+dm = { name = "Dezimeter", faktor = 0.1 }
+m = { name = "Meter", faktor = 1, alias = ["meter"] }
+km = { name = "Kilometer", faktor = 1000, alias = ["kilometer"] }
+zoll = { name = "Zoll", faktor = 0.0254, plural = "Zoll", alias = ["inch", "inches", "\""] }
+fuss = { name = "Fuß", faktor = 0.3048, plural = "Fuß", alias = ["fuß", "foot", "feet", "ft"] }
+yard = { name = "Yard", faktor = 0.9144, plural = "Yards", alias = ["yards", "yd"] }
+meile = { name = "Meile", faktor = 1609.344, plural = "Meilen", alias = ["meilen", "mile", "miles", "mi"] }
+seemeile = { name = "Seemeile", faktor = 1852, plural = "Seemeilen", alias = ["seemeilen", "nautische meile", "nautische meilen"] }
+lichtjahr = { name = "Lichtjahr", faktor = 9.4607304725808e15, plural = "Lichtjahre", alias = ["lichtjahre"] }
+
+[kategorie.masse]
+mg = { name = "Milligramm", faktor = 0.001, alias = ["milligramm"] }
+g = { name = "Gramm", faktor = 1, plural = "Gramm", alias = ["gramm"] }
+kg = { name = "Kilogramm", faktor = 1000, plural = "Kilogramm", alias = ["kilogramm", "kilo", "kilos"] }
+tonne = { name = "Tonne", faktor = 1000000, plural = "Tonnen", alias = ["tonnen"] }
+pfund = { name = "Pfund", faktor = 500, plural = "Pfund", alias = ["pfd"] }
+zentner = { name = "Zentner", faktor = 50000, plural = "Zentner" }
+unze = { name = "Unze", faktor = 28.349523125, plural = "Unzen", alias = ["unzen", "ounce", "ounces", "oz"] }
+engl_pfund = { name = "englisches Pfund", faktor = 453.59237, plural = "englische Pfund", alias = ["englisches pfund", "englische pfund", "pound", "pounds", "lb", "lbs", "amerikanisches pfund"] }
+stone = { name = "Stone", faktor = 6350.29318, plural = "Stone" }
+
+[kategorie.volumen]
+ml = { name = "Milliliter", faktor = 0.001, alias = ["milliliter"] }
+cl = { name = "Zentiliter", faktor = 0.01, alias = ["zentiliter"] }
+dl = { name = "Deziliter", faktor = 0.1, alias = ["deziliter"] }
+l = { name = "Liter", faktor = 1, plural = "Liter", alias = ["liter"] }
+hl = { name = "Hektoliter", faktor = 100, plural = "Hektoliter", alias = ["hektoliter"] }
+m3 = { name = "Kubikmeter", faktor = 1000, plural = "Kubikmeter", alias = ["kubikmeter", "m³"] }
+gallone = { name = "US-Gallone", faktor = 3.785411784, plural = "US-Gallonen", alias = ["gallone", "gallonen", "gallon", "gallons", "us-gallone", "us gallone", "us-gallonen"] }
+uk_gallone = { name = "britische Gallone", faktor = 4.54609, plural = "britische Gallonen", alias = ["britische gallone", "britische gallonen", "imperial gallon"] }
+pint = { name = "Pint", faktor = 0.473176473, plural = "Pints", alias = ["pints"] }
+tasse = { name = "Tasse", faktor = 0.25, plural = "Tassen", alias = ["tassen", "cup", "cups"] }
+"esslöffel" = { name = "Esslöffel", faktor = 0.015, plural = "Esslöffel", alias = ["esslöffel", "el", "esslöffeln"] }
+"teelöffel" = { name = "Teelöffel", faktor = 0.005, plural = "Teelöffel", alias = ["teelöffel", "tl", "teelöffeln"] }
+
+[kategorie.flaeche]
+m2 = { name = "Quadratmeter", faktor = 1, plural = "Quadratmeter", alias = ["quadratmeter", "qm", "m²"] }
+km2 = { name = "Quadratkilometer", faktor = 1000000, plural = "Quadratkilometer", alias = ["quadratkilometer", "km²"] }
+ha = { name = "Hektar", faktor = 10000, plural = "Hektar", alias = ["hektar"] }
+ar = { name = "Ar", faktor = 100, plural = "Ar" }
+acre = { name = "Acre", faktor = 4046.8564224, plural = "Acre", alias = ["acres"] }
+
+[kategorie.geschwindigkeit]
+kmh = { name = "Kilometer pro Stunde", faktor = 0.2777777778, plural = "Kilometer pro Stunde", alias = ["km/h", "kmh", "kilometer pro stunde", "stundenkilometer"] }
+ms = { name = "Meter pro Sekunde", faktor = 1, plural = "Meter pro Sekunde", alias = ["m/s", "meter pro sekunde"] }
+knoten = { name = "Knoten", faktor = 0.5144444444, plural = "Knoten", alias = ["kn", "knot", "knots"] }
+mph = { name = "Meilen pro Stunde", faktor = 0.44704, plural = "Meilen pro Stunde", alias = ["meilen pro stunde", "miles per hour"] }
+
+[kategorie.zeit]
+sekunde = { name = "Sekunde", faktor = 1, plural = "Sekunden", alias = ["sekunden", "s", "sek"] }
+minute = { name = "Minute", faktor = 60, plural = "Minuten", alias = ["minuten", "min"] }
+stunde = { name = "Stunde", faktor = 3600, plural = "Stunden", alias = ["stunden", "std", "h"] }
+tag = { name = "Tag", faktor = 86400, plural = "Tage", alias = ["tage", "tagen"] }
+woche = { name = "Woche", faktor = 604800, plural = "Wochen", alias = ["wochen"] }
+monat = { name = "Monat", faktor = 2629746, plural = "Monate", alias = ["monate", "monaten"] }
+jahr = { name = "Jahr", faktor = 31556952, plural = "Jahre", alias = ["jahre", "jahren"] }
+
+[kategorie.daten]
+bit = { name = "Bit", faktor = 0.125, plural = "Bit" }
+byte = { name = "Byte", faktor = 1, plural = "Byte", alias = ["bytes"] }
+kb = { name = "Kilobyte", faktor = 1000, plural = "Kilobyte", alias = ["kilobyte", "kilobytes"] }
+mb = { name = "Megabyte", faktor = 1000000, plural = "Megabyte", alias = ["megabyte", "megabytes"] }
+gb = { name = "Gigabyte", faktor = 1000000000, plural = "Gigabyte", alias = ["gigabyte", "gigabytes"] }
+tb = { name = "Terabyte", faktor = 1000000000000, plural = "Terabyte", alias = ["terabyte", "terabytes"] }
+kib = { name = "Kibibyte", faktor = 1024, plural = "Kibibyte", alias = ["kibibyte"] }
+mib = { name = "Mebibyte", faktor = 1048576, plural = "Mebibyte", alias = ["mebibyte"] }
+gib = { name = "Gibibyte", faktor = 1073741824, plural = "Gibibyte", alias = ["gibibyte"] }
+
+[kategorie.temperatur]
+celsius = { name = "Grad Celsius", faktor = 1, offset = 273.15, plural = "Grad Celsius", alias = ["°c", "grad celsius", "grad", "celsius"] }
+fahrenheit = { name = "Grad Fahrenheit", faktor = 0.5555555556, offset = 459.67, plural = "Grad Fahrenheit", alias = ["°f", "grad fahrenheit", "fahrenheit"] }
+kelvin = { name = "Kelvin", faktor = 1, offset = 0, plural = "Kelvin", alias = ["k"] }
+
+[kategorie.energie]
+joule = { name = "Joule", faktor = 1, plural = "Joule", alias = ["j"] }
+kj = { name = "Kilojoule", faktor = 1000, plural = "Kilojoule", alias = ["kilojoule"] }
+kcal = { name = "Kilokalorie", faktor = 4184, plural = "Kilokalorien", alias = ["kilokalorie", "kilokalorien", "kalorien", "kalorie"] }
+kwh = { name = "Kilowattstunde", faktor = 3600000, plural = "Kilowattstunden", alias = ["kilowattstunde", "kilowattstunden"] }
+wh = { name = "Wattstunde", faktor = 3600, plural = "Wattstunden", alias = ["wattstunde", "wattstunden"] }
+
+[kategorie.leistung]
+watt = { name = "Watt", faktor = 1, plural = "Watt", alias = ["w"] }
+kw = { name = "Kilowatt", faktor = 1000, plural = "Kilowatt", alias = ["kilowatt"] }
+ps = { name = "PS", faktor = 735.49875, plural = "PS", alias = ["pferdestärke", "pferdestärken"] }
+
+[kategorie.druck]
+pa = { name = "Pascal", faktor = 1, plural = "Pascal", alias = ["pascal"] }
+hpa = { name = "Hektopascal", faktor = 100, plural = "Hektopascal", alias = ["hektopascal", "millibar", "mbar"] }
+bar = { name = "Bar", faktor = 100000, plural = "Bar" }
+psi = { name = "PSI", faktor = 6894.757293, plural = "PSI" }
+
+[kategorie.verbrauch]
+"l/100km" = { name = "Liter pro 100 Kilometer", faktor = 1, plural = "Liter pro 100 Kilometer", alias = ["l/100 km", "liter pro 100 kilometer", "liter auf 100 kilometer", "liter pro hundert kilometer"] }
+mpg = { name = "Meilen pro US-Gallone", faktor = 235.214583, plural = "Meilen pro US-Gallone", alias = ["meilen pro gallone", "meilen pro us-gallone", "miles per gallon"] }
+mpg_uk = { name = "Meilen pro britischer Gallone", faktor = 282.480936, plural = "Meilen pro britischer Gallone", alias = ["meilen pro britischer gallone"] }

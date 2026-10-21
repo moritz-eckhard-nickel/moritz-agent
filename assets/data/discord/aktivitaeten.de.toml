@@ -1,0 +1,165 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Schelmische Aktivitäten von Nikita (docs/plan/14 §8.5, ADR-037). Eigene Texte.
+# Regeln: nur Spaß, der nicht beunruhigt – nichts, was wie ein echter Vorfall aussieht ("hackt deinen
+# Server", "Festplatte kaputt"), nichts über echte Personen, nichts Gemeines. Höchstens 128 Zeichen.
+# kind: playing = "Spielt …", listening = "Hört …", watching = "Schaut …", competing = "Tritt an in …",
+#       custom = freier Status.
+
+[[base]]
+kind = "playing"
+text = "mit deinen Daten 😈"
+[[base]]
+kind = "playing"
+text = "Verstecken mit deinen Bits"
+[[base]]
+kind = "playing"
+text = "Tetris mit deinem RAM"
+[[base]]
+kind = "playing"
+text = "Wetterfrosch 🐸"
+[[base]]
+kind = "playing"
+text = "Mikado mit Telefonkabeln"
+[[base]]
+kind = "playing"
+text = "Schach gegen den Router (und verliert)"
+[[base]]
+kind = "playing"
+text = "mit Scribbles 🐾"
+[[base]]
+kind = "playing"
+text = "Bingo mit Postleitzahlen"
+[[base]]
+kind = "playing"
+text = "„Wer hat an der Uhr gedreht?“"
+[[base]]
+kind = "playing"
+text = "Kopf oder Zahl mit sich selbst"
+[[base]]
+kind = "listening"
+text = "deinem Kühlschrank zu"
+[[base]]
+kind = "listening"
+text = "Ebbelwoi-Lofi 🎶"
+[[base]]
+kind = "listening"
+text = "dem Rauschen der Lahn"
+[[base]]
+kind = "listening"
+text = "Hessisch für Fortgeschrittene"
+[[base]]
+kind = "listening"
+text = "dem Lüfter beim Singen zu"
+[[base]]
+kind = "listening"
+text = "Wettervorhersagen als Hörbuch"
+[[base]]
+kind = "watching"
+text = "Wolken über Weilburg zu ☁️"
+[[base]]
+kind = "watching"
+text = "deinen Logs beim Wachsen zu"
+[[base]]
+kind = "watching"
+text = "ob der Toast schon fertig ist"
+[[base]]
+kind = "watching"
+text = "dir über die Schulter 👀"
+[[base]]
+kind = "watching"
+text = "dem Lahn-Pegel beim Steigen zu"
+[[base]]
+kind = "watching"
+text = "Sekunden beim Vergehen zu"
+[[base]]
+kind = "competing"
+text = "Wer zuerst die Uhrzeit sagt"
+[[base]]
+kind = "competing"
+text = "der Wetterraten-Weltmeisterschaft"
+[[base]]
+kind = "competing"
+text = "Kopfrechnen gegen einen Taschenrechner"
+[[base]]
+kind = "competing"
+text = "dem Langsamer-Sprechen-Wettbewerb"
+[[base]]
+kind = "custom"
+text = "🍪 isst gerade deine Cookies"
+[[base]]
+kind = "custom"
+text = "🧠 denkt über die 42 nach"
+[[base]]
+kind = "custom"
+text = "🔌 hängt am Strom (wie immer)"
+[[base]]
+kind = "custom"
+text = "🧦 sucht die zweite Socke"
+[[base]]
+kind = "custom"
+text = "📎 sortiert Büroklammern nach Farbe"
+
+# -- lagebezogen (hat Vorrang vor der Grundliste) -------------------------------------------------------
+[situation.call]
+kind = "custom"
+text = ["📞 Telefoniert gerade – psst!"]
+[situation.voice]
+kind = "custom"
+text = ["🎧 Quatscht mit Moritz im Sprachkanal"]
+[situation.night]
+kind = "custom"
+text = ["💤 Träumt von Gigabytes", "💤 Zählt elektrische Schäfchen"]
+[situation.rain]
+kind = "playing"
+text = ["im Regen ☔"]
+[situation.snow]
+kind = "custom"
+text = ["⛄ Baut einen Schneemann"]
+[situation.hot]
+kind = "custom"
+text = ["🫠 Schmilzt langsam"]
+[situation.thunder]
+kind = "custom"
+text = ["⛈️ Versteckt sich vorm Donner"]
+[situation.warning]            # Ernst-Modus: keine Witze
+kind = "custom"
+text = ["⚠️ Achtet auf das Unwetter in Weilburg"]
+[situation.startup]
+kind = "custom"
+text = ["✨ Wacht gerade auf"]
+[situation.maintenance]
+kind = "custom"
+text = ["🔧 Wird gerade frisch gemacht"]
+[situation.offline]
+kind = "custom"
+text = ["🔍 Sucht das Internet"]
+
+# -- Sonderdaten (Monat/Tag oder Ostern±Tage) -----------------------------------------------------------
+[[special]]
+name = "christmas"
+from = "12-24"
+to = "12-26"
+kind = "custom"
+text = "🎁 Packt Geschenke ein"
+[[special]]
+name = "halloween"
+from = "10-31"
+to = "10-31"
+kind = "custom"
+text = "👻 Spukt in deinen Kabeln"
+[[special]]
+name = "new_year"
+from = "12-31"
+to = "01-01"
+kind = "custom"
+text = "🎆 Zählt runter"
+[[special]]
+name = "easter"
+easter = [-1, 1]
+kind = "custom"
+text = "🥚 Versteckt Eier im Dateisystem"
+[[special]]
+name = "carnival"
+easter = [-52, -46]            # Weiberfastnacht bis Aschermittwoch
+kind = "custom"
+text = "🎭 Helau aus dem Serverraum"

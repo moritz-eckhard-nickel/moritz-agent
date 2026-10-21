@@ -57,6 +57,8 @@ class PhoneControl:
             "in_call": bool(sip_status.get("in_call")),
             "calls_total": sip_status.get("calls_total", 0),
         }
+        if sip_status.get("skills"):
+            payload["skills"] = sip_status["skills"]  # home place and data services (13 §13)
         tmp = self.status_path.with_suffix(".tmp")
         try:
             self.directory.mkdir(parents=True, exist_ok=True)

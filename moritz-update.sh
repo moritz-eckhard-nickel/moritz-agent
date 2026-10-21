@@ -230,7 +230,7 @@ phase_apply() {
 	elif [[ ${SKIP_ENV} -eq 0 && ${DRY_RUN} -eq 0 ]]; then
 		"${PREFIX}/runtime/venv/bin/python" -m compileall -q "${PREFIX}/moritz_agent"
 	fi
-	installer "${PREFIX}" "models,secrets,config,prompts"
+	installer "${PREFIX}" "searxng,models,secrets,config,prompts"
 }
 
 phase_start_verify() {

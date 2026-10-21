@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Witze und hessische Wörter für „Erzähl einen Witz“ / „Sag was auf Hessisch“
+# (docs/plan/13-sofortauskuenfte.md §6.14). Harmlose Klassiker und eigene Sprüche.
+
+witze = [
+  "Was sagt der große Stift zum kleinen Stift? Wachsmalstift!",
+  "Warum hat der Computer eine Brille auf? Damit er seine Windows besser sieht.",
+  "Was ist grün und klopft an die Tür? Ein Klopfsalat.",
+  "Wie viele Informatiker braucht man, um eine Glühbirne zu wechseln? Keinen, das ist ein Hardwareproblem.",
+  "Was sagt der Taschenrechner zum Mathebuch? Du hast so viele Probleme.",
+  "Was ist der Unterschied zwischen einem Wecker und einem Montag? Den Wecker kann man ausmachen.",
+  "Warum sind Wolken so entspannt? Sie haben immer Luft nach oben.",
+  "Was sagt Schrödingers Katze, wenn man fragt, wie es ihr geht? Mal so, mal so.",
+  "Was ist ein Keks unter einem Baum? Ein schattiges Plätzchen.",
+  "Wie nennt man einen Bumerang, der nicht zurückkommt? Stock.",
+  "Was macht ein Pirat am Computer? Er drückt die Enter-Taste.",
+  "Warum können Geister so schlecht lügen? Weil man sie durchschaut.",
+  "Ich wollte einen Witz über Hessen erzählen. Dann hab ich erst mal en Äppler getrunken.",
+  "Was sagt ein Fisch, der gegen die Wand schwimmt? Damm.",
+  "Warum nimmt der Programmierer immer zwei Hosen mit? Falls er einen Bug hat.",
+]
+
+[hessisch.begriffe]
+# Schlüssel genau so, wie man danach fragt ("Was heißt Guude?"), alles klein geschrieben
+"guude" = "Guude heißt einfach: Guten Tag."
+"ebbelwoi" = "Ebbelwoi oder Äppler ist der hessische Apfelwein."
+"äppler" = "Äppler oder Ebbelwoi ist der hessische Apfelwein."
+"schobbe" = "Ein Schobbe ist ein Glas, meistens Apfelwein oder Wein."
+"babbeln" = "Babbeln heißt reden oder schwätzen."
+"gebabbel" = "Gebabbel ist ein anderes Wort für Gerede."
+"handkäs" = "Handkäs mit Musik ist ein Sauermilchkäse mit Zwiebeln, Essig und Öl."
+"grie soß" = "Die Grie Soß ist die Frankfurter Grüne Soße mit sieben Kräutern."
+"grüne soße" = "Die Frankfurter Grüne Soße ist eine Kräutersoße aus sieben Kräutern, hessisch Grie Soß."
+"dribbdebach" = "Dribbdebach heißt in Frankfurt: auf der anderen Mainseite, im Süden."
+"ei gude wie" = "Ei gude wie? heißt: Na, wie geht’s dir?"
+
+[hessisch]
+sprueche = [
+  "Guude! Ich bin Nikita, und ich babbel gern mit dir.",
+  "Des passt scho. Das heißt: Das passt schon.",
+  "Mer sinn dabei. Das heißt: Wir sind dabei.",
+  "Net schlimm, gell? Das heißt: Nicht schlimm, oder?",
+]

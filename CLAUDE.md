@@ -24,6 +24,10 @@ Der vollständige Plan steht in `docs/plan/` – **vor jeder Aufgabe** das passe
 - `third_party/` (SearXNG, pjproject) und `assets/models/` sind **mitgelieferte
   Fremdkomponenten**: nicht verändern, nur nach `third_party/VENDORED.md` aktualisieren
   (`git add -f third_party`). `third_party/pjproject/CLAUDE.md` gehört zu PJSIP, nicht zu uns.
+- **Daten unter `assets/data/`:** `geo/` (Ortsgrundmenge; `de-places.tsv`/`de-postcodes.tsv` sind aus GeoNames
+  erzeugt und nur über `scripts/build_geodata.py` zu ändern), `kalender/`, `wetter/`, `discord/` (Stil, Aktivitäten),
+  `sprache/` (Aussprache- und Hessisch-Listen) sind eigene Pflegedaten (MSOL); Aussprache-Einträge nur ändern,
+  wenn der Korpus-Test (`tests/moritz_agent/data/skills.de.jsonl`) dabei grün bleibt.
 - Neue Python-Abhängigkeit: in `requirements/<gruppe>.in` eintragen und Lock mit Hashes neu
   erzeugen (ADR-019). Python-Pakete kommen von PyPI und werden **nicht** ins Repo gelegt.
 - Branding: nutzer-sichtbar immer „moritz-agent“/„m-agent“ mit Logo aus `assets/branding/`.

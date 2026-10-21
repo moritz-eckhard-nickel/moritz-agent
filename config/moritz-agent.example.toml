@@ -11,6 +11,7 @@ language = "de"                   # Sprache für STT, TTS, Systemprompts
 data_dir = "data"                 # relativ zum Installationsverzeichnis
 models_dir = "models"
 passwords_file = "passwords.txt"
+config_poll_s = 0                 # >0: Dateien alle n Sekunden auf Änderungen prüfen und neu laden (sonst SIGHUP / Web-UI)
 
 [server]
 host = "0.0.0.0"                  # aus dem LAN erreichbar (F-04); nur mit aktivem Web-Login (API-02)
@@ -30,6 +31,7 @@ backup_count = 10
 pjsip_log_level = 3               # > 3 kann Authorization-Header enthalten (LOG-02)
 
 [inference]
+enabled = true                    # false: nur Sofortauskünfte, kein Sprachmodell starten
 koboldcpp_script = "koboldcpp.py" # Upstream-Einstieg, als Child-Prozess (ADR-003)
 model = "models/llm/Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"   # ADR-016
 context_size = 4096               # 8192 erst nach Messung (INF-05)
@@ -53,6 +55,10 @@ fallback_timeout_s = 8            # KoboldCpp-Websuche / Wikipedia
 max_results = 5
 language = "de-DE"
 safesearch = 0
+searxng_venv = "runtime/searxng-venv"          # eigene Umgebung (scripts/setup-searxng.sh)
+searxng_source = "third_party/searxng"         # mitgelieferter SearXNG-Code (unverändert)
+searxng_settings = "config/searxng/settings.yml"
+searxng_startup_timeout_s = 90    # SearXNG braucht beim ersten Start einige Sekunden
 # Engines: config/searxng/settings.yml (alle Standard-Engines + google, bing, qwant, …; F-09)
 
 [phone]
@@ -96,7 +102,7 @@ beam_size = 1
 cpu_threads = 8
 no_speech_threshold = 0.6
 min_avg_logprob = -1.0
-initial_prompt = "Nikita, Moritz, Hessen, Frankfurt."   # hilft bei Namen und Orten
+initial_prompt = "Nikita, Moritz, Weilburg, Limburg, Lahn, Wetzlar, Hessen, Frankfurt, Wetter, Postleitzahl, Grad."   # hilft bei Namen, Orten und Zahlen (docs/plan/13 §9.2)
 
 [phone.tts]
 # Nikitas Stimme: Thorsten-Voice „Hessisch“ als Piper-Modell (high, CC0), läuft auf der CPU (ADR-027).
@@ -119,7 +125,14 @@ speed_wpm = 150
 max_tool_steps = 3
 max_answer_tokens = 160
 temperature = 0.3
-tools = ["get_current_time", "web_search"]   # PHONE-45: keine Shell/SSH
+deadline_s = 15                   # ganze Antwort inklusive Werkzeugaufrufen (AGENT-04)
+max_sentences = 3                 # was vorgelesen wird (AGENT-07)
+# PHONE-45: Uhrzeit, Websuche und die lesenden Sofortauskunft-Werkzeuge; keine Shell/SSH/Sandbox
+tools = [
+    "get_current_time", "web_search",
+    "get_weather", "get_warnings", "get_pollen", "get_air_quality", "get_sun_moon",
+    "calendar_info", "calculate", "money_info", "regional_info", "place_info", "everyday_advice",
+]
 system_prompt_file = "moritz_agent/agent/prompts/phone.de.md"
 
 [storage]
@@ -130,7 +143,161 @@ transcript_retention_hours = 24   # … aber nur 24 Stunden
 [fastpaths]
 enabled = true                    # F-13, Katalog docs/plan/12-fast-paths.md
 state = "HE"                      # Bundesland für Feiertage: Hessen (F-15)
+                                  # (alt – aufgegangen in [skills], ADR-029; wird bis 1.0 weiter gelesen)
+
+[skills]                          # Sofortauskünfte ohne Sprachmodell, docs/plan/13-sofortauskuenfte.md
+enabled = true                    # false: nur Uhrzeit, Datum, Abschied (Grundfunktionen bleiben)
+disabled = []                     # einzelne Skills/Gruppen abschalten, z. B. ["news", "fuel", "fun"]
+online = true                     # false: keine Netzabrufe; Online-Skills sagen ehrlich ab
+http_connect_timeout_s = 1.5
+http_timeout_s = 3.0
+cache_dir = "data/cache/skills"
+max_sentences = 3
+answer_variation = true           # leicht wechselnde Formulierungen
+store_misses = true               # nicht erkannte Fragen 24 h merken (nur wenn storage.store_transcripts)
+
+[skills.home]                     # Heimatort: gilt für jede ortsbezogene Frage ohne Ortsangabe
+postal_code = "35781"
+name = "Weilburg"
+state = "HE"                      # Feiertage/Ferien
+latitude = 0.0                    # 0 = Koordinaten aus dem Gazetteer; sonst z. B. 50.48
+longitude = 0.0                   # z. B. 8.26
+region_places = ["Limburg an der Lahn", "Wetzlar"]
+
+[skills.time]
+spoken_style = "digital"          # "digital" = „19 Uhr 12“ | "umgangssprachlich" = „Viertel nach sieben“ (nur glatte Viertel)
+quarter_dialect = true            # „viertel acht“ = 7:15 verstehen
+
+[skills.calendar]
+workdays = [1, 2, 3, 4, 5]        # ISO-Wochentage (1 = Montag)
+
+[skills.weather]                  # nur Open-Source-Dienste mit freien Daten (SKILL-35)
+provider = "open-meteo"
+fallback_provider = "brightsky"   # "" = kein Rückfall
+open_meteo_url = "https://api.open-meteo.com"   # eigene Open-Meteo-Instanz möglich (AGPL-3.0)
+brightsky_url = "https://api.brightsky.dev"     # eigene Bright-Sky-Instanz möglich (MIT)
+model = "best_match"              # oder "icon_seamless"
+forecast_days = 10                # 1 … 16
+past_days = 3
+coordinate_decimals = 2           # ≈ 1 km (Datensparsamkeit)
+cache_current_minutes = 10
+cache_forecast_minutes = 30
+max_stale_hours = 6
+prefetch_home = true
+prefetch_interval_minutes = 30
+mention_source = "on_request"     # "always" | "first" | "on_request"
+
+[skills.warnings]
+enabled = true
+sources = ["dwd", "nina"]
+announce_on_greeting = "severe"   # "off" | "moderate" | "severe" | "extreme"
+refresh_minutes = 10
+nina_ars = "065330000000"          # Kreisschlüssel (ARS) des Heimatorts für NINA; Landkreis Limburg-Weilburg
+
+[skills.pollen]
+enabled = true
+dwd_partregion = "Nordhessen und hessische Mittelgebirge"   # oder "Rhein-Main"
+allergens = []                    # z. B. ["Birke", "Gräser"]: nur diese nennen
+
+[skills.air]
+enabled = true
+
+[skills.advice]
+enabled = true
+
+[skills.water]
+enabled = true
+river = "LAHN"
+station = "auto"                  # PEGELONLINE-Name/UUID oder "auto" (nächster Pegel)
+
+[skills.waste]
+enabled = false
+ics_url = ""                      # iCal-Link des Abfallkalenders (nur https)
+ics_file = ""                     # oder Datei unter data/
+
+[skills.money]
+currency = true                   # EZB-Kurse
+electricity = true                # Börsenstrompreis
+bidding_zone = "DE-LU"
+fuel = false                      # braucht tankerkoenig_api_key in passwords.txt [optional_services]
+fuel_type = "e10"                 # "e5" | "e10" | "diesel"
+fuel_radius_km = 5
+
+[skills.football]
+enabled = false
+team = "Eintracht Frankfurt"
+league = "bl1"
+
+[skills.news]
+enabled = false
+max_headlines = 3
+
+[skills.notes]
+enabled = false
+retention_days = 30
+
+[skills.spelling]
+alphabet = "din5009"              # oder "traditionell"
+
+[skills.fun]
+enabled = true
+
+[skills.timer]
+enabled = true
+max_minutes = 15
 
 [sandbox]
 # Verbindungsdaten in passwords.txt [sandbox_ssh]; Nutzung ab Part 4.
 connect_timeout_s = 10
+
+[discord]                         # docs/plan/14-discord.md, Einrichtung: docs/discord-einrichtung.md
+enabled = false                   # true, sobald bot_token in passwords.txt steht (das Setup setzt das)
+owner_user_ids = []               # Discord-Benutzer-IDs (das Setup übernimmt den Besitzer der Anwendung)
+trusted_user_ids = []
+allowed_guild_ids = []            # weitere Server (der Server des Standardkanals ist immer erlaubt)
+chat_channel_ids = []             # weitere Kanäle, in denen Nikita auf jede Nachricht antwortet
+style = "cute"                    # "cute" | "normal" (ADR-037)
+startup_message = true            # „Bin wieder wach ✨“ im Standardkanal nach dem Start
+name_trigger = true               # „Nikita, …“ am Satzanfang wirkt wie eine Erwähnung
+guest_mode = "off"                # "off" | "skills"
+unknown_users = "ignore"          # "ignore" | "notice"
+ephemeral_in_foreign_guilds = true
+call_summaries = "off"            # "off" | "topics" | "transcript" (Transkripte liegen dann bei Discord)
+phone_extensions = {}             # z. B. { "20" = "123456789012345678" } für „schick mir das auf Discord“
+quiet_hours = "22:00-07:00"       # in dieser Zeit nur Unwetter ab Stufe 3 und Erinnerungen
+max_message_chars = 4000
+
+[discord.rate_limits]
+owner_per_minute = 30
+trusted_per_minute = 10
+guest_per_minute = 3
+
+[discord.activities]
+enabled = true                    # schelmische Aktivitäten (ADR-037)
+rotate_minutes = [7, 15]          # zufälliger Wechsel in diesem Bereich (mindestens 5)
+situational = true                # Anruf, Sprachkanal, Nacht, Wetter, Sonderdaten, Wartung
+night = "23:00-06:00"
+
+[discord.voice]
+enabled = true
+default_channel_id = ""           # Sprachkanal für /joinvc, wenn Moritz in keinem ist (optional)
+auto_join = false                 # von selbst kommen, sobald Moritz einen Sprachkanal betritt
+greeting = "phone"                # dieselbe Begrüßung wie am Telefon (PHONE-21)
+after_goodbye = "leave"           # "leave" | "stay"
+on_silence = "rest"               # "rest" (still bleiben, auf „Nikita“ hören) | "leave" (wie Auflegen)
+idle_leave_minutes = 10           # ohne Menschen im Kanal so lange warten, dann gehen
+barge_in = true
+max_session_minutes = 120
+stt_threads = 4
+unload_after_minutes = 10         # Sprachmodelle nach der letzten Sitzung wieder freigeben
+stage_fallback = false            # Bühnenkanal statt E2EE-Sprachkanal (ADR-036, Ergebnis B)
+
+[discord.voice_messages]
+enabled = true
+reply_with_voice = "mirror"       # "mirror" | "always" | "never"
+max_seconds = 300
+
+[discord.notify]
+target = "channel"                # "channel" (Standardkanal) | "dm"
+warnings_default_level = "severe" # Standard-Abo des Owners: "moderate" | "severe" | "extreme"
+system_alerts = true

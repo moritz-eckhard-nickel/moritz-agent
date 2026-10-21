@@ -1,0 +1,171 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# WMO-Wettercodes (wie Open-Meteo sie liefert) → Deutsch (docs/plan/13-sofortauskuenfte.md §7.3).
+# Klassen: trocken, nebel, regen, schauer, schnee, glatt, gewitter
+# `tag` / `nacht`: Himmel- oder Wetterwort für die Sprachausgabe; `kurz`: Hauptwort ("Regen").
+[codes.0]
+tag = "sonnig"
+nacht = "klar"
+klasse = "trocken"
+kurz = "Sonne"
+
+[codes.1]
+tag = "überwiegend sonnig"
+nacht = "überwiegend klar"
+klasse = "trocken"
+kurz = "Sonne"
+
+[codes.2]
+tag = "teils bewölkt"
+nacht = "teils bewölkt"
+klasse = "trocken"
+kurz = "Wolken"
+
+[codes.3]
+tag = "bedeckt"
+nacht = "bedeckt"
+klasse = "trocken"
+kurz = "Wolken"
+
+[codes.45]
+tag = "neblig"
+nacht = "neblig"
+klasse = "nebel"
+kurz = "Nebel"
+
+[codes.48]
+tag = "neblig mit Reifansatz"
+nacht = "neblig mit Reifansatz"
+klasse = "nebel"
+kurz = "Nebel"
+
+[codes.51]
+tag = "leichter Nieselregen"
+nacht = "leichter Nieselregen"
+klasse = "regen"
+kurz = "Nieselregen"
+
+[codes.53]
+tag = "Nieselregen"
+nacht = "Nieselregen"
+klasse = "regen"
+kurz = "Nieselregen"
+
+[codes.55]
+tag = "starker Nieselregen"
+nacht = "starker Nieselregen"
+klasse = "regen"
+kurz = "Nieselregen"
+
+[codes.56]
+tag = "leichter gefrierender Nieselregen"
+nacht = "leichter gefrierender Nieselregen"
+klasse = "glatt"
+kurz = "gefrierender Nieselregen"
+
+[codes.57]
+tag = "starker gefrierender Nieselregen"
+nacht = "starker gefrierender Nieselregen"
+klasse = "glatt"
+kurz = "gefrierender Nieselregen"
+
+[codes.61]
+tag = "leichter Regen"
+nacht = "leichter Regen"
+klasse = "regen"
+kurz = "Regen"
+
+[codes.63]
+tag = "Regen"
+nacht = "Regen"
+klasse = "regen"
+kurz = "Regen"
+
+[codes.65]
+tag = "starker Regen"
+nacht = "starker Regen"
+klasse = "regen"
+kurz = "Regen"
+
+[codes.66]
+tag = "leichter gefrierender Regen"
+nacht = "leichter gefrierender Regen"
+klasse = "glatt"
+kurz = "gefrierender Regen"
+
+[codes.67]
+tag = "starker gefrierender Regen"
+nacht = "starker gefrierender Regen"
+klasse = "glatt"
+kurz = "gefrierender Regen"
+
+[codes.71]
+tag = "leichter Schneefall"
+nacht = "leichter Schneefall"
+klasse = "schnee"
+kurz = "Schnee"
+
+[codes.73]
+tag = "Schneefall"
+nacht = "Schneefall"
+klasse = "schnee"
+kurz = "Schnee"
+
+[codes.75]
+tag = "starker Schneefall"
+nacht = "starker Schneefall"
+klasse = "schnee"
+kurz = "Schnee"
+
+[codes.77]
+tag = "Schneegriesel"
+nacht = "Schneegriesel"
+klasse = "schnee"
+kurz = "Schneegriesel"
+
+[codes.80]
+tag = "leichte Regenschauer"
+nacht = "leichte Regenschauer"
+klasse = "schauer"
+kurz = "Schauer"
+
+[codes.81]
+tag = "Regenschauer"
+nacht = "Regenschauer"
+klasse = "schauer"
+kurz = "Schauer"
+
+[codes.82]
+tag = "heftige Regenschauer"
+nacht = "heftige Regenschauer"
+klasse = "schauer"
+kurz = "Schauer"
+
+[codes.85]
+tag = "leichte Schneeschauer"
+nacht = "leichte Schneeschauer"
+klasse = "schnee"
+kurz = "Schneeschauer"
+
+[codes.86]
+tag = "kräftige Schneeschauer"
+nacht = "kräftige Schneeschauer"
+klasse = "schnee"
+kurz = "Schneeschauer"
+
+[codes.95]
+tag = "Gewitter"
+nacht = "Gewitter"
+klasse = "gewitter"
+kurz = "Gewitter"
+
+[codes.96]
+tag = "Gewitter mit Hagel"
+nacht = "Gewitter mit Hagel"
+klasse = "gewitter"
+kurz = "Gewitter"
+
+[codes.99]
+tag = "Gewitter mit starkem Hagel"
+nacht = "Gewitter mit starkem Hagel"
+klasse = "gewitter"
+kurz = "Gewitter"

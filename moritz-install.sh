@@ -51,10 +51,12 @@ PHASES=(
 	"python_env:venv und gepinnte Python-Pakete (mit Prüfsummen)"
 	"pjsip:PJSIP + PJSUA2-Binding bauen (ADR-005)"
 	"koboldcpp:KoboldCpp bauen (kommt mit Ticket P1-02)"
-	"searxng:SearXNG einrichten (kommt mit Ticket P1-08)"
+	"searxng:SearXNG-Umgebung für die Websuche einrichten"
 	"models:Whisper small und Piper-Stimme Hessisch laden"
+	"geodata:Postleitzahlen und Orte von GeoNames laden (optional, CC BY 4.0)"
 	"secrets:passwords.txt anlegen (vorhandene bleibt unverändert)"
 	"config:config/moritz-agent.toml anlegen (vorhandene bleibt unverändert)"
+	"discord:Discord-Bot einrichten (optional, nur auf Wunsch)"
 	"prompts:Ansagen vorrendern und cachen"
 	"service:systemd-Dienst installieren und starten"
 	"verify:Dienst und SIP-Registrierung prüfen"
@@ -250,7 +252,12 @@ phase_pjsip() {
 }
 
 phase_koboldcpp() { log "KoboldCpp: gehört zu Ticket P1-02 und ist noch nicht Teil dieses Installers"; }
-phase_searxng() { log "SearXNG: gehört zu Ticket P1-08 und ist noch nicht Teil dieses Installers"; }
+
+phase_searxng() {
+	if [[ ${SKIP_ENV} -eq 1 ]]; then return 0; fi
+	run "${PREFIX}/scripts/setup-searxng.sh" --venv "${PREFIX}/runtime/searxng-venv"
+	run chown -R "${SERVICE_USER}:${SERVICE_USER}" "${PREFIX}/runtime/searxng-venv"
+}
 
 phase_models() {
 	if [[ ${SKIP_MODELS} -eq 1 || ${SKIP_ENV} -eq 1 ]]; then
@@ -263,6 +270,22 @@ phase_models() {
 	run env HF_HOME="${PREFIX}/runtime/hf-home" PYTHONPATH="${PREFIX}" \
 		"$(PY)" -m moritz_agent.phone.audio.models "${args[@]}"
 	run chown -R "${SERVICE_USER}:${SERVICE_USER}" "${PREFIX}/models" "${PREFIX}/runtime"
+}
+
+phase_geodata() {
+	if [[ ${SKIP_MODELS} -eq 1 || ${SKIP_ENV} -eq 1 ]]; then
+		log "Ortsdaten-Download übersprungen"
+		return 0
+	fi
+	local geo="${PREFIX}/assets/data/geo"
+	if [[ -s "${geo}/de-places.tsv" && -s "${geo}/de-postcodes.tsv" ]]; then
+		log "Ortsdaten sind schon da (zum Erneuern: ${PREFIX}/scripts/build_geodata.py)"
+		return 0
+	fi
+	log "lade Postleitzahlen und Orte von GeoNames (CC BY 4.0, ca. 10 MB) …"
+	if ! run "$(PY)" "${PREFIX}/scripts/build_geodata.py"; then
+		warn "Ortsdaten konnten nicht geladen werden – Nikita kennt dann nur die mitgelieferte Grundmenge"
+	fi
 }
 
 phase_secrets() {
@@ -283,6 +306,11 @@ phase_secrets() {
 	if [[ ${DRY_RUN} -eq 0 ]] && grep -Eq '^[[:space:]]*password[[:space:]]*=[[:space:]]*agent[[:space:]]*$' "${file}"; then
 		warn "SIP-Passwort ist noch der Startwert 'agent' – in Asterisk und passwords.txt ändern (empfohlen)"
 	fi
+	# a passwords.txt from an older version gets the new [discord] section – appended, never re-written
+	if [[ ${SKIP_ENV} -eq 0 && ${DRY_RUN} -eq 0 ]]; then
+		runuser -u "${SERVICE_USER}" -- env -C "${PREFIX}" PYTHONPATH="${PREFIX}" \
+			"$(PY)" -m moritz_agent.setup --passwords "${file}" migrate || warn "passwords.txt konnte nicht ergänzt werden"
+	fi
 }
 
 phase_config() {
@@ -296,6 +324,64 @@ phase_config() {
 		cp "${PREFIX}/config/moritz-agent.example.toml" "${file}"
 		chmod 0640 "${file}"
 		chown "${SERVICE_USER}:${SERVICE_USER}" "${file}"
+	fi
+}
+
+# setup CMD… – a step of the Discord setup as the service user (secrets only via stdin)
+discord_setup() {
+	runuser -u "${SERVICE_USER}" -- env -C "${PREFIX}" PYTHONPATH="${PREFIX}" \
+		"$(PY)" -m moritz_agent.setup --passwords "${PREFIX}/passwords.txt" \
+		--config "${PREFIX}/config/moritz-agent.toml" "$@"
+}
+
+phase_discord() {
+	local file="${PREFIX}/passwords.txt"
+	if [[ ${SKIP_ENV} -eq 1 || ${DRY_RUN} -eq 1 ]]; then return 0; fi
+	if grep -Eq '^[[:space:]]*bot_token[[:space:]]*=[[:space:]]*[^[:space:]]' "${file}"; then
+		log "Discord ist eingerichtet (bot_token vorhanden) – bleibt unverändert"
+		return 0
+	fi
+	if [[ ${NON_INTERACTIVE} -eq 1 || ! -r /dev/tty ]]; then
+		log "Discord: nicht eingerichtet. Später: ${PREFIX}/docs/discord-einrichtung.md (Token in passwords.txt eintragen)"
+		return 0
+	fi
+	local answer=""
+	read -r -p "Discord-Bot einrichten? Nikita antwortet dann auch auf Discord [j/N] " answer </dev/tty || answer=""
+	case "${answer}" in
+	j | J | y | Y | ja | Ja) ;;
+	*)
+		log "Discord übersprungen – Anleitung: ${PREFIX}/docs/discord-einrichtung.md"
+		return 0
+		;;
+	esac
+	cat <<'HINT'
+  Vorbereitung im Discord Developer Portal (einmalig, Anleitung: docs/discord-einrichtung.md):
+    1. Anwendung "Nikita" anlegen, unter "Bot": Public Bot AUS, Message Content Intent AN.
+    2. Token kopieren ("Reset Token").
+HINT
+	local token=""
+	read -r -s -p "  Bot-Token (die Eingabe bleibt unsichtbar): " token </dev/tty || token=""
+	printf '\n'
+	if [[ -z "${token}" ]]; then
+		warn "kein Token eingegeben – Discord bleibt aus"
+		return 0
+	fi
+	# the token travels through a pipe (stdin) only: never as an argument, never in the environment
+	if ! printf '%s\n' "${token}" | discord_setup discord-token; then
+		token=""
+		warn "Token nicht übernommen – Discord bleibt aus (später erneut: ${PREFIX}/docs/discord-einrichtung.md)"
+		return 0
+	fi
+	token=""
+	log "Einladungslinks stehen oben. Nikita muss auf deinen Server (Server-Link öffnen), dann geht es weiter."
+	read -r -p "  Ist Nikita auf dem Server? [Enter = ja, n = später] " answer </dev/tty || answer="n"
+	if [[ "${answer}" != "n" && "${answer}" != "N" ]]; then
+		local rc=0
+		discord_setup discord-channel || rc=$?
+		if [[ ${rc} -eq 3 ]]; then
+			read -r -p "  Nummer des Standardkanals (oder Kanal-ID): " answer </dev/tty || answer=""
+			printf '%s\n' "${answer}" | discord_setup discord-channel --answer || warn "Standardkanal nicht gespeichert – channel_id in passwords.txt später eintragen"
+		fi
 	fi
 }
 

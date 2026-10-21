@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-MSOL-1.1
+# Discord bot worker (ADR-033, ADR-036). [voice] brings PyNaCl and davey (DAVE, end-to-end encrypted
+# voice). Receiving voice needs an extension that decrypts DAVE: see requirements/README.md.
+discord.py[voice]>=2.7

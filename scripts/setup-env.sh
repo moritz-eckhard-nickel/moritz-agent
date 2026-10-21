@@ -95,7 +95,8 @@ fi
 
 log "installiere Python-Pakete (exakte Versionen mit Prüfsummen, aus PyPI) …"
 "${VPY}" -m pip install --disable-pip-version-check --quiet --require-hashes \
-	-r "${ROOT}/requirements/core.lock" -r "${ROOT}/requirements/phone.lock" ||
+	-r "${ROOT}/requirements/core.lock" -r "${ROOT}/requirements/phone.lock" \
+	-r "${ROOT}/requirements/discord.lock" ||
 	die "Paketinstallation fehlgeschlagen (Netzwerk? Python-Version für die Lock-Dateien: 3.12–3.13)"
 
 if [[ ${PJSIP} -eq 1 ]]; then

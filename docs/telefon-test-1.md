@@ -21,8 +21,9 @@ LXC samt Dienst legt `./install.sh` auf dem Proxmox-Host an
 | Vorgefertigte Ansagen gerendert und gecacht | ✅ |
 | Gesprächsablauf: Klingeln (zufällig 4–8 s, `phone.ring_seconds_min/max`), Begrüßung, mehrere Runden, Stille-Erinnerung, Auflegen, Störungsansagen | ✅ |
 | Sofort-Antworten (Uhrzeit, Datum, Wochentag, Kalenderwoche, Name, Verabschiedung) | ✅ (Fast-Paths) |
-| Sofortauskünfte: Wetter (Standard Weilburg 35781), Warnungen, Pollen, Sonne/Mond, Feiertage, Ferien, Rechnen, Lahn-Pegel … und `./test-1.sh ask "…"` | 📋 geplant als Nächstes ([Plan 13](plan/13-sofortauskuenfte.md), Tickets P1-19 … P1-30) |
-| Sprachmodell, Websuche, Web-UI | ❌ kommen mit den nächsten Tickets – Nikita antwortet hier auf alles andere mit „Ich habe verstanden: …“ |
+| Sofortauskünfte: Wetter (Standard Weilburg 35781), Warnungen, Pollen, Sonne/Mond, Feiertage, Ferien, Rechnen, Lahn-Pegel, Eieruhr … und `./test-1.sh ask "…"` | ✅ gebaut, mit Fixtures und einem Korpus von 803 Äußerungen **als Text** getestet; gegen die echten Dienste und mit echter Spracherkennung noch nicht ([Plan 13](plan/13-sofortauskuenfte.md), Abnahme P1-30: [Vorlage](abnahme/sofortauskuenfte-vorlage.md)) |
+| Discord-Bot (Standardkanal, Befehle, `/joinvc` wie ein Anruf, süß mit schelmischen Aktivitäten) und `./test-1.sh discord …` | ✅ gebaut und gegen ein Fake-Discord getestet; **noch nie mit dem echten Discord gelaufen**, Sprachempfang (DAVE) ist offen – dann gilt „nur sprechen“ ([Einrichtung](discord-einrichtung.md), [Spike](abnahme/p1-32-discord-spike.md), [Abnahme](abnahme/discord-vorlage.md)) |
+| Sprachmodell (KoboldCpp), Websuche, Statusseite | 🔶 Code und Tests sind da (Inference-Client, SearXNG-Kette, Agent-Schleife, Weboberfläche mit Login); **KoboldCpp und das Modell sind nicht eingerichtet (P1-02)** – `test-1.sh` läuft ohne sie, und Nikita antwortet auf alles, was keine Sofortauskunft ist, mit „Ich habe verstanden: …“ |
 
 ## Voraussetzungen
 
@@ -62,6 +63,8 @@ Was dabei passiert (jeder Schritt ist wiederholbar und überspringt Fertiges):
 | `./test-1.sh call [--quick] ["Satz" …]` | Testanruf ohne Telefonanlage: Nikita startet im Direktmodus (Port 5062, nur 127.0.0.1) und ein Test-Anrufer ruft an, spricht die Sätze und nimmt Nikitas Antworten auf: `runtime/test-1/anruf.wav`. `--quick` nimmt nur die Notstimme und ein festes Text-Skript – damit geht es ohne jeden Modell-Download. |
 | `./test-1.sh run` | Nikita starten, bei der Telefonanlage anmelden und Anrufe an die Nebenstelle annehmen (Strg+C beendet). `--no-register` nimmt Anrufe direkt an, `--engines espeak` erzwingt eine Stimme. |
 | `./test-1.sh models [status\|fetch]` | Modell-Download prüfen oder nachholen. |
+| `./test-1.sh ask "Frage" [--explain]` | Sofortauskünfte ohne Telefon ausprobieren (gleiche Antwort wie am Telefon); `./test-1.sh skills help` listet alle. |
+| `./test-1.sh discord token\|check\|channel\|run\|say …` | Discord-Bot einrichten und ausprobieren – Anleitung: [discord-einrichtung.md](discord-einrichtung.md). |
 
 Ablauf eines echten Tests: `./test-1.sh setup` → `./test-1.sh check` →
 `./test-1.sh speak "Guude, hier ist Nikita." --play` → `./test-1.sh call` (ohne Telefonanlage) →
@@ -131,3 +134,12 @@ Konfiguration ein normales Piper-Format hat (Einzelsprecher, 22,05 kHz, espeak �
 klingt – insbesondere wie stark die hessische Färbung bei hochdeutsch geschriebenem Text hörbar ist –
 und wie schnell sie auf deiner CPU ist, zeigt erst dein erster Lauf (`./test-1.sh speak`, `./test-1.sh bench`).
 Ebenso steht der Test gegen die echte Asterisk-Anlage aus.
+
+### Nachtrag 21.10.2026
+
+Seitdem sind Sofortauskünfte, Eieruhr, Discord-Bot und die Weboberfläche dazugekommen und mit
+automatischen Tests geprüft (Fixtures, Fake-Discord, 803 Korpus-Äußerungen als Text). Weiterhin **nicht
+gelaufen**: echte Modelle (Whisper/Piper) und damit Erkennungsrate und Aussprache der Sofortauskünfte, die
+echten Datendienste (Wächter: `pytest -m network`), das echte Discord-Gateway, der Sprachkanal mit
+Ende-zu-Ende-Verschlüsselung und alles auf Sophie-1. Die Liste mit Begründung steht in
+[Plan 04, Anhang C.3](plan/04-part1-umsetzung.md#c3-nicht-in-der-entwicklungsumgebung-prüfbar).
