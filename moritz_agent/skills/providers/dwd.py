@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Any
 
 from moritz_agent.skills.geo.gazetteer import fold
@@ -21,6 +23,8 @@ ALLERGENS = {
     "Ambrosia": "Ambrosia",
 }
 DAYS = ("today", "tomorrow", "dayafter_to")
+# "-1" (or an empty value) means "no forecast for this day" – usually ``dayafter_to`` except on Fridays
+NO_FORECAST = {"-1", ""}
 # index → numeric level (the DWD writes "1-2" for "between 1 and 2")
 LEVELS = {"0": 0.0, "0-1": 0.5, "1": 1.0, "1-2": 1.5, "2": 2.0, "2-3": 2.5, "3": 3.0}
 LEVEL_WORDS = (
@@ -62,6 +66,33 @@ class PollenForecast:
 
     def level(self, day: str, allergen: str) -> float:
         return self.days.get(day, {}).get(allergen, 0.0)
+
+    @property
+    def issued(self) -> date | None:
+        """The issue date of the file; ``today``/``tomorrow``/``dayafter_to`` count from it."""
+        return issue_date(self.last_update)
+
+    def day_key(self, day: date, fallback: date) -> str | None:
+        """The day key that covers ``day`` (``None`` when the file has no forecast for it).
+
+        ``fallback`` is used as issue date when ``last_update`` cannot be read.
+        """
+        offset = (day - (self.issued or fallback)).days
+        if not 0 <= offset < len(DAYS):
+            return None
+        key = DAYS[offset]
+        return key if self.days.get(key) else None
+
+
+def issue_date(last_update: str) -> date | None:
+    """ "2026-10-18 11:00 Uhr" → 2026-10-18."""
+    match = re.match(r"\s*(\d{4})-(\d{2})-(\d{2})", last_update or "")
+    if match is None:
+        return None
+    try:
+        return date(int(match[1]), int(match[2]), int(match[3]))
+    except ValueError:
+        return None
 
 
 def level_word(level: float) -> str:
@@ -107,7 +138,11 @@ def parse(entry: dict[str, Any], last_update: str = "") -> PollenForecast:
         if not isinstance(values, dict):
             continue
         for day in DAYS:
-            level = LEVELS.get(str(values.get(day, "0")).strip())
+            value = values.get(day)
+            text = "" if value is None else str(value).strip()
+            if text in NO_FORECAST:
+                continue
+            level = LEVELS.get(text)
             if level is None:
                 raise HttpError("bad_data", "dwd pollen: unknown index value")
             forecast.days.setdefault(day, {})[name] = level

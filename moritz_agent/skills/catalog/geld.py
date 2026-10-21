@@ -81,18 +81,43 @@ def _name(code: str) -> str:
     return _currencies()[code]["name"]
 
 
-def _amount_before(text: str, position: int) -> float | None:
-    match = re.search(r"(\d+(?:[.,]\d+)?)\s*$", text[:position])
-    if not match:
-        return None
-    raw = match.group(1)
+_AMOUNT = r"\d+(?:[.,]\d+)*"
+
+
+def parse_amount(raw: str) -> float | None:
+    """German number: "1.000" → 1000, "1.000,50" → 1000.5, "2,5" → 2.5, "1.5" → 1.5."""
+    raw = raw.strip()
     if "," in raw:
-        raw = raw.replace(".", "").replace(",", ".")
-    return float(raw)
+        whole, _, fraction = raw.rpartition(",")
+        raw = whole.replace(".", "") + "." + fraction
+    elif "." in raw:
+        head, *groups = raw.split(".")
+        if all(len(group) == 3 for group in groups) and 1 <= len(head) <= 3:
+            raw = raw.replace(".", "")  # thousands separators
+        elif len(groups) > 1:
+            return None
+    try:
+        return float(raw)
+    except ValueError:
+        return None
+
+
+def _amount_before(text: str, position: int) -> float | None:
+    match = re.search(rf"({_AMOUNT})\s*$", text[:position])
+    return parse_amount(match.group(1)) if match else None
+
+
+def _first_amount(text: str) -> float | None:
+    match = re.search(_AMOUNT, text)
+    return parse_amount(match.group(0)) if match else None
 
 
 def _money(value: float, code: str) -> str:
     if code == "EUR":
+        cents = round(abs(value) * 100)
+        if cents < 100 and value != 0:
+            sign = "minus " if value < 0 else ""
+            return f"{sign}{cents} Cent" if cents else "weniger als ein Cent"
         return g.euro(value)
     digits = 0 if value >= 100 else 2
     return f"{g.number(round(value, digits), digits)} {_name(code)}"
@@ -116,8 +141,7 @@ async def _fx(req: Request) -> SkillResult | None:
     if chosen is None:
         options = _ambiguous(source_text)
         if options:
-            amount_match = re.search(r"(\d+(?:[.,]\d+)?)", source_text)
-            amount_value = float(amount_match.group(1).replace(",", ".")) if amount_match else None
+            amount_value = _first_amount(source_text)
             names = ["schwedische", "norwegische", "dänische", "tschechische"]
             question = "Welche Krone meinst du – die " + " oder ".join(names[: len(options)]) + "?"
             return SkillResult(
@@ -176,8 +200,7 @@ async def _fx(req: Request) -> SkillResult | None:
         first_start = mentions[0][0]
         amount = _amount_before(source_text, first_start)
         if amount is None:
-            match = re.search(r"(\d+(?:[.,]\d+)?)", source_text)
-            amount = float(match.group(1).replace(",", ".")) if match else None
+            amount = _first_amount(source_text)
     if amount is None:
         amount = 1.0
     result = rates.convert(amount, source, target)
@@ -253,7 +276,9 @@ async def _power(req: Request) -> SkillResult | None:
         )
     if re.search(r"\b(?:billigsten|günstigsten|billig|günstig|am besten)\b", req.text):
         future = (
-            [p for p in points if p.start + timedelta(hours=1) > now] if not tomorrow else points
+            [p for p in points if p.start.timestamp() + 3600 > now.timestamp()]
+            if not tomorrow
+            else points
         )
         window = energy_charts.cheapest_window(future, 2)
         if window is None:
@@ -266,7 +291,7 @@ async def _power(req: Request) -> SkillResult | None:
         )
     else:
         current = next(
-            (p for p in points if p.start <= now < p.start + timedelta(hours=1)), points[0]
+            (p for p in points if 0 <= now.timestamp() - p.start.timestamp() < 3600), points[0]
         )
         text = (
             f"{'Morgen früh' if tomorrow else 'Gerade'} kostet Strom an der Börse etwa "

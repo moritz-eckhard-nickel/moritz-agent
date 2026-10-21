@@ -96,7 +96,12 @@ def _metric(pack: WeatherPack, day: date, metric: str) -> float | None:
     point = pack.day(day)
     if point is None:
         return None
-    return {"tmax": point.tmax, "rain": point.precipitation, "wind": point.wind_max}[metric]
+    return {
+        "tmax": point.tmax,
+        "rain": point.precipitation,
+        "gusts": point.gusts_max,
+        "wind": point.wind_max,
+    }[metric]
 
 
 def _current_temperature(pack: WeatherPack, now: datetime) -> float | None:
@@ -104,6 +109,15 @@ def _current_temperature(pack: WeatherPack, now: datetime) -> float | None:
         return pack.current.temperature
     hour = pack.hour_at(now)
     return hour.temperature if hour else None
+
+
+def _wind_metric(metric: str, *cases: tuple[WeatherPack, date]) -> str:
+    """ "windiger" compares gusts when both sides have them, the mean wind otherwise."""
+    if metric != "wind":
+        return metric
+    if all(_metric(pack, day, "gusts") is not None for pack, day in cases):
+        return "gusts"
+    return "wind"
 
 
 async def answer_compare(frame: Frame) -> SkillResult | None:
@@ -130,6 +144,7 @@ async def answer_compare(frame: Frame) -> SkillResult | None:
             day = now.date()
         else:
             day = day or now.date()
+            metric = _wind_metric(metric, (frame.pack, day), (other, day))
             a, b = _metric(frame.pack, day, metric), _metric(other, day, metric)
         when_part = "" if day == now.date() else f"{g.day_label(day, now.date())} "
         subject = f"{when_part}in {frame.place_name()}"
@@ -141,6 +156,7 @@ async def answer_compare(frame: Frame) -> SkillResult | None:
         base = dates[1] if len(dates) > 1 else now.date()
         if day == base:
             base = now.date() - timedelta(days=1) if day == now.date() else now.date()
+        metric = _wind_metric(metric, (frame.pack, day), (frame.pack, base))
         a, b = _metric(frame.pack, day, metric), _metric(frame.pack, base, metric)
         subject = g.day_label(day, now.date())
         reference = g.day_label(base, now.date())
@@ -154,9 +170,12 @@ async def answer_compare(frame: Frame) -> SkillResult | None:
     elif metric == "rain":
         unit_text = ""
         value = f"mit {t.liters(a)} " if a >= 0.2 else "ohne Regen "
-    else:
+    elif metric == "gusts":
         unit_text = ""
         value = f"mit Böen bis {t.round5(a)} Kilometer pro Stunde "
+    else:
+        unit_text = ""
+        value = f"mit Wind bis {t.round5(a)} Kilometer pro Stunde "
     threshold = 0.5 if metric == "tmax" else 1.0
     if abs(a - b) < threshold:
         text = f"Nein, {subject} {verb} etwa genauso {adjective} wie {reference}"
@@ -251,9 +270,9 @@ def answer_extremes(frame: Frame) -> SkillResult | None:
         return out_of_range(frame, start.date())
     if metric in {"tmax", "tmin"}:
         pick = (
-            max(hours, key=lambda h: h.temperature or -99)
+            max(hours, key=lambda h: h.temperature if h.temperature is not None else -99)
             if metric == "tmax"
-            else min(hours, key=lambda h: h.temperature or 99)
+            else min(hours, key=lambda h: h.temperature if h.temperature is not None else 99)
         )
         if pick.temperature is None:
             return None
@@ -274,13 +293,13 @@ _CHANGES = (
         r"\b(?:warm|wärmer|mild|milder|sommerlich)\b",
         "wird es wieder warm",
         "wird es nicht wärmer als {tmax}",
-        lambda p: (p.tmax or -99) >= 20,
+        lambda p: p.tmax is not None and p.tmax >= 20,
     ),
     (
         r"\b(?:kalt|kälter|kühl|kühler)\b",
         "wird es kalt",
         "wird es nicht kälter als {tmin}",
-        lambda p: (p.tmax or 99) <= 8,
+        lambda p: p.tmax is not None and p.tmax <= 8,
     ),
     (
         r"\b(?:sonnig|sonne|schön|besser)\b",
@@ -304,7 +323,7 @@ _CHANGES = (
         r"\b(?:frost|friert|gefrier)\b",
         "gibt es den nächsten Frost",
         "gibt es keinen Frost",
-        lambda p: (p.tmin if p.tmin is not None else 99) <= 0,
+        lambda p: p.tmin is not None and p.tmin <= 0,
     ),
     (
         r"\b(?:schnee|schneit|schneien)\b",

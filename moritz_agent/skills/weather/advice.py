@@ -317,7 +317,7 @@ def swim(frame: Frame) -> SkillResult:
     hours, _label, day = _span(frame, 11, 19)
     if not hours:
         return _no_data(frame, day)
-    top = max(hours, key=lambda h: h.temperature or -99)
+    top = max(hours, key=lambda h: h.temperature if h.temperature is not None else -99)
     storm = any(hour_class(h) == "gewitter" for h in hours)
     if storm:
         return frame.finish(g.sentence("Nein, es sind Gewitter möglich"), aspect="advice")

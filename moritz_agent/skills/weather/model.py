@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 from bisect import bisect_right
-from dataclasses import dataclass, field
+from collections.abc import Sequence
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, timedelta
+from typing import Any, TypeVar
 
 
 @dataclass(frozen=True)
@@ -141,3 +143,30 @@ class WeatherPack:
 
     def has(self, attr: str) -> bool:
         return any(getattr(h, attr) is not None for h in self.hours)
+
+
+# -- interval semantics ------------------------------------------------------------------------
+# Open-Meteo and Bright Sky stamp sums (precipitation, its probability, sunshine) at the END of
+# their interval ("preceding hour" / "preceding 15 minutes"). The pack keeps every point at the
+# START of the interval it describes, so ``hour_at(T)`` and ``hours_between`` read [T, T+1h).
+HOUR_INTERVAL_FIELDS = ("precipitation", "rain", "showers", "snowfall", "precip_prob", "sunshine_s")
+MINUTE_INTERVAL_FIELDS = ("precipitation",)
+_P = TypeVar("_P", HourPoint, Minute15)
+
+
+def interval_start(points: Sequence[_P], step: timedelta, fields: Sequence[str]) -> list[_P]:
+    """Move the interval values of ``fields`` from the point stamped at the end of the interval
+    onto the point at its start. The last point (no successor) gets no value (0 mm / None)."""
+    by_stamp = {point.time.timestamp(): point for point in points}
+    seconds = step.total_seconds()
+    out: list[_P] = []
+    for point in points:
+        following = by_stamp.get(point.time.timestamp() + seconds)
+        values: dict[str, Any] = {}
+        for name in fields:
+            if following is not None:
+                values[name] = getattr(following, name)
+            else:
+                values[name] = 0.0 if name == "precipitation" else None
+        out.append(replace(point, **values))
+    return out

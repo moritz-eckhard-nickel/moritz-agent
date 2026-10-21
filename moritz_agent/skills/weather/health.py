@@ -43,23 +43,65 @@ DAY_KEYS = ("today", "tomorrow", "dayafter_to")
 
 
 # -- warnings ------------------------------------------------------------------------------------
-def event_dative(event: str) -> str:
-    """ "Starker schneefall" → "starkem Schneefall", "Sturmböen" stays (after "vor")."""
-    words = event.replace("-", "-").split()
-    if len(words) < 2:
-        return event
+# words that end the leading noun phrase; what follows keeps its own case ("mit Orkanböen")
+_PHRASE_BREAKS = {"mit", "durch", "von", "bei", "in", "im", "aus", "an", "am", "auf", "ohne", "für"}
+_PHRASE_JOINS = {"und", "oder", "sowie"}
+
+
+def _noun(word: str) -> str:
+    return word[:1].upper() + word[1:].lower()
+
+
+def _decline(words: list[str]) -> list[str]:
+    """Nominative → dative for one "adjective* noun" group (only the adjectives change)."""
+    if not words:
+        return []
     noun = words[-1].lower()
     plural = noun.endswith("n") and not noun.endswith(("ung", "ing"))
     out = []
     for word in words[:-1]:
         low = word.lower()
-        if (low.endswith(("es", "er")) and not low.endswith("ger")) or low.endswith("er"):
+        if low.endswith(("es", "er")):
             out.append(low[:-2] + "em")
         elif low.endswith("e"):
             out.append(low + ("n" if plural else "r"))
         else:
             out.append(low)
-    out.append(words[-1][:1].upper() + words[-1][1:].lower())
+    return [*out, _noun(words[-1])]
+
+
+def _keep(words: list[str]) -> list[str]:
+    """A group that already has its case: lower-case adjectives, capitalised noun."""
+    return [*(w.lower() for w in words[:-1]), _noun(words[-1])] if words else []
+
+
+def event_dative(event: str) -> str:
+    """ "Starker schneefall" → "starkem Schneefall", "Sturmböen" stays (after "vor").
+
+    Only the leading noun phrase (and phrases joined to it with "und"/"oder") is declined;
+    "SCHWERES GEWITTER mit ORKANBÖEN" → "schwerem Gewitter mit Orkanböen".
+    """
+    words = event.split()
+    if not words:
+        return event
+    out: list[str] = []
+    group: list[str] = []
+    declining = True
+
+    def flush() -> None:
+        out.extend(_decline(group) if declining else _keep(group))
+        group.clear()
+
+    for word in words:
+        low = word.lower()
+        if low in _PHRASE_BREAKS or low in _PHRASE_JOINS:
+            flush()
+            out.append(low)
+            if low in _PHRASE_BREAKS:
+                declining = False
+            continue
+        group.append(word)
+    flush()
     return " ".join(out)
 
 

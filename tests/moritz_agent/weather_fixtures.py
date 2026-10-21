@@ -111,6 +111,26 @@ def _hour_values(day: Day, hour: int) -> dict[str, Any]:
     }
 
 
+# Open-Meteo and Bright Sky stamp sums and probabilities at the END of their interval ("preceding
+# hour" / "preceding 15 minutes"); a ``Day.rain`` span (first hour, last hour) describes the hours
+# themselves, so these values move one step later in the answers.
+_END_STAMPED = {
+    "precipitation": 0.0,
+    "rain": 0.0,
+    "showers": 0.0,
+    "snowfall": 0.0,
+    "precipitation_probability": 5.0,
+    "sunshine_duration": 0.0,
+}
+
+
+def _stamp_at_end(block: dict[str, list[Any]], names: dict[str, Any]) -> None:
+    for name, before in names.items():
+        values = block.get(name)
+        if values:
+            block[name] = [before, *values[:-1]]
+
+
 def open_meteo_answer(
     days: list[Day] | None = None,
     *,
@@ -170,6 +190,8 @@ def open_meteo_answer(
             "et0_fao_evapotranspiration": 0.8,
         }.items():
             daily.setdefault(name, []).append(value)
+    _stamp_at_end(hourly, _END_STAMPED)
+    _stamp_at_end(minutely_block, {"precipitation": 0.0})
     answer: dict[str, Any] = {
         "latitude": lat,
         "longitude": lon,
@@ -239,6 +261,11 @@ def bright_sky_weather(days: list[Day] | None = None, first: date = FIRST_DAY) -
                     "wind_gust_speed": v["wind_gusts_10m"],
                 }
             )
+    # "precipitation" is the sum of the previous 60 minutes
+    for row, before in zip(rows[1:][::-1], rows[:-1][::-1], strict=True):
+        row["precipitation"] = before["precipitation"]
+    if rows:
+        rows[0]["precipitation"] = 0.0
     return {"weather": rows, "sources": [{"id": 1, "station_name": "Weilburg", "distance": 5200}]}
 
 

@@ -8,7 +8,7 @@ The pack is parsed from the raw JSON, which is what the cache stores. Every answ
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -16,11 +16,14 @@ from moritz_agent.config.settings import SkillsWeather
 from moritz_agent.skills.geo.gazetteer import Place
 from moritz_agent.skills.providers.http import HttpClient, HttpError
 from moritz_agent.skills.weather.model import (
+    HOUR_INTERVAL_FIELDS,
+    MINUTE_INTERVAL_FIELDS,
     Current,
     DayPoint,
     HourPoint,
     Minute15,
     WeatherPack,
+    interval_start,
 )
 
 CURRENT_VARS = (
@@ -217,6 +220,9 @@ def _parse_forecast(raw: dict[str, Any], fetched_at: datetime, tz: str) -> Weath
                 soil_temperature=_num(hourly, "soil_temperature_0cm", i),
             )
         )
+    # sums and probabilities are stamped at the end of their interval (see model.interval_start)
+    pack.minutes = interval_start(pack.minutes, timedelta(minutes=15), MINUTE_INTERVAL_FIELDS)
+    pack.hours = interval_start(pack.hours, timedelta(hours=1), HOUR_INTERVAL_FIELDS)
     daily = _series(raw.get("daily"), "daily")
     for i, stamp in enumerate(daily["time"]):
         sunrise = daily.get("sunrise", [None] * (i + 1))[i]

@@ -286,7 +286,14 @@ class Providers:
             self._failed("brightsky", exc)
             raise ProviderUnavailable("observed", "offline") from exc
         self._ok("brightsky")
-        return brightsky.parse_current(raw, tz)
+        try:
+            current, station, km = brightsky.parse_current(raw, tz)
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
+            current, station, km = None, "", None
+            log.debug("brightsky current_weather unreadable: %s", type(exc).__name__)
+        if current is None:
+            raise ProviderUnavailable("observed", "empty")
+        return current, station, km
 
     # -- warnings -----------------------------------------------------------------------------
     def cached_alerts(self, place: Place, max_age_s: float = 30 * 60) -> list[Warning] | None:
