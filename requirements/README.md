@@ -11,7 +11,7 @@ sie liegen bewusst nicht im Repository.
 | `discord` | Discord-Bot: discord.py mit Sprache (PyNaCl, davey) – nur wenn Discord eingerichtet ist |
 | `searxng` | Abhängigkeiten des mitgelieferten SearXNG (`third_party/searxng`) inkl. granian |
 
-Neu erzeugen: `uv pip compile --universal --python-version 3.13 --generate-hashes --no-header -o <g>.lock <g>.in`
+Neu erzeugen: `uv pip compile --universal --python-version 3.12 --generate-hashes --no-header -o <g>.lock <g>.in`
 
 Das Upstream-`requirements.txt` im Wurzelverzeichnis gehört zu KoboldCpp und bleibt unverändert.
 
