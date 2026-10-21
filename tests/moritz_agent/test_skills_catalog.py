@@ -8,6 +8,18 @@ import pytest
 from .skills_util import Session, ask
 
 GOLDEN = [
+    # P1-29: phrasings found missing by the 800 utterance corpus
+    ("Wie viele Kilometer sind 10 Meilen?", "10 Meilen sind etwa 16,1 Kilometer."),
+    (
+        "Wie viel sind 100 Kilometer pro Stunde in Meilen pro Stunde?",
+        "100 Kilometer pro Stunde sind etwa 62,1 Meilen pro Stunde.",
+    ),
+    ("Wie viel Grad Fahrenheit sind 20 Grad Celsius?", "20 Grad Celsius sind 68 Grad Fahrenheit."),
+    ("Welcher Ort ist die 35781?", "35781 ist Weilburg im Landkreis Limburg-Weilburg, Hessen."),
+    ("Wie viel ist 17,5 gerundet?", "Gerundet sind das 18."),
+    ("Wie lange dauert es noch bis Neujahr?", "Noch 75 Tage bis Neujahr."),
+    ("Wie lange ist Neujahr her?", "Seit Neujahr sind 290 Tage vergangen."),
+    ("Wie viel Prozent vom Jahr sind schon vorbei?", "Etwa 80 Prozent – 291 von 365 Tagen."),
     ("Wie viel Uhr ist es?", "Es ist 19 Uhr 12."),
     ("Wie spät isses?", "Es ist 19 Uhr 12."),
     ("Wie viel Uhr hammer?", "Es ist 19 Uhr 12."),

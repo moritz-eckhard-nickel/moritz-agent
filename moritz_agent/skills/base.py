@@ -95,6 +95,7 @@ class SkillResult:
     reminder: tuple[datetime, str] | None = (
         None  # (when, text): chat surfaces keep it, restart-proof
     )
+    forward: tuple[str, str] | None = None  # (title, text) to send to the caller's Discord (P1-39)
 
 
 # -- context -------------------------------------------------------------------------------

@@ -134,6 +134,7 @@ async def talk_how_are_you(req: Request) -> SkillResult:
         r"\bwie ist dein name\b",
         r"\bstell dich vor\b",
         r"\bbist du (?:ein |eine )?(?:mensch|roboter|computer|ki|programm|echt)\b",
+        r"\bbist du (?:der |die )?nikita\b",
     ),
 )
 async def talk_identity(req: Request) -> SkillResult:
@@ -266,6 +267,34 @@ async def talk_source(req: Request) -> SkillResult | None:
 
 
 @skill(
+    "talk.discord",
+    group="gespraech",
+    priority="S",
+    help="das Letzte auf Discord schicken",
+    examples=("Schick mir das auf Discord", "Schreib mir das auf Discord"),
+    max_words=9,
+    patterns=(
+        r"\b(?:schick|schreib|send)\w* (?:mir |uns )?(?:das |es |die antwort )?(?:bitte )?(?:auch )?"
+        r"(?:auf|an|per|über) (?:mein |meinen )?discord\b",
+        r"\bauf discord (?:schicken|schreiben|senden)\b",
+        r"\b(?:schick|schreib)\w* (?:mir )?(?:das |es )?(?:bitte )?aufs handy\b",
+    ),
+)
+async def talk_discord(req: Request) -> SkillResult:
+    """On the phone: the last answer goes to the caller's Discord as a direct message (docs/plan/14 §12)."""
+    if req.surface == "chat":
+        return say("Du bist doch schon auf Discord – hier steht es ja.")
+    if not req.svc.settings.discord.enabled:
+        return say("Discord ist bei mir nicht eingerichtet.")
+    if not req.ctx.last_text:
+        return say("Ich habe noch nichts gesagt, das ich dir schicken könnte.")
+    return SkillResult(
+        text="Okay, ich habe es dir auf Discord geschickt.",
+        forward=("📲 Von Nikita (Telefon)", req.ctx.last_text),
+    )
+
+
+@skill(
     "talk.slower",
     group="gespraech",
     priority="S",
@@ -350,6 +379,7 @@ async def talk_last_question(req: Request) -> SkillResult | None:
         r"\bbist du (?:noch )?da\b",
         r"\bkannst du mich hören\b",
         r"\bhallo\? ?hörst\b",
+        r"\bkannst du mich (?:verstehen|verstehen)\b",
     ),
 )
 async def talk_hear_me(req: Request) -> SkillResult:
@@ -367,6 +397,8 @@ async def talk_hear_me(req: Request) -> SkillResult:
         r"\bspeicherst du (?:das|alles|mich)\b",
         r"\bnimmst du (?:das|mich|alles) auf\b",
         r"\bwird das (?:aufgezeichnet|gespeichert|aufgenommen)\b",
+        r"\bspeicherst du\b",
+        r"\bhörst du (?:mir )?(?:immer |ständig |dauernd )?zu\b",
         r"\bdatenschutz\b",
     ),
 )
@@ -384,7 +416,12 @@ async def talk_privacy(req: Request) -> SkillResult:
     group="gespraech",
     priority="S",
     examples=("Welche Version hast du?", "Wie lange läufst du schon?"),
-    patterns=(r"\bwelche version\b", r"\bwie lange läufst du schon\b", r"\bwie alt bist du\b"),
+    patterns=(
+        r"\bwelche version\b",
+        r"\bversionsnummer\b",
+        r"\bwie lange läufst du schon\b",
+        r"\bwie alt bist du\b",
+    ),
 )
 async def talk_version(req: Request) -> SkillResult:
     uptime = timedelta(seconds=max(0.0, req.svc.clock.monotonic() - req.svc.started_at))
@@ -403,6 +440,7 @@ async def talk_version(req: Request) -> SkillResult:
         r"\bläuft alles\b",
         r"\bsystemstatus\b",
         r"\bfunktioniert alles\b",
+        r"\bfunktionierst du (?:richtig|noch|gut)\b",
         r"\balles in ordnung bei dir\b",
         r"\bwie ist dein status\b",
     ),
@@ -452,7 +490,10 @@ async def talk_compliment(req: Request) -> SkillResult:
     priority="K",
     examples=("Du bist doof",),
     max_words=6,
-    patterns=(r"\bdu bist (?:doof|dumm|blöd|schlecht|nutzlos|scheiße|ein idiot)\b",),
+    patterns=(
+        r"\bdu bist (?:doof|dumm|blöd|schlecht|nutzlos|scheiße|ein idiot)\b",
+        r"^du nervst$",
+    ),
 )
 async def talk_insult(req: Request) -> SkillResult:
     return say("Okay. Kann ich dir sonst irgendwie helfen?")
@@ -495,6 +536,7 @@ async def _briefing_calendar(req: Request) -> str | None:
         r"\bmorgenbriefing\b",
         r"\bwas gibt(?:'s| es) heute\b",
     ),
+    exclude=(r"\b(?:fernsehen|fernseher|tv|kino|essen|mittag\w*|abendessen|nachrichten)\b",),
 )
 async def briefing(req: Request) -> SkillResult:
     sentences: list[str] = []

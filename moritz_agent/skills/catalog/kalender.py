@@ -277,6 +277,7 @@ def _resolve_target(req: Request) -> tuple[date, str] | None:
         r"\bwie viele? (?:wochen|monate) (?:noch )?bis\b",
         r"\bwann ist (?:es )?(?:wieder )?(?:\w+ )?wochenende\b",
         r"\bwie viele? mal schlafen bis\b",
+        r"\bwie lange dauert es (?:noch )?bis\b",
     ),
 )
 async def date_days_until(req: Request) -> SkillResult | None:
@@ -313,7 +314,7 @@ async def date_days_until(req: Request) -> SkillResult | None:
     examples=("Wie viele Tage sind seit Neujahr vergangen?", "Wie lange ist der 1. Mai her?"),
     patterns=(
         r"\bwie viele? tage (?:sind |ist )?(?:es )?seit\b",
-        r"\bwie lange ist (?:der|die|das)\b.*\bher\b",
+        r"\bwie lange ist (?:der |die |das )?[\w. ]+ her\b",
         r"\bseit wann\b.*\b(?:ist|haben wir)\b",
         r"\bwie viele? tage (?:ist|sind) .* (?:her|vorbei|vergangen)\b",
     ),
@@ -562,6 +563,7 @@ async def date_age(req: Request) -> SkillResult | None:
     patterns=(
         r"\bwie viel (?:vom|des) jahr(?:es)? ist (?:schon )?(?:rum|vorbei|um|geschafft)\b",
         r"\bwie weit ist das jahr\b",
+        r"\bwie viel prozent (?:vom|des|von dem) jahr(?:es)?\b",
     ),
 )
 async def date_year_progress(req: Request) -> SkillResult:
@@ -644,6 +646,7 @@ async def date_special(req: Request) -> SkillResult | None:
         r"\bnächste[rn]? feiertag\b",
         r"\bwann ist (?:wieder )?feiertag\b",
         r"\bwann (?:haben|ist) wir? (?:wieder )?(?:einen )?feiertag\b",
+        r"\bwelcher feiertag (?:kommt|ist|steht) (?:als )?(?:nächstes|nächster|demnächst|bald)\b",
     ),
 )
 async def holiday_next(req: Request) -> SkillResult | None:

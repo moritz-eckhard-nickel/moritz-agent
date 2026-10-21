@@ -83,6 +83,7 @@ class RemoteResponder:
                             prompt=event.get("prompt"),
                             hangup=bool(event.get("hangup")),
                             skill_id=event.get("skill_id"),
+                            meta={"timer": event["timer"]} if event.get("timer") else None,
                         )
                     elif kind == "cancelled":
                         raise asyncio.CancelledError

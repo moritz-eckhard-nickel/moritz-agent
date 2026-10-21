@@ -204,7 +204,7 @@ skill(
     patterns=(
         (r"^(?:.*\s)?wann wird es (?:\w+ )?(?:dunkel|hell)\b.*$", 1.0),
         (r"^(?:.*\s)?ist es (?:draußen )?(?:noch |schon )?(?:hell|dunkel)\b.*$", 1.0),
-        (r"^(?:.*\s)?wann (?:ist|wird) (?:es )?dunkel\b.*$", 1.0),
+        (r"^(?:.*\s)?wann (?:ist|wird) (?:es )?(?:heute |morgen )?dunkel\b.*$", 1.0),
     ),
     exclude=(r"\bmond\b", r"\bwie lange (?:ist|wird) es (?:heute |morgen )?hell\b"),
 )(_sun_dark)
@@ -300,7 +300,9 @@ skill(
     priority="K",
     max_words=10,
     examples=("Wann ist die goldene Stunde?",),
-    patterns=((_line(r"goldene stunde", r"golden hour"), 1.0),),
+    patterns=(
+        (_line(r"goldene stunde", r"golden hour", r"beste[sn]? licht\w*", r"fotografieren"), 1.0),
+    ),
 )(_golden)
 
 
@@ -428,7 +430,15 @@ skill(
     help="Mond und Mondphasen",
     examples=("Welche Mondphase haben wir?", "Ist heute Vollmond?", "Wie sieht der Mond aus?"),
     patterns=(
-        (_line(r"mondphase\w*", r"wie sieht der mond aus", r"wie (?:voll|groß) ist der mond"), 1.0),
+        (
+            _line(
+                r"mondphase\w*",
+                r"wie sieht der mond aus",
+                r"wie (?:voll|groß) ist der mond",
+                r"wie ist der mond",
+            ),
+            1.0,
+        ),
         (r"^(?:.*\s)?ist (?:heute )?(?:vollmond|neumond)\b.*$", 1.0),
         (r"^(?:.*\s)?haben wir (?:heute )?(?:vollmond|neumond|halbmond)\b.*$", 1.0),
         (r"^(?:.*\s)?welcher mond\b.*$", 0.9),

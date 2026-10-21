@@ -292,6 +292,7 @@ skill(
             1.0,
         ),
         (_line(r"börsenstrompreis", r"strompreis\w*", r"strombörse"), 1.0),
+        (r"^(?:.*\s)?wie teuer ist (?:der |gerade )?strom\b.*$", 1.0),
     ),
 )(_power)
 

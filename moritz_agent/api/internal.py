@@ -55,6 +55,7 @@ async def turn(body: TurnBody, ctx: AppContext = Depends(require_internal)) -> S
                     yield _line({"type": "cancelled"})
                 else:
                     reply = event["reply"]
+                    timer = getattr(reply.result, "start_timer", None)  # (seconds, label)
                     yield _line(
                         {
                             "type": "reply",
@@ -62,6 +63,7 @@ async def turn(body: TurnBody, ctx: AppContext = Depends(require_internal)) -> S
                             "prompt": reply.prompt,
                             "hangup": reply.hangup,
                             "skill_id": reply.skill_id,
+                            "timer": list(timer) if timer else None,
                         }
                     )
         except ResponderUnavailable as exc:

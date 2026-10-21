@@ -113,7 +113,7 @@ class Stt(_Section):
     cpu_threads: int = Field(8, ge=0)
     no_speech_threshold: float = 0.6
     min_avg_logprob: float = -1.0
-    initial_prompt: str = "Nikita, Moritz, Hessen, Frankfurt."
+    initial_prompt: str = "Nikita, Moritz, Weilburg, Limburg, Lahn, Wetzlar, Hessen, Frankfurt, Wetter, Postleitzahl, Grad."
 
 
 class PiperSettings(_Section):

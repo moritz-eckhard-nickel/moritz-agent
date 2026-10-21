@@ -287,3 +287,47 @@ def test_talking_over_nikita_stops_the_playback_and_listens():
     assert any(isinstance(a, ArmTimer) and a.name == "silence" for a in actions)
     assert machine.state is State.LISTENING
     assert machine.handle(BargeIn()) == []  # already listening
+
+
+# -- the kitchen timer (SKILL "Eieruhr") ------------------------------------------------------------------------------
+def test_a_timer_that_runs_out_while_listening_is_announced_at_once():
+    from moritz_agent.phone.state_machine import (
+        CallAnswered,
+        CallStateMachine,
+        PlaybackDone,
+        PlayPrompt,
+        State,
+        TimerAlarm,
+    )
+
+    machine = CallStateMachine()
+    machine.handle(CallAnswered())
+    machine.handle(PlaybackDone())
+    assert machine.state is State.LISTENING
+    actions = machine.handle(TimerAlarm("Eier"))
+    assert PlayPrompt("timer_done") in actions and machine.state is State.SPEAKING
+    again = machine.handle(PlaybackDone())  # afterwards the conversation goes on
+    assert machine.state is State.LISTENING and any(
+        type(a).__name__ == "StartListening" for a in again
+    )
+
+
+def test_a_timer_that_runs_out_while_busy_waits_for_its_turn():
+    from moritz_agent.phone.state_machine import (
+        CallAnswered,
+        CallStateMachine,
+        PlaybackDone,
+        PlayPrompt,
+        State,
+        TimerAlarm,
+    )
+
+    machine = CallStateMachine()
+    machine.handle(CallAnswered())
+    assert machine.handle(TimerAlarm()) == []  # during the greeting: later
+    actions = machine.handle(PlaybackDone())
+    assert actions == [PlayPrompt("timer_done")] and machine.state is State.SPEAKING
+    machine.handle(PlaybackDone())
+    assert machine.state is State.LISTENING
+    machine.state = State.ENDING
+    assert machine.handle(TimerAlarm()) == []  # the call is over: nobody to tell

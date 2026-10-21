@@ -23,12 +23,14 @@ _DICE_WORDS = {"einen": 1, "ein": 1, "zwei": 2, "drei": 3, "vier": 4, "fünf": 5
     priority="S",
     help="Wörter buchstabieren",
     examples=("Buchstabier Weilburg", "Wie buchstabiert man Lahn?"),
-    patterns=(r"\bbuchstabier\w*\b", r"\bbuchstabiert man\b"),
+    patterns=(r"\bbuchstabier\w*\b", r"\bbuchstabiert man\b", r"\bwie schreibt man\b"),
     exclude=(r"\bwie heißt\b.*\bbuchstabiertafel\b",),
 )
 async def spell_word(req: Request) -> SkillResult | None:
-    m = re.search(r"\bbuchstabiert man (.+)$", req.text) or re.search(
-        r"\bbuchstabier\w* (.+)$", req.text
+    m = (
+        re.search(r"\bbuchstabiert man (.+)$", req.text)
+        or re.search(r"\bwie schreibt man (.+)$", req.text)
+        or re.search(r"\bbuchstabier\w* (.+)$", req.text)
     )
     if not m:
         return None
@@ -91,7 +93,7 @@ async def random_coin(req: Request) -> SkillResult:
     priority="S",
     help="würfeln",
     examples=("Würfel mal", "Wirf zwei Würfel", "Würfel einen W20"),
-    patterns=(r"\bwürfel\w*\b", r"\bw(?:4|6|8|10|12|20|100)\b"),
+    patterns=(r"\bwürfel\w*\b", r"\bwürfle\w*\b", r"\bw(?:4|6|8|10|12|20|100)\b"),
 )
 async def random_dice(req: Request) -> SkillResult | None:
     sides = 6
@@ -138,11 +140,15 @@ async def random_number(req: Request) -> SkillResult:
     priority="K",
     examples=("Entscheide: Pizza oder Döner?",),
     patterns=(
-        r"\b(?:entscheide|entscheid|such aus|wähle|wähl|lass das zufall entscheiden)\b.*\boder\b",
+        r"\b(?:entscheide|entscheid|such aus|such (?:eins|1) aus|wähle|wähl|lass das zufall entscheiden)\b.*\boder\b",
     ),
 )
 async def random_choice(req: Request) -> SkillResult | None:
-    body = re.sub(r"^.*?\b(?:entscheide|entscheid|such aus|wähle|wähl)\b[: ]*", "", req.text)
+    body = re.sub(
+        r"^.*?\b(?:entscheide|entscheid|such (?:eins|1) aus|such aus|wähle|wähl)\b[: ]*",
+        "",
+        req.text,
+    )
     options = [o.strip() for o in re.split(r"\boder\b|,", body) if o.strip()]
     if len(options) < 2:
         return None
@@ -205,6 +211,8 @@ async def fun_joke(req: Request) -> SkillResult | None:
     examples=("Sag was auf Hessisch", "Was heißt Guude?"),
     patterns=(
         r"\bauf hessisch\b",
+        r"\b(?:sag|sprich|red)\w* (?:mal |doch )?(?:was |etwas )?hessisch\w*\b",
+        r"\bwas hessisch\w*\b",
         r"\bwas (?:heißt|bedeutet|ist) (?:guude|ebbelwoi|äppler|schobbe|babbeln|gebabbel|handkäs|grie soß|dribbdebach|ei gude wie)\b",
         r"\bhessisch(?:e)? wörter\b",
     ),
@@ -271,7 +279,14 @@ def _duration_seconds(text: str) -> float | None:
     priority="S",
     help="Timer und Eieruhr",
     examples=("Stell einen Timer auf 3 Minuten", "Eieruhr 7 Minuten"),
-    patterns=(r"\btimer\b", r"\beieruhr\b", r"\bwecker (?:in|auf|für)\b", r"\bstoppuhr\b"),
+    patterns=(
+        r"\btimer\b",
+        r"\beieruhr\b",
+        r"\bwecker (?:in|auf|für)\b",
+        r"\bstoppuhr\b",
+        r"\bweck mich in\b",
+    ),
+    exclude=(r"\bwie lange\b.*\bnoch\b",),
 )
 async def timer_start(req: Request) -> SkillResult | None:
     if not req.svc.cfg.timer.enabled:
@@ -294,7 +309,12 @@ async def timer_start(req: Request) -> SkillResult | None:
     group="helfer",
     priority="S",
     examples=("Wie lange noch?",),
-    patterns=(r"\bwie lange noch\b", r"\bnoch wie lange\b", r"\bwie viel zeit (?:ist )?noch\b"),
+    patterns=(
+        r"\bwie lange noch\b",
+        r"\bnoch wie lange\b",
+        r"\bwie viel zeit (?:ist )?noch\b",
+        r"\bwie lange läuft (?:der|die) (?:timer|eieruhr)\b.*\bnoch\b",
+    ),
     exclude=(r"\bbis\b",),
 )
 async def timer_left(req: Request) -> SkillResult | None:

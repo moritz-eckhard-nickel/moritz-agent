@@ -325,7 +325,7 @@ async def calc_discount(req: Request) -> SkillResult | None:
     group="rechnen",
     priority="K",
     examples=("Runde 3,14159 auf zwei Stellen",),
-    patterns=(r"\brunde?\b.*\d", r"\bgerundet\b.*\d"),
+    patterns=(r"\brunde?\b.*\d", r"\bgerundet\b.*\d", r"\d.*\bgerundet\b"),
 )
 async def calc_round(req: Request) -> SkillResult | None:
     nums = find_numbers(req.text)
@@ -377,8 +377,8 @@ def _say_conversion(value: float, source: Unit, target: Unit) -> str:
         "3 Esslöffel in Milliliter",
     ),
     patterns=(
-        r"\b\d+(?:[.,]\d+)? ?[a-zäöüß°²³/%\"]+(?: [a-zäöüß]+)? (?:in|zu|nach|auf)\b",
-        r"\bwie ?viele? [a-zäöüß/²³ ]+ (?:sind|ist|hat|haben|ergeben|entsprechen)\b.*\b(?:\d|ein|eine|einen)\b",
+        r"\b\d+(?:[.,]\d+)? ?[a-zäöüß°²³/%\"]+(?: [a-zäöüß]+){0,2} (?:in|zu|nach|auf)\b",
+        r"\bwie ?viele? [a-zäöüß/²³ ]+ (?:sind|ist|hat|haben|ergeben|entsprechen)\b.*\b(?:\d+|ein|eine|einen|zwei)\b",
         r"\bumrechn\w*\b",
         r"\bwas sind \d+(?:[.,]\d+)? [a-zäöüß°/]+ in\b",
     ),

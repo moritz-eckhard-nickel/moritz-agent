@@ -432,3 +432,47 @@ def test_talking_over_the_answer_stops_it_and_the_first_words_are_not_lost(tmp_p
 
     h, cleared, stt = run(scenario())
     assert h.media.cleared > cleared and stt.calls >= 2
+
+
+class TimerResponder:
+    """Answers "Timer gestellt" and asks for a timer of 0.4 seconds."""
+
+    async def respond(self, text: str, context: TurnContext) -> Reply:
+        return Reply(text="Okay, der Timer läuft jetzt.", meta={"timer": [0.4, "Eier"]})
+
+
+def test_the_kitchen_timer_rings_in_the_call(tmp_path):
+    async def scenario():
+        h = Harness(tmp_path, FakeStt("Stell einen Timer"), TimerResponder(), silence_prompt_s=5.0)
+        h.store.catalog["timer_done"] = Prompt("timer_done", "Die Zeit ist um.", False)
+        h.store.ensure()
+        task = await h.start()
+        await h.say()
+        await h.wait_for(lambda: h.played("timer_done"), "Timer klingelt")
+        h.session.remote_hangup()
+        await h.finish(task)
+        return h
+
+    from moritz_agent.phone.audio.pcm import beep
+
+    h = run(scenario())
+    played = h.media.played
+    assert h.played("timer_done") and beep() in played  # the words, and a beep before them
+    assert played.index(beep()) < played.index(h.store.get("timer_done"))
+
+
+def test_a_timer_set_in_a_call_dies_with_the_call(tmp_path):
+    async def scenario():
+        h = Harness(tmp_path, FakeStt("Stell einen Timer"), TimerResponder(), silence_prompt_s=5.0)
+        h.store.catalog["timer_done"] = Prompt("timer_done", "Die Zeit ist um.", False)
+        h.store.ensure()
+        task = await h.start()
+        await h.say()
+        await h.wait_for(lambda: h.session._timers.keys() >= {"alarm:1"}, "Timer gestellt")
+        h.session.remote_hangup()
+        await h.finish(task)
+        await asyncio.sleep(0.6)
+        return h
+
+    h = run(scenario())
+    assert not h.played("timer_done")

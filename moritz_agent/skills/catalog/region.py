@@ -331,6 +331,7 @@ skill(
             r"^(?:.*\s)?was wird (?:\w+ )?(?:woche|nächste woche|diese woche)\b.*\babgeholt\b.*$",
             1.05,
         ),
+        (r"^(?:.*\s)?welche tonnen .*\b(?:woche|dran|fällig)\b.*$", 1.2),
     ),
 )(_waste_week)
 
@@ -440,6 +441,10 @@ skill(
             1.0,
         ),
         (_line(r"letzte[sn]? spiel\w*", r"spielergebnis\w*"), 0.95),
+        (
+            r"^(?:.*\s)?wie ist (?:\w+ )?(?:eintracht|die eintracht|frankfurt)\b.*\bausgegangen\b.*$",
+            1.0,
+        ),
     ),
 )(_football_last)
 
@@ -562,6 +567,7 @@ skill(
         ),
         (r"^(?:notiz|notizen?)\s*:?\s+\S.*$", 1.0),
         (r"^(?:merk dir|merke dir|notier|notiere)\s+\S.*$", 0.95),
+        (r"^schreib(?:e)? (?:mir )?auf\s*:?\s+\S.*$", 0.95),
     ),
     exclude=(r"\b(?:lies|lese|vorlesen|was steht)\b",),
 )(_notes_add)

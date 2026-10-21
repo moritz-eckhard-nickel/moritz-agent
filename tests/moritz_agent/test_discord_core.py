@@ -802,3 +802,47 @@ def test_a_call_note_reaches_subscribers_with_topics_only_if_allowed(tmp_path):
 
     texts = run_in(tmp_path, body)
     assert len(texts) == 1 and texts[0].startswith("Anruf beendet") and "Themen" not in texts[0]
+
+
+# -- phone → Discord (P1-39) --------------------------------------------------------------------------------------
+def test_the_phone_can_send_the_last_answer_to_discord(tmp_path):
+    async def body(system):
+        runtime = system.runtime
+        runtime.call_started("c1", "sip:20@192.168.1.176")
+        await runtime.turn("c1", "Wie spät ist es?")
+        reply = await runtime.turn("c1", "Schick mir das auf Discord")
+        pending = system.runtime.discord_store.pending(runtime.svc.now(), 10)
+        return reply, [(i["kind"], i["target"], i["payload"]["text"]) for i in pending]
+
+    reply, pending = run_in(tmp_path, body)
+    assert reply.text == "Okay, ich habe es dir auf Discord geschickt."
+    assert pending == [("forward", f"dm:{OWNER_ID}", "Es ist 19 Uhr 12.")]
+
+
+def test_a_known_extension_gets_it_on_its_own_discord_and_nothing_goes_out_without_discord(
+    tmp_path,
+):
+    async def body(system):
+        system.config.settings.discord.phone_extensions = {"20": TRUSTED_ID}
+        runtime = system.runtime
+        runtime.call_started("c1", "sip:20@192.168.1.176")
+        await runtime.turn("c1", "Welcher Tag ist heute?")
+        await runtime.turn("c1", "Schreib mir das auf Discord")
+        runtime.call_started("c2", "sip:99@x")
+        nothing = await runtime.turn("c2", "Schick mir das auf Discord")  # nothing said before
+        targets = [i["target"] for i in runtime.discord_store.pending(runtime.svc.now(), 10)]
+        return targets, nothing.text
+
+    targets, nothing = run_in(tmp_path, body)
+    assert targets == [f"dm:{TRUSTED_ID}"] and "noch nichts" in nothing
+
+
+def test_without_discord_the_phone_says_so(tmp_path):
+    async def go():
+        async with running_system(tmp_path) as system:
+            runtime = system.runtime
+            runtime.call_started("c1", "sip:20@x")
+            await runtime.turn("c1", "Wie spät ist es?")
+            return (await runtime.turn("c1", "Schick mir das auf Discord")).text
+
+    assert "nicht eingerichtet" in run(go())

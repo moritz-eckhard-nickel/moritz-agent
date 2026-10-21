@@ -1,16 +1,26 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-"""German text normalization for speech output.
+"""German text normalization for speech output (docs/plan/13 §9.3).
 
-CosyVoice's built-in text frontend only knows Chinese and English: digits would be read in
-English. Everything that reaches the TTS is therefore turned into plain German words first
-(numbers, times, dates, percent, units, abbreviations) and stripped of markdown, links and
-emoji. The result contains no digits.
+Piper (and the emergency voice espeak-ng) read digits and abbreviations unreliably, so everything
+that reaches the voice is turned into plain German words first: numbers (with the right "ein/eine/
+eins"), times, dates, minus signs and ranges, units ("l/m²", "hPa", "µg/m³", "ct/kWh" …), money,
+postcodes digit by digit, wind directions, and the pronunciation list
+``assets/data/sprache/aussprache.toml``; markdown, links and emoji are removed. The result contains no
+digits.
 """
 
 from __future__ import annotations
 
+import functools
 import re
+import tomllib
 import unicodedata
+from decimal import ROUND_HALF_UP, Decimal
+from pathlib import Path
+
+PRONUNCIATION_FILE = (
+    Path(__file__).resolve().parents[3] / "assets" / "data" / "sprache" / "aussprache.toml"
+)
 
 _ONES = [
     "null", "ein", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn", "elf", "zwölf",
@@ -53,6 +63,21 @@ _ABBREVIATIONS = (
     (r"\bMrd\.", "Milliarden"),
 )
 _UNITS = (
+    (r"(?<=\d)\s?l/m²", " Liter pro Quadratmeter"),
+    (r"(?<=\d)\s?mm/h\b", " Millimeter pro Stunde"),
+    (r"(?<=\d)\s?m/s\b", " Meter pro Sekunde"),
+    (r"(?<=\d)\s?µg/m³", " Mikrogramm pro Kubikmeter"),
+    (r"(?<=\d)\s?mg/m³", " Milligramm pro Kubikmeter"),
+    (r"(?<=\d)\s?ct/kWh\b", " Cent pro Kilowattstunde"),
+    (r"(?<=\d)\s?€/kWh\b", " Euro pro Kilowattstunde"),
+    (r"(?<=\d)\s?kWh\b", " Kilowattstunden"),
+    (r"(?<=\d)\s?hPa\b", " Hektopascal"),
+    (r"(?<=\d)\s?km²", " Quadratkilometer"),
+    (r"(?<=\d)\s?m²", " Quadratmeter"),
+    (r"(?<=\d)\s?m³", " Kubikmeter"),
+    (r"(?<=\d)\s?kW\b", " Kilowatt"),
+    (r"(?<=\d)\s?ct\b", " Cent"),
+    (r"\bBft\s?(?=\d)", "Windstärke "),
     (r"°\s?C\b", " Grad Celsius"),
     (r"°", " Grad"),
     (r"\s?%", " Prozent"),
@@ -70,6 +95,86 @@ _UNITS = (
     (r"(?<=\d)\s?l\b", " Liter"),
     (r"(?<=\d)\s?min\b", " Minuten"),
 )
+
+
+@functools.cache
+def _pronunciations(path: Path = PRONUNCIATION_FILE) -> tuple[tuple[re.Pattern[str], str], ...]:
+    """The replacements of ``aussprache.toml`` as compiled patterns (empty if the file is missing)."""
+    try:
+        with path.open("rb") as handle:
+            data = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError):
+        return ()
+    rules: list[tuple[re.Pattern[str], str]] = []
+    words: dict[str, str] = dict(data.get("woerter", {}))
+    for word in data.get("buchstaben", {}).get("words", []):
+        words[word] = " ".join(word)
+    for word, spoken in sorted(words.items(), key=lambda item: -len(item[0])):
+        rules.append((re.compile(rf"(?<![\w-]){re.escape(word)}(?![\w-])"), spoken))
+    for pattern, spoken in data.get("ausdruecke", {}).items():
+        rules.append((re.compile(pattern, re.IGNORECASE), spoken))
+    return tuple(rules)
+
+
+def _pronounce(text: str) -> str:
+    for pattern, spoken in _pronunciations():
+        text = pattern.sub(spoken, text)
+    return text
+
+
+_DIRECTIONS = {
+    "NNO": "Nordnordost", "NNW": "Nordnordwest", "SSO": "Südsüdost", "SSW": "Südsüdwest",
+    "ONO": "Ostnordost", "OSO": "Ostsüdost", "WNW": "Westnordwest", "WSW": "Westsüdwest",
+    "NO": "Nordost", "NW": "Nordwest", "SO": "Südost", "SW": "Südwest",
+}  # fmt: skip
+_FEMININE = {
+    "minute", "minuten", "stunde", "stunden", "sekunde", "sekunden", "woche", "wochen", "tonne",
+    "flasche", "packung", "dose", "tasse", "tüte", "scheibe", "portion", "seite", "million",
+}  # fmt: skip
+_MASCULINE_E = {"name", "käse", "gedanke", "buchstabe", "friede", "glaube", "wille", "funke"}
+_HALF_UNITS = r"(?:Liter|Meter|Kilometer|Kilogramm|Stunden|Tage|Wochen|Jahre|Monate)"
+
+
+def _expand_signs_and_ranges(text: str) -> str:
+    """ "−3" → "minus 3", "12–15" → "12 bis 15" (also times: "12:30–13:00")."""
+    number = r"(\d{1,2}[:.]\d{2}|\d{1,4}(?:,\d+)?)"
+    text = re.sub(rf"(?<![\d\w,.:-]){number}\s?[–−-]\s?{number}(?![\d-])", r"\1 bis \2", text)
+    return re.sub(r"(?<![\w.,:])[−–-]\s?(?=\d)", "minus ", text)
+
+
+def _digits(code: str) -> str:
+    return " ".join(cardinal(int(d)) for d in code)
+
+
+def _expand_postcodes_and_directions(text: str) -> str:
+    text = re.sub(
+        r"\b(?:Postleitzahl|PLZ)\s*(\d{5})\b", lambda m: "Postleitzahl " + _digits(m[1]), text
+    )
+    text = re.sub(
+        r"\b(in|für|bei|aus|nach|von)\s+(\d{5})\b(?=\s+[A-ZÄÖÜ])",
+        lambda m: f"{m[1]} {_digits(m[2])}",
+        text,
+    )
+    pattern = r"\b(" + "|".join(sorted(_DIRECTIONS, key=len, reverse=True)) + r")\b"
+    return re.sub(pattern, lambda m: _DIRECTIONS[m[1]], text)
+
+
+def _half(match: re.Match[str]) -> str:
+    whole = int(match[1])
+    return (
+        ("eineinhalb" if whole == 1 else f"{cardinal(whole, eins=False)}einhalb") + " " + match[2]
+    )
+
+
+def _expand_meters(text: str) -> str:
+    """ "1,42 m" (a river level) → "ein Meter zweiundvierzig"."""
+
+    def meters(match: re.Match[str]) -> str:
+        whole, centi = int(match[1]), int(match[2])
+        spoken = f"{cardinal(whole, eins=False)} Meter"
+        return spoken + (f" {cardinal(centi)}" if centi else "")
+
+    return re.sub(r"\b(\d+),(\d{2})\s?m\b(?![²³/])", meters, text)
 
 
 def cardinal(n: int, *, eins: bool = True) -> str:
@@ -171,11 +276,13 @@ def _preceded_by_dative(text: str, position: int) -> bool:
 
 def _expand_euro_cents(text: str) -> str:
     def euro_cents(match: re.Match[str]) -> str:
-        euros, cents = int(match[1]), int(match[2])
+        amount = Decimal(f"{match[1]}.{match[2]}").quantize(Decimal("0.01"), ROUND_HALF_UP)
+        euros, cents = int(amount), int((amount - int(amount)) * 100)
         spoken = f"{cardinal(euros, eins=False)} Euro"
         return spoken + (f" {cardinal(cents)}" if cents else "")
 
-    return re.sub(r"\b(\d+),(\d{2})\s?€", euro_cents, text)
+    # "1,729 €" (fuel prices) is rounded to cents; "1,5 €" is one euro fifty
+    return re.sub(r"\b(\d+),(\d{1,4})\s?€", euro_cents, text)
 
 
 def _expand_numbers(text: str) -> str:
@@ -194,14 +301,19 @@ def _expand_numbers(text: str) -> str:
             before,
         ):
             return _year(value)
-        if value == 1 and after.lower().startswith("million"):
-            return "eine"
-        if value == 1 and after.lower().startswith(("uhr", "mal", "euro", "grad")):
-            return "ein"
-        if value == 1 and after.lower().startswith(
-            ("prozent", "kilo", "meter", "liter", "gramm", "minute", "stunde", "tag")
-        ):
-            return "ein"
+        if value == 1:
+            word = re.match(r"[A-Za-zÄÖÜäöüß]+", after)
+            noun = word[0] if word else ""
+            low = noun.lower()
+            if low.startswith("million"):
+                return "eine"
+            if noun[
+                :1
+            ].isupper():  # a noun follows: its gender decides ("eine Minute", "ein Pfund")
+                feminine = low in _FEMININE or (low.endswith("e") and low not in _MASCULINE_E)
+                return "eine" if feminine else "ein"
+            if low in {"mal", "uhr"}:
+                return "ein"
         return cardinal(value)
 
     text = re.sub(r"\b(\d+),(\d{1,3})\b", decimal, text)
@@ -212,12 +324,17 @@ def _expand_numbers(text: str) -> str:
 def normalize_for_tts(text: str) -> str:
     """Return plain German words for ``text`` (no digits, no markup)."""
     text = _strip_noise(text)
+    text = _pronounce(text)
     for pattern, replacement in _ABBREVIATIONS:
         text = re.sub(pattern, replacement, text, flags=re.IGNORECASE if "usw" in pattern else 0)
+    text = _expand_postcodes_and_directions(text)
+    text = _expand_signs_and_ranges(text)
     text = _expand_dates_and_times(text)
     text = _expand_euro_cents(text)
+    text = _expand_meters(text)
     for pattern, replacement in _UNITS:
         text = re.sub(pattern, replacement, text)
+    text = re.sub(rf"\b(\d+),5\s+({_HALF_UNITS})\b", _half, text)
     text = _expand_numbers(text)
     text = text.replace("&", " und ").replace("+", " plus ").replace("=", " gleich ")
     text = re.sub(r"[\"“”„«»()\[\]{}<>/\\]", " ", text)

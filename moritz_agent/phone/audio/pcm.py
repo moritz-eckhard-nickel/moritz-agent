@@ -107,6 +107,19 @@ def silence(ms: int, rate: int = SAMPLE_RATE) -> bytes:
     return bytes(2 * rate * ms // 1000)
 
 
+def beep(ms: int = 220, freq: float = 880.0, count: int = 2, rate: int = SAMPLE_RATE) -> bytes:
+    """A short double beep (the sound before "Die Zeit ist um.")."""
+    n = rate * ms // 1000
+    t = np.arange(n) / rate
+    envelope = np.minimum(1.0, np.minimum(t, t[::-1] + 1 / rate) * 200)  # no clicks
+    tone = (0.35 * np.sin(2 * np.pi * freq * t) * envelope).astype(np.float32)
+    gap = np.zeros(rate * 90 // 1000, dtype=np.float32)
+    parts: list[np.ndarray] = []
+    for _ in range(count):
+        parts += [tone, gap]
+    return float_to_pcm16(np.concatenate(parts)).tobytes()
+
+
 def chunk_frames(pcm: bytes, frame_bytes: int = FRAME_BYTES) -> Iterator[bytes]:
     """Split PCM into fixed-size frames (last one zero padded)."""
     for offset in range(0, len(pcm), frame_bytes):

@@ -632,3 +632,16 @@ def test_authenticator_without_login_never_validates(tmp_path):
         return auth.enabled, auth.valid("irgendwas"), auth.login("a", "b", "1.2.3.4").reason
 
     assert scenario(tmp_path, body, web_login=False) == (False, False, "not_configured")
+
+
+def test_a_timer_request_reaches_the_phone_in_the_reply(tmp_path):
+    async def body(system):
+        async with system.client(internal=True) as client:
+            headers = system.internal_headers()
+            timer = await post_turn(client, headers, "c1", "Stell einen Timer auf zehn Minuten")
+            plain = await post_turn(client, headers, "c1", "Wie spät ist es?")
+            return timer[-1], plain[-1]
+
+    timer, plain = scenario(tmp_path, body)
+    assert timer["type"] == "reply" and timer["timer"][0] == 600
+    assert plain["timer"] is None

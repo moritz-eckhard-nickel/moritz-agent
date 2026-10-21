@@ -68,6 +68,13 @@ class TimerFired:
 
 
 @dataclass(frozen=True)
+class TimerAlarm:
+    """The kitchen timer of this call has run out ("Die Zeit ist um.")."""
+
+    label: str = ""
+
+
+@dataclass(frozen=True)
 class BargeIn:
     """Somebody started talking while Nikita was speaking (Discord voice only)."""
 
@@ -86,6 +93,7 @@ Event = (
     | ReplyFailed
     | TimerFired
     | BargeIn
+    | TimerAlarm
     | RemoteHangup
 )
 
@@ -186,9 +194,14 @@ class CallStateMachine:
         self._unclear = 0
         self._failures = 0
         self._hangup_reason = "goodbye"
+        self._alarms = 0  # timers that ran out while Nikita was busy
 
     # -- helpers -----------------------------------------------------------------------
     def _listen(self) -> list[Action]:
+        if self._alarms:  # a timer ran out meanwhile: say so first, then listen
+            self._alarms -= 1
+            self.state = State.SPEAKING
+            return [PlayPrompt("timer_done")]
         self.state = State.LISTENING
         seconds = self.cfg.silence_hangup_s if self._silence_prompted else self.cfg.silence_prompt_s
         return [StartListening(), ArmTimer("silence", seconds)]
@@ -221,6 +234,16 @@ class CallStateMachine:
             return []
         if isinstance(event, RemoteHangup):
             return self._end(event.reason)
+
+        if isinstance(event, TimerAlarm):
+            if self.state in (State.ENDING, State.RINGING, State.GREETING):
+                self._alarms += int(self.state is State.GREETING)  # after the greeting
+                return []
+            if self.state is State.LISTENING:
+                self.state = State.SPEAKING
+                return [CancelTimer("silence"), PlayPrompt("timer_done")]
+            self._alarms += 1
+            return []
 
         if isinstance(event, TimerFired) and event.name == "max_duration":
             if self.state in (State.ENDING, State.RINGING):

@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from moritz_agent.config.settings import Phone
 from moritz_agent.logging_setup import get_logger
 from moritz_agent.phone.audio.announcements import AnnouncementStore
-from moritz_agent.phone.audio.pcm import chunk_frames
+from moritz_agent.phone.audio.pcm import beep, chunk_frames
 from moritz_agent.phone.audio.stt import SpeechToText
 from moritz_agent.phone.audio.tts import TtsError, TtsService
 from moritz_agent.phone.audio.vad import SileroVad, UtteranceEnd
@@ -48,6 +48,7 @@ from moritz_agent.phone.state_machine import (
     StartListening,
     State,
     StopPlayback,
+    TimerAlarm,
     TimerFired,
     Transcribe,
     TranscriptReady,
@@ -120,6 +121,7 @@ class CallSession:
         self._listening = False
         self._busy = False  # an item is being synthesized/played
         self._utterance = b""
+        self._alarm_count = 0
         self._prebuffer = b""  # the first words of an interruption, replayed into the VAD
         self._player_task: asyncio.Task | None = None
         self._last_rx = self._loop.time()
@@ -232,6 +234,8 @@ class CallSession:
                 if prompt == "thinking":  # skills may ask for a more specific one
                     skills = self._context.extras.get("skills")
                     prompt = getattr(skills, "thinking_prompt", None) or prompt
+                if prompt == "timer_done":
+                    self._queue_playback("beep", "")  # a short signal, then the words
                 self._queue_playback("prompt", prompt)
                 if prompt == "greeting":
                     await self._queue_greeting_hint()
@@ -369,6 +373,7 @@ class CallSession:
         self._turn_clock["reply_s"] = self._loop.time() - self._turn_clock.get(
             "reply_request", self._loop.time()
         )
+        self._arm_kitchen_timer(reply)
         spoken = reply.text or ""
         self._context.turn += 1
         self._context.last_reply = reply.text or self._context.last_reply
@@ -376,6 +381,22 @@ class CallSession:
         self._events.put_nowait(
             ReplyReady(text=reply.text, prompt=reply.prompt, hangup=reply.hangup)
         )
+
+    def _arm_kitchen_timer(self, reply) -> None:
+        """ "Stell einen Timer auf 10 Minuten": when the time is up Nikita says so (SKILL "Eieruhr")."""
+        timer = getattr(getattr(reply, "result", None), "start_timer", None) or (
+            reply.meta or {}
+        ).get("timer")
+        if not timer:
+            return
+        seconds, label = float(timer[0]), str(timer[1])
+        self._alarm_count += 1
+        name = f"alarm:{self._alarm_count}"
+        self._timers[name] = self._loop.call_later(seconds, self._alarm_fired, name, label)
+
+    def _alarm_fired(self, name: str, label: str) -> None:
+        self._timers.pop(name, None)
+        self._events.put_nowait(TimerAlarm(label))
 
     # -- playback ----------------------------------------------------------------------
     def _queue_playback(self, kind: str, value: str) -> None:
@@ -387,7 +408,9 @@ class CallSession:
             kind, value = await self._items.get()
             self._busy = True
             try:
-                if kind == "prompt":
+                if kind == "beep":
+                    self._push(beep())
+                elif kind == "prompt":
                     await self._play_prompt(value)
                 else:
                     await self._speak(value)

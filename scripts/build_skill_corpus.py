@@ -578,8 +578,467 @@ NEGATIVE: list[str] = [
     "Was soll ich zum Abendessen kochen",
 ]
 
+# -- second batch (P1-29: corpus of at least 800 utterances) ---------------------------------------
+EXTRA_POSITIVE: dict[str, list[str]] = {
+    "time.now": [
+        "Sag mal die Uhrzeit",
+        "Wie spät haben wir es",
+        "Wieviel Uhr isses",
+        "Hast du die Uhrzeit",
+    ],
+    "time.world": [
+        "Wie spät ist es in Paris?",
+        "Wie viel Uhr ist es in Peking?",
+        "Uhrzeit in Dubai",
+    ],
+    "time.until": ["Wie lange noch bis 18 Uhr?", "Wie lange ist es noch bis Mitternacht?"],
+    "time.dst_next": ["Wann wird die Uhr umgestellt?", "Wann ist die nächste Zeitumstellung?"],
+    "date.today": [
+        "Welches Datum ist heute?",
+        "Den Wievielten haben wir heute?",
+        "Welcher Tag ist heute?",
+    ],
+    "date.weekday": [
+        "Was für ein Tag ist heute?",
+        "Welcher Wochentag ist heute?",
+        "Was ist heute für ein Wochentag?",
+    ],
+    "date.weekday_of": [
+        "Welcher Wochentag ist der 24. Dezember?",
+        "Auf welchen Wochentag fällt Silvester?",
+        "Welcher Wochentag war der 3. Oktober 1990?",
+    ],
+    "date.days_until": [
+        "Wie viele Tage sind es noch bis Ostern?",
+        "Wie lange noch bis Silvester?",
+        "Noch wie viele Tage bis zum Wochenende?",
+        "Wie lange dauert es noch bis Neujahr?",
+    ],
+    "date.days_since": ["Wie viele Tage ist Weihnachten her?", "Wie lange ist Neujahr her?"],
+    "date.offset": ["Welcher Tag ist in 10 Tagen?", "Welches Datum haben wir in zwei Wochen?"],
+    "date.relative": [
+        "Welcher Tag war vorgestern?",
+        "Welches Datum war gestern?",
+        "Welcher Tag ist übermorgen?",
+    ],
+    "date.calendar_week": ["In welcher Kalenderwoche sind wir?", "Welche KW haben wir?"],
+    "date.leap_year": ["Ist 2028 ein Schaltjahr?", "Ist dieses Jahr ein Schaltjahr?"],
+    "date.age": [
+        "Wie alt ist man, wenn man 1990 geboren ist?",
+        "Wie alt bin ich, wenn ich 1985 geboren wurde?",
+    ],
+    "date.special": [
+        "Wann ist Muttertag?",
+        "Wann ist Ostern dieses Jahr?",
+        "Wann ist Heiligabend?",
+        "Wann ist Halloween?",
+    ],
+    "date.year_progress": [
+        "Wie viel Prozent vom Jahr sind schon vorbei?",
+        "Wie weit ist das Jahr schon?",
+    ],
+    "date.weeks_in_year": [
+        "Wie viele Wochen hat dieses Jahr?",
+        "Wie viele Kalenderwochen hat das Jahr?",
+    ],
+    "date.zodiac": ["Welches Sternzeichen hat man am 15. August?"],
+    "holiday.is": [
+        "Ist heute ein Feiertag?",
+        "Ist morgen Feiertag?",
+        "Ist der 3. Oktober ein Feiertag?",
+    ],
+    "holiday.next": ["Wann ist der nächste Feiertag?", "Welcher Feiertag kommt als Nächstes?"],
+    "holiday.list": ["Welche Feiertage gibt es im Dezember?", "Welche Feiertage hat Hessen?"],
+    "holiday.long_weekend": [
+        "Gibt es bald ein langes Wochenende?",
+        "Wann ist das nächste lange Wochenende?",
+    ],
+    "holiday.workdays": [
+        "Wie viele Arbeitstage hat dieser Monat?",
+        "Wie viele Werktage sind es noch bis Weihnachten?",
+    ],
+    "school.now": ["Sind gerade Schulferien?", "Haben wir Ferien in Hessen?"],
+    "school.next": [
+        "Wann sind die nächsten Herbstferien?",
+        "Wann beginnen die Sommerferien in Hessen?",
+        "Wann sind Weihnachtsferien?",
+    ],
+    "weather.now": [
+        "Wie wird das Wetter in 35781?",
+        "Wie ist das Wetter gerade?",
+        "Wie ist das Wetter jetzt in Weilburg?",
+        "Wie ist das Wetter in Limburg?",
+    ],
+    "weather.today": ["Wie wird das Wetter heute?", "Wettervorhersage für heute"],
+    "weather.day": [
+        "Wie wird das Wetter morgen?",
+        "Wie wird das Wetter morgen in Frankfurt?",
+        "Wetter übermorgen in Wiesbaden",
+        "Wie wird das Wetter am Dienstag?",
+        "Wetter für die Postleitzahl 60311 morgen",
+        "Wie wird das Wetter in Gießen am Freitag?",
+    ],
+    "weather.weekend": [
+        "Wie wird das Wetter am Wochenende?",
+        "Wie wird das Wetter am Wochenende in Weilburg?",
+    ],
+    "weather.week": [
+        "Wie wird das Wetter diese Woche?",
+        "Wettervorhersage für die ganze Woche",
+        "Wie wird die Woche wettertechnisch?",
+    ],
+    "weather.rain": [
+        "Regnet es morgen?",
+        "Wird es heute noch regnen?",
+        "Kommt heute Regen?",
+        "Gibt es morgen Schauer?",
+    ],
+    "weather.rain_now": ["Regnet es gerade?", "Regnet es draußen?", "Regnet es jetzt in Limburg?"],
+    "weather.rain_when": [
+        "Wann hört der Regen auf?",
+        "Wann fängt es an zu regnen?",
+        "Wann regnet es das nächste Mal?",
+    ],
+    "weather.rain_amount": [
+        "Wie viel Regen ist letzte Nacht gefallen?",
+        "Wie viel hat es gestern geregnet?",
+        "Wie viel Regen kommt morgen?",
+        "Wie viel Niederschlag gibt es heute?",
+    ],
+    "weather.snow": [
+        "Schneit es morgen?",
+        "Wird es Schnee geben?",
+        "Gibt es dieses Wochenende Schnee?",
+    ],
+    "weather.frost": [
+        "Gibt es heute Nacht Frost?",
+        "Wird es morgen früh frostig?",
+        "Muss ich das Auto heute Nacht abkratzen?",
+    ],
+    "weather.temperature": [
+        "Wie warm war es gestern?",
+        "Wie kalt wird es heute Nacht mindestens?",
+        "Was ist die Höchsttemperatur morgen?",
+        "Wie heiß wird es heute höchstens?",
+        "Wie kalt ist es gerade draußen?",
+        "Wie warm ist es draußen?",
+        "Was zeigt das Thermometer?",
+        "Wie warm wird es morgen?",
+        "Wie kalt wird es heute Nacht?",
+        "Welche Temperatur hat es morgen Mittag?",
+        "Wie warm wird es am Wochenende?",
+    ],
+    "weather.wind": [
+        "Wie windig ist es heute?",
+        "Wie stark ist der Wind morgen?",
+        "Weht heute Wind?",
+    ],
+    "weather.thunder": ["Gibt es heute ein Gewitter?", "Kommt ein Gewitter?", "Donnert es heute?"],
+    "weather.umbrella": [
+        "Brauche ich heute einen Regenschirm?",
+        "Brauche ich einen Schirm?",
+        "Soll ich einen Regenschirm mitnehmen?",
+    ],
+    "weather.uv": ["Wie hoch ist heute der UV-Index?", "Brauche ich heute Sonnencreme?"],
+    "weather.humidity": ["Wie hoch ist die Luftfeuchtigkeit?", "Wie feucht ist es draußen?"],
+    "weather.pressure": ["Wie hoch ist der Luftdruck?", "Wie ist der Luftdruck gerade?"],
+    "weather.fog": ["Gibt es morgen früh Nebel?", "Ist es draußen neblig?"],
+    "weather.clouds": ["Wie bewölkt ist es heute?"],
+    "weather.sunshine": ["Wie viele Sonnenstunden gibt es morgen?", "Scheint morgen die Sonne?"],
+    "weather.feels_like": ["Wie fühlt sich die Temperatur an?", "Wie ist die gefühlte Temperatur?"],
+    "weather.extremes": [],
+    "weather.compare": ["Ist es morgen wärmer als heute?", "Wird es morgen kälter als heute?"],
+    "weather.when_change": ["Wann wird das Wetter besser?", "Wann wird es wärmer?"],
+    "weather.long_range": ["Wie wird das Wetter nächste Woche?"],
+    "weather.yesterday": ["Wie war das Wetter gestern?"],
+    "weather.observed": [],
+    "weather.region": [
+        "Wie ist das Wetter bei uns in der Gegend?",
+        "Wie wird das Wetter in der Region?",
+    ],
+    "weather.source": [
+        "Woher hast du die Wetterdaten?",
+        "Welcher Wetterdienst liefert das Wetter?",
+    ],
+    "warn.weather": [
+        "Gibt es Unwetterwarnungen?",
+        "Gibt es eine Wetterwarnung für Weilburg?",
+        "Ist eine Unwetterwarnung aktiv?",
+        "Gibt es eine Sturmwarnung?",
+    ],
+    "warn.weather_detail": [],
+    "warn.civil": [
+        "Gibt es eine Katastrophenwarnung?",
+        "Gibt es aktuelle Warnungen vom Bevölkerungsschutz?",
+    ],
+    "pollen.today": [
+        "Wie ist der Pollenflug heute?",
+        "Wie stark fliegen die Pollen?",
+        "Gibt es heute viele Pollen?",
+        "Wie ist die Pollenbelastung?",
+    ],
+    "pollen.forecast": ["Wie wird der Pollenflug morgen?", "Pollenvorhersage für morgen"],
+    "air.quality": [
+        "Wie ist die Luftqualität?",
+        "Wie sauber ist die Luft heute?",
+        "Wie hoch ist der Feinstaub?",
+    ],
+    "air.ozone": ["Wie hoch ist der Ozonwert?", "Gibt es heute viel Ozon?"],
+    "advice.jacket": [
+        "Brauche ich eine Jacke?",
+        "Was soll ich heute anziehen?",
+        "Muss ich mich warm anziehen?",
+    ],
+    "advice.bike": ["Kann ich heute Fahrrad fahren?", "Ist es heute gutes Wetter fürs Radfahren?"],
+    "advice.run": ["Ist heute ein guter Tag zum Joggen?", "Kann ich heute laufen gehen?"],
+    "advice.hike": ["Eignet sich das Wetter zum Wandern?", "Kann ich morgen wandern gehen?"],
+    "advice.swim": ["Kann ich heute baden gehen?", "Ist es warm genug zum Schwimmen?"],
+    "advice.laundry": ["Kann ich heute Wäsche aufhängen?", "Trocknet die Wäsche heute draußen?"],
+    "advice.car_wash": ["Lohnt sich heute die Autowäsche?", "Kann ich heute mein Auto waschen?"],
+    "advice.mow": ["Kann ich heute Rasen mähen?", "Ist heute ein guter Tag zum Rasenmähen?"],
+    "advice.garden_water": [
+        "Muss ich heute den Garten gießen?",
+        "Soll ich heute die Blumen gießen?",
+    ],
+    "advice.plants_frost": [
+        "Muss ich die Pflanzen reinholen wegen Frost?",
+        "Soll ich die Pflanzen heute Nacht reinstellen?",
+    ],
+    "advice.ventilate": ["Soll ich lüften?", "Ist jetzt ein guter Zeitpunkt zum Lüften?"],
+    "advice.heating": ["Muss ich heute heizen?", "Brauche ich die Heizung?"],
+    "advice.bbq": ["Kann ich heute grillen?", "Ist heute Grillwetter?"],
+    "sun.rise_set": [
+        "Wann geht die Sonne auf?",
+        "Wann geht die Sonne unter?",
+        "Um wie viel Uhr ist Sonnenaufgang?",
+        "Wann ist Sonnenuntergang morgen?",
+    ],
+    "sun.daylength": ["Wie lange ist es heute hell?", "Wie lang ist der Tag heute?"],
+    "sun.dark": ["Wann wird es dunkel?", "Wann ist es heute dunkel?"],
+    "sun.noon": ["Wann steht die Sonne am höchsten?"],
+    "sun.golden_hour": [
+        "Wann ist die goldene Stunde?",
+        "Wann ist das beste Licht zum Fotografieren?",
+    ],
+    "sun.solstice": ["Wann ist die Sommersonnenwende?", "Wann ist Wintersonnenwende?"],
+    "season.start": [
+        "Wann ist Sommeranfang?",
+        "Wann beginnt der Herbst?",
+        "Wann fängt der Frühling an?",
+        "Wann beginnt der Winter?",
+    ],
+    "moon.phase": [
+        "Wie ist der Mond heute?",
+        "Welche Mondphase haben wir?",
+        "Ist heute Vollmond?",
+        "Ist Neumond?",
+    ],
+    "moon.next": ["Wann ist der nächste Vollmond?", "Wann ist der nächste Neumond?"],
+    "moon.rise_set": ["Wann geht der Mond auf?", "Wann geht der Mond unter?"],
+    "sky.stars": ["Sieht man heute Nacht Sterne?", "Kann ich heute die Sterne sehen?"],
+    "calc.arith": [
+        "Was ist 12 mal 12?",
+        "Wie viel ist 100 geteilt durch 8?",
+        "Was ist 45 plus 78?",
+        "Was ergibt 1000 minus 357?",
+        "Rechne 15 mal 15",
+        "Was ist 7 mal 8?",
+        "Wie viel ist 2 hoch 10?",
+        "Was ist die Wurzel aus 144?",
+    ],
+    "calc.percent": [
+        "Wie viel sind 15 Prozent von 80?",
+        "Was sind 20 Prozent von 250?",
+        "Wie viel Prozent sind 30 von 120?",
+    ],
+    "calc.vat": [
+        "Wie viel ist 100 Euro netto mit Mehrwertsteuer?",
+        "Wie viel Mehrwertsteuer sind das bei 59 Euro?",
+    ],
+    "calc.tip": [
+        "Wie viel Trinkgeld bei 45 Euro?",
+        "Wie viel Trinkgeld soll ich bei 28 Euro geben?",
+    ],
+    "calc.split": [
+        "Wie viel ist das pro Person bei 90 Euro für vier Leute?",
+        "90 Euro durch 3 Personen teilen",
+    ],
+    "calc.discount": [
+        "Was kostet es mit 20 Prozent Rabatt bei 80 Euro?",
+        "Wie viel ist 60 Euro minus 15 Prozent?",
+    ],
+    "calc.fraction": ["Wie viel ist ein Drittel von 90?", "Was ist ein Viertel von 200?"],
+    "calc.round": ["Runde 3,14159 auf zwei Stellen", "Wie viel ist 17,5 gerundet?"],
+    "convert.units": [
+        "Wie viel sind 100 Kilometer pro Stunde in Meilen pro Stunde?",
+        "Wie viele Kilometer sind 10 Meilen?",
+        "Wie viel sind 5 Zoll in Zentimeter?",
+        "Wie viel Grad Fahrenheit sind 20 Grad Celsius?",
+        "Wie viele Liter sind 3 Gallonen?",
+        "Wie viele Gramm sind 2 Pfund?",
+    ],
+    "convert.numeral": ["Schreib 2026 in römischen Zahlen"],
+    "money.fx": [
+        "Wie viel sind 100 Dollar in Euro?",
+        "Wie ist der Dollarkurs?",
+        "Was ist ein Euro in britischen Pfund?",
+        "Wie viel sind 50 Schweizer Franken in Euro?",
+    ],
+    "money.fuel": [
+        "Wie teuer ist Diesel?",
+        "Was kostet Super E10?",
+        "Wo ist der Sprit am günstigsten?",
+    ],
+    "money.power_price": [
+        "Wie teuer ist der Strom gerade?",
+        "Wie hoch ist der Strompreis an der Börse?",
+    ],
+    "water.level": [
+        "Wie hoch ist die Lahn?",
+        "Wie ist der Pegelstand der Lahn?",
+        "Wie hoch ist der Pegel in Limburg?",
+    ],
+    "water.flood": ["Gibt es Hochwasser an der Lahn?", "Droht Hochwasser?"],
+    "waste.next": [
+        "Welche Tonne kommt als Nächstes?",
+        "Wann ist die nächste Müllabfuhr?",
+        "Wann wird die Biotonne abgeholt?",
+        "Wann kommt die gelbe Tonne?",
+    ],
+    "waste.week": ["Welche Tonnen sind diese Woche dran?", "Was wird diese Woche abgeholt?"],
+    "football.last": ["Wie hat die Eintracht gespielt?", "Wie ist die Eintracht ausgegangen?"],
+    "football.next": [
+        "Wann spielt die Eintracht das nächste Mal?",
+        "Wann ist das nächste Spiel der Eintracht?",
+    ],
+    "football.table": [
+        "Wie steht die Eintracht in der Tabelle?",
+        "Auf welchem Platz ist die Eintracht?",
+    ],
+    "news.headlines": [
+        "Was gibt es Neues?",
+        "Was sind die Nachrichten?",
+        "Lies mir die Schlagzeilen vor",
+    ],
+    "geo.home": [
+        "Wo wohnst du?",
+        "Wo bist du zu Hause?",
+        "Für welchen Ort gibst du das Wetter an?",
+    ],
+    "geo.distance": [
+        "Wie weit ist es von Weilburg nach Frankfurt?",
+        "Wie weit ist Limburg von Weilburg entfernt?",
+        "Wie viele Kilometer sind es bis Köln?",
+    ],
+    "geo.plz_to_place": [
+        "Welcher Ort ist die 35781?",
+        "Zu welchem Ort gehört die Postleitzahl 35781?",
+        "Welche Stadt hat die Postleitzahl 60311?",
+    ],
+    "geo.place_to_plz": [
+        "Wie lautet die Postleitzahl von Wetzlar?",
+        "Welche Postleitzahl hat Limburg?",
+    ],
+    "geo.region_of": [
+        "In welchem Landkreis liegt Weilburg?",
+        "In welchem Bundesland liegt Wetzlar?",
+    ],
+    "random.dice": ["Würfle mal", "Würfel eine Zahl", "Wirf zwei Würfel"],
+    "random.coin": ["Wirf eine Münze", "Kopf oder Zahl?"],
+    "random.number": ["Nenne mir eine Zufallszahl zwischen 1 und 10", "Zufallszahl bis 100"],
+    "random.choice": ["Entscheide für mich: Pizza oder Pasta", "Such eins aus: Kino oder Theater"],
+    "random.rps": ["Spielen wir Schere, Stein, Papier", "Schere Stein Papier"],
+    "spell.word": ["Buchstabiere Weilburg", "Wie schreibt man Limburg?"],
+    "spell.letter": [],
+    "fun.joke": ["Erzähl mir einen Witz", "Kennst du einen Witz?", "Bring mich zum Lachen"],
+    "fun.hessian": ["Sag was auf Hessisch", "Sag mal was Hessisches"],
+    "timer.start": [
+        "Stell einen Timer auf 10 Minuten",
+        "Timer auf eine Stunde",
+        "Weck mich in 20 Minuten",
+        "Eieruhr auf 8 Minuten",
+    ],
+    "timer.left": [],
+    "remind.add": [
+        "Erinnere mich morgen um 8 Uhr an den Zahnarzt",
+        "Erinnere mich in zwei Stunden an die Wäsche",
+        "Erinner mich heute Abend um 18 Uhr ans Einkaufen",
+    ],
+    "remind.list": [],
+    "notes.add": [
+        "Notiere Milch kaufen",
+        "Setz Brot auf die Einkaufsliste",
+        "Schreib auf: Zahnarzttermin am Montag",
+    ],
+    "notes.read": ["Was steht auf meiner Einkaufsliste?", "Lies mir meine Notizen vor"],
+    "notes.clear": ["Lösch meine Notizen", "Leere die Einkaufsliste"],
+    "briefing": [
+        "Gib mir den Tagesüberblick",
+        "Guten Morgen, was steht an?",
+        "Morgenbriefing bitte",
+    ],
+    "talk.greeting": ["Guten Morgen", "Hallo Nikita", "Guude", "Moin"],
+    "talk.how_are_you": ["Wie geht es dir?", "Wie geht's dir so?", "Alles klar bei dir?"],
+    "talk.identity": ["Wer bist du?", "Wie heißt du?", "Bist du Nikita?"],
+    "talk.thanks": ["Danke dir", "Vielen Dank", "Das war super, danke"],
+    "talk.goodbye": ["Tschüss Nikita", "Auf Wiederhören", "Bis später", "Mach's gut"],
+    "talk.help": ["Was kannst du alles?", "Wobei kannst du mir helfen?", "Hilfe"],
+    "talk.status": ["Funktionierst du richtig?", "Läuft alles bei dir?"],
+    "talk.version": ["Welche Version bist du?", "Wie ist deine Versionsnummer?"],
+    "talk.privacy": ["Hörst du mir immer zu?", "Speicherst du, was ich sage?"],
+    "talk.hear_me": ["Hörst du mich?", "Kannst du mich verstehen?"],
+    "talk.slower": ["Sprich langsamer", "Kannst du bitte langsamer sprechen?"],
+    "talk.louder": ["Sprich lauter", "Kannst du etwas lauter sprechen?"],
+    "talk.repeat": ["Wiederhole das bitte", "Was hast du gesagt?"],
+    "talk.cancel": ["Vergiss es", "Schon gut, lass es"],
+    "talk.compliment": ["Du bist toll", "Das hast du gut gemacht"],
+    "talk.insult": ["Du bist doof", "Du nervst"],
+    "talk.discord": ["Schick mir das auf Discord", "Schreib mir das auf Discord"],
+    "talk.call_duration": ["Wie lange telefonieren wir schon?"],
+    "talk.last_question": ["Was war meine letzte Frage?"],
+    "time.clock_check": [],
+    "time.timestamp_talk": [],
+    "count.down": ["Zähl von 5 runter", "Zähl rückwärts von 10"],
+}
+EXTRA_NEGATIVE: list[str] = [
+    "Wie kommt man am schnellsten nach Berlin",
+    "Was gibt es heute im Fernsehen",
+    "Wie alt ist die Erde",
+    "Wer hat die Glühbirne erfunden",
+    "Kannst du mir ein Rezept für Pfannkuchen geben",
+    "Wie viele Menschen leben auf der Welt",
+    "Übersetze Guten Tag ins Französische",
+    "Was bedeutet das Wort Nachhaltigkeit",
+    "Wie funktioniert ein Kühlschrank",
+    "Warum ist der Himmel blau",
+    "Was ist der Unterschied zwischen Wetter und Klima",
+    "Schalte den Fernseher ein",
+    "Rufe die Polizei",
+    "Bestelle mir eine Pizza",
+    "Ich möchte einen Termin beim Arzt vereinbaren",
+    "Was kostet ein Zimmer in einem Hotel in Hamburg",
+    "Wo ist die nächste Apotheke",
+    "Wie lange fährt der Zug nach München",
+    "Hast du heute schon etwas gegessen",
+    "Magst du Musik",
+    "Was ist die Relativitätstheorie",
+    "Erkläre mir bitte die Mehrwertsteuer in Deutschland ausführlich",
+    "Wer wird Meister in der Bundesliga",
+    "Ich habe Hunger",
+    "Mir ist kalt",
+    "Das war ein schöner Tag",
+    "Meine Tochter hat morgen Geburtstag und ich weiß nicht was ich schenken soll",
+    "Sing mir ein Lied",
+    "Wie viel wiegt ein Elefant",
+]
+
 # conversations: the sentence only works with what was said before
 FOLLOWUPS: list[dict] = [
+    {
+        "prior": ["Stell einen Timer auf 5 Minuten"],
+        "say": "Wie lange läuft der Timer noch?",
+        "skill": "timer.left",
+    },
     {"prior": ["Wie lange noch bis Weihnachten?"], "say": "Mehr Details", "skill": None},
     {"prior": ["Was kannst du?"], "say": "Mehr Details", "skill": "talk.details"},
     {"prior": ["Wie spät ist es?"], "say": "Woher weißt du das?", "skill": "talk.source"},
@@ -594,12 +1053,18 @@ FOLLOWUPS: list[dict] = [
 
 
 def main() -> None:
-    lines = []
-    for skill, phrases in POSITIVE.items():
-        for phrase in phrases:
-            lines.append({"say": phrase, "skill": skill})
-    for phrase in NEGATIVE:
-        lines.append({"say": phrase, "skill": None})
+    lines: list[dict] = []
+    seen: set[str] = set()
+    for table in (POSITIVE, EXTRA_POSITIVE):
+        for skill, phrases in table.items():
+            for phrase in phrases:
+                if phrase not in seen:  # the same sentence must not be listed twice
+                    seen.add(phrase)
+                    lines.append({"say": phrase, "skill": skill})
+    for phrase in [*NEGATIVE, *EXTRA_NEGATIVE]:
+        if phrase not in seen:
+            seen.add(phrase)
+            lines.append({"say": phrase, "skill": None})
     lines.extend(FOLLOWUPS)
     target = (
         Path(__file__).resolve().parents[1] / "tests" / "moritz_agent" / "data" / "skills.de.jsonl"

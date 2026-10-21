@@ -35,6 +35,7 @@ _NOT_WEATHER = (
     r"\bwar\b.*\b(?:urlaub|ferien|reise|hochzeit|konzert|geburtstag|wandern|wanderung)\b",
     r"\b(?:fahrenheit|celsius|kelvin)\b",
     r"\b(?:wetterfest|wetterhahn|wettbewerb)\b",
+    r"\b(?:unterschied|klima\w*|erkläre?|erklär\w*)\b",  # a question about weather, not for it
 )
 _TIME_WORDS = (
     r"heute|morgen|übermorgen|gestern|vorgestern|jetzt|gerade|abend|nacht|früh|mittag|nachmittag|"
@@ -412,7 +413,9 @@ _aspect_skill(
     "weather.frost",
     _line(
         r"frost",
+        r"frostig",
         r"kratzen",
+        r"abkratz\w*",
         r"glatteis",
         r"glatt",
         r"glätte",
@@ -422,7 +425,11 @@ _aspect_skill(
         r"bodenfrost",
     ),
     examples=("Gibt es heute Nacht Frost?", "Muss ich morgen kratzen?", "Wird es glatt?"),
-    exclude=(r"\bgefrierschrank\b", r"\bglatt\s+(?:rasieren|bügeln)\b"),
+    exclude=(
+        r"\bgefrierschrank\b",
+        r"\bglatt\s+(?:rasieren|bügeln)\b",
+        r"\b(?:pflanzen|blumen|geranien)\b",  # advice.plants_frost
+    ),
 )(_aspect("weather.frost", s.answer_frost))
 
 _aspect_skill(
@@ -434,7 +441,7 @@ _aspect_skill(
 
 _aspect_skill(
     "weather.thunder",
-    _line(r"gewitter", r"gewittert", r"gewittrig", r"donner", r"blitz\w*"),
+    _line(r"gewitter", r"gewittert", r"gewittrig", r"donner", r"donnert", r"blitz\w*"),
     examples=("Gibt es Gewitter?", "Wird's heute gewittrig?"),
     exclude=(r"\bgewitterwarnung\b",),
 )(_aspect("weather.thunder", s.answer_thunder))
@@ -459,6 +466,7 @@ _TEMP_WORDS = (
     r"wieviel grad",
     r"wie (?:viele|viel) grad",
     r"temperatur",
+    r"thermometer",
     r"grad (?:hat|sind|ist)",
     r"höchsttemperatur",
     r"tiefsttemperatur",
@@ -487,7 +495,7 @@ _aspect_skill(
 
 _aspect_skill(
     "weather.humidity",
-    _line(r"luftfeuchtigkeit", r"luftfeuchte", r"schwül", r"schwüle"),
+    _line(r"luftfeuchtigkeit", r"luftfeuchte", r"schwül", r"schwüle", r"wie feucht"),
     examples=("Wie hoch ist die Luftfeuchtigkeit?", "Ist es schwül?"),
     priority="S",
 )(_aspect("weather.humidity", s.answer_humidity, need="current"))
@@ -602,6 +610,10 @@ skill(
         ),
         (r"^(?:.*\s)?wann scheint (?:mal )?wieder (?:die )?sonne\b.*$", 1.05),
         (
+            r"^(?:.*\s)?wann wird es (?:\w+ )?(?:wärmer|kälter|besser|schlechter|trockener|milder|sonnig)\b.*$",
+            1.05,
+        ),
+        (
             r"^(?:.*\s)?wann kommt (?:der |die |das )?(?:nächste |nächsten )?(?:frost|schnee|sonne)\b.*$",
             1.05,
         ),
@@ -675,7 +687,10 @@ skill(
     group=GROUP,
     priority="S",
     max_words=10,
-    patterns=((r"^(?:.*\s)?(?:welcher|welchen|von welchem) wetterdienst\b.*$", 1.1),),
+    patterns=(
+        (r"^(?:.*\s)?(?:welcher|welchen|von welchem) wetterdienst\b.*$", 1.1),
+        (r"^(?:.*\s)?woher (?:hast|weißt|kommen|stammen) .*\bwetter\w*\b.*$", 1.1),
+    ),
     examples=("Welcher Wetterdienst?",),
 )(_source)
 

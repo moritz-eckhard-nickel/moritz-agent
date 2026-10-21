@@ -59,6 +59,7 @@ def _where_phrase(place: Place) -> str:
     patterns=(
         (_line(r"postleitzahl", r"plz"), 0.9),
         (r"^wo (?:ist|liegt) \d{5}$", 1.0),
+        (r"^(?:.*\s)?welche[rs]? (?:ort|stadt|gemeinde) ist die \d{5}$", 1.0),
         (r"^(?:zu )?welche[mr]? ort (?:gehört|hat) .*\d{5}.*$", 1.0),
     ),
     exclude=(
@@ -71,10 +72,16 @@ async def plz_to_place(req: Request) -> SkillResult | None:
     if problem is not None:
         return problem
     found = [w for w in find_places(req.text, req.svc, req.ctx) if w.how == "postcode"]
-    if not found or found[0].place is None:
-        return None
-    place = found[0].place
-    return say(f"{found[0].postcode} ist {place.spoken}{_where_phrase(place)}.")
+    if found and found[0].place is not None:
+        place, code = found[0].place, found[0].postcode
+    else:  # "Welcher Ort ist die 35781?" – no keyword in front of the digits
+        digits = re.search(r"\b(\d{5})\b", req.text)
+        gaz = req.svc.gazetteer
+        place = gaz.by_postcode(digits.group(1)) if digits and gaz else None
+        if place is None:
+            return None
+        code = digits.group(1)  # type: ignore[union-attr]
+    return say(f"{code} ist {place.spoken}{_where_phrase(place)}.")
 
 
 @skill(
@@ -138,6 +145,7 @@ def _kilometers(km: float) -> str:
     max_words=12,
     patterns=(
         (r"^(?:.*\s)?wie weit (?:ist|sind)\b.*$", 0.85),
+        (r"^(?:.*\s)?wie viele kilometer sind es (?:bis|nach)\b.*$", 1.0),
         (r"^(?:.*\s)?(?:entfernung|luftlinie|distanz|abstand)\b.*$", 1.0),
     ),
     exclude=(r"\b(?:wetter|sonne|mond|regen)\b",),
@@ -216,6 +224,8 @@ async def region_of(req: Request) -> SkillResult | None:
         r"^(?:.*\s)?für welchen ort\b.*$",
         r"^(?:.*\s)?welcher ort ist (?:eingestellt|mein heimatort)\b.*$",
         r"^wo wohne ich$",
+        r"^wo wohnst du$",
+        r"^wo bist du (?:zu hause|zuhause|daheim)$",
     ),
 )
 async def home(req: Request) -> SkillResult:

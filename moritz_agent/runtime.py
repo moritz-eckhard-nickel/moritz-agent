@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import re
 import time
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass, field
@@ -147,6 +148,7 @@ class Runtime:
         self._calls: dict[str, _Conversation] = {}
         self._call_topics: dict[str, list[str]] = {}
         self._call_started: dict[str, float] = {}
+        self._call_remote: dict[str, str] = {}
         self._bad_since: dict[str, float] = {}
         self._scheduler_task: asyncio.Task[None] | None = None
         self._started = False
@@ -447,6 +449,7 @@ class Runtime:
         del context.history[:-12]
         if reply.skill_id:
             self._call_topics.setdefault(call_id, []).append(reply.skill_id)
+        self._forward_to_discord(call_id, reply)
         self._record_turn(call_id, context.turn, text, reply, "phone", started)
         yield {"type": "reply", "reply": reply}
 
@@ -507,7 +510,23 @@ class Runtime:
             return True
         return False
 
+    def _forward_to_discord(self, call_id: str, reply: Reply) -> None:
+        """ "Schick mir das auf Discord": the caller's extension → Discord id (``discord.phone_extensions``),
+        otherwise the owner (docs/plan/14 §12). A direct message, delivered by the Discord worker."""
+        forward = getattr(reply.result, "forward", None)
+        store, cfg = self.discord_store, self.settings.discord
+        if forward is None or store is None or not cfg.enabled:
+            return
+        match = re.search(r"sip:([^@;>]+)", self._call_remote.get(call_id, ""))
+        user = cfg.phone_extensions.get(match.group(1)) if match else None
+        user = user or next(iter(cfg.owner_user_ids), None)
+        if user is None:
+            return
+        title, text = forward
+        store.enqueue("forward", f"dm:{user}", {"title": title, "text": text}, user_id=user)
+
     def call_started(self, call_id: str, remote: str = "", codec: str = "") -> None:
+        self._call_remote[call_id] = remote
         self._call(call_id)
         self._call_started[call_id] = time.monotonic()
         if self.repo is not None:
@@ -516,6 +535,7 @@ class Runtime:
 
     def call_ended(self, call_id: str, reason: str = "") -> None:
         conversation = self._calls.pop(call_id, None)
+        self._call_remote.pop(call_id, None)
         if conversation is not None and conversation.task is not None:
             conversation.task.cancel()
         topics = self._call_topics.pop(call_id, [])

@@ -458,6 +458,280 @@
 {"say": "Was steht auf der Einkaufsliste?", "skill": "notes.read"}
 {"say": "Lies meine Notizen vor", "skill": "notes.read"}
 {"say": "Lösch die Einkaufsliste.", "skill": "notes.clear"}
+{"say": "Sag mal die Uhrzeit", "skill": "time.now"}
+{"say": "Wie spät haben wir es", "skill": "time.now"}
+{"say": "Wieviel Uhr isses", "skill": "time.now"}
+{"say": "Hast du die Uhrzeit", "skill": "time.now"}
+{"say": "Wie spät ist es in Paris?", "skill": "time.world"}
+{"say": "Wie viel Uhr ist es in Peking?", "skill": "time.world"}
+{"say": "Uhrzeit in Dubai", "skill": "time.world"}
+{"say": "Wie lange noch bis 18 Uhr?", "skill": "time.until"}
+{"say": "Was für ein Tag ist heute?", "skill": "date.weekday"}
+{"say": "Was ist heute für ein Wochentag?", "skill": "date.weekday"}
+{"say": "Welcher Wochentag ist der 24. Dezember?", "skill": "date.weekday_of"}
+{"say": "Auf welchen Wochentag fällt Silvester?", "skill": "date.weekday_of"}
+{"say": "Wie lange noch bis Silvester?", "skill": "date.days_until"}
+{"say": "Noch wie viele Tage bis zum Wochenende?", "skill": "date.days_until"}
+{"say": "Wie lange dauert es noch bis Neujahr?", "skill": "date.days_until"}
+{"say": "Wie viele Tage ist Weihnachten her?", "skill": "date.days_since"}
+{"say": "Wie lange ist Neujahr her?", "skill": "date.days_since"}
+{"say": "Welcher Tag ist in 10 Tagen?", "skill": "date.offset"}
+{"say": "Welches Datum haben wir in zwei Wochen?", "skill": "date.offset"}
+{"say": "Welcher Tag war vorgestern?", "skill": "date.relative"}
+{"say": "Wie alt ist man, wenn man 1990 geboren ist?", "skill": "date.age"}
+{"say": "Wie alt bin ich, wenn ich 1985 geboren wurde?", "skill": "date.age"}
+{"say": "Wann ist Ostern dieses Jahr?", "skill": "date.special"}
+{"say": "Wann ist Heiligabend?", "skill": "date.special"}
+{"say": "Wann ist Halloween?", "skill": "date.special"}
+{"say": "Wie viel Prozent vom Jahr sind schon vorbei?", "skill": "date.year_progress"}
+{"say": "Wie weit ist das Jahr schon?", "skill": "date.year_progress"}
+{"say": "Wie viele Wochen hat dieses Jahr?", "skill": "date.weeks_in_year"}
+{"say": "Wie viele Kalenderwochen hat das Jahr?", "skill": "date.weeks_in_year"}
+{"say": "Welches Sternzeichen hat man am 15. August?", "skill": "date.zodiac"}
+{"say": "Ist heute ein Feiertag?", "skill": "holiday.is"}
+{"say": "Ist morgen Feiertag?", "skill": "holiday.is"}
+{"say": "Welcher Feiertag kommt als Nächstes?", "skill": "holiday.next"}
+{"say": "Welche Feiertage hat Hessen?", "skill": "holiday.list"}
+{"say": "Gibt es bald ein langes Wochenende?", "skill": "holiday.long_weekend"}
+{"say": "Wie viele Arbeitstage hat dieser Monat?", "skill": "holiday.workdays"}
+{"say": "Wie viele Werktage sind es noch bis Weihnachten?", "skill": "holiday.workdays"}
+{"say": "Sind gerade Schulferien?", "skill": "school.now"}
+{"say": "Haben wir Ferien in Hessen?", "skill": "school.now"}
+{"say": "Wann sind die nächsten Herbstferien?", "skill": "school.next"}
+{"say": "Wann beginnen die Sommerferien in Hessen?", "skill": "school.next"}
+{"say": "Wann sind Weihnachtsferien?", "skill": "school.next"}
+{"say": "Wie wird das Wetter in 35781?", "skill": "weather.now"}
+{"say": "Wie ist das Wetter gerade?", "skill": "weather.now"}
+{"say": "Wie ist das Wetter jetzt in Weilburg?", "skill": "weather.now"}
+{"say": "Wie ist das Wetter in Limburg?", "skill": "weather.now"}
+{"say": "Wettervorhersage für heute", "skill": "weather.today"}
+{"say": "Wie wird das Wetter morgen in Frankfurt?", "skill": "weather.day"}
+{"say": "Wetter übermorgen in Wiesbaden", "skill": "weather.day"}
+{"say": "Wie wird das Wetter am Dienstag?", "skill": "weather.day"}
+{"say": "Wetter für die Postleitzahl 60311 morgen", "skill": "weather.day"}
+{"say": "Wie wird das Wetter in Gießen am Freitag?", "skill": "weather.day"}
+{"say": "Wie wird das Wetter am Wochenende in Weilburg?", "skill": "weather.weekend"}
+{"say": "Wie wird das Wetter diese Woche?", "skill": "weather.week"}
+{"say": "Wettervorhersage für die ganze Woche", "skill": "weather.week"}
+{"say": "Wie wird die Woche wettertechnisch?", "skill": "weather.week"}
+{"say": "Wird es heute noch regnen?", "skill": "weather.rain"}
+{"say": "Kommt heute Regen?", "skill": "weather.rain"}
+{"say": "Gibt es morgen Schauer?", "skill": "weather.rain"}
+{"say": "Regnet es jetzt in Limburg?", "skill": "weather.rain_now"}
+{"say": "Wann regnet es das nächste Mal?", "skill": "weather.rain_when"}
+{"say": "Wie viel Regen ist letzte Nacht gefallen?", "skill": "weather.rain_amount"}
+{"say": "Wie viel hat es gestern geregnet?", "skill": "weather.rain_amount"}
+{"say": "Wie viel Regen kommt morgen?", "skill": "weather.rain_amount"}
+{"say": "Wie viel Niederschlag gibt es heute?", "skill": "weather.rain_amount"}
+{"say": "Gibt es dieses Wochenende Schnee?", "skill": "weather.snow"}
+{"say": "Wird es morgen früh frostig?", "skill": "weather.frost"}
+{"say": "Muss ich das Auto heute Nacht abkratzen?", "skill": "weather.frost"}
+{"say": "Wie warm war es gestern?", "skill": "weather.temperature"}
+{"say": "Wie kalt wird es heute Nacht mindestens?", "skill": "weather.temperature"}
+{"say": "Was ist die Höchsttemperatur morgen?", "skill": "weather.temperature"}
+{"say": "Wie heiß wird es heute höchstens?", "skill": "weather.temperature"}
+{"say": "Wie kalt ist es gerade draußen?", "skill": "weather.temperature"}
+{"say": "Wie warm ist es draußen?", "skill": "weather.temperature"}
+{"say": "Was zeigt das Thermometer?", "skill": "weather.temperature"}
+{"say": "Welche Temperatur hat es morgen Mittag?", "skill": "weather.temperature"}
+{"say": "Wie warm wird es am Wochenende?", "skill": "weather.temperature"}
+{"say": "Wie windig ist es heute?", "skill": "weather.wind"}
+{"say": "Wie stark ist der Wind morgen?", "skill": "weather.wind"}
+{"say": "Weht heute Wind?", "skill": "weather.wind"}
+{"say": "Gibt es heute ein Gewitter?", "skill": "weather.thunder"}
+{"say": "Kommt ein Gewitter?", "skill": "weather.thunder"}
+{"say": "Donnert es heute?", "skill": "weather.thunder"}
+{"say": "Brauche ich heute einen Regenschirm?", "skill": "weather.umbrella"}
+{"say": "Soll ich einen Regenschirm mitnehmen?", "skill": "weather.umbrella"}
+{"say": "Wie hoch ist heute der UV-Index?", "skill": "weather.uv"}
+{"say": "Brauche ich heute Sonnencreme?", "skill": "weather.uv"}
+{"say": "Wie feucht ist es draußen?", "skill": "weather.humidity"}
+{"say": "Wie hoch ist der Luftdruck?", "skill": "weather.pressure"}
+{"say": "Wie ist der Luftdruck gerade?", "skill": "weather.pressure"}
+{"say": "Ist es draußen neblig?", "skill": "weather.fog"}
+{"say": "Wie bewölkt ist es heute?", "skill": "weather.clouds"}
+{"say": "Scheint morgen die Sonne?", "skill": "weather.sunshine"}
+{"say": "Wie fühlt sich die Temperatur an?", "skill": "weather.feels_like"}
+{"say": "Ist es morgen wärmer als heute?", "skill": "weather.compare"}
+{"say": "Wann wird das Wetter besser?", "skill": "weather.when_change"}
+{"say": "Wann wird es wärmer?", "skill": "weather.when_change"}
+{"say": "Wie ist das Wetter bei uns in der Gegend?", "skill": "weather.region"}
+{"say": "Wie wird das Wetter in der Region?", "skill": "weather.region"}
+{"say": "Woher hast du die Wetterdaten?", "skill": "weather.source"}
+{"say": "Welcher Wetterdienst liefert das Wetter?", "skill": "weather.source"}
+{"say": "Gibt es eine Wetterwarnung für Weilburg?", "skill": "warn.weather"}
+{"say": "Ist eine Unwetterwarnung aktiv?", "skill": "warn.weather"}
+{"say": "Gibt es eine Sturmwarnung?", "skill": "warn.weather"}
+{"say": "Gibt es aktuelle Warnungen vom Bevölkerungsschutz?", "skill": "warn.civil"}
+{"say": "Wie ist der Pollenflug heute?", "skill": "pollen.today"}
+{"say": "Wie stark fliegen die Pollen?", "skill": "pollen.today"}
+{"say": "Gibt es heute viele Pollen?", "skill": "pollen.today"}
+{"say": "Wie ist die Pollenbelastung?", "skill": "pollen.today"}
+{"say": "Pollenvorhersage für morgen", "skill": "pollen.forecast"}
+{"say": "Wie sauber ist die Luft heute?", "skill": "air.quality"}
+{"say": "Wie hoch ist der Feinstaub?", "skill": "air.quality"}
+{"say": "Wie hoch ist der Ozonwert?", "skill": "air.ozone"}
+{"say": "Gibt es heute viel Ozon?", "skill": "air.ozone"}
+{"say": "Was soll ich heute anziehen?", "skill": "advice.jacket"}
+{"say": "Muss ich mich warm anziehen?", "skill": "advice.jacket"}
+{"say": "Kann ich heute Fahrrad fahren?", "skill": "advice.bike"}
+{"say": "Ist es heute gutes Wetter fürs Radfahren?", "skill": "advice.bike"}
+{"say": "Ist heute ein guter Tag zum Joggen?", "skill": "advice.run"}
+{"say": "Kann ich heute laufen gehen?", "skill": "advice.run"}
+{"say": "Eignet sich das Wetter zum Wandern?", "skill": "advice.hike"}
+{"say": "Kann ich morgen wandern gehen?", "skill": "advice.hike"}
+{"say": "Kann ich heute baden gehen?", "skill": "advice.swim"}
+{"say": "Ist es warm genug zum Schwimmen?", "skill": "advice.swim"}
+{"say": "Kann ich heute Wäsche aufhängen?", "skill": "advice.laundry"}
+{"say": "Trocknet die Wäsche heute draußen?", "skill": "advice.laundry"}
+{"say": "Lohnt sich heute die Autowäsche?", "skill": "advice.car_wash"}
+{"say": "Kann ich heute mein Auto waschen?", "skill": "advice.car_wash"}
+{"say": "Kann ich heute Rasen mähen?", "skill": "advice.mow"}
+{"say": "Ist heute ein guter Tag zum Rasenmähen?", "skill": "advice.mow"}
+{"say": "Muss ich heute den Garten gießen?", "skill": "advice.garden_water"}
+{"say": "Soll ich heute die Blumen gießen?", "skill": "advice.garden_water"}
+{"say": "Muss ich die Pflanzen reinholen wegen Frost?", "skill": "advice.plants_frost"}
+{"say": "Soll ich die Pflanzen heute Nacht reinstellen?", "skill": "advice.plants_frost"}
+{"say": "Ist jetzt ein guter Zeitpunkt zum Lüften?", "skill": "advice.ventilate"}
+{"say": "Muss ich heute heizen?", "skill": "advice.heating"}
+{"say": "Brauche ich die Heizung?", "skill": "advice.heating"}
+{"say": "Um wie viel Uhr ist Sonnenaufgang?", "skill": "sun.rise_set"}
+{"say": "Wann ist Sonnenuntergang morgen?", "skill": "sun.rise_set"}
+{"say": "Wie lang ist der Tag heute?", "skill": "sun.daylength"}
+{"say": "Wann ist es heute dunkel?", "skill": "sun.dark"}
+{"say": "Wann ist das beste Licht zum Fotografieren?", "skill": "sun.golden_hour"}
+{"say": "Wann ist die Sommersonnenwende?", "skill": "sun.solstice"}
+{"say": "Wann ist Sommeranfang?", "skill": "season.start"}
+{"say": "Wann beginnt der Herbst?", "skill": "season.start"}
+{"say": "Wann fängt der Frühling an?", "skill": "season.start"}
+{"say": "Wie ist der Mond heute?", "skill": "moon.phase"}
+{"say": "Ist Neumond?", "skill": "moon.phase"}
+{"say": "Wann ist der nächste Neumond?", "skill": "moon.next"}
+{"say": "Sieht man heute Nacht Sterne?", "skill": "sky.stars"}
+{"say": "Kann ich heute die Sterne sehen?", "skill": "sky.stars"}
+{"say": "Was ist 12 mal 12?", "skill": "calc.arith"}
+{"say": "Wie viel ist 100 geteilt durch 8?", "skill": "calc.arith"}
+{"say": "Was ist 45 plus 78?", "skill": "calc.arith"}
+{"say": "Was ergibt 1000 minus 357?", "skill": "calc.arith"}
+{"say": "Rechne 15 mal 15", "skill": "calc.arith"}
+{"say": "Was ist 7 mal 8?", "skill": "calc.arith"}
+{"say": "Wie viel ist 2 hoch 10?", "skill": "calc.arith"}
+{"say": "Was ist die Wurzel aus 144?", "skill": "calc.arith"}
+{"say": "Wie viel sind 15 Prozent von 80?", "skill": "calc.percent"}
+{"say": "Was sind 20 Prozent von 250?", "skill": "calc.percent"}
+{"say": "Wie viel ist 100 Euro netto mit Mehrwertsteuer?", "skill": "calc.vat"}
+{"say": "Wie viel Mehrwertsteuer sind das bei 59 Euro?", "skill": "calc.vat"}
+{"say": "Wie viel Trinkgeld bei 45 Euro?", "skill": "calc.tip"}
+{"say": "Wie viel Trinkgeld soll ich bei 28 Euro geben?", "skill": "calc.tip"}
+{"say": "Wie viel ist das pro Person bei 90 Euro für vier Leute?", "skill": "calc.split"}
+{"say": "90 Euro durch 3 Personen teilen", "skill": "calc.split"}
+{"say": "Was kostet es mit 20 Prozent Rabatt bei 80 Euro?", "skill": "calc.discount"}
+{"say": "Wie viel ist 60 Euro minus 15 Prozent?", "skill": "calc.discount"}
+{"say": "Wie viel ist ein Drittel von 90?", "skill": "calc.fraction"}
+{"say": "Was ist ein Viertel von 200?", "skill": "calc.fraction"}
+{"say": "Runde 3,14159 auf zwei Stellen", "skill": "calc.round"}
+{"say": "Wie viel ist 17,5 gerundet?", "skill": "calc.round"}
+{"say": "Wie viel sind 100 Kilometer pro Stunde in Meilen pro Stunde?", "skill": "convert.units"}
+{"say": "Wie viele Kilometer sind 10 Meilen?", "skill": "convert.units"}
+{"say": "Wie viel sind 5 Zoll in Zentimeter?", "skill": "convert.units"}
+{"say": "Wie viel Grad Fahrenheit sind 20 Grad Celsius?", "skill": "convert.units"}
+{"say": "Wie viele Liter sind 3 Gallonen?", "skill": "convert.units"}
+{"say": "Wie viele Gramm sind 2 Pfund?", "skill": "convert.units"}
+{"say": "Schreib 2026 in römischen Zahlen", "skill": "convert.numeral"}
+{"say": "Was ist ein Euro in britischen Pfund?", "skill": "money.fx"}
+{"say": "Wie viel sind 50 Schweizer Franken in Euro?", "skill": "money.fx"}
+{"say": "Was kostet Super E10?", "skill": "money.fuel"}
+{"say": "Wo ist der Sprit am günstigsten?", "skill": "money.fuel"}
+{"say": "Wie teuer ist der Strom gerade?", "skill": "money.power_price"}
+{"say": "Wie hoch ist der Strompreis an der Börse?", "skill": "money.power_price"}
+{"say": "Wie hoch ist die Lahn?", "skill": "water.level"}
+{"say": "Wie ist der Pegelstand der Lahn?", "skill": "water.level"}
+{"say": "Wie hoch ist der Pegel in Limburg?", "skill": "water.level"}
+{"say": "Gibt es Hochwasser an der Lahn?", "skill": "water.flood"}
+{"say": "Droht Hochwasser?", "skill": "water.flood"}
+{"say": "Welche Tonne kommt als Nächstes?", "skill": "waste.next"}
+{"say": "Wann ist die nächste Müllabfuhr?", "skill": "waste.next"}
+{"say": "Wann wird die Biotonne abgeholt?", "skill": "waste.next"}
+{"say": "Welche Tonnen sind diese Woche dran?", "skill": "waste.week"}
+{"say": "Wie ist die Eintracht ausgegangen?", "skill": "football.last"}
+{"say": "Wann spielt die Eintracht das nächste Mal?", "skill": "football.next"}
+{"say": "Wann ist das nächste Spiel der Eintracht?", "skill": "football.next"}
+{"say": "Wie steht die Eintracht in der Tabelle?", "skill": "football.table"}
+{"say": "Auf welchem Platz ist die Eintracht?", "skill": "football.table"}
+{"say": "Was gibt es Neues?", "skill": "news.headlines"}
+{"say": "Was sind die Nachrichten?", "skill": "news.headlines"}
+{"say": "Lies mir die Schlagzeilen vor", "skill": "news.headlines"}
+{"say": "Wo wohnst du?", "skill": "geo.home"}
+{"say": "Wo bist du zu Hause?", "skill": "geo.home"}
+{"say": "Für welchen Ort gibst du das Wetter an?", "skill": "geo.home"}
+{"say": "Wie weit ist es von Weilburg nach Frankfurt?", "skill": "geo.distance"}
+{"say": "Wie weit ist Limburg von Weilburg entfernt?", "skill": "geo.distance"}
+{"say": "Wie viele Kilometer sind es bis Köln?", "skill": "geo.distance"}
+{"say": "Welcher Ort ist die 35781?", "skill": "geo.plz_to_place"}
+{"say": "Zu welchem Ort gehört die Postleitzahl 35781?", "skill": "geo.plz_to_place"}
+{"say": "Welche Stadt hat die Postleitzahl 60311?", "skill": "geo.plz_to_place"}
+{"say": "Wie lautet die Postleitzahl von Wetzlar?", "skill": "geo.place_to_plz"}
+{"say": "In welchem Landkreis liegt Weilburg?", "skill": "geo.region_of"}
+{"say": "Würfle mal", "skill": "random.dice"}
+{"say": "Würfel eine Zahl", "skill": "random.dice"}
+{"say": "Nenne mir eine Zufallszahl zwischen 1 und 10", "skill": "random.number"}
+{"say": "Zufallszahl bis 100", "skill": "random.number"}
+{"say": "Entscheide für mich: Pizza oder Pasta", "skill": "random.choice"}
+{"say": "Such eins aus: Kino oder Theater", "skill": "random.choice"}
+{"say": "Spielen wir Schere, Stein, Papier", "skill": "random.rps"}
+{"say": "Schere Stein Papier", "skill": "random.rps"}
+{"say": "Buchstabiere Weilburg", "skill": "spell.word"}
+{"say": "Wie schreibt man Limburg?", "skill": "spell.word"}
+{"say": "Erzähl mir einen Witz", "skill": "fun.joke"}
+{"say": "Bring mich zum Lachen", "skill": "fun.joke"}
+{"say": "Sag mal was Hessisches", "skill": "fun.hessian"}
+{"say": "Stell einen Timer auf 10 Minuten", "skill": "timer.start"}
+{"say": "Timer auf eine Stunde", "skill": "timer.start"}
+{"say": "Weck mich in 20 Minuten", "skill": "timer.start"}
+{"say": "Eieruhr auf 8 Minuten", "skill": "timer.start"}
+{"say": "Erinnere mich morgen um 8 Uhr an den Zahnarzt", "skill": "remind.add"}
+{"say": "Erinnere mich in zwei Stunden an die Wäsche", "skill": "remind.add"}
+{"say": "Erinner mich heute Abend um 18 Uhr ans Einkaufen", "skill": "remind.add"}
+{"say": "Notiere Milch kaufen", "skill": "notes.add"}
+{"say": "Setz Brot auf die Einkaufsliste", "skill": "notes.add"}
+{"say": "Schreib auf: Zahnarzttermin am Montag", "skill": "notes.add"}
+{"say": "Was steht auf meiner Einkaufsliste?", "skill": "notes.read"}
+{"say": "Lies mir meine Notizen vor", "skill": "notes.read"}
+{"say": "Lösch meine Notizen", "skill": "notes.clear"}
+{"say": "Leere die Einkaufsliste", "skill": "notes.clear"}
+{"say": "Gib mir den Tagesüberblick", "skill": "briefing"}
+{"say": "Guten Morgen, was steht an?", "skill": "briefing"}
+{"say": "Morgenbriefing bitte", "skill": "briefing"}
+{"say": "Guude", "skill": "talk.greeting"}
+{"say": "Wie geht's dir so?", "skill": "talk.how_are_you"}
+{"say": "Bist du Nikita?", "skill": "talk.identity"}
+{"say": "Danke dir", "skill": "talk.thanks"}
+{"say": "Das war super, danke", "skill": "talk.thanks"}
+{"say": "Bis später", "skill": "talk.goodbye"}
+{"say": "Mach's gut", "skill": "talk.goodbye"}
+{"say": "Was kannst du alles?", "skill": "talk.help"}
+{"say": "Wobei kannst du mir helfen?", "skill": "talk.help"}
+{"say": "Funktionierst du richtig?", "skill": "talk.status"}
+{"say": "Läuft alles bei dir?", "skill": "talk.status"}
+{"say": "Welche Version bist du?", "skill": "talk.version"}
+{"say": "Wie ist deine Versionsnummer?", "skill": "talk.version"}
+{"say": "Hörst du mir immer zu?", "skill": "talk.privacy"}
+{"say": "Speicherst du, was ich sage?", "skill": "talk.privacy"}
+{"say": "Kannst du mich verstehen?", "skill": "talk.hear_me"}
+{"say": "Kannst du bitte langsamer sprechen?", "skill": "talk.slower"}
+{"say": "Sprich lauter", "skill": "talk.louder"}
+{"say": "Kannst du etwas lauter sprechen?", "skill": "talk.louder"}
+{"say": "Wiederhole das bitte", "skill": "talk.repeat"}
+{"say": "Schon gut, lass es", "skill": "talk.cancel"}
+{"say": "Du bist toll", "skill": "talk.compliment"}
+{"say": "Das hast du gut gemacht", "skill": "talk.compliment"}
+{"say": "Du bist doof", "skill": "talk.insult"}
+{"say": "Du nervst", "skill": "talk.insult"}
+{"say": "Schick mir das auf Discord", "skill": "talk.discord"}
+{"say": "Schreib mir das auf Discord", "skill": "talk.discord"}
+{"say": "Was war meine letzte Frage?", "skill": "talk.last_question"}
+{"say": "Zähl von 5 runter", "skill": "count.down"}
+{"say": "Zähl rückwärts von 10", "skill": "count.down"}
 {"say": "Um wie viel Uhr fährt der Zug nach Frankfurt?", "skill": null}
 {"say": "Wann öffnet der Supermarkt?", "skill": null}
 {"say": "Um wie viel Uhr beginnt der Film?", "skill": null}
@@ -491,6 +765,36 @@
 {"say": "Ich habe 100 Euro im Lotto gewonnen", "skill": null}
 {"say": "Wie viel kostet ein Liter Milch", "skill": null}
 {"say": "Was soll ich zum Abendessen kochen", "skill": null}
+{"say": "Wie kommt man am schnellsten nach Berlin", "skill": null}
+{"say": "Was gibt es heute im Fernsehen", "skill": null}
+{"say": "Wie alt ist die Erde", "skill": null}
+{"say": "Wer hat die Glühbirne erfunden", "skill": null}
+{"say": "Kannst du mir ein Rezept für Pfannkuchen geben", "skill": null}
+{"say": "Wie viele Menschen leben auf der Welt", "skill": null}
+{"say": "Übersetze Guten Tag ins Französische", "skill": null}
+{"say": "Was bedeutet das Wort Nachhaltigkeit", "skill": null}
+{"say": "Wie funktioniert ein Kühlschrank", "skill": null}
+{"say": "Warum ist der Himmel blau", "skill": null}
+{"say": "Was ist der Unterschied zwischen Wetter und Klima", "skill": null}
+{"say": "Schalte den Fernseher ein", "skill": null}
+{"say": "Rufe die Polizei", "skill": null}
+{"say": "Bestelle mir eine Pizza", "skill": null}
+{"say": "Ich möchte einen Termin beim Arzt vereinbaren", "skill": null}
+{"say": "Was kostet ein Zimmer in einem Hotel in Hamburg", "skill": null}
+{"say": "Wo ist die nächste Apotheke", "skill": null}
+{"say": "Wie lange fährt der Zug nach München", "skill": null}
+{"say": "Hast du heute schon etwas gegessen", "skill": null}
+{"say": "Magst du Musik", "skill": null}
+{"say": "Was ist die Relativitätstheorie", "skill": null}
+{"say": "Erkläre mir bitte die Mehrwertsteuer in Deutschland ausführlich", "skill": null}
+{"say": "Wer wird Meister in der Bundesliga", "skill": null}
+{"say": "Ich habe Hunger", "skill": null}
+{"say": "Mir ist kalt", "skill": null}
+{"say": "Das war ein schöner Tag", "skill": null}
+{"say": "Meine Tochter hat morgen Geburtstag und ich weiß nicht was ich schenken soll", "skill": null}
+{"say": "Sing mir ein Lied", "skill": null}
+{"say": "Wie viel wiegt ein Elefant", "skill": null}
+{"prior": ["Stell einen Timer auf 5 Minuten"], "say": "Wie lange läuft der Timer noch?", "skill": "timer.left"}
 {"prior": ["Wie lange noch bis Weihnachten?"], "say": "Mehr Details", "skill": null}
 {"prior": ["Was kannst du?"], "say": "Mehr Details", "skill": "talk.details"}
 {"prior": ["Wie spät ist es?"], "say": "Woher weißt du das?", "skill": "talk.source"}
