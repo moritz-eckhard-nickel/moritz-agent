@@ -48,3 +48,11 @@ Ist Anton noch auf keinem Server, zeigt `setup` die Einladungslinks und wartet a
 
 Das Ergebnis steht am Ende als ✔/✘/– und in `runtime/test-2/ergebnis.txt`. Einzelbefehle (`speak`,
 `ask`, `call`, `discord …`) gibt es weiter in `./test-1.sh`.
+
+## Aufräumen
+
+```bash
+./test-clearup.sh          # alles, was die Testskripte angelegt haben: Umgebungen, PJSIP-Build, Modelle,
+                           # Ansagen-Cache, Testläufe, data/ – passwords.txt und config/moritz-agent.toml bleiben
+./test-clearup.sh --venv   # nur die Python-Umgebungen (z. B. vor einem frischen setup)
+```
