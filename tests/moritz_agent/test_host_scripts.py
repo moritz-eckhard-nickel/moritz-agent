@@ -244,10 +244,10 @@ def test_dry_run_creates_nothing(pve):
     assert not [c for c in pve.calls("pveam") if c[0] == "download"]
 
 
-def test_without_confirmation_and_without_terminal_nothing_is_created(pve):
-    result = pve.run("install.sh")  # no --yes, stdin is not a terminal
-    assert result.returncode == 2
-    assert not pve.pct_calls("create")
+def test_there_is_no_yes_no_question_the_container_is_created_right_away(pve):
+    result = pve.run("install.sh")  # no --yes, stdin is not a terminal: no question either
+    assert result.returncode == 0, result.stderr
+    assert pve.pct_calls("create")
 
 
 def test_not_on_a_proxmox_host_is_a_clear_error(pve):

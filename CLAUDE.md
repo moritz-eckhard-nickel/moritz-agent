@@ -11,7 +11,7 @@ Der vollständige Plan steht in `docs/plan/` – **vor jeder Aufgabe** das passe
 
 - Eigener Code nur in: `moritz_agent/`, `tests/moritz_agent/`, `frontend/`, `config/`,
   `assets/`, `deploy/`, `scripts/`, `requirements/`, `docs/`, sowie die Wurzeldateien
-  `moritz-agent`, `moritz-install.sh`, `moritz-update.sh`, `install.sh`, `update.sh`, `test-1.sh`,
+  `moritz-agent`, `moritz-install.sh`, `moritz-update.sh`, `install.sh`, `update.sh`, `test-1.sh`, `test-2.sh` (allgemein `test-N.sh`),
   `pyproject.toml`, `README.md`, `CLAUDE.md`, `THIRD_PARTY_NOTICES.md`.
 - **KoboldCpp-Upstream-Dateien nicht ändern** (`koboldcpp.py`, `kcpp_*`, `ggml/`, `src/`,
   `otherarch/`, `tools/`, `vendor/`, `Makefile`, `CMakeLists.txt`, `.github/workflows/kcpp-*`,
@@ -56,8 +56,9 @@ pip install -e ".[dev]"                       # Entwicklungsumgebung
 ruff check moritz_agent tests/moritz_agent scripts
 ruff format --check moritz_agent tests/moritz_agent scripts
 pytest                                        # testpaths = tests/moritz_agent
-shellcheck -x moritz-agent install.sh update.sh moritz-install.sh moritz-update.sh test-1.sh scripts/*.sh deploy/lib/*.sh
+shellcheck -x moritz-agent install.sh update.sh moritz-install.sh moritz-update.sh test-*.sh scripts/*.sh deploy/lib/*.sh
 ./test-1.sh setup|check|speak|call|run        # Telefon + Stimme ohne Systeminstallation (läuft überall, kein LXC nötig)
+./test-2.sh setup|run                         # ALLES bis heute: Telefon, Sofortauskünfte, Wetter, Discord (Text + Sprache), Live-Test
 sudo ./install.sh | sudo ./update.sh          # auf dem Proxmox-Host: LXC anlegen/aktualisieren (oder --remote user@host)
 python -m moritz_agent --version
 ```
@@ -70,3 +71,10 @@ python -m moritz_agent --version
 - Neue Abhängigkeiten: in `pyproject.toml` + Lock-Datei, Lizenz in `THIRD_PARTY_NOTICES.md`.
 - Jede Änderung, die vom Plan abweicht, aktualisiert den Plan im selben PR.
 - PR-Titel `P1-xx: …`, PR-Vorlage ausfüllen, Base-Branch `agent`.
+- **Testskripte (Moritz, 21.10.2026):** Jede große Erweiterung bekommt ein neues `test-N.sh` (nächste
+  Nummer) mit mindestens `setup` und `run`, das **alles Bisherige mit testet** (das vorige Skript wird
+  wiederverwendet, nicht kopiert). `setup` richtet alles ein und fragt nur Werte ab (Token, Kanal-IDs;
+  Enter = überspringen/behalten), `run` testet automatisch und startet danach einen Live-Test.
+- **Keine Ja/Nein-Rückfragen** in Skripten und Setup: Downloads und Einrichtungsschritte laufen ohne
+  Nachfrage. Nur wo Fremdes zerstört werden könnte (fremder Container), wird abgebrochen und auf
+  `--yes` verwiesen – ohne Frage.

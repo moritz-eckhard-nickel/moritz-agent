@@ -56,7 +56,7 @@ main() {
 		warn "Optionen zur Container-Erstellung (Ressourcen, Netzwerk, GPU …) wirken nur bei install.sh und werden hier ignoriert"
 	fi
 	if ! ct_is_ours; then
-		confirm_or_die "Container ${CTID} wurde nicht von moritz-agent angelegt. Trotzdem aktualisieren?"
+		refuse_foreign "Container ${CTID} wurde nicht von moritz-agent angelegt"
 	fi
 	ensure_running
 	ct_has_installation || die 64 "in Container ${CTID} ist moritz-agent nicht installiert – ./install.sh --ctid ${CTID}"

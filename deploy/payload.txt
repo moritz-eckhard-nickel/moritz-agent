@@ -25,3 +25,4 @@ moritz-update.sh
 install.sh
 update.sh
 test-1.sh
+test-2.sh

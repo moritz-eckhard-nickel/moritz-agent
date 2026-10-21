@@ -80,7 +80,7 @@ main() {
 
 	if [[ ${CT_EXISTS} -eq 1 ]]; then
 		if ! ct_is_ours; then
-			confirm_or_die "Container ${CTID} wurde nicht von moritz-agent angelegt. Trotzdem darin installieren?"
+			refuse_foreign "Container ${CTID} wurde nicht von moritz-agent angelegt"
 		fi
 		log "Container ${CTID} gibt es schon"
 		ensure_running
@@ -103,7 +103,7 @@ main() {
 	choose_template
 	if [[ -z "${CTID}" ]]; then CTID="$(next_ctid)"; fi
 	print_plan
-	confirm_or_die "Container ${CTID} so anlegen und moritz-agent installieren?"
+	confirm_or_die "Container ${CTID} so anlegen und moritz-agent installieren"
 
 	ensure_template
 	create_container

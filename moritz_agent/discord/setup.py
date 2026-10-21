@@ -35,6 +35,7 @@ PERMISSION_BITS = {
 FLAG_MESSAGE_CONTENT = 1 << 18  # application flags: Message Content Intent (approved bots)
 FLAG_MESSAGE_CONTENT_LIMITED = 1 << 19  # … switched on in the Developer Portal (small bots)
 TEXT_CHANNEL_TYPES = {0, 5}  # text, announcement
+VOICE_CHANNEL_TYPES = {2, 13}  # voice, stage
 BIO = (
     "Guude! Ich bin Anton ✨ Moritz’ kleiner Helfer aus Weilburg – Telefon 999, Wetter, Uhrzeit & "
     "ganz viel Quatsch. Frag mich einfach 🐾"
@@ -143,6 +144,13 @@ class DiscordRest:
         channels = await self.call("GET", f"/guilds/{guild_id}/channels")
         return sorted(
             (c for c in channels if c.get("type") in TEXT_CHANNEL_TYPES),
+            key=lambda c: (c.get("position", 0), c["name"]),
+        )
+
+    async def voice_channels(self, guild_id: str) -> list[dict[str, Any]]:
+        channels = await self.call("GET", f"/guilds/{guild_id}/channels")
+        return sorted(
+            (c for c in channels if c.get("type") in VOICE_CHANNEL_TYPES),
             key=lambda c: (c.get("position", 0), c["name"]),
         )
 

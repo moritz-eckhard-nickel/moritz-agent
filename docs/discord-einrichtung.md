@@ -39,11 +39,16 @@ einschalten** wird dringend empfohlen).
 
 ### Mit dem Installer (`moritz-install.sh`, im LXC)
 
-Die Phase `discord` fragt „Discord-Bot einrichten? [j/N]“, nimmt den Token **unsichtbar** entgegen,
+Die Phase `discord` fragt nach dem Token (**unsichtbar**, Enter = ohne Discord),
 prüft ihn bei Discord (der Bot-Name wird angezeigt), speichert ihn **nur** in `passwords.txt`
 (Zeile `bot_token`), schaltet Discord in `config/moritz-agent.toml` ein, trägt dich als Owner ein,
-zeigt die **Einladungslinks** und lässt dich den Standardkanal aus einer Liste wählen. Mit
-`--non-interactive` gibt es keine Frage – dann wie unten von Hand.
+zeigt die **Einladungslinks** und lässt dich Textkanal und Sprachkanal aus einer Liste wählen. Mit
+`--non-interactive` wird nichts abgefragt – dann wie unten von Hand.
+
+### Am einfachsten: `./test-2.sh setup`
+
+Fragt nacheinander Token, Textkanal und Sprachkanal ab (Enter = überspringen) und testet danach mit
+`./test-2.sh run` alles – siehe [test-2.md](test-2.md).
 
 ### Zum Ausprobieren ohne LXC (`./test-1.sh discord …`)
 

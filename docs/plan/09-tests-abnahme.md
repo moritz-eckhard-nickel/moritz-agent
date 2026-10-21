@@ -21,7 +21,7 @@
 CI-Workflow: `.github/workflows/moritz-ci.yaml` (Python 3.12 und 3.13). Die Upstream-
 KoboldCPP-Workflows bleiben `workflow_dispatch`-only und laufen nicht automatisch.
 
-Skripte (`install.sh`, `update.sh`, `moritz-install.sh`, `moritz-update.sh`, `test-1.sh`, `scripts/*.sh`, `deploy/lib/*.sh`) sind `shellcheck`-sauber; ihr Verhalten prüfen `tests/moritz_agent/test_installers.py` (echte Läufe gegen einen Fake-Baum mit aufzeichnenden Systembefehlen) und `tests/moritz_agent/test_host_scripts.py` (simulierter Proxmox-Host, siehe `fake_proxmox.py`).
+Skripte (`install.sh`, `update.sh`, `moritz-install.sh`, `moritz-update.sh`, `test-*.sh`, `scripts/*.sh`, `deploy/lib/*.sh`) sind `shellcheck`-sauber; ihr Verhalten prüfen `tests/moritz_agent/test_installers.py` (echte Läufe gegen einen Fake-Baum mit aufzeichnenden Systembefehlen) und `tests/moritz_agent/test_host_scripts.py` (simulierter Proxmox-Host, siehe `fake_proxmox.py`).
 
 ## 2. Testdaten
 
@@ -75,3 +75,18 @@ Feste Geschwindigkeitsversprechen gibt es nicht; die Ziele aus NFR-03 dienen der
 Modelle in der Entwicklungsumgebung). Die Abnahmevorlagen [`sofortauskuenfte-vorlage.md`](../abnahme/sofortauskuenfte-vorlage.md)
 und [`discord-vorlage.md`](../abnahme/discord-vorlage.md) enthalten die Tabelle zum Ausfüllen. Tests, die echtes
 Internet brauchen, tragen den Marker `network` (`pytest -m network`) und laufen nicht im Standardlauf.
+
+## 5. Testskripte je Ausbaustufe (`test-N.sh`)
+
+Moritz, 21.10.2026: „Ab nun immer so: wenn wir was Großes einbauen, gibt's ein neues Testskript mit
+setup und run.“ Regeln:
+
+- Jede große Erweiterung bekommt das nächste `test-N.sh` im Wurzelverzeichnis (`test-1.sh` Telefon und
+  Stimme, `test-2.sh` alles bis Part 1 inklusive Sofortauskünfte und Discord, …).
+- Es hat mindestens `setup` (alles einrichten) und `run` (automatisch testen, danach Live-Test;
+  `--auto` nur automatisch, Exit-Code 0 = grün) und testet **alles Bisherige mit**; das vorige Skript
+  wird aufgerufen, nicht kopiert.
+- **Keine Ja/Nein-Fragen**: Downloads und Einrichtung laufen ohne Rückfrage; abgefragt werden nur Werte
+  (Token, Kanal-IDs), Enter überspringt bzw. behält. Secrets nur unsichtbar über stdin (CLAUDE.md).
+- Neue Skripte stehen in `deploy/payload.txt`, in der CI (`shellcheck … test-*.sh`) und in
+  `tests/moritz_agent/test_project_files.py`; Anleitung `docs/test-N.md`.

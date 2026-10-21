@@ -285,3 +285,25 @@ def test_old_default_names_switch_to_anton_but_own_choices_stay():
     assert rename_assistant(own) == (own, 0)
     passwords = "[sip]\nusername = agent\ndisplay_name = Nikita\n"
     assert rename_assistant(passwords) == (passwords.replace("= Nikita", "= Anton"), 1)
+
+
+def test_the_voice_channel_is_chosen_by_list_number_or_id_and_lands_in_the_config(files_in):
+    from moritz_agent.config.settings import load_settings
+
+    _, config = files_in
+
+    def voice(answer):
+        out = io.StringIO()
+        code = asyncio.run(
+            setup_discord.setup_voice_channel(config, BOT_TOKEN, answer, out=out, transport=api())
+        )
+        return code, out.getvalue()
+
+    code, listing = voice("")
+    assert code == 3 and "Zuhause / 🔊 Sprache" in listing and "#anton" not in listing
+    assert voice("1")[0] == 0
+    text = config.read_text(encoding="utf-8")
+    assert 'default_channel_id = "5550003"' in text and "Sprachkanal für /joinvc" in text
+    assert load_settings(config).discord.voice.default_channel_id == "5550003"
+    assert voice("5550099")[0] == 0  # an id is taken as it is
+    assert load_settings(config).discord.voice.default_channel_id == "5550099"

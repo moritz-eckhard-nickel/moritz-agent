@@ -256,6 +256,7 @@ def test_voice_in_versions_lock_matches_the_download_manifest():
 
 EXECUTABLE_SCRIPTS = (
     "test-1.sh",
+    "test-2.sh",
     "install.sh",
     "update.sh",
     "moritz-install.sh",
@@ -312,3 +313,17 @@ def test_phone_subcommand_is_passed_through(monkeypatch):
     monkeypatch.setattr(phone_cli, "main", lambda argv=None: seen.append(argv) or 0)
     assert main(["phone", "check", "--sip"]) == 0
     assert seen == [["check", "--sip"]]
+
+
+def test_test_2_covers_everything_and_asks_no_yes_no_questions():
+    result = subprocess.run(
+        [str(REPO_ROOT / "test-2.sh"), "--help"], capture_output=True, text=True, check=False
+    )
+    assert result.returncode == 0
+    for command in ("./test-2.sh setup", "./test-2.sh run", "--auto"):
+        assert command in result.stdout, command
+    script = (REPO_ROOT / "test-2.sh").read_text(encoding="utf-8")
+    assert "test-1.sh" in script  # everything of test-1 is tested again, reused not copied
+    for path in ("test-1.sh", "test-2.sh", "moritz-install.sh", "deploy/lib/host.sh"):
+        text = (REPO_ROOT / path).read_text(encoding="utf-8")
+        assert not re.search(r"\[j/N\]|\[J/n\]|\[y/N\]|\[Y/n\]", text), path
