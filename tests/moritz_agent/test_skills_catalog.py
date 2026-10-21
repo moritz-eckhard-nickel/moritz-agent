@@ -3,9 +3,11 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import pytest
 
-from .skills_util import Session, ask
+from .skills_util import BERLIN, Session, ask
 
 GOLDEN = [
     # P1-29: phrasings found missing by the 800 utterance corpus
@@ -282,3 +284,128 @@ def test_calculator_survives_nonsense(silly):
 def test_calculator_never_runs_code():
     assert ask("__import__('os').system('echo hi')") is None
     assert ask("import os und rechne 2 plus 2") in (None, "2 plus 2 ist 4.")
+
+
+# -- review findings: wrong answers that must not come back ----------------------------------------
+WED_10 = datetime(2026, 10, 21, 10, 0, tzinfo=BERLIN)
+WED_NOON = datetime(2026, 10, 21, 12, 0, tzinfo=BERLIN)
+AUTUMN_SWITCH = datetime(2026, 10, 25, 1, 0, tzinfo=BERLIN)  # 01:00 summer time, change at 03:00
+SPRING_SWITCH = datetime(2026, 3, 29, 1, 0, tzinfo=BERLIN)  # 01:00 winter time, change at 02:00
+
+FOUND = [
+    # date.today answers the day asked for, not today
+    (WED_10, "Welches Datum ist nächsten Freitag?", "Freitag, der 23. Oktober"),
+    (WED_10, "Welches Datum ist am Samstag?", "Samstag, der 24. Oktober"),
+    (WED_10, "Welches Datum ist in einer Woche?", "Mittwoch, der 28. Oktober"),
+    (WED_10, "Welches Datum ist Heiligabend?", "Heiligabend ist am Donnerstag, dem 24. Dezember"),
+    (WED_10, "Welches Datum ist Ostern?", "Ostern ist am Sonntag, dem 28. März 2027"),
+    (WED_10, "Der wievielte ist Muttertag?", "Sonntag, dem 9. Mai 2027"),
+    (WED_10, "Welches Datum war letzten Samstag?", "Das war Samstag, der 17. Oktober"),
+    (WED_10, "Welches Datum ist heute?", "Heute ist Mittwoch, der 21. Oktober 2026"),
+    # spoken decimals
+    (WED_10, "Was ist zwei Komma fünf mal vier?", "2,5 mal 4 ist 10."),
+    (WED_10, "Was ist null komma fünf plus eins komma fünf?", "ist 2."),
+    # negative temperatures
+    (WED_10, "Was sind minus 40 Grad in Fahrenheit?", "Minus 40 Grad Celsius sind minus 40 Grad"),
+    (WED_10, "Was sind -10 Grad Celsius in Fahrenheit?", "sind 14 Grad Fahrenheit"),
+    # year-less dates share the year
+    (WED_10, "Wie viele Tage sind zwischen 1. Oktober und 1. November?", "31 Tage"),
+    # years
+    (WED_10, "Welcher Wochentag war der 3.10.90?", "3. Oktober 1990 war ein Mittwoch"),
+    (WED_10, "Wann war Ostern 1990?", "Ostern war am Sonntag, 15. April 1990"),
+    (WED_10, "Welcher Wochentag ist Weihnachten 2027?", "24. Dezember 2027 ist ein Freitag"),
+    (WED_10, "Welcher Wochentag war Ostern neunzehnhundertneunzig?", "15. April 1990"),
+    # clock changes: elapsed time counts, not the wall clock
+    (AUTUMN_SWITCH, "Wie spät ist es in 3 Stunden?", "ist es 3 Uhr."),
+    (AUTUMN_SWITCH, "Wie lange noch bis 12 Uhr?", "Noch 12 Stunden."),
+    (AUTUMN_SWITCH, "Wie lange noch bis 5 Uhr?", "Noch 5 Stunden."),
+    (SPRING_SWITCH, "Wie spät ist es in 3 Stunden?", "ist es 5 Uhr."),
+    (SPRING_SWITCH, "Wie spät ist es in 90 Minuten?", "ist es 3 Uhr 30."),
+    (SPRING_SWITCH, "Wie lange noch bis 5 Uhr?", "Noch 3 Stunden."),
+    (SPRING_SWITCH, "Haben wir gerade Sommerzeit?", "beginnt am Sonntag, 29. März."),
+    (SPRING_SWITCH, "Wann beginnt die Sommerzeit?", "Am Sonntag, 29. März, um 2 Uhr"),
+    (WED_10, "Wann beginnt die Sommerzeit?", "Am Sonntag, 28. März 2027, um 2 Uhr"),
+    # dark or light
+    (WED_NOON, "Ist es schon dunkel?", "Nein, es ist noch hell"),
+    (WED_NOON, "Ist es noch hell?", "Ja, es ist noch hell"),
+    (WED_NOON, "Wann ist es dunkel?", "Heute wird es gegen"),
+    # VAT: add, tax on a net price, or extract
+    (WED_10, "Was sind 100 Euro plus Mehrwertsteuer?", "sind 119 Euro"),
+    (WED_10, "Was sind 100 Euro mit Mehrwertsteuer?", "sind 119 Euro"),
+    (WED_10, "Was sind 100 Euro zuzüglich Mehrwertsteuer?", "sind 119 Euro"),
+    (WED_10, "Was sind 19 Prozent Mehrwertsteuer von 100 Euro?", "100 Euro sind 19 Euro"),
+    (WED_10, "Was sind 7 Prozent Mehrwertsteuer auf 50 Euro?", "50 Euro sind 3 Euro 50"),
+    (WED_10, "Wie viel Mehrwertsteuer ist in 119 Euro?", "In 119 Euro stecken 19 Euro"),
+    (WED_10, "100 Euro inklusive Mehrwertsteuer – wie viel Steuer?", "stecken 15 Euro 97"),
+    (WED_10, "Was sind 100 Euro netto brutto?", "100 Euro netto sind 119 Euro brutto"),
+    # Mariä Himmelfahrt is not Christi Himmelfahrt
+    (WED_10, "Wann ist Mariä Himmelfahrt?", "Mariä Himmelfahrt ist am Sonntag, 15. August 2027"),
+    (WED_10, "Ist Mariä Himmelfahrt ein Feiertag?", "in Hessen kein Feiertag – aber im Saarland"),
+    # commercial rounding
+    (WED_10, "Runde 2,5", "Gerundet sind das 3."),
+    (WED_10, "Was sind 19 Prozent von 32,50 Euro?", "sind 6 Euro 18."),
+    (WED_10, "Was sind 10 Prozent von 3 Euro 50?", "von 3 Euro 50 sind 0 Euro 35."),
+    # long weekends grow over neighbouring holidays
+    (WED_10, "Wann ist das nächste lange Wochenende?", "25. Dezember, bis Sonntag, 27. Dezember"),
+    (
+        datetime(2025, 12, 1, 10, 0, tzinfo=BERLIN),
+        "Wann ist das nächste lange Wochenende?",
+        "bis Sonntag, 28. Dezember – 4 Tage frei",
+    ),
+    (
+        datetime(2028, 12, 1, 10, 0, tzinfo=BERLIN),
+        "Wann ist das nächste lange Wochenende?",
+        "vom Samstag, 23. Dezember, bis Dienstag, 26. Dezember – 4 Tage frei",
+    ),
+    # places with a spoken addition
+    (WED_10, "Wie weit ist Frankfurt an der Oder?", "bis Frankfurt an der Oder etwa 485 Kilometer"),
+    (WED_10, "Wie weit ist Frankfurt am Main?", "bis Frankfurt am Main etwa 51 Kilometer"),
+    # calendar weeks
+    (WED_10, "Welche Kalenderwoche ist nächste Woche?", "Nächste Woche ist Kalenderwoche 44."),
+    (WED_10, "Welche Kalenderwoche ist letzte Woche?", "Letzte Woche war Kalenderwoche 42."),
+    (WED_10, "Wann ist KW 1?", "Kalenderwoche 1 im Jahr 2027 geht von Montag, 4. Januar,"),
+    (WED_10, "Wann ist KW 50?", "Kalenderwoche 50 geht von Montag, 7. Dezember,"),
+    # Halloween is no holiday – the Reformationstag on the same day is
+    (WED_10, "Ist Halloween ein Feiertag?", "Halloween selbst ist kein Feiertag"),
+    (WED_10, "Ist Weihnachten ein Feiertag?", "Ja, der erste Weihnachtstag ist in Hessen"),
+    (WED_10, "Ist Ostern 2027 ein Feiertag?", "Ja, Ostern ist in Hessen ein Feiertag."),
+    (WED_10, "Ist Heilige Drei Könige ein Feiertag?", "aber in Baden-Württemberg, Bayern"),
+    (WED_10, "Ist Buß- und Bettag ein Feiertag?", "aber in Sachsen."),
+]
+
+
+@pytest.mark.parametrize(("at", "question", "expected"), FOUND)
+def test_review_findings(at, question, expected):
+    answer = ask(question, at)
+    assert answer is not None and expected in answer, answer
+
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        "Ruf mich unter 0171-1234567 an",
+        "Hat die Apotheke 24/7 offen?",
+        "Ich wohne Hauptstraße 5-7",
+        "Das Spiel endete 2-1",
+        "Was war zwischen 1939-1945?",
+    ],
+)
+def test_numbers_with_dash_or_slash_are_not_calculations(sentence):
+    assert Session(WED_10).skill(sentence) != "calc.arith"
+
+
+@pytest.mark.parametrize(
+    ("sentence", "answer"),
+    [
+        ("Was ist 7-2?", "7 minus 2 ist 5."),
+        ("5-3", "5 minus 3 ist 2."),
+        ("Was ist 24/7?", "etwa 3,4286"),
+    ],
+)
+def test_dash_and_slash_still_calculate_when_asked(sentence, answer):
+    assert answer in ask(sentence, WED_10)
+
+
+def test_sun_answers_keep_the_case_of_month_and_weekday():
+    answer = ask("Wann geht die Sonne am 21. Juni auf?", WED_10)
+    assert answer.startswith("Am Montag, dem 21. Juni 2027")

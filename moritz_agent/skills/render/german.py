@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
+from decimal import ROUND_HALF_UP, Decimal, localcontext
 
 from moritz_agent.phone.audio.textnorm import cardinal
 from moritz_agent.tools.time_tool import MONTHS_DE, WEEKDAYS_DE
@@ -99,23 +100,36 @@ def join_and(items: list[str] | tuple[str, ...]) -> str:
     return ", ".join(items[:-1]) + " und " + items[-1]
 
 
+def round_half_up(value: float, decimals: int = 0) -> Decimal:
+    """Commercial rounding (2,5 → 3, 6,175 → 6,18) instead of Python's banker's rounding.
+
+    The float is first cut to ten decimals so that binary noise (6,17499999…) does not decide.
+    """
+    exact = Decimal(repr(round(value, 10)))
+    with localcontext() as ctx:
+        ctx.prec = 80
+        return exact.quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_UP)
+
+
 def number(value: float, decimals: int = 2) -> str:
     """German number text: "3,5", "1.234", trailing zeros dropped (the voice reads "Komma")."""
-    if abs(value - round(value)) < 10 ** (-decimals) / 2:
-        text = f"{round(value):,}".replace(",", ".")
-    else:
-        text = f"{value:,.{decimals}f}".rstrip("0").rstrip(".")
-        whole, _, frac = text.partition(".")
-        # f-string used "," for thousands and "." for decimals
-        text = whole.replace(",", ".") + ("," + frac if frac else "")
+    rounded = round_half_up(value, decimals)
+    text = f"{rounded:,f}"
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    whole, _, frac = text.partition(".")
+    # the format used "," for thousands and "." for decimals
+    text = whole.replace(",", ".") + ("," + frac if frac else "")
+    if text in {"-0", "-0,0"}:
+        text = "0"
     return text.replace("-", "minus ") if text.startswith("-") else text
 
 
 def euro(amount: float) -> str:
     """ "47 Euro 31" / "5 Euro" (speakable)."""
-    cents = round(abs(amount) * 100)
+    cents = int(round_half_up(abs(amount) * 100))
     euros, rest = divmod(cents, 100)
-    sign = "minus " if amount < 0 else ""
+    sign = "minus " if amount < 0 and cents else ""
     return f"{sign}{euros} Euro" + (f" {rest}" if rest else "")
 
 

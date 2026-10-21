@@ -11,9 +11,14 @@ from __future__ import annotations
 import calendar
 import re
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 
-from moritz_agent.skills.calendar.special import SPECIAL_DAYS, find_special, next_occurrence
+from moritz_agent.skills.calendar.special import (
+    SPECIAL_DAYS,
+    find_special,
+    next_occurrence,
+    special_date,
+)
 from moritz_agent.skills.render.german import day_label
 from moritz_agent.skills.text.numbers import MONTHS
 from moritz_agent.tools.time_tool import WEEKDAYS_DE
@@ -100,6 +105,7 @@ class _Parts:
     clock: time | None = None
     now: bool = False
     delta: timedelta | None = None
+    exact: bool = False  # the delta is elapsed time (minutes, hours), not calendar days
     spans: list[tuple[int, int]] = field(default_factory=list)
     label_override: str = ""
 
@@ -144,9 +150,9 @@ def find_when(text: str, now: datetime) -> When | None:
         amount = float(amount_text) if amount is None else amount
         base = unit.rstrip("n")
         if base.startswith("minute"):
-            p.delta = timedelta(minutes=amount)
+            p.delta, p.exact = timedelta(minutes=amount), True
         elif base.startswith("stunde"):
-            p.delta = timedelta(hours=amount)
+            p.delta, p.exact = timedelta(hours=amount), True
         elif base.startswith("tag"):
             p.delta = timedelta(days=amount)
         elif base.startswith("woche"):
@@ -176,8 +182,8 @@ def find_when(text: str, now: datetime) -> When | None:
         if found:
             key, span = found
             if key in SPECIAL_DAYS:
-                p.day = next_occurrence(key, today)
                 a, b = span.span() if hasattr(span, "span") else span
+                p.day, b = _special_day(key, text, b, today)
                 taken.append((a, b))
                 p.label_override = ""
 
@@ -358,10 +364,27 @@ def find_when(text: str, now: datetime) -> When | None:
     return _compose(p, now)
 
 
+_SPECIAL_YEAR = re.compile(r" (?:im jahr |im jahre )?((?:19|20)\d{2})\b")
+
+
+def _special_day(key: str, text: str, end: int, today: date) -> tuple[date, int]:
+    """Date of a special day, in the year named right after it ("ostern 1990"), else the next one."""
+    m = _SPECIAL_YEAR.match(text, end)
+    if m:
+        return special_date(key, int(m.group(1))), m.end()
+    return next_occurrence(key, today), end
+
+
+def two_digit_year(yy: int, today: date) -> int:
+    """ "90" → 1990, "26" → 2026, "30" → 2030: the 1900s once the year is more than ten years ahead."""
+    year = 2000 + yy
+    return year - 100 if year > today.year + 10 else year
+
+
 def _date_from(day: int, month: int, year_text: str | None, today: date) -> date | None:
     year = int(year_text) if year_text else today.year
     if year_text and len(year_text) == 2:
-        year += 2000
+        year = two_digit_year(year, today)
     try:
         result = date(year, month, day)
     except ValueError:
@@ -378,7 +401,8 @@ def _compose(p: _Parts, now: datetime) -> When | None:
     tz, today = now.tzinfo, now.date()
     spans = tuple(sorted(p.spans))
     if p.delta is not None and p.clock is None:
-        target = now + p.delta
+        # elapsed time (minutes, hours) counts in UTC, so a clock change in between is respected
+        target = (now.astimezone(UTC) + p.delta).astimezone(tz) if p.exact else now + p.delta
         gran = "hour" if p.delta <= timedelta(hours=48) else "day"
         label = f"in {_dur_label(p.delta)}"
         if gran == "day":
@@ -436,8 +460,9 @@ def _compose(p: _Parts, now: datetime) -> When | None:
                         time((p.clock.hour + add_hours) % 24, p.clock.minute),
                         tzinfo=tz,
                     )
+                    # "um 3" by day is 15 Uhr; at night, "bis 5 Uhr" is the coming early morning
                     ok_hours = (
-                        6 <= alt.hour <= 23
+                        6 <= alt.hour <= 23 or alt - now <= timedelta(hours=6)
                         if p.clock.hour < 12 and p.part is None and p.clock.hour >= 1
                         else True
                     )
@@ -507,29 +532,46 @@ def remove_spans(text: str, when: When | None) -> str:
 
 
 def find_dates(text: str, now: datetime) -> list[date]:
-    """Every single date named in ``text`` in spoken order ("vom 1. märz bis zum 15. april")."""
+    """Every single date named in ``text`` in spoken order ("vom 1. märz bis zum 15. april").
+
+    A date without a year lies in the year of the date named before it ("zwischen 1. oktober und
+    1. november"), and only rolls into the next year if it would come before that one; the first
+    date without a year is the next one to come.
+    """
     today = now.date()
-    found: list[tuple[int, date]] = []
+    found: list[tuple[int, date, bool]] = []  # (position, date, year named or implied)
     taken: list[tuple[int, int]] = []
     for m in re.finditer(r"\b(\d{1,2})\.(\d{1,2})\.(?:(\d{4}|\d{2})\b)?", text):
         d = _date_from(int(m.group(1)), int(m.group(2)), m.group(3), today)
         if d:
-            found.append((m.start(), d))
+            found.append((m.start(), d, m.group(3) is not None))
             taken.append(m.span())
     for m in re.finditer(rf"\b(\d{{1,2}})\.? ({_MONTH_NAMES})(?: (\d{{4}}))?\b", text):
         if any(m.start() < b and a < m.end() for a, b in taken):
             continue
         d = _date_from(int(m.group(1)), MONTH_INDEX[m.group(2)], m.group(3), today)
         if d:
-            found.append((m.start(), d))
+            found.append((m.start(), d, m.group(3) is not None))
             taken.append(m.span())
     spec = find_special(text)
     if spec and not any(
         a <= (spec[1].start() if hasattr(spec[1], "start") else spec[1][0]) < b for a, b in taken
     ):
         key, span = spec
-        start = span.start() if hasattr(span, "start") else span[0]
-        found.append((start, next_occurrence(key, today)))
+        start, end = span.span() if hasattr(span, "span") else span
+        day, _ = _special_day(key, text, end, today)
+        found.append((start, day, True))  # movable feasts: always their own next date
     for m in re.finditer(r"\b(vorgestern|gestern|heute|übermorgen|morgen)\b", text):
-        found.append((m.start(), today + timedelta(days=_DAYWORDS[m.group(1)])))
-    return [d for _, d in sorted(found)]
+        found.append((m.start(), today + timedelta(days=_DAYWORDS[m.group(1)]), True))
+    result: list[date] = []
+    for _, day, fixed in sorted(found, key=lambda item: item[0]):
+        if not fixed and result:
+            previous = result[-1]
+            try:
+                day = day.replace(year=previous.year)
+                if day < previous:
+                    day = day.replace(year=previous.year + 1)
+            except ValueError:  # 29 February
+                pass
+        result.append(day)
+    return result

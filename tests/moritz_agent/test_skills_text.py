@@ -24,6 +24,8 @@ from moritz_agent.skills.text.phonetic import phonetic_code
         ("hundert", 100), ("hundertfünf", 105), ("dreihundertvierzig", 340), ("tausend", 1000),
         ("zweitausendsechsundzwanzig", 2026), ("siebenhunderteinundachtzig", 781),
         ("fünfunddreißigtausendsiebenhunderteinundachtzig", 35781), ("neunundneunzig", 99),
+        ("neunzehnhundertneunzig", 1990), ("neunzehnhundert", 1900),
+        ("achtzehnhundertdreiundsiebzig", 1873),
     ],
 )  # fmt: skip
 def test_cardinals(word, value):
@@ -157,3 +159,15 @@ def test_phonetic_codes_differ_for_different_names():
     assert phonetic_code("Weilburg") != phonetic_code("Wetzlar")
     assert phonetic_code("") == ""
     assert phonetic_code("Müller") == "657"
+
+
+@pytest.mark.parametrize(
+    ("spoken", "expected"),
+    [
+        ("was ist zwei komma fünf mal vier", "was ist 2,5 mal 4"),
+        ("null komma fünf plus eins komma fünfundzwanzig", "0,5 plus 1,25"),
+        ("das komma steht falsch", "das komma steht falsch"),
+    ],
+)
+def test_spoken_decimals(spoken, expected):
+    assert words_to_digits(spoken) == expected

@@ -302,7 +302,10 @@ def _window(
         return None
     if window[0] in _POSSESSIVE:
         return None
-    # longest known name first
+    # longest known name first – also across stop words ("frankfurt an der oder")
+    full = tokens[start + skipped : start + skipped + 6]
+    if gaz.known_prefix(full) > len(window):
+        window = full
     size = gaz.known_prefix(window)
     if size:
         name = " ".join(window[:size])

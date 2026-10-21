@@ -517,6 +517,9 @@ def _variants(place: Place) -> list[tuple[str, float, str]]:
     weight = 1.0
     how = "district" if place.parent else "exact"
     out.append((full, weight, how))
+    spoken = fold(place.spoken)  # "Frankfurt (Oder)" is said "Frankfurt an der Oder"
+    if spoken and spoken != full:
+        out.append((spoken, weight, how))
     bare = fold(re.sub(r"\s*\(.*?\)", "", place.name))
     if bare and bare != full:
         out.append((bare, 0.9, "stripped"))

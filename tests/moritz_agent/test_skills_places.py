@@ -85,6 +85,8 @@ def test_unknown_postcode_has_a_near_miss(gaz):
         ("Homburg", "Bad Homburg vor der Höhe", "stripped"),
         ("Kubach", "Kubach", "district"),
         ("Halle", "Halle (Saale)", "stripped"),
+        ("Frankfurt an der Oder", "Frankfurt (Oder)", "exact"),
+        ("Halle an der Saale", "Halle (Saale)", "exact"),
         ("Weilborg", "Weilburg", "fuzzy"),
         ("Weilbug", "Weilburg", "fuzzy"),
     ],
@@ -181,6 +183,8 @@ def where(svc, sentence):
     [
         ("wetter in berlin heute abend", "place", "Berlin", "exact"),
         ("wie ist das wetter in frankfurt morgen", "place", "Frankfurt am Main", "stripped"),
+        ("wetter in frankfurt an der oder morgen", "place", "Frankfurt (Oder)", "exact"),
+        ("wie weit ist frankfurt am main", "place", "Frankfurt am Main", "exact"),
         ("wetter in 35781", "place", "Weilburg", "postcode"),
         ("wie wird das wetter in 6 0 3 1 1", "place", "Frankfurt am Main", "postcode"),
         ("wetter für sechs null drei eins eins", "place", "Frankfurt am Main", "postcode"),

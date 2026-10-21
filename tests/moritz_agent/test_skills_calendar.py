@@ -100,6 +100,9 @@ def test_find_special_names():
     assert special.find_special("wann ist muttertag")[0] == "muttertag"
     assert special.find_special("wann ist vatertag")[0] == "himmelfahrt"
     assert special.find_special("wetter morgen") is None
+    assert special.find_special("wann ist mariä himmelfahrt")[0] == "mariae_himmelfahrt"
+    assert special.find_special("wann ist christi himmelfahrt")[0] == "himmelfahrt"
+    assert special.special_date("mariae_himmelfahrt", 2027) == date(2027, 8, 15)
 
 
 def test_school_holidays_hessen():
@@ -130,3 +133,18 @@ def test_long_weekends_with_bridge_days():
     assert found["himmelfahrt"].days == 4
     assert found["karfreitag"].bridge is None
     assert found["weihnachtstag1"].days == 3
+
+
+def test_long_weekends_grow_over_neighbouring_holidays():
+    found = workdays.long_weekends(date(2025, 12, 1), "HE", 4)
+    spans = {(lw.first, lw.last): lw for lw in found}
+    # 26.12.2025 is a holiday on Friday: never a bridge day, Thu–Sun are free anyway
+    christmas = spans[(date(2025, 12, 25), date(2025, 12, 28))]
+    assert christmas.bridge is None and christmas.days == 4
+    assert all(lw.bridge is None or not hol.holiday_on(lw.bridge, "HE") for lw in found)
+    # Easter 2027: Good Friday to Easter Monday, once
+    easter = spans[(date(2027, 3, 26), date(2027, 3, 29))]
+    assert easter.days == 4 and easter.bridge is None
+    assert not any(lw.first == date(2027, 3, 27) for lw in found)
+    # Christmas 2028: Saturday 23 to Tuesday 26 December
+    assert spans[(date(2028, 12, 23), date(2028, 12, 26))].days == 4
