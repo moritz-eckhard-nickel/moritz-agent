@@ -168,9 +168,9 @@ def test_shipped_catalog_formats_with_assistant_values():
     cat = load_catalog(
         REPO_ROOT / "assets/audio/prompts.de.toml",
         {
-            "greeting_text": "Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?",
-            "assistant_name": "Nikita",
+            "greeting_text": "Hallo Moritz, hier ist Anton. Was kann ich für dich tun?",
+            "assistant_name": "Anton",
         },
     )
-    assert cat["greeting"].text.startswith("Hallo Moritz, hier ist Nikita")
+    assert cat["greeting"].text.startswith("Hallo Moritz, hier ist Anton")
     assert cat["greeting"].required

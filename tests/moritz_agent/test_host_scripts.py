@@ -93,7 +93,7 @@ class Pve:
             "status": status,
             "hostname": "moritz-agent",
             "config": "",
-            "description": "moritz-agent Nikita - managed-by-moritz-agent-install"
+            "description": "moritz-agent Anton - managed-by-moritz-agent-install"
             if ours
             else "mein anderer Container",
             "installed": installed,
@@ -200,13 +200,13 @@ def test_container_is_started_before_the_installer_runs(pve):
 
 def test_network_and_resource_options_reach_pct_create(pve):
     result = pve.run(
-        "install.sh", "--yes", "--ctid", "230", "--hostname", "nikita", "--storage", "local", "--disk", "100",
+        "install.sh", "--yes", "--ctid", "230", "--hostname", "anton", "--storage", "local", "--disk", "100",
         "--memory", "20480", "--cores", "12", "--bridge", "vmbr1", "--vlan", "20", "--ip", "192.168.1.50/24",
         "--gateway", "192.168.1.1", "--dns", "192.168.1.1", "--timezone", "Europe/Berlin",
     )  # fmt: skip
     assert result.returncode == 0, result.stdout + result.stderr
     create = pve.pct_calls("create")[0]
-    assert create[1] == "230" and option_value(create, "--hostname") == "nikita"
+    assert create[1] == "230" and option_value(create, "--hostname") == "anton"
     assert option_value(create, "--rootfs") == "local:100"
     assert option_value(create, "--memory") == "20480" and option_value(create, "--cores") == "12"
     assert (

@@ -61,7 +61,7 @@ class Worker:
             )  # fmt: skip
         deadline = time.monotonic() + 60
         while time.monotonic() < deadline:
-            if "Nikita ist bereit" in self.text():
+            if "Anton ist bereit" in self.text():
                 return
             if self.process.poll() is not None:
                 break
@@ -110,7 +110,7 @@ def greeting_delay(output: str) -> float:
     return float(match.group(1))
 
 
-def test_nikita_lets_it_ring_before_picking_up(worker_factory):
+def test_anton_lets_it_ring_before_picking_up(worker_factory):
     worker = worker_factory(2.0)
     result = worker.call("--hangup-after-greeting")
     assert result.returncode == 0, result.stdout + result.stderr
@@ -143,7 +143,7 @@ def test_caller_who_gives_up_while_it_rings_leaves_nothing_behind(worker_factory
     assert cancelled.returncode == 0, cancelled.stdout + cancelled.stderr
     time.sleep(3.5)  # the answer timer fires after the caller left: it must do nothing
     assert "Traceback" not in worker.text()
-    again = worker.call("--hangup-after-greeting")  # the line is free again, Nikita still works
+    again = worker.call("--hangup-after-greeting")  # the line is free again, Anton still works
     assert again.returncode == 0, again.stdout + again.stderr
     assert greeting_delay(again.stdout) >= 3.0
 

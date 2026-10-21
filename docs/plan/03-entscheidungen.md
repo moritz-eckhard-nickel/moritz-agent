@@ -123,7 +123,7 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 - **Kontext (F-08, F-08b):** Moritz wollte zunächst die Stimme **Hans** (Amazon Polly, Cloud).
 - **Entscheidung (16.10.2026):** Engine `polly` als Standard, `piper` lokal als Fallback.
 - **Status:** **abgelöst am 17.10.2026** durch ADR-027 (Moritz: „wir nehmen ab jetzt als Stimme
-  diese hier für Nikita“ – Thorsten-Voice Hessisch, lokal auf der CPU). Polly, die
+  diese hier für Anton“ – Thorsten-Voice Hessisch, lokal auf der CPU). Polly, die
   AWS-Zugangsdaten und `docs/stimme-hans.md` sind entfernt; sie bleiben in der Git-Historie
   (Commit `cbb5520`) und lassen sich bei Bedarf als zusätzliche Engine wiederherstellen.
 
@@ -307,22 +307,28 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 - **Status:** beschlossen; **erweitert durch ADR-029** (Fast-Paths gehen in den Sofortauskünften auf,
   Wetter ist nicht mehr Sache der Websuche).
 
-## ADR-026 – Name des Assistenten: Nikita
+## ADR-026 – Name des Assistenten: Anton
 
-- **Entscheidung (Moritz, 16.10.2026):** Der Assistent heißt **Nikita** – ein Mann, deshalb
+- **Entscheidung (Moritz, 16.10.2026):** Der Assistent heißt **Anton** – ein Mann, deshalb
   die männliche Stimme Thorsten-Voice (ADR-027). Er stellt sich so
-  vor („Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?“), der Systemprompt und der
+  vor („Hallo Moritz, hier ist Anton. Was kann ich für dich tun?“), der Systemprompt und der
   Fast-Path `identity` verwenden den Namen, der SIP-Anzeigename (`display_name`) und die
-  Anrufer-ID in Asterisk lauten Nikita, und die Oberfläche spricht von Nikita.
+  Anrufer-ID in Asterisk lauten Anton, und die Oberfläche spricht von Anton.
   Konfigurierbar über `phone.assistant_name`.
 - **Unverändert:** Produkt-/Repo-Name `moritz-agent` (Kurzform m-agent), Paketname
   `moritz_agent`, SIP-Konto `agent` (Benutzername/Passwort in Asterisk und `passwords.txt`),
   Maskottchen Scribbles. Der Originalplan (`00-originalplan.md`) bleibt als Referenz unverändert.
+- **Nachtrag 21.10.2026 (Moritz: „Nenn ihn ab jetzt überall Anton“):** Bis dahin hieß der Assistent
+  *Nikita*. Der Name ist überall ersetzt (Ansagen, Systemprompt, Discord, Doku, Weckwort im
+  Sprachkanal). Installierte Systeme, die noch die alten Standardwerte haben (`assistant_name`,
+  `greeting_text`, `initial_prompt`, SIP-`display_name`), stellt `moritz-update.sh` zeilenweise auf
+  Anton um; selbst gewählte Werte bleiben unverändert. Den Namen der Discord-Anwendung ändert man
+  im Developer Portal.
 - **Status:** beschlossen.
 
 ## ADR-027 – Stimme: Thorsten-Voice „Hessisch“ als Piper-Modell auf der CPU
 
-- **Kontext (Moritz, 17./18.10.2026):** Nikita bekommt die Stimme von Thorsten-Voice, **auch die
+- **Kontext (Moritz, 17./18.10.2026):** Anton bekommt die Stimme von Thorsten-Voice, **auch die
   hessische Variante**, lokal auf der CPU, vorgefertigte Ansagen gecacht. Zuerst wurde
   CosyVoice3-Hessisch gebaut (17.10.), am 18.10.2026 ersetzt: „nimm nur Piper – das müsste das
   Hessische ja auch können und ist leichter“. Das stimmt: `Thorsten-Voice/Hessisch` enthält ein
@@ -410,7 +416,7 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 
 ## ADR-029 – Sofortauskünfte (Skills) vor dem Sprachmodell; jeder Skill ist auch ein Tool
 
-- **Kontext (Moritz, 18.10.2026):** „Bevor wir LLM und richtige Agent-Instanzen machen, will ich Nikita
+- **Kontext (Moritz, 18.10.2026):** „Bevor wir LLM und richtige Agent-Instanzen machen, will ich Anton
   nach Uhrzeit, Datum und simplen Sachen wie dem Wetter in der Region fragen können. Standard ist 35781
   Weilburg, außer PLZ oder was anderes wird gesagt.“ Bisher waren Wetter, Preise und Sport ausdrücklich
   Sache der Websuche (12 §3), also erst mit LLM möglich – und dort langsam und halluzinationsanfällig.
@@ -510,10 +516,10 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 ## ADR-033 – Discord-Kanal: offizieller Bot, Server- und Benutzer-Installation, eigener Worker mit discord.py
 
 - **Kontext (Moritz, 20.10.2026):** „Plane eine komplette Discord-User-Integration mit allen Features,
-  die Nikita jemals hat, und mach ihn zu einem Bot. Beim Setup gibt man den Token ein oder auch in die
+  die Anton jemals hat, und mach ihn zu einem Bot. Beim Setup gibt man den Token ein oder auch in die
   TXT.“ Plan: [14-discord.md](14-discord.md).
 - **Entscheidung:**
-  1. Nikita ist der **Bot** einer eigenen Discord-Anwendung. „Public Bot“ aus, Server-Installation
+  1. Anton ist der **Bot** einer eigenen Discord-Anwendung. „Public Bot“ aus, Server-Installation
      (eigene Server: Chat, Sprache, Threads) **und** Benutzer-Installation (Befehle überall, wo Moritz
      ist). Ein Benutzer-Token („Self-Bot“) wird nie verwendet – verstößt gegen Discords
      Nutzungsbedingungen und gefährdet Moritz’ Konto.
@@ -527,7 +533,7 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
      Moritz: „beim Setup oder in der TXT“); Setup-Phase `discord` im Installer mit verdeckter
      Token-Eingabe über stdin, Prüfung gegen die API, Einladungslinks und Kanalauswahl; Updater hängt
      den Abschnitt leer an.
-  5. **Privatserver** (Nachtrag 20.10.2026): Nikitas Server enthält nur Moritz und Nikita. Der
+  5. **Privatserver** (Nachtrag 20.10.2026): Antons Server enthält nur Moritz und Anton. Der
      Standard-Textkanal ist ihr Zuhause (Antwort auf alles, Ziel aller Hinweise); der Server dieses
      Kanals ist automatisch erlaubt.
 - **Alternativen:** Self-Bot (verboten), Interactions-Endpunkt per HTTPS-Webhook (bräuchte eine
@@ -541,9 +547,9 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 
 ## ADR-034 – Kanalunabhängiger Kern und Ausgabeprofile je Oberfläche
 
-- **Kontext:** Nikita soll auf Discord **alles** können, was sie irgendwo kann – heute und in jedem
+- **Kontext:** Anton soll auf Discord **alles** können, was sie irgendwo kann – heute und in jedem
   späteren Part. Zwei Implementierungen derselben Funktion würden auseinanderlaufen.
-- **Entscheidung:** Ein Nikita-Kern (SkillResponder → Agent, Tools, Gedächtnis, Aufgaben) bekommt
+- **Entscheidung:** Ein Anton-Kern (SkillResponder → Agent, Tools, Gedächtnis, Aufgaben) bekommt
   Turns mit `principal` (wer, Rolle, persönliche Einstellungen), `channel` (`phone|discord|web`, Ort)
   und `surface` (`spoken|chat`). Kanäle sind dünne Adapter. Skills liefern gesprochenen Text **und**
   `markdown`, `card` und `actions` ([13 §3.3](13-sofortauskuenfte.md#33-schnittstellen)); das LLM-Profil
@@ -595,8 +601,8 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   5. **`/joinvc` = Anruf** (Nachtrag 20.10.2026): Der Sprachkanal benutzt dieselbe `CallSession` und
      denselben Zustandsautomaten wie das Telefon über eine gemeinsame Schnittstelle `MediaChannel`
      (SIP-Anruf bzw. Discord-Sprachkanal). Moritz betritt den Kanal = Anruf angenommen (Begrüßung wie
-     PHONE-21), verlässt ihn = aufgelegt; „Tschüss“ = Abschied und Nikita geht; lange Stille = Ruhe-Modus
-     (still im Kanal, „Nikita“ weckt) oder wie am Telefon gehen (`on_silence`).
+     PHONE-21), verlässt ihn = aufgelegt; „Tschüss“ = Abschied und Anton geht; lange Stille = Ruhe-Modus
+     (still im Kanal, „Anton“ weckt) oder wie am Telefon gehen (`on_silence`).
 - **Alternativen:** gemeinsamer Sprachdienst für Telefon und Discord (spart ≈ 1 GB RAM, koppelt aber
   Discord an den Telefon-Prozess – „verworfen für jetzt“, neu bewerten nach der RAM-Messung in P1-36);
   Node-Worker mit @discordjs/voice (hat eigene DAVE-Empfangsprobleme, zweite Laufzeit); nur
@@ -606,7 +612,7 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   sprechen“); der Spike P1-32 ist **offen** ([Protokoll](../abnahme/p1-32-discord-spike.md)).
 - **Status:** vorläufig – bestätigt oder geändert durch P1-32.
 
-## ADR-037 – Nikita auf Discord: ein bisschen süß, mit schelmischen Aktivitäten
+## ADR-037 – Anton auf Discord: ein bisschen süß, mit schelmischen Aktivitäten
 
 - **Kontext (Moritz, 20.10.2026):** „Mache den User bitte bissl cutey. Er soll als Aktivitäten coole
   Sachen haben wie ‚spielt mit deinen Daten‘ – schelmisch, funny.“
@@ -622,11 +628,11 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
      Aktivitäten haben Vorrang (Anruf, Sprachkanal, Nacht, Wetter, Sonderdaten, Wartung, Unwetter im
      Ernst-Modus). Nie Texte, die wie echte Vorfälle wirken; `/aktivitaet` zum Wechseln, Abschalten und
      für eigene Sprüche.
-  3. **Profil:** Name „Nikita“, Bio im gleichen Ton, Avatar und Banner aus Scribbles **monochrom** über
+  3. **Profil:** Name „Anton“, Bio im gleichen Ton, Avatar und Banner aus Scribbles **monochrom** über
      `scripts/build_branding.py` (Branding-Regeln: keine Farben, nicht neu zeichnen – eine niedlichere
      Pose kann nur Moritz zeichnen).
 - **Alternativen:** neutraler Ton (nicht gewünscht); Stil im LLM allein (nicht deterministisch, gilt
   nicht für Sofortauskünfte); farbiger Kawaii-Avatar (verstößt gegen die Branding-Regeln).
 - **Konsequenzen:** DISCORD-43, DISCORD-44, Ticket P1-43, Risiko R34; `/hilfe datenschutz` stellt klar,
-  dass Nikita nicht wirklich mit Daten spielt.
+  dass Anton nicht wirklich mit Daten spielt.
 - **Status:** beschlossen (Plan).

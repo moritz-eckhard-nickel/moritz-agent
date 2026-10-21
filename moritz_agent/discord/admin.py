@@ -122,7 +122,7 @@ def status_card(overview: dict[str, Any], local: dict[str, Any], data_root: Path
         )
     warning = overview.get("situation", {}).get("warning_level", 0)
     return {
-        "title": "Nikita – Status",
+        "title": "Anton – Status",
         "description": (
             f"Version {overview.get('version', __version__)} · läuft seit "
             f"{duration(overview.get('uptime_s', 0))}"

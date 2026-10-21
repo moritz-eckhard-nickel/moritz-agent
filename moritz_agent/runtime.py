@@ -561,7 +561,7 @@ class Runtime:
             groups = sorted({topic.split(".")[0] for topic in topics})
             text += ". Themen: " + ", ".join(groups)
         elif mode == "transcript" and conversation is not None:
-            lines = [f"Du: {heard}\nNikita: {said}" for heard, said in conversation.context.history]
+            lines = [f"Du: {heard}\nAnton: {said}" for heard, said in conversation.context.history]
             text += ".\n" + "\n".join(lines)
         return text
 

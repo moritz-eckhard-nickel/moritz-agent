@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-"""``/joinvc``: Nikita in the voice channel, a conversation like a phone call (docs/plan/14 §9).
+"""``/joinvc``: Anton in the voice channel, a conversation like a phone call (docs/plan/14 §9).
 
 One session at a time. The conversation itself is the phone's ``CallSession`` (same state machine,
 same announcements, same voice) with a Discord ``CallMedia``; this module is the part around it:
 
-* [Wartet]  Nikita sits quietly in the channel until an allowed person is there
+* [Wartet]  Anton sits quietly in the channel until an allowed person is there
 * [Im Gespräch]  a ``CallSession`` runs: greeting, listen, answer, listen … (barge-in allowed)
-* [Ruht]  after silence Nikita stays, listens only for "Nikita …" and then asks "Ja?"
+* [Ruht]  after silence Anton stays, listens only for "Anton …" and then asks "Ja?"
 
 Listening needs the receiving extension (``receive.py``); without it the session runs in the mode
 "nur sprechen": text written into the voice channel is answered aloud.
@@ -52,7 +52,7 @@ class VoiceMode(StrEnum):
 
 
 class RestListener:
-    """In rest mode only the name wakes Nikita: utterances are recognised and checked for "Nikita"."""
+    """In rest mode only the name wakes Anton: utterances are recognised and checked for "Anton"."""
 
     def __init__(
         self,
@@ -227,7 +227,7 @@ class VoiceSession:
 
     # -- state ---------------------------------------------------------------------------------------------------
     def update(self) -> None:
-        """Somebody came or went: decide what Nikita does (docs/plan/14 §9.1)."""
+        """Somebody came or went: decide what Anton does (docs/plan/14 §9.1)."""
         if self._closing:
             return
         humans = self.humans()
@@ -263,7 +263,7 @@ class VoiceSession:
         self.begin(first_prompt)
 
     def _wake(self) -> None:
-        """ "Nikita …" in rest mode."""
+        """ "Anton …" in rest mode."""
         if self.mode is VoiceMode.RESTING and not self._closing:
             self.begin("yes")
 

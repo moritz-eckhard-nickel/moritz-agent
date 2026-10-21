@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-"""Piper engine (Nikita's voice) – everything that works without the 110 MB model file."""
+"""Piper engine (Anton's voice) – everything that works without the 110 MB model file."""
 
 from __future__ import annotations
 

@@ -87,7 +87,7 @@ class VoiceMessages:
 
     # -- incoming ------------------------------------------------------------------------------------------
     async def handle(self, message: discord.Message, origin: Origin, sender: Sender) -> bool:
-        """``True`` if the message carried audio for Nikita and has been dealt with."""
+        """``True`` if the message carried audio for Anton and has been dealt with."""
         cfg = self.cfg
         audio = next((a for a in message.attachments if is_audio(a)), None)
         if audio is None or not cfg.voice_messages.enabled:
@@ -96,7 +96,7 @@ class VoiceMessages:
             self.info_of(message), today=self.dispatcher.today()
         )
         if decision.reaction is not Reaction.ANSWER:
-            return False  # not meant for Nikita (other channel, not addressed, stranger)
+            return False  # not meant for Anton (other channel, not addressed, stranger)
         limiter = self.dispatcher.limiter
         if not limiter.allow(origin.user_id, decision.role):
             await sender.send(self.dispatcher.say("rate_limited"))

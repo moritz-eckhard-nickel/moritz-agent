@@ -29,15 +29,15 @@ Hintergrund, ohne eigene Oberfläche.
 
 ## Part 1: Der Telefon-Agent
 
-Moritz wählt intern die **999** und landet bei **Nikita**, dem Assistenten von moritz-agent. Er ist als SIP-Konto `agent` an der Telefonanlage
+Moritz wählt intern die **999** und landet bei **Anton**, dem Assistenten von moritz-agent. Er ist als SIP-Konto `agent` an der Telefonanlage
 `192.168.1.176` registriert und
 
-1. nimmt automatisch ab und begrüßt sofort: „Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?“
+1. nimmt automatisch ab und begrüßt sofort: „Hallo Moritz, hier ist Anton. Was kann ich für dich tun?“
 2. hört zu, erkennt das Sprachende und transkribiert auf Deutsch (Whisper small, CPU),
 3. beantwortet vieles sofort, ohne Sprachmodell – Uhrzeit (immer aus der echten Systemuhr, Europe/Berlin), Datum,
    Kalenderwoche, Rechnen und **Sofortauskünfte**: Wetter für Weilburg (35781) oder jede genannte PLZ/jeden Ort
    (nur freie Dienste: Open-Meteo, Bright Sky, DWD), Warnungen, Pollen, Sonne/Mond, Feiertage, Ferien, Eieruhr und mehr
-   ([Plan](docs/plan/13-sofortauskuenfte.md)); dasselbe kann Nikita als **Discord-Bot** – im Textkanal, per Slash-Befehl,
+   ([Plan](docs/plan/13-sofortauskuenfte.md)); dasselbe kann Anton als **Discord-Bot** – im Textkanal, per Slash-Befehl,
    auf Sprachnachrichten und im Sprachkanal (`/joinvc` wie ein Anruf), süß und mit schelmischen Aktivitäten
    ([Einrichtung](docs/discord-einrichtung.md), [Plan](docs/plan/14-discord.md)),
 4. beantwortet andere Fragen mit dem Sprachmodell und nutzt bei Bedarf die integrierte Websuche,
@@ -96,17 +96,17 @@ Aus dem Netz kommen nur: Python-Pakete von PyPI (exakt gepinnt mit Hashes in
 
 ## Telefon- und Stimmenteil jetzt ausprobieren: `./test-1.sh`
 
-SIP-Telefon, Spracherkennung und Nikitas Stimme laufen schon – ganz ohne Systeminstallation, alles
+SIP-Telefon, Spracherkennung und Antons Stimme laufen schon – ganz ohne Systeminstallation, alles
 unter `runtime/` und `models/` im Repository (Anleitung: [docs/telefon-test-1.md](docs/telefon-test-1.md)). Er setzt keinen LXC voraus und läuft auf jedem Linux-Rechner.
 Es ist derselbe Code, der später im vollständigen System läuft; nur das Sprachmodell fehlt noch
-(Nikita beantwortet Uhrzeit, Datum usw. über Fast-Paths, sonst „Ich habe verstanden: …“).
+(Anton beantwortet Uhrzeit, Datum usw. über Fast-Paths, sonst „Ich habe verstanden: …“).
 
 ```bash
 sudo apt install build-essential python3-venv python3-dev swig pkg-config espeak-ng   # einmalig, falls fehlt
 ./test-1.sh setup          # Python-Umgebung, SIP-Stack bauen, Modelle laden (ca. 0,6 GB)
 ./test-1.sh check          # Selbsttest
-./test-1.sh speak "Hallo Moritz, hier ist Nikita." --play
-./test-1.sh call           # Testanruf ohne Telefonanlage (Nikita ruft sich selbst an)
+./test-1.sh speak "Hallo Moritz, hier ist Anton." --play
+./test-1.sh call           # Testanruf ohne Telefonanlage (Anton ruft sich selbst an)
 ./test-1.sh run            # an der Telefonanlage anmelden und 999 anrufen
 ```
 

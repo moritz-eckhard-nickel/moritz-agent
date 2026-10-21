@@ -7,12 +7,12 @@
 {"say": "Welche Uhrzeit haben wir?", "skill": "time.now"}
 {"say": "Sag mir die Uhrzeit", "skill": "time.now"}
 {"say": "Kannst du mir sagen, wie spät es ist?", "skill": "time.now"}
-{"say": "Nikita, wie viel Uhr ist es?", "skill": "time.now"}
+{"say": "Anton, wie viel Uhr ist es?", "skill": "time.now"}
 {"say": "Weißt du, wie spät es ist?", "skill": "time.now"}
 {"say": "Wie spät ist es gerade?", "skill": "time.now"}
 {"say": "Wieviel Uhr ist es denn?", "skill": "time.now"}
 {"say": "Wie spät iss es?", "skill": "time.now"}
-{"say": "Hey Nikita wie spät ist es", "skill": "time.now"}
+{"say": "Hey Anton wie spät ist es", "skill": "time.now"}
 {"say": "Sag mal, wie viel Uhr haben wir eigentlich?", "skill": "time.now"}
 {"say": "Ich möchte wissen, wie spät es ist", "skill": "time.now"}
 {"say": "Jetzt mal ehrlich, wie spät ist es?", "skill": "time.now"}
@@ -167,7 +167,7 @@
 {"say": "42 in binär?", "skill": "convert.numeral"}
 {"say": "Buchstabier Weilburg", "skill": "spell.word"}
 {"say": "Wie buchstabiert man Lahn?", "skill": "spell.word"}
-{"say": "Buchstabiere mir Nikita", "skill": "spell.word"}
+{"say": "Buchstabiere mir Anton", "skill": "spell.word"}
 {"say": "Wirf eine Münze", "skill": "random.coin"}
 {"say": "Kopf oder Zahl?", "skill": "random.coin"}
 {"say": "Würfel mal", "skill": "random.dice"}
@@ -197,12 +197,12 @@
 {"say": "Bis bald", "skill": "talk.goodbye"}
 {"say": "Gute Nacht", "skill": "talk.goodbye"}
 {"say": "Auflegen", "skill": "talk.goodbye"}
-{"say": "Tschüss Nikita", "skill": "talk.goodbye"}
+{"say": "Tschüss Anton", "skill": "talk.goodbye"}
 {"say": "Guude!", "skill": "talk.greeting"}
 {"say": "Hallo", "skill": "talk.greeting"}
 {"say": "Moin", "skill": "talk.greeting"}
 {"say": "Servus", "skill": "talk.greeting"}
-{"say": "Hallo Nikita", "skill": "talk.greeting"}
+{"say": "Hallo Anton", "skill": "talk.greeting"}
 {"say": "Guten Tag", "skill": "talk.greeting"}
 {"say": "Danke", "skill": "talk.thanks"}
 {"say": "Vielen Dank", "skill": "talk.thanks"}
@@ -265,7 +265,7 @@
 {"say": "Wie isses Wedder drauße?", "skill": "weather.now"}
 {"say": "Wie ist das Wetter in Berlin?", "skill": "weather.now"}
 {"say": "Wetter in 60311", "skill": "weather.now"}
-{"say": "Nikita, wie ist das Wetter gerade?", "skill": "weather.now"}
+{"say": "Anton, wie ist das Wetter gerade?", "skill": "weather.now"}
 {"say": "Wie ist das Wetter bei uns?", "skill": "weather.now"}
 {"say": "Sag mal, wie ist eigentlich das Wetter?", "skill": "weather.now"}
 {"say": "Wetter?", "skill": "weather.now"}
@@ -704,7 +704,7 @@
 {"say": "Morgenbriefing bitte", "skill": "briefing"}
 {"say": "Guude", "skill": "talk.greeting"}
 {"say": "Wie geht's dir so?", "skill": "talk.how_are_you"}
-{"say": "Bist du Nikita?", "skill": "talk.identity"}
+{"say": "Bist du Anton?", "skill": "talk.identity"}
 {"say": "Danke dir", "skill": "talk.thanks"}
 {"say": "Das war super, danke", "skill": "talk.thanks"}
 {"say": "Bis später", "skill": "talk.goodbye"}

@@ -1,7 +1,7 @@
 # moritz-agent – Projektplan
 
 Stand: 20.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, RTX 3070 8 GB) ·
-**Höchste Priorität: intern anrufbarer Telefon-Agent ab Part 1.** Der Assistent heißt **Nikita** (ADR-026).
+**Höchste Priorität: intern anrufbarer Telefon-Agent ab Part 1.** Der Assistent heißt **Anton** (ADR-026).
 
 | Dokument | Inhalt |
 | --- | --- |
@@ -19,7 +19,7 @@ Stand: 20.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, 
 | [11-suchoptionen.md](11-suchoptionen.md) | Suchoptionen und Fallback-Kette (R4) |
 | [12-fast-paths.md](12-fast-paths.md) | Vordefinierte Antworten für einfache Infos (F-13), aufgegangen in 13 |
 | [13-sofortauskuenfte.md](13-sofortauskuenfte.md) | **Sofortauskünfte vor dem LLM:** Uhrzeit, Kalender, **Wetter für Weilburg 35781** (oder genannte PLZ/Ort), Warnungen, Pollen, Sonne/Mond, Rechnen, Region – rund 180 Auskünfte, Architektur, Datenquellen, Tests, Wellen |
-| [14-discord.md](14-discord.md) | **Discord-Bot:** Nikita mit allen Funktionen auf Discord, ein bisschen süß, mit schelmischen Aktivitäten – Standard-Textkanal, Slash-Befehle, Benutzer-App, `/joinvc` = Sprachkanal wie ein Anruf (DAVE), Sprachnachrichten, Erinnerungen, Abos, Admin, Sicherheit, Setup mit Token, Tests, Abnahme |
+| [14-discord.md](14-discord.md) | **Discord-Bot:** Anton mit allen Funktionen auf Discord, ein bisschen süß, mit schelmischen Aktivitäten – Standard-Textkanal, Slash-Befehle, Benutzer-App, `/joinvc` = Sprachkanal wie ein Anruf (DAVE), Sprachnachrichten, Erinnerungen, Abos, Admin, Sicherheit, Setup mit Token, Tests, Abnahme |
 | [../proxmox-installation.md](../proxmox-installation.md) | `install.sh`/`update.sh`: LXC auf dem Proxmox-Host anlegen und aktualisieren |
 | [../telefon-test-1.md](../telefon-test-1.md) | `./test-1.sh`: Telefon und Stimme ohne LXC ausprobieren |
 | [../asterisk-konfiguration.md](../asterisk-konfiguration.md) | Komplette Asterisk-Konfiguration für Nebenstelle 999 / Konto `agent` |
@@ -45,7 +45,7 @@ Stand: 20.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, 
 - **Sofortauskünfte vor dem LLM (ADR-029):** Uhrzeit, Kalender, Wetter (Standard **35781 Weilburg**,
   sonst die genannte PLZ bzw. der genannte Ort), Warnungen, Pollen, Sonne/Mond, Rechnen und mehr –
   deterministisch, mit Cache und ehrlich bei Ausfall; später dieselben Funktionen als LLM-Tools.
-- **Discord (ADR-033):** Nikita auch als Discord-Bot – alle Funktionen auf allen Kanälen
+- **Discord (ADR-033):** Anton auch als Discord-Bot – alle Funktionen auf allen Kanälen
   (Kanal-Parität), Token und Standardkanal beim Setup oder in `passwords.txt`, `/joinvc` wie ein
   Anruf, süßer Stil mit schelmischen Aktivitäten, kein offener Port, Telefon hat Vorrang.
 

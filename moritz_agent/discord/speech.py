@@ -255,7 +255,7 @@ class SpeechService:
         return result
 
     async def synthesize(self, text: str) -> bytes:
-        """PCM16 16 kHz of the whole text in Nikita's voice."""
+        """PCM16 16 kHz of the whole text in Anton's voice."""
         self._last_used = self._clock()
         tts = await asyncio.to_thread(self._load_tts)
         pcm = await asyncio.to_thread(tts.render_blocking, text)

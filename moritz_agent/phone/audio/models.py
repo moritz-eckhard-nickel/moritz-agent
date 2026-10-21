@@ -187,7 +187,7 @@ def status(groups: list[str], root: Path = REPO_ROOT) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Modelle für Nikitas Stimme verwalten")
+    parser = argparse.ArgumentParser(description="Modelle für Antons Stimme verwalten")
     parser.add_argument("command", choices=["status", "fetch"])
     parser.add_argument("--groups", default="stt,piper", help="Komma-getrennt: stt,piper")
     parser.add_argument("--root", type=Path, default=REPO_ROOT)

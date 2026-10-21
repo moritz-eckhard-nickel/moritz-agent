@@ -182,7 +182,7 @@ def test_estimate_has_a_reserve():
 def test_render_prompt_fills_the_variables():
     settings = Settings()
     text = render_prompt("Ich bin {assistant} in {home_name} ({home_postal_code}).", settings)
-    assert text == "Ich bin Nikita in Weilburg (35781)."
+    assert text == "Ich bin Anton in Weilburg (35781)."
 
 
 def test_the_phone_profile_has_the_tools_of_phone_45_and_no_shell():
@@ -191,7 +191,7 @@ def test_the_phone_profile_has_the_tools_of_phone_45_and_no_shell():
     profile = phone_profile(settings, ROOT)
     assert {"get_current_time", "web_search", "get_weather", "calculate"} <= profile.tools
     assert not profile.tools & FORBIDDEN_TOOLS
-    assert "Nikita" in profile.system_prompt and "{" not in profile.system_prompt
+    assert "Anton" in profile.system_prompt and "{" not in profile.system_prompt
     assert "get_weather" in profile.system_prompt and "Weilburg (35781)" in profile.system_prompt
     assert profile.max_tool_steps == 3 and profile.deadline_s == 15
 
@@ -222,7 +222,7 @@ class Rig:
         self.registry.register_all(skill_tools(self.session.router))
         base = {
             "name": "phone",
-            "system_prompt": "Du bist Nikita.",
+            "system_prompt": "Du bist Anton.",
             "tools": frozenset(tools or self.registry.names()),
         }
         self.profile = Profile(**(base | profile))
@@ -251,12 +251,12 @@ def tools_offered(request):
 def test_a_plain_answer_needs_one_request_and_is_made_speakable():
     rig = Rig()
     rig.model.script = [text_chunks("Hallo ", "**Moritz**! 😀 Wie ", "geht's?")]
-    result = rig.ask("Hallo Nikita")
+    result = rig.ask("Hallo Anton")
     assert result.text == "Hallo Moritz! Wie geht's?"
     assert result.steps == 0 and result.tools == [] and not result.hangup
     request = rig.model.requests[0]
-    assert request["messages"][0] == {"role": "system", "content": "Du bist Nikita."}
-    assert request["messages"][-1] == {"role": "user", "content": "Hallo Nikita"}
+    assert request["messages"][0] == {"role": "system", "content": "Du bist Anton."}
+    assert request["messages"][-1] == {"role": "user", "content": "Hallo Anton"}
     assert "get_weather" in tools_offered(request) and request["max_tokens"] == 160
 
 
@@ -265,7 +265,7 @@ def test_history_goes_into_the_prompt_in_order():
     rig.model.script = [text_chunks("Ok")]
     rig.ask("Und jetzt?", [("Hallo", "Hi"), ("Wie geht's", "Gut")])
     contents = [m["content"] for m in rig.model.requests[0]["messages"]]
-    assert contents == ["Du bist Nikita.", "Hallo", "Hi", "Wie geht's", "Gut", "Und jetzt?"]
+    assert contents == ["Du bist Anton.", "Hallo", "Hi", "Wie geht's", "Gut", "Und jetzt?"]
 
 
 def test_a_tool_call_runs_and_its_result_goes_back_to_the_model():

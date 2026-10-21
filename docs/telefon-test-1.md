@@ -17,13 +17,13 @@ LXC samt Dienst legt `./install.sh` auf dem Proxmox-Host an
 | --- | --- |
 | SIP: Anmeldung an der Telefonanlage, Anruf annehmen, 1 Anruf gleichzeitig (zweiter → „besetzt“), Zugriffsliste nach Absender-IP | ✅ gebaut, per echtem SIP/RTP-Anruf getestet |
 | Sprachende-Erkennung (Silero VAD, echtes Modell getestet), Spracherkennung (Whisper small, CPU) | ✅ gebaut; Whisper-Modell selbst noch nicht gelaufen (siehe Ende) |
-| Stimme Nikita: Thorsten-Voice **„Hessisch“** als Piper-Modell (CPU), Notstimme espeak-ng | ✅ gebaut und mit Test-Engines geprüft; das echte Modell ist noch nicht gelaufen (siehe Ende) |
+| Stimme Anton: Thorsten-Voice **„Hessisch“** als Piper-Modell (CPU), Notstimme espeak-ng | ✅ gebaut und mit Test-Engines geprüft; das echte Modell ist noch nicht gelaufen (siehe Ende) |
 | Vorgefertigte Ansagen gerendert und gecacht | ✅ |
 | Gesprächsablauf: Klingeln (zufällig 4–8 s, `phone.ring_seconds_min/max`), Begrüßung, mehrere Runden, Stille-Erinnerung, Auflegen, Störungsansagen | ✅ |
 | Sofort-Antworten (Uhrzeit, Datum, Wochentag, Kalenderwoche, Name, Verabschiedung) | ✅ (Fast-Paths) |
 | Sofortauskünfte: Wetter (Standard Weilburg 35781), Warnungen, Pollen, Sonne/Mond, Feiertage, Ferien, Rechnen, Lahn-Pegel, Eieruhr … und `./test-1.sh ask "…"` | ✅ gebaut, mit Fixtures und einem Korpus von 803 Äußerungen **als Text** getestet; gegen die echten Dienste und mit echter Spracherkennung noch nicht ([Plan 13](plan/13-sofortauskuenfte.md), Abnahme P1-30: [Vorlage](abnahme/sofortauskuenfte-vorlage.md)) |
 | Discord-Bot (Standardkanal, Befehle, `/joinvc` wie ein Anruf, süß mit schelmischen Aktivitäten) und `./test-1.sh discord …` | ✅ gebaut und gegen ein Fake-Discord getestet; **noch nie mit dem echten Discord gelaufen**, Sprachempfang (DAVE) ist offen – dann gilt „nur sprechen“ ([Einrichtung](discord-einrichtung.md), [Spike](abnahme/p1-32-discord-spike.md), [Abnahme](abnahme/discord-vorlage.md)) |
-| Sprachmodell (KoboldCpp), Websuche, Statusseite | 🔶 Code und Tests sind da (Inference-Client, SearXNG-Kette, Agent-Schleife, Weboberfläche mit Login); **KoboldCpp und das Modell sind nicht eingerichtet (P1-02)** – `test-1.sh` läuft ohne sie, und Nikita antwortet auf alles, was keine Sofortauskunft ist, mit „Ich habe verstanden: …“ |
+| Sprachmodell (KoboldCpp), Websuche, Statusseite | 🔶 Code und Tests sind da (Inference-Client, SearXNG-Kette, Agent-Schleife, Weboberfläche mit Login); **KoboldCpp und das Modell sind nicht eingerichtet (P1-02)** – `test-1.sh` läuft ohne sie, und Anton antwortet auf alles, was keine Sofortauskunft ist, mit „Ich habe verstanden: …“ |
 
 ## Voraussetzungen
 
@@ -57,17 +57,17 @@ Was dabei passiert (jeder Schritt ist wiederholbar und überspringt Fertiges):
 | Befehl | Zweck |
 | --- | --- |
 | `./test-1.sh check` | Selbsttest: Konfiguration, SIP-Stack, VAD, Whisper, Stimme, Ansagen, Ports. `--sip` prüft zusätzlich die Anmeldung an der Telefonanlage. |
-| `./test-1.sh speak "Text" --play` | Nikitas Stimme hören (`--engine piper\|espeak`, `--out datei.wav`). |
+| `./test-1.sh speak "Text" --play` | Antons Stimme hören (`--engine piper\|espeak`, `--out datei.wav`). |
 | `./test-1.sh prompts` | Alle vorgefertigten Ansagen rendern und cachen. `--warm-times` rendert zusätzlich alle Viertelstunden-Uhrzeiten. |
 | `./test-1.sh bench` | Misst Whisper und die Stimme auf **deinem** Rechner (Echtzeitfaktor). |
-| `./test-1.sh call [--quick] ["Satz" …]` | Testanruf ohne Telefonanlage: Nikita startet im Direktmodus (Port 5062, nur 127.0.0.1) und ein Test-Anrufer ruft an, spricht die Sätze und nimmt Nikitas Antworten auf: `runtime/test-1/anruf.wav`. `--quick` nimmt nur die Notstimme und ein festes Text-Skript – damit geht es ohne jeden Modell-Download. |
-| `./test-1.sh run` | Nikita starten, bei der Telefonanlage anmelden und Anrufe an die Nebenstelle annehmen (Strg+C beendet). `--no-register` nimmt Anrufe direkt an, `--engines espeak` erzwingt eine Stimme. |
+| `./test-1.sh call [--quick] ["Satz" …]` | Testanruf ohne Telefonanlage: Anton startet im Direktmodus (Port 5062, nur 127.0.0.1) und ein Test-Anrufer ruft an, spricht die Sätze und nimmt Antons Antworten auf: `runtime/test-1/anruf.wav`. `--quick` nimmt nur die Notstimme und ein festes Text-Skript – damit geht es ohne jeden Modell-Download. |
+| `./test-1.sh run` | Anton starten, bei der Telefonanlage anmelden und Anrufe an die Nebenstelle annehmen (Strg+C beendet). `--no-register` nimmt Anrufe direkt an, `--engines espeak` erzwingt eine Stimme. |
 | `./test-1.sh models [status\|fetch]` | Modell-Download prüfen oder nachholen. |
 | `./test-1.sh ask "Frage" [--explain]` | Sofortauskünfte ohne Telefon ausprobieren (gleiche Antwort wie am Telefon); `./test-1.sh skills help` listet alle. |
 | `./test-1.sh discord token\|check\|channel\|run\|say …` | Discord-Bot einrichten und ausprobieren – Anleitung: [discord-einrichtung.md](discord-einrichtung.md). |
 
 Ablauf eines echten Tests: `./test-1.sh setup` → `./test-1.sh check` →
-`./test-1.sh speak "Guude, hier ist Nikita." --play` → `./test-1.sh call` (ohne Telefonanlage) →
+`./test-1.sh speak "Guude, hier ist Anton." --play` → `./test-1.sh call` (ohne Telefonanlage) →
 in `passwords.txt` den Abschnitt `[sip]` ausfüllen → `./test-1.sh run` → mit dem Telefon die
 Nebenstelle **999** wählen.
 
@@ -76,9 +76,9 @@ Nebenstelle **999** wählen.
 * Zugangsdaten: `passwords.txt`, Abschnitt `[sip]` (Konto `agent`, Registrar, Port). Die Datei wird nie
   umgeschrieben und nie in Logs oder Fehlermeldungen ausgegeben.
 * Asterisk-Konfiguration: [`asterisk-konfiguration.md`](asterisk-konfiguration.md) (Nebenstelle 999 → Konto `agent`).
-* Nikita nimmt Anrufe nur von den Adressen in `phone.allowed_source_ips` (`config/moritz-agent.toml`)
+* Anton nimmt Anrufe nur von den Adressen in `phone.allowed_source_ips` (`config/moritz-agent.toml`)
   an; alle anderen bekommen SIP 403. Ein zweiter gleichzeitiger Anruf bekommt 486 „besetzt“.
-* Nikita ruft **nie** selbst an.
+* Anton ruft **nie** selbst an.
 
 ## Die Stimme: Cache und Notstimme
 
@@ -103,8 +103,8 @@ Nebenstelle **999** wählen.
 | --- | --- |
 | „Die Umgebung fehlt“ / „PJSIP (pjsua2) fehlt“ | `./test-1.sh setup` ausführen. |
 | „fehlende Build-Voraussetzungen“ | den angezeigten `sudo apt install …`-Befehl einmal ausführen. |
-| `check`: Stimme „piper“ nicht bereit | Modell fehlt oder ist defekt (`./test-1.sh models status`, `./test-1.sh models fetch`); Nikita spricht bis dahin mit espeak-ng. Details im Log (`runtime/test-1/agent.log`). |
-| Start bricht ab: „Ansagen fehlen“ | keine einzige Stimme bereit – `espeak-ng` installieren oder die Piper-Stimme laden. Nikita registriert sich nie ohne sprechbare Ansagen. |
+| `check`: Stimme „piper“ nicht bereit | Modell fehlt oder ist defekt (`./test-1.sh models status`, `./test-1.sh models fetch`); Anton spricht bis dahin mit espeak-ng. Details im Log (`runtime/test-1/agent.log`). |
+| Start bricht ab: „Ansagen fehlen“ | keine einzige Stimme bereit – `espeak-ng` installieren oder die Piper-Stimme laden. Anton registriert sich nie ohne sprechbare Ansagen. |
 | Anruf wird mit SIP 403 abgewiesen | Absender-IP nicht in `phone.allowed_source_ips`. |
 | Registrierung schlägt fehl | `./test-1.sh check --sip`; Konto/Passwort in `passwords.txt` und Asterisk vergleichen. |
 | Port 5060/5062 belegt | `MORITZ_TEST_SIP_PORT=5072 ./test-1.sh call` bzw. `phone.local_sip_port` ändern. |

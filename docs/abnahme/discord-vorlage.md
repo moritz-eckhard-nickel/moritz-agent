@@ -9,7 +9,7 @@ Stand der Entwicklung: **offen** – der Bot ist **nie gegen das echte Discord-G
 Logische (Zugriff, Stil, Befehle, Verteiler, Sprachsitzung) ist mit einem Fake-Discord und dem echten
 Hauptprozess getestet (`test_discord_*`); die Spalte „Automatisch belegt“ zeigt, wo.
 
-Durchführung auf einem privaten Server (Moritz + Nikita), in einer DM und mit der Benutzer-App.
+Durchführung auf einem privaten Server (Moritz + Anton), in einer DM und mit der Benutzer-App.
 
 | # | Prüfung | Erwartung | Automatisch belegt | Ergebnis | Datum / Wer |
 | --- | --- | --- | --- | --- | --- |
@@ -17,10 +17,10 @@ Durchführung auf einem privaten Server (Moritz + Nikita), in einer DM und mit d
 | 2 | DM „wie isses wedder morsche?“ | Karte für **Weilburg**, Quelle in der Fußzeile, Folgeknöpfe funktionieren | `test_discord_dispatch` | offen | |
 | 3 | `/wetter ort:` mit Autovervollständigung, PLZ 60311, „Neustadt“ | richtige Orte, Auswahlliste bei Mehrdeutigkeit | `test_discord_client` | offen | |
 | 4 | Benutzer-App in fremdem Server/Gruppen-DM | `/wetter` geht, Antwort nur für mich sichtbar | – (nur real prüfbar) | offen | |
-| 5 | Fremde Person schreibt Nikita / erwähnt sie | keine Reaktion (bzw. Hinweis bei `notice`) | `test_discord_logic` (Zugriff) | offen | |
-| 6 | Bot in nicht erlaubten Server einladen | geht nicht (Public Bot aus) bzw. Nikita verlässt ihn | `test_discord_client` | offen | |
-| 7 | `/joinvc`, Sprachkanal betreten; drei Fragen ohne „Nikita“; Unterbrechen; „Tschüss“ | Begrüßung wie am Telefon, Antworten gesprochen, Unterbrechen < 300 ms, Abschied und Verlassen | `test_discord_voice` (FakeVoiceClient) | offen | |
-| 7a | Im Sprachkanal schweigen; Kanal verlassen und wieder betreten | „Bist du noch da?“ → Ruhe-Modus, „Nikita“ weckt; Verlassen = Auflegen | `test_discord_voice` | offen | |
+| 5 | Fremde Person schreibt Anton / erwähnt ihn | keine Reaktion (bzw. Hinweis bei `notice`) | `test_discord_logic` (Zugriff) | offen | |
+| 6 | Bot in nicht erlaubten Server einladen | geht nicht (Public Bot aus) bzw. Anton verlässt ihn | `test_discord_client` | offen | |
+| 7 | `/joinvc`, Sprachkanal betreten; drei Fragen ohne „Anton“; Unterbrechen; „Tschüss“ | Begrüßung wie am Telefon, Antworten gesprochen, Unterbrechen < 300 ms, Abschied und Verlassen | `test_discord_voice` (FakeVoiceClient) | offen | |
+| 7a | Im Sprachkanal schweigen; Kanal verlassen und wieder betreten | „Bist du noch da?“ → Ruhe-Modus, „Anton“ weckt; Verlassen = Auflegen | `test_discord_voice` | offen | |
 | 7b | Standardkanal: Frage ohne Erwähnung; Erinnerung und Warnungs-Abo | Antwort ohne Erwähnung; Erinnerung/Warnung landen im Standardkanal | `test_discord_dispatch`, `test_supervisor` | offen | |
 | 7c | Stil und Aktivitäten eine Stunde beobachten; Warnung (Fixture) | süß, aber Fakten exakt; Aktivitäten wechseln, keine Wiederholung unter 10; bei Warnung Ernst-Modus | `test_discord_logic` | offen | |
 | 8 | Sprachkanal + gleichzeitiger Anruf an 999 | Telefon unbeeinträchtigt (Latenz wie ohne Discord) | – (nur real prüfbar) | offen | |

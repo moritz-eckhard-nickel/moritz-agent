@@ -113,6 +113,30 @@ def migrate_passwords(text: str) -> tuple[str, list[str]]:
     return text, added
 
 
+# The assistant was called "Nikita" until 21.10.2026 (ADR-026). Installed files that still carry the
+# old *default* values get the new name; anything chosen by hand stays as it is.
+OLD_NAME, NEW_NAME = "Nikita", "Anton"
+_RENAMES = (
+    re.compile(rf'^(\s*assistant_name\s*=\s*"){OLD_NAME}(".*)$'),
+    re.compile(rf'^(\s*greeting_text\s*=\s*"Hallo Moritz, hier ist ){OLD_NAME}(\. .*)$'),
+    re.compile(rf'^(\s*initial_prompt\s*=\s*"){OLD_NAME}(, Moritz, .*)$'),
+    re.compile(rf"^(\s*display_name\s*=\s*){OLD_NAME}(\s*)$"),
+)
+
+
+def rename_assistant(text: str) -> tuple[str, int]:
+    """Old default names → new name, line by line (nothing else is touched)."""
+    lines = text.split("\n")
+    changed = 0
+    for index, line in enumerate(lines):
+        for pattern in _RENAMES:
+            if pattern.match(line):
+                lines[index] = pattern.sub(rf"\g<1>{NEW_NAME}\g<2>", line)
+                changed += 1
+                break
+    return "\n".join(lines), changed
+
+
 def write_atomic(path: Path, text: str, *, default_mode: int = 0o600) -> None:
     """Replace ``path`` in one step; mode and owner of an existing file are kept."""
     try:

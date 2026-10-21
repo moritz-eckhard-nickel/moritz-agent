@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-"""Who may talk to Nikita where, and when she answers (docs/plan/14 §5, ADR-035).
+"""Who may talk to Anton where, and when she answers (docs/plan/14 §5, ADR-035).
 
 Default is *refuse*: Discord is the internet. Roles hang on the Discord user id only. This module
 is pure logic (no Discord objects), so the whole matrix is tested without Discord.
@@ -18,7 +18,7 @@ from moritz_agent.config.settings import Discord
 from moritz_agent.core.principal import Role, discord_role
 
 _MENTION = re.compile(r"<@!?(\d+)>")
-_TRIGGER = re.compile(r"^\s*(?:(?:hey|hi|hallo|moin|guude)\s+)?nikita\s*[,:!]\s*", re.IGNORECASE)
+_TRIGGER = re.compile(r"^\s*(?:(?:hey|hi|hallo|moin|guude)\s+)?anton\s*[,:!]\s*", re.IGNORECASE)
 NOTICE_STRANGER = "Psst, da ist jemand Neues auf dem Server 👀 – mit dem rede ich nicht."
 NOTICE_ONCE_A_DAY = "Ich spreche nur mit freigegebenen Personen."
 
@@ -26,7 +26,7 @@ NOTICE_ONCE_A_DAY = "Ich spreche nur mit freigegebenen Personen."
 class Reaction(StrEnum):
     IGNORE = "ignore"
     ANSWER = "answer"
-    NOTICE = "notice"  # tell the stranger once a day that Nikita does not talk to them
+    NOTICE = "notice"  # tell the stranger once a day that Anton does not talk to them
 
 
 @dataclass(frozen=True)
@@ -62,7 +62,7 @@ _LETTER = {Role.OWNER: "O", Role.TRUSTED: "V", Role.GUEST: "G"}
 
 
 def strip_address(text: str, bot_id: str | None = None) -> tuple[str, bool, bool]:
-    """The text without the bot's mention or a leading "Nikita, …", whether she was mentioned and
+    """The text without the bot's mention or a leading "Anton, …", whether she was mentioned and
     whether she was called by name."""
     mentioned = named = False
     cleaned = text
@@ -90,9 +90,7 @@ class AccessPolicy:
         self.bot_id = bot_id
         self._noticed: dict[str, str] = {}  # stranger → day of the last notice
         self._announced: set[str] = set()  # strangers the default channel was told about
-        self.extra_chat_channels: set[str] = (
-            set()
-        )  # e.g. the chat of the voice channel Nikita is in
+        self.extra_chat_channels: set[str] = set()  # e.g. the chat of the voice channel Anton is in
 
     def configure(self, cfg: Discord, default_channel_id: str) -> None:
         self.cfg = cfg

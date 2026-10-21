@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-"""Nikita, a little sweet (docs/plan/14 §8.2, ADR-037).
+"""Anton, a little sweet (docs/plan/14 §8.2, ADR-037).
 
 The core answer stays neutral. This adds the sugar *around* it – one emoji that fits the topic, now
 and then a kaomoji – and nothing at all for warnings, errors and admin messages. Every choice comes

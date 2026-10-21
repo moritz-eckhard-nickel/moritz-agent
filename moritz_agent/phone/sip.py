@@ -502,7 +502,7 @@ class SipPhone:
         self.calls_total += 1
         ring = ring_duration(self.phone.ring_seconds_min, self.phone.ring_seconds_max)
         if ring > 0:
-            # 180 Ringing: the caller hears the ringback tone; Nikita picks up after ``ring`` seconds
+            # 180 Ringing: the caller hears the ringback tone; Anton picks up after ``ring`` seconds
             log.info("Anruf von %s: klingelt %.1f s", source, ring)
             op.statusCode = pjsua.PJSIP_SC_RINGING
             call.answer(op)
@@ -575,7 +575,7 @@ class SipPhone:
         fmt.init(pjsua.PJMEDIA_FORMAT_PCM, pcmtools.SAMPLE_RATE, 1, pcmtools.FRAME_MS * 1000, 16)
         port = self._port_class()
         port.media = media
-        port.createPort("nikita", fmt)
+        port.createPort("anton", fmt)
         remote_audio = call.getAudioMedia(index)
         remote_audio.startTransmit(port)
         port.startTransmit(remote_audio)

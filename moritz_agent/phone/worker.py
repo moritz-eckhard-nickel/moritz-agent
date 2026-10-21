@@ -181,7 +181,7 @@ class PhoneWorker:
                 "Direktmodus: nimmt Anrufe direkt an Port %d an (keine Registrierung)",
                 self.settings.phone.local_sip_port,
             )
-        log.info("Nikita ist bereit (Strg+C beendet).")
+        log.info("Anton ist bereit (Strg+C beendet).")
         self._start_skills()
 
         heartbeat = asyncio.ensure_future(self._heartbeat())

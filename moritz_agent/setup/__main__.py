@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
 """Helpers for the installer and updater:  python -m moritz_agent.setup <command>
 
-migrate            add missing sections/keys to passwords.txt (appends only, nothing re-written)
+migrate            add missing sections/keys to passwords.txt (appends only, nothing re-written) and
+                   switch old default values from the name "Nikita" to "Anton" (line by line)
 discord-token      read the bot token from stdin, check it, store it, switch Discord on
 discord-channel    set the home channel: ``--id N``, or pick from a list (the answer comes from stdin)
 discord-pin        read a PIN for dangerous admin commands from stdin and store it
@@ -29,18 +30,30 @@ def _token_of(passwords: Path) -> str:
 
 
 def _migrate(args: argparse.Namespace) -> int:
-    passwords, _ = _paths(args)
+    passwords, config = _paths(args)
     if not passwords.exists():
         print("passwords.txt fehlt.", file=sys.stderr)
         return 1
     added: list[str] = []
+    renamed = [0]
 
     def edit(text: str) -> str:
         new, added[:] = files.migrate_passwords(text)
+        new, renamed[0] = files.rename_assistant(new)
         return new
 
     files.update_file(passwords, edit)
     print("Ergänzt: " + ", ".join(added) if added else "passwords.txt ist vollständig.")
+    if config is not None:
+
+        def edit_config(text: str) -> str:
+            new, count = files.rename_assistant(text)
+            renamed[0] += count
+            return new
+
+        files.update_file(config, edit_config, default_mode=0o640)
+    if renamed[0]:
+        print(f"Name des Assistenten auf {files.NEW_NAME} umgestellt ({renamed[0]} Einträge).")
     return 0
 
 

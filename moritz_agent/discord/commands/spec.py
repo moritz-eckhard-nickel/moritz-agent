@@ -162,7 +162,7 @@ STATE = Opt("bundesland", "Bundesland (leer = Hessen)")
 SPECS: tuple[Spec, ...] = (
     Spec(
         "frag",
-        "Frag Nikita etwas",
+        "Frag Anton etwas",
         (Opt("text", "Deine Frage", required=True),),
         TRUSTED,
         lambda v: _v(v, "text"),
@@ -414,7 +414,7 @@ SPECS: tuple[Spec, ...] = (
     # -- handled by the worker itself ----------------------------------------------------------------
     Spec(
         "abo",
-        "Nachrichten, die Nikita dir von sich aus schickt",
+        "Nachrichten, die Anton dir von sich aus schickt",
         (
             Opt(
                 "was",
@@ -464,7 +464,7 @@ SPECS: tuple[Spec, ...] = (
     ),
     Spec(
         "aktivitaet",
-        "Was Nikita gerade so treibt",
+        "Was Anton gerade so treibt",
         (
             Opt(
                 "aktion",
@@ -505,7 +505,7 @@ SPECS: tuple[Spec, ...] = (
     ),
     Spec(
         "hilfe",
-        "Was Nikita kann",
+        "Was Anton kann",
         (
             Opt(
                 "thema",
@@ -524,13 +524,13 @@ SPECS: tuple[Spec, ...] = (
     ),
     Spec(
         "joinvc",
-        "Nikita kommt in den Sprachkanal",
+        "Anton kommt in den Sprachkanal",
         (Opt("kanal", "Sprachkanal (leer = der, in dem du gerade bist)", "channel"),),
         CommandRule("OV", "S"),
         None,
         "voice",
     ),
-    Spec("leavevc", "Nikita verlässt den Sprachkanal", (), CommandRule("OV", "S"), None, "voice"),
+    Spec("leavevc", "Anton verlässt den Sprachkanal", (), CommandRule("OV", "S"), None, "voice"),
     Spec(
         "admin",
         "Verwaltung (nur Owner)",
@@ -575,8 +575,8 @@ SPECS: tuple[Spec, ...] = (
 
 # context menus (right click on a message → Apps); name → (description for /hilfe, feature)
 MENUS: tuple[tuple[str, str, str], ...] = (
-    ("Nikita fragen", "Die Nachricht als Frage an Nikita", ""),
-    ("Vorlesen", "Nikita liest die Nachricht vor", "speech"),
+    ("Anton fragen", "Die Nachricht als Frage an Anton", ""),
+    ("Vorlesen", "Anton liest die Nachricht vor", "speech"),
 )
 
 

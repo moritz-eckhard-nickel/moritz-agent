@@ -57,7 +57,7 @@ sha256 = "tofu"
 license = "MIT"
 
 [models.tts_voice]
-# Nikita's voice (ADR-027): Thorsten-Voice "Hessisch" as Piper model (high quality, single speaker,
+# Anton's voice (ADR-027): Thorsten-Voice "Hessisch" as Piper model (high quality, single speaker,
 # 22.05 kHz). File list and sizes are also kept in moritz_agent/phone/audio/models.py (tests compare).
 name = "Thorsten-Voice_Hessisch_Piper_high-Oct2023"
 target_dir = "models/tts/piper"

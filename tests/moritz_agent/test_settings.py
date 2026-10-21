@@ -18,7 +18,7 @@ def test_example_config_is_valid_and_has_the_voice_defaults():
     assert tts.engine == "piper"
     assert tts.fallback_engines == ["espeak"]
     assert "Hessisch" in tts.piper.voice
-    assert settings.phone.assistant_name == "Nikita"
+    assert settings.phone.assistant_name == "Anton"
     assert settings.phone.max_concurrent_calls == 1
 
 
@@ -54,7 +54,7 @@ def test_paths_resolve_relative_to_the_installation(tmp_path):
 def test_local_config_wins_over_the_example(tmp_path):
     (tmp_path / "config").mkdir()
     (tmp_path / "config" / "moritz-agent.example.toml").write_text(example_text(), encoding="utf-8")
-    local = example_text().replace('assistant_name = "Nikita"', 'assistant_name = "Anna"')
+    local = example_text().replace('assistant_name = "Anton"', 'assistant_name = "Anna"')
     (tmp_path / "config" / "moritz-agent.toml").write_text(local, encoding="utf-8")
     assert load_settings(root=tmp_path).phone.assistant_name == "Anna"
 

@@ -19,9 +19,9 @@ from moritz_agent.core.principal import Role
 from moritz_agent.core.scheduler import Scheduler  # noqa: F401  (the planner fills the outbox)
 from moritz_agent.discord import components, setup
 from moritz_agent.discord.client import (
+    AntonClient,
     InteractionSender,
     MessageSender,
-    NikitaClient,
     kwargs_for,
     only_asker,
     view_for,
@@ -144,7 +144,7 @@ def test_the_whole_table_becomes_valid_discord_commands():
         "hilfe",
         "admin",
         "joinvc",
-        "Nikita fragen",
+        "Anton fragen",
         "Vorlesen",
     } <= set(names)
     assert len(payloads) <= 100
@@ -299,8 +299,8 @@ def wired(tmp_path, body):
             worker._build()
             worker.policy.bot_id = "5000"
             worker.policy.default_guild_id = GUILD_ID
-            client = NikitaClient(worker)
-            client._connection.user = SimpleNamespace(id=5000, name="Nikita")
+            client = AntonClient(worker)
+            client._connection.user = SimpleNamespace(id=5000, name="Anton")
             worker.client = client
             return await body(system, worker, client)
 
@@ -339,8 +339,8 @@ def interaction_origin(channel: dict | None, context: int | None):
         cfg = Settings().discord.model_copy(update={"owner_user_ids": [OWNER_ID]})
         policy = AccessPolicy(cfg, default_channel_id=CHANNEL_ID, default_guild_id=GUILD_ID)
         policy.bot_id = "5000"
-        client = NikitaClient(SimpleNamespace(policy=policy, voice_messages=None))
-        bot = {"id": "5000", "username": "Nikita", "discriminator": "0", "avatar": None}
+        client = AntonClient(SimpleNamespace(policy=policy, voice_messages=None))
+        bot = {"id": "5000", "username": "Anton", "discriminator": "0", "avatar": None}
         client._connection.user = discord.ClientUser(state=client._connection, data=bot)
         user = {"id": OWNER_ID, "username": "moritz", "discriminator": "0", "avatar": None}
         data = {
@@ -473,7 +473,7 @@ def test_foreign_buttons_and_other_apps_interactions_are_left_alone(tmp_path):
     assert not wired(tmp_path, body).response.defer.await_count
 
 
-def test_reactions_count_as_feedback_only_on_answers_nikita_gave(tmp_path):
+def test_reactions_count_as_feedback_only_on_answers_anton_gave(tmp_path):
     async def body(system, worker, client):
         await client._on_message(
             fake_message(content="Wie spät ist es?", channel_id=int(CHANNEL_ID))
@@ -513,7 +513,7 @@ def test_place_suggestions_come_from_the_gazetteer_and_not_for_strangers(tmp_pat
 def stub_client(channel, guilds=(), ready=True):
     user = AsyncMock()
     client = MagicMock()
-    client.user = SimpleNamespace(id=5000, name="Nikita")
+    client.user = SimpleNamespace(id=5000, name="Anton")
     client.application_id = 7000
     client.guilds = list(guilds)
     client.is_ready = MagicMock(return_value=ready)
@@ -730,7 +730,7 @@ def test_notes_into_the_home_channel_never_ping_anybody(tmp_path):
     channel = wired(tmp_path, body)
     mentions = channel.send.await_args.kwargs["allowed_mentions"]
     assert mentions.everyone is False and mentions.roles is False and mentions.users is False
-    client_default = NikitaClient(SimpleNamespace(voice_messages=None)).allowed_mentions
+    client_default = AntonClient(SimpleNamespace(voice_messages=None)).allowed_mentions
     assert client_default.everyone is False and client_default.roles is False
 
 
@@ -825,7 +825,7 @@ def good_api(request: httpx.Request) -> httpx.Response:
     assert request.headers["authorization"] == f"Bot {BOT_TOKEN}"
     path = request.url.path
     if path.endswith("/users/@me"):
-        return httpx.Response(200, json={"id": "7000", "username": "Nikita"})
+        return httpx.Response(200, json={"id": "7000", "username": "Anton"})
     if path.endswith("/applications/@me"):
         return httpx.Response(
             200,
@@ -835,7 +835,7 @@ def good_api(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json=[{"id": GUILD_ID, "name": "Zuhause"}])
     if path.endswith(f"/channels/{CHANNEL_ID}"):
         return httpx.Response(
-            200, json={"id": CHANNEL_ID, "type": 0, "name": "nikita", "guild_id": GUILD_ID}
+            200, json={"id": CHANNEL_ID, "type": 0, "name": "anton", "guild_id": GUILD_ID}
         )
     return httpx.Response(404)
 
@@ -844,7 +844,7 @@ def test_the_check_reports_in_plain_words_and_never_the_token():
     report = asyncio.run(setup.check(BOT_TOKEN, CHANNEL_ID, [OWNER_ID], transport=rest(good_api)))
     assert report.ok and report.owner_ids == [OWNER_ID] and report.application_id == "7000"
     text = "\n".join(c.text for c in report.checks)
-    assert "Nikita" in text and "Public Bot“ ist aus" in text and "#nikita" in text
+    assert "Anton" in text and "Public Bot“ ist aus" in text and "#anton" in text
     assert BOT_TOKEN not in text
 
 
@@ -866,7 +866,7 @@ def test_the_check_warns_about_public_bots_and_stops_on_a_bad_token():
     assert [c.text for c in refused.checks] == ["Der Bot-Token wurde abgelehnt"]
 
 
-def test_the_check_finds_a_channel_on_a_server_nikita_is_not_on():
+def test_the_check_finds_a_channel_on_a_server_anton_is_not_on():
     def elsewhere(request: httpx.Request) -> httpx.Response:
         if request.url.path.endswith(f"/channels/{CHANNEL_ID}"):
             return httpx.Response(
@@ -903,7 +903,7 @@ def test_say_and_channel_list_use_the_rest_api_without_pinging_anybody():
             200,
             json=[
                 {"id": "5", "type": 2, "name": "Sprache", "position": 0},
-                {"id": "4", "type": 0, "name": "nikita", "position": 1},
+                {"id": "4", "type": 0, "name": "anton", "position": 1},
                 {"id": "3", "type": 0, "name": "allgemein", "position": 0},
             ],
         )
@@ -915,7 +915,7 @@ def test_say_and_channel_list_use_the_rest_api_without_pinging_anybody():
 
     channels = asyncio.run(go())
     assert seen["body"]["allowed_mentions"] == {"parse": []}
-    assert [c["name"] for c in channels] == ["allgemein", "nikita"]
+    assert [c["name"] for c in channels] == ["allgemein", "anton"]
 
 
 def test_errors_of_the_api_never_contain_the_token():
@@ -962,18 +962,18 @@ def test_sync_commands_registers_what_the_worker_would_and_remembers_it(tmp_path
     Database(tmp_path / "db.sqlite3").ensure()  # an installation that has run before
     monkeypatch.delenv(core_module.ENV_URL, raising=False)
     monkeypatch.setattr(SpeechService, "stt_available", lambda self: True)
-    monkeypatch.setattr(NikitaClient, "login", AsyncMock())
-    monkeypatch.setattr(NikitaClient, "close", AsyncMock())
+    monkeypatch.setattr(AntonClient, "login", AsyncMock())
+    monkeypatch.setattr(AntonClient, "close", AsyncMock())
     synced = AsyncMock(return_value=[])
     monkeypatch.setattr(app_commands.CommandTree, "sync", synced)
     built: list[list[dict]] = []
-    original = NikitaClient.build_commands
+    original = AntonClient.build_commands
 
     def build(self, features):
         built.append(original(self, features))
         return built[-1]
 
-    monkeypatch.setattr(NikitaClient, "build_commands", build)
+    monkeypatch.setattr(AntonClient, "build_commands", build)
     options = WorkerOptions(
         config=tree / "config" / "moritz-agent.toml", passwords=tree / "passwords.txt"
     )

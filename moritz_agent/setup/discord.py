@@ -122,7 +122,7 @@ async def setup_channel(
     else:
         if not channels:
             print(
-                "Nikita ist noch auf keinem Server oder darf keine Kanäle sehen. Einladungslink benutzen.",
+                "Anton ist noch auf keinem Server oder darf keine Kanäle sehen. Einladungslink benutzen.",
                 file=out,
             )
             return 1

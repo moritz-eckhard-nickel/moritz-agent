@@ -76,7 +76,7 @@ class TimerAlarm:
 
 @dataclass(frozen=True)
 class BargeIn:
-    """Somebody started talking while Nikita was speaking (Discord voice only)."""
+    """Somebody started talking while Anton was speaking (Discord voice only)."""
 
 
 @dataclass(frozen=True)
@@ -194,7 +194,7 @@ class CallStateMachine:
         self._unclear = 0
         self._failures = 0
         self._hangup_reason = "goodbye"
-        self._alarms = 0  # timers that ran out while Nikita was busy
+        self._alarms = 0  # timers that ran out while Anton was busy
 
     # -- helpers -----------------------------------------------------------------------
     def _listen(self) -> list[Action]:

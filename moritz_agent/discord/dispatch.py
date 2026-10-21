@@ -106,7 +106,7 @@ class Dispatcher:
 
     # -- messages --------------------------------------------------------------------------------------
     async def message(self, info: MessageInfo, origin: Origin, sender: Sender) -> TurnResult | None:
-        """Answer a message if it is meant for Nikita; returns the answer (``None``: not answered)."""
+        """Answer a message if it is meant for Anton; returns the answer (``None``: not answered)."""
         decision = self.policy.message(info, today=self.today())
         if decision.reaction is Reaction.IGNORE:
             return None
@@ -242,7 +242,7 @@ class Dispatcher:
         await self.local.run(spec, values, origin, sender)
 
     async def context_menu(self, name: str, text: str, origin: Origin, sender: Sender) -> None:
-        """ "Nikita fragen" on a message."""
+        """ "Anton fragen" on a message."""
         await sender.begin()
         if self.policy.role(origin.user_id) is Role.UNKNOWN:
             await sender.send(self.say("forbidden"))
@@ -336,7 +336,7 @@ class Dispatcher:
 
     # -- reactions -----------------------------------------------------------------------------------------------
     async def feedback(self, user_id: str, emoji: str, skill_id: str = "agent") -> bool:
-        """👍/👎 on an answer of Nikita goes to the statistics (docs/plan/14 §8.3)."""
+        """👍/👎 on an answer of Anton goes to the statistics (docs/plan/14 §8.3)."""
         rating = {"👍": "up", "👎": "down"}.get(emoji)
         if rating is None or self.policy.role(user_id) is Role.UNKNOWN:
             return False

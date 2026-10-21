@@ -128,7 +128,7 @@ $("chat-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const input = $("chat-input");
   const answer = $("chat-answer");
-  answer.textContent = "Nikita denkt nach …";
+  answer.textContent = "Anton denkt nach …";
   const result = await api("/api/chat", { method: "POST", body: JSON.stringify({ message: input.value }) });
   answer.replaceChildren();
   if (!result.ok) {

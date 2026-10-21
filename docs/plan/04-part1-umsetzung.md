@@ -17,7 +17,7 @@ aktualisierbar per `moritz-update.sh`, beobachtbar über eine minimale Statussei
   4. Keine Secrets in Code, Tests, Logs, Fixtures (Test-Secrets nur offensichtlich falsch,
      z. B. `test-password-123`).
   5. Abweichungen vom Plan → Plan-Dokument im selben PR aktualisiert.
-  6. **Kanal-Parität** (ADR-034, DISCORD-12): Eine neue Nikita-Funktion ist im selben PR auf allen
+  6. **Kanal-Parität** (ADR-034, DISCORD-12): Eine neue Anton-Funktion ist im selben PR auf allen
      Kanälen nutzbar (Telefon, Discord, später WebUI) – oder die Ausnahme ist in der Matrix
      [14 §6](14-discord.md#6-funktionsumfang-alle-funktionen-auf-allen-kanälen) begründet.
 - Hardware-abhängige Schritte (GPU, SIP-Anlage) werden mit einem **Testprotokoll** im PR
@@ -64,7 +64,7 @@ P1-29 Erkennung, Aussprache, Korpus (begleitend ab P1-19) ─► P1-30 Abnahme S
 danach: P1-02, P1-05, P1-07 (übernimmt skills/tools.py), P1-09 (Agent hinter den Skills), P1-08, P1-14, P1-18
 ```
 
-**Block D – Discord (ADR-033 … ADR-037, [14](14-discord.md)):** Nikita als Discord-Bot mit allen
+**Block D – Discord (ADR-033 … ADR-037, [14](14-discord.md)):** Anton als Discord-Bot mit allen
 Funktionen. Startet nach P1-19 mit dem Kanal-Kern (P1-31) und dem Spike (P1-32) und läuft parallel zu
 den späteren Wellen von Block S; LLM-Funktionen kommen mit P1-09 automatisch dazu.
 
@@ -227,7 +227,7 @@ P1-03 (Konfiguration) und P1-06 (Speicher) werden nur so weit vorgezogen, wie Bl
 - **Systemprompt-Entwurf** (`phone.de.md`):
 
   ```text
-  Du bist „Nikita“, der Telefonassistent von Moritz. Du sprichst Deutsch und duzt Moritz.
+  Du bist „Anton“, der Telefonassistent von Moritz. Du sprichst Deutsch und duzt Moritz.
   Deine Antworten werden vorgelesen: Antworte in höchstens zwei bis drei kurzen Sätzen,
   ohne Aufzählungen, ohne Markdown, ohne Links, ohne Emojis.
   Für die aktuelle Uhrzeit oder das Datum rufst du immer das Werkzeug get_current_time auf.
@@ -608,8 +608,8 @@ das Telefon unberührt (Test: Worker beenden während eines Testanrufs).
 ## P1-34 – Text-Chat und Sofortauskünfte auf Discord
 
 - **Dateien:** `discord/{render,components}.py`, `discord/sessions.py`.
-- **Aufgaben:** Antworten in DMs, bei Erwähnung, auf Antworten, in Nikita-Threads/-Kanälen und auf
-  „Nikita, …“; Rendern als Text/Karte mit Quelle, Folgeknöpfe, Auswahllisten für Rückfragen,
+- **Aufgaben:** Antworten in DMs, bei Erwähnung, auf Antworten, in Anton-Threads/-Kanälen und auf
+  „Anton, …“; Rendern als Text/Karte mit Quelle, Folgeknöpfe, Auswahllisten für Rückfragen,
   Aufteilen/Datei, Tippanzeige, Reaktionen (✅, 👍/👎-Feedback); ab P1-09: LLM-Antworten gestreamt,
   Websuche mit Quellenlinks, Threads für lange Gespräche; `/hilfe datenschutz`.
 - **Anforderungen:** DISCORD-13, -14, -15, -18, -19, -34, -35, -40.
@@ -619,7 +619,7 @@ das Telefon unberührt (Test: Worker beenden während eines Testanrufs).
 - **Dateien:** `discord/commands/*`, `discord/__main__.py` (`sync-commands`).
 - **Aufgaben:** Befehle aus [14 §7](14-discord.md#7-befehle-slash-befehle-kontextmenüs-autovervollständigung)
   für alle aktiven Funktionen, Kontexte (Server/DM/Benutzer-App), Autovervollständigung für Orte aus dem
-  Gazetteer, `/joinvc` und `/leavevc`, Kontextmenüs „Nikita fragen“ und „Vorlesen“, ephemere Antworten in fremden Servern,
+  Gazetteer, `/joinvc` und `/leavevc`, Kontextmenüs „Anton fragen“ und „Vorlesen“, ephemere Antworten in fremden Servern,
   Registrierung nur bei geändertem Befehlsbaum; `/abo`, `/einstellungen`, `/hilfe`.
 - **Tests:** Befehlsbaum gültig (Namen, Längen, Anzahl), nur aktive Funktionen, Interaktion-Fakes.
 - **Anforderungen:** DISCORD-02, -16, -17, -29.
@@ -689,11 +689,11 @@ das Telefon unberührt (Test: Worker beenden während eines Testanrufs).
   byte-identisch; shellcheck.
 - **Anforderungen:** DISCORD-05, -06, -07, -37, -38, -42, -45, INST-05, CFG-09.
 
-## P1-43 – Nikitas Discord-Persönlichkeit: süßer Stil und schelmische Aktivitäten
+## P1-43 – Antons Discord-Persönlichkeit: süßer Stil und schelmische Aktivitäten
 
 - **Dateien:** `discord/{style,activities}.py`, `assets/data/discord/{stil,aktivitaeten}.de.toml`,
   `discord/commands/` (`/aktivitaet`), LLM-Profil `discord_chat` (Stilzeile, ab P1-09).
-- **Aufgaben:** Stil-Renderer nach [14 §8.2](14-discord.md#82-persönlichkeit-nikita-ein-bisschen-süß-adr-037)
+- **Aufgaben:** Stil-Renderer nach [14 §8.2](14-discord.md#82-persönlichkeit-anton-ein-bisschen-süß-adr-037)
   mit Ernst-Modus; Aktivitäten nach [14 §8.5](14-discord.md#85-aktivitäten-schelmisch-und-funny-adr-037):
   Grundliste, lagebezogene Aktivitäten (Anruf, Sprachkanal, Nacht, Wetter aus dem Cache, Sonderdaten,
   Wartung, Unwetter), Rotation 7–15 min ohne Wiederholung, Präsenz-Limits, `/aktivitaet neu|aus|an|vorschlag`;
@@ -715,7 +715,7 @@ das Telefon unberührt (Test: Worker beenden während eines Testanrufs).
 
 | ID | Text | Verwendung |
 | --- | --- | --- |
-| `greeting` | Hallo Moritz, hier ist Nikita. Was kann ich für dich tun? | Anrufbeginn |
+| `greeting` | Hallo Moritz, hier ist Anton. Was kann ich für dich tun? | Anrufbeginn |
 | `not_understood` | Entschuldigung, das habe ich nicht verstanden. Kannst du das bitte wiederholen? | Reprompt 1 |
 | `not_understood_again` | Ich verstehe dich leider schlecht. Sag zum Beispiel: Wie viel Uhr ist es? | Reprompt 2 |
 | `still_there` | Bist du noch da? | Stille |
@@ -728,11 +728,11 @@ das Telefon unberührt (Test: Worker beenden während eines Testanrufs).
 | `thinking_weather` | Moment, ich schaue nach dem Wetter. | Wetterabruf ohne Cache-Treffer (P1-22) |
 | `skills_offline` | Ich komme gerade nicht an die Daten. Versuch es bitte gleich noch einmal. | Datendienst nicht erreichbar, kein Cache (P1-22) |
 | `timer_done` | Die Zeit ist um! | Eieruhr während des Gesprächs (P1-28), davor ein kurzer Ton |
-| `voice_join` | Guude, ich bin da. | Nikita betritt einen Discord-Sprachkanal, in dem Moritz noch nicht ist (P1-36); kommt Moritz dazu, folgt `greeting` |
-| `voice_rest` | Ich bin dann mal still. Sag einfach Nikita, wenn du mich brauchst. | Sprachkanal: Ruhe-Modus nach Stille (P1-36) |
+| `voice_join` | Guude, ich bin da. | Anton betritt einen Discord-Sprachkanal, in dem Moritz noch nicht ist (P1-36); kommt Moritz dazu, folgt `greeting` |
+| `voice_rest` | Ich bin dann mal still. Sag einfach Anton, wenn du mich brauchst. | Sprachkanal: Ruhe-Modus nach Stille (P1-36) |
 | `voice_wake` | Ja? | Sprachkanal: aus dem Ruhe-Modus geweckt (P1-36) |
 | `voice_waking` | Einen Moment, ich wache auf. | Sprachmodelle im Discord-Worker werden noch geladen (P1-36) |
-| `voice_leave` | Ich bin dann mal weg. Bis bald! | Nikita verlässt den Sprachkanal (P1-36) |
+| `voice_leave` | Ich bin dann mal weg. Bis bald! | Anton verlässt den Sprachkanal (P1-36) |
 
 ## Anhang B – Konfigurationsschlüssel Part 1
 

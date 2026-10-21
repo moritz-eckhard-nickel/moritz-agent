@@ -6,6 +6,6 @@ Entwickler- und Messwerkzeuge (nicht Teil der Laufzeit):
 | --- | --- | --- |
 | `build-pjsip.sh` | P1-11 | PJSIP aus `third_party/pjproject` bauen, Python-Binding `pjsua2` in die Umgebung installieren |
 | `setup-env.sh` | P1-15 | Python-Umgebung anlegen: venv, gepinnte Pakete mit Prüfsummen, PJSIP-Binding (gemeinsam für `test-1.sh` und den Installer) |
-| `sip_testcall.py` | P1-11 | Skriptgesteuerter Test-Anrufer: spricht Sätze, misst Antwortzeiten, nimmt Nikitas Antworten auf |
+| `sip_testcall.py` | P1-11 | Skriptgesteuerter Test-Anrufer: spricht Sätze, misst Antwortzeiten, nimmt Antons Antworten auf |
 | *(statt `bench_audio.py`)* | P1-10 | `./test-1.sh bench` misst STT und Stimmen |
 | `bench_llm.py` | P1-02 | 40 deutsche Telefonfragen: Latenz, Tokens/s, Tool-Call-Validität |

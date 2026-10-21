@@ -71,7 +71,7 @@ class Machine:
 
     def __init__(self, tmp_path: Path) -> None:
         self.root = tmp_path
-        self.prefix = tmp_path / "srv" / "nikita-home"
+        self.prefix = tmp_path / "srv" / "anton-home"
         self.state = tmp_path / "state"
         self.bin = tmp_path / "fakebin"
         self.units = tmp_path / "units"

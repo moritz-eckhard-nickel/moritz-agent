@@ -24,7 +24,7 @@ OLD_PASSWORDS = """# meine Notizen
 username = agent
 auth_username = agent
 password = Sup3r%Geheim;
-display_name = Nikita
+display_name = Anton
 registrar = 192.168.1.176
 port = 5060
 transport = udp
@@ -132,7 +132,7 @@ def api(handler=None):
         if request.headers["authorization"] != f"Bot {BOT_TOKEN}":
             return httpx.Response(401)
         if path.endswith("/users/@me"):
-            return httpx.Response(200, json={"id": "7000", "username": "Nikita"})
+            return httpx.Response(200, json={"id": "7000", "username": "Anton"})
         if path.endswith("/applications/@me"):
             return httpx.Response(
                 200,
@@ -149,14 +149,14 @@ def api(handler=None):
             return httpx.Response(
                 200,
                 json=[
-                    {"id": CHANNEL_ID, "type": 0, "name": "nikita", "position": 0},
+                    {"id": CHANNEL_ID, "type": 0, "name": "anton", "position": 0},
                     {"id": "5550002", "type": 0, "name": "allgemein", "position": 1},
                     {"id": "5550003", "type": 2, "name": "Sprache", "position": 2},
                 ],
             )
         if path.endswith(f"/channels/{CHANNEL_ID}"):
             return httpx.Response(
-                200, json={"id": CHANNEL_ID, "type": 0, "name": "nikita", "guild_id": "9000"}
+                200, json={"id": CHANNEL_ID, "type": 0, "name": "anton", "guild_id": "9000"}
             )
         return httpx.Response(404)
 
@@ -180,7 +180,7 @@ def test_a_good_token_is_stored_checked_and_never_printed(files_in):
         setup_discord.setup_token(passwords, config, BOT_TOKEN + "\n", out=out, transport=api())
     )
     shown = out.getvalue()
-    assert code == 0 and BOT_TOKEN not in shown and "Nikita" in shown and OWNER_ID in shown
+    assert code == 0 and BOT_TOKEN not in shown and "Anton" in shown and OWNER_ID in shown
     assert "client_id=7000" in shown
     assert (
         parse_passwords(passwords.read_text(encoding="utf-8")).discord.bot_token.reveal()
@@ -235,12 +235,12 @@ def test_the_home_channel_is_chosen_by_list_number_or_id(files_in):
         return code, out.getvalue()
 
     code, listing = channel("")
-    assert code == 3 and "Zuhause / #nikita" in listing and "Sprache" not in listing
+    assert code == 3 and "Zuhause / #anton" in listing and "Sprache" not in listing
     assert files.get_value(passwords.read_text(encoding="utf-8"), "discord", "channel_id") == ""
     assert channel("1")[0] == 0
     assert parse_passwords(passwords.read_text(encoding="utf-8")).discord.channel_id == CHANNEL_ID
     assert channel("99")[0] == 3  # not on the list: show it again
-    code, _ = channel("5550002")  # a channel id Nikita cannot see
+    code, _ = channel("5550002")  # a channel id Anton cannot see
     assert code == 1
 
 
@@ -266,3 +266,22 @@ def test_command_line_migrate_token_and_pin(files_in, monkeypatch, capsys):
         1,
         3,
     }  # needs the network – refused, not crashed
+
+
+def test_old_default_names_switch_to_anton_but_own_choices_stay():
+    from moritz_agent.setup.files import rename_assistant
+
+    config = (
+        'assistant_name = "Nikita"         # Name\n'
+        'greeting_text = "Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?"\n'
+        'initial_prompt = "Nikita, Moritz, Weilburg, Limburg."   # hilft\n'
+        "name_trigger = true\n"
+    )
+    text, count = rename_assistant(config)
+    assert count == 3
+    assert 'assistant_name = "Anton"         # Name' in text
+    assert "hier ist Anton. Was kann" in text and '"Anton, Moritz, Weilburg' in text
+    own = 'assistant_name = "Nikita die Große"\ngreeting_text = "Servus, hier ist Nikita!"\n'
+    assert rename_assistant(own) == (own, 0)
+    passwords = "[sip]\nusername = agent\ndisplay_name = Nikita\n"
+    assert rename_assistant(passwords) == (passwords.replace("= Nikita", "= Anton"), 1)

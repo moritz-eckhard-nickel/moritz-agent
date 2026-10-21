@@ -63,15 +63,15 @@ searxng_startup_timeout_s = 90    # SearXNG braucht beim ersten Start einige Sek
 
 [phone]
 enabled = true
-assistant_name = "Nikita"         # Name, mit dem sich der Assistent vorstellt (ADR-026)
-greeting_text = "Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?"
+assistant_name = "Anton"         # Name, mit dem sich der Assistent vorstellt (ADR-026)
+greeting_text = "Hallo Moritz, hier ist Anton. Was kann ich für dich tun?"
 local_sip_port = 5060
 rtp_port_start = 40000
 rtp_port_count = 200
 codecs = ["G722/16000", "PCMA/8000", "PCMU/8000"]   # Reihenfolge = Priorität
 allowed_source_ips = ["192.168.1.176"]                # INVITEs nur von hier (PHONE-09)
 max_concurrent_calls = 1                              # zweiter Anruf → 486 Busy Here
-ring_seconds_min = 4.0            # Nikita lässt es zufällig zwischen min und max Sekunden klingeln, bevor er abnimmt
+ring_seconds_min = 4.0            # Anton lässt es zufällig zwischen min und max Sekunden klingeln, bevor er abnimmt
 ring_seconds_max = 8.0            # (beide 0 = sofort abnehmen; Dial-Timeout der Telefonanlage größer wählen)
 register_retry_min_s = 5
 register_retry_max_s = 300
@@ -102,10 +102,10 @@ beam_size = 1
 cpu_threads = 8
 no_speech_threshold = 0.6
 min_avg_logprob = -1.0
-initial_prompt = "Nikita, Moritz, Weilburg, Limburg, Lahn, Wetzlar, Hessen, Frankfurt, Wetter, Postleitzahl, Grad."   # hilft bei Namen, Orten und Zahlen (docs/plan/13 §9.2)
+initial_prompt = "Anton, Moritz, Weilburg, Limburg, Lahn, Wetzlar, Hessen, Frankfurt, Wetter, Postleitzahl, Grad."   # hilft bei Namen, Orten und Zahlen (docs/plan/13 §9.2)
 
 [phone.tts]
-# Nikitas Stimme: Thorsten-Voice „Hessisch“ als Piper-Modell (high, CC0), läuft auf der CPU (ADR-027).
+# Antons Stimme: Thorsten-Voice „Hessisch“ als Piper-Modell (high, CC0), läuft auf der CPU (ADR-027).
 engine = "piper"                  # Hauptstimme für Ansagen (gecacht) und Antworten
 fallback_engines = ["espeak"]     # Notstimme, falls Piper nicht ladbar ist (roboterhaft)
 cpu_threads = 4                   # Rechenthreads für Piper (onnxruntime)
@@ -255,10 +255,10 @@ enabled = false                   # true, sobald bot_token in passwords.txt steh
 owner_user_ids = []               # Discord-Benutzer-IDs (das Setup übernimmt den Besitzer der Anwendung)
 trusted_user_ids = []
 allowed_guild_ids = []            # weitere Server (der Server des Standardkanals ist immer erlaubt)
-chat_channel_ids = []             # weitere Kanäle, in denen Nikita auf jede Nachricht antwortet
+chat_channel_ids = []             # weitere Kanäle, in denen Anton auf jede Nachricht antwortet
 style = "cute"                    # "cute" | "normal" (ADR-037)
 startup_message = true            # „Bin wieder wach ✨“ im Standardkanal nach dem Start
-name_trigger = true               # „Nikita, …“ am Satzanfang wirkt wie eine Erwähnung
+name_trigger = true               # „Anton, …“ am Satzanfang wirkt wie eine Erwähnung
 guest_mode = "off"                # "off" | "skills"
 unknown_users = "ignore"          # "ignore" | "notice"
 ephemeral_in_foreign_guilds = true
@@ -284,7 +284,7 @@ default_channel_id = ""           # Sprachkanal für /joinvc, wenn Moritz in kei
 auto_join = false                 # von selbst kommen, sobald Moritz einen Sprachkanal betritt
 greeting = "phone"                # dieselbe Begrüßung wie am Telefon (PHONE-21)
 after_goodbye = "leave"           # "leave" | "stay"
-on_silence = "rest"               # "rest" (still bleiben, auf „Nikita“ hören) | "leave" (wie Auflegen)
+on_silence = "rest"               # "rest" (still bleiben, auf „Anton“ hören) | "leave" (wie Auflegen)
 idle_leave_minutes = 10           # ohne Menschen im Kanal so lange warten, dann gehen
 barge_in = true
 max_session_minutes = 120

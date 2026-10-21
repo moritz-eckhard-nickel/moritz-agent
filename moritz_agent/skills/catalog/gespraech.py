@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-"""Talking to Nikita: greeting, thanks, help, repeat, speed, goodbye, status (docs/plan/13 §6.15)."""
+"""Talking to Anton: greeting, thanks, help, repeat, speed, goodbye, status (docs/plan/13 §6.15)."""
 
 from __future__ import annotations
 
@@ -59,10 +59,10 @@ async def talk_goodbye(req: Request) -> SkillResult:
     examples=("Guude!", "Hallo", "Moin"),
     max_words=4,
     patterns=(
-        r"^(?:ei )?(?:guude|gude|hallo|hi|hey|moin|moin moin|servus|grüß dich|grüß gott|hallöchen|huhu|na)(?: nikita)?$",
+        r"^(?:ei )?(?:guude|gude|hallo|hi|hey|moin|moin moin|servus|grüß dich|grüß gott|hallöchen|huhu|na)(?: anton)?$",
         r"^guten (?:tag|abend)$",
-        r"^guten tag nikita$",
-        r"^nikita$",
+        r"^guten tag anton$",
+        r"^anton$",
     ),
 )
 async def talk_greeting(req: Request) -> SkillResult:
@@ -134,7 +134,7 @@ async def talk_how_are_you(req: Request) -> SkillResult:
         r"\bwie ist dein name\b",
         r"\bstell dich vor\b",
         r"\bbist du (?:ein |eine )?(?:mensch|roboter|computer|ki|programm|echt)\b",
-        r"\bbist du (?:der |die )?nikita\b",
+        r"\bbist du (?:der |die )?anton\b",
     ),
 )
 async def talk_identity(req: Request) -> SkillResult:
@@ -290,7 +290,7 @@ async def talk_discord(req: Request) -> SkillResult:
         return say("Ich habe noch nichts gesagt, das ich dir schicken könnte.")
     return SkillResult(
         text="Okay, ich habe es dir auf Discord geschickt.",
-        forward=("📲 Von Nikita (Telefon)", req.ctx.last_text),
+        forward=("📲 Von Anton (Telefon)", req.ctx.last_text),
     )
 
 
@@ -529,7 +529,7 @@ async def _briefing_calendar(req: Request) -> str | None:
     examples=("Guten Morgen", "Was steht heute an?", "Gib mir einen Überblick"),
     max_words=7,
     patterns=(
-        r"^guten morgen(?: nikita)?$",
+        r"^guten morgen(?: anton)?$",
         r"\bwas steht (?:heute )?an\b",
         r"\b(?:gib|gibt|mach) (?:mir )?(?:bitte )?(?:einen |den )?(?:überblick|tagesüberblick)\b",
         r"\btagesüberblick\b",

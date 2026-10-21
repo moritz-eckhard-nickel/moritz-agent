@@ -104,8 +104,8 @@ def avatar_svg(width: int, height: int, path: str) -> str:
     scale = size * 0.62 / max(width, height)
     left = (size - width * scale) / 2
     top = (size - height * scale) / 2
-    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Nikita">
-  <title>Nikita</title>
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Anton">
+  <title>Anton</title>
   <rect x="0" y="0" width="512" height="512" fill="#1b1b1f"/>
   <g transform="translate({left:.2f} {top:.2f}) scale({scale:.5f})">
     <path fill="#ffffff" fill-rule="evenodd" stroke="#ffffff" stroke-width="{SCRIBBLES_LOGO_STROKE / scale * 0.5:.2f}" stroke-linejoin="round" d="{path}"/>

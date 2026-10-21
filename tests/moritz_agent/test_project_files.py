@@ -34,7 +34,7 @@ def test_example_config_contains_plan_defaults():
     assert config["search"]["backends"][0] == "searxng"
     assert config["inference"]["context_size"] == 4096
     assert config["phone"]["greeting_text"] == (
-        "Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?"
+        "Hallo Moritz, hier ist Anton. Was kann ich für dich tun?"
     )
     assert config["phone"]["max_concurrent_calls"] == 1
     tools = set(config["agent"]["phone"]["tools"])

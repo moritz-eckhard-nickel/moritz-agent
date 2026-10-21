@@ -94,8 +94,8 @@ def test_no_postal_code_in_ordinary_numbers():
     ("raw", "expected"),
     [
         ("Wie viel Uhr haben wir?", "wie viel uhr haben wir"),
-        ("Nikita, wie spät ist es?", "wie spät ist es"),
-        ("Hey Nikita wie spät ist es", "wie spät ist es"),
+        ("Anton, wie spät ist es?", "wie spät ist es"),
+        ("Hey Anton wie spät ist es", "wie spät ist es"),
         ("Kannst du mir bitte mal sagen, wie spät es ist?", "wie spät es ist"),
         ("Sag mir bitte mal die Uhrzeit", "die uhrzeit"),
         ("Was ist 17 mal 23?", "was ist 17 mal 23"),
@@ -111,10 +111,10 @@ def test_prepare(raw, expected):
     assert prepare(raw).text == expected
 
 
-def test_prepare_remembers_that_nikita_was_addressed():
-    assert prepare("Nikita, wie spät ist es?").addressed
+def test_prepare_remembers_that_anton_was_addressed():
+    assert prepare("Anton, wie spät ist es?").addressed
     assert not prepare("Wie spät ist es?").addressed
-    assert prepare("Nikita").text == "nikita"
+    assert prepare("Anton").text == "anton"
 
 
 def test_prepare_never_returns_empty_text():

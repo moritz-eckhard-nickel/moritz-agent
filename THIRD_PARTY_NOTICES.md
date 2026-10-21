@@ -50,13 +50,13 @@ Unmodified copies; provenance and versions in [third_party/VENDORED.md](third_pa
 | --- | --- | --- |
 | Qwen3-30B-A3B-Instruct-2507 GGUF (unsloth) | LLM | Apache-2.0 |
 | OpenAI Whisper small (faster-whisper conversion by Systran) | speech-to-text | MIT |
-| Thorsten-Voice „Hessisch“ Piper model (`Thorsten-Voice/Hessisch`, `…_Piper_high-Oct2023.onnx`) | Nikita's voice | CC0-1.0 (Thorsten-Voice) – verify per model card |
+| Thorsten-Voice „Hessisch“ Piper model (`Thorsten-Voice/Hessisch`, `…_Piper_high-Oct2023.onnx`) | Anton's voice | CC0-1.0 (Thorsten-Voice) – verify per model card |
 | espeak-ng (system package, optional) | last-resort voice and test caller | GPL-3.0-or-later (used as a separate program) |
 
 ## Data services used at run time (not stored in this repository)
 
 Only free services without an account; hosts and URLs are configurable in `config/moritz-agent.toml`
-(`[skills.*]`). Nikita names the source when asked (SKILL-14).
+(`[skills.*]`). Anton names the source when asked (SKILL-14).
 
 | Service | Purpose | Terms |
 | --- | --- | --- |

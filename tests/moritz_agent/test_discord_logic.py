@@ -58,9 +58,9 @@ def message(author=OWNER, content="Hallo", **kw) -> MessageInfo:
 def test_mentions_and_the_name_are_removed_from_the_question():
     assert strip_address(f"<@{BOT}> wie spät ist es", BOT) == ("wie spät ist es", True, False)
     assert strip_address(f"<@!{BOT}>  Wetter?", BOT)[0] == "Wetter?"
-    assert strip_address("Nikita, wie spät ist es", BOT) == ("wie spät ist es", False, True)
-    assert strip_address("hey nikita: Wetter", BOT)[0] == "Wetter"
-    assert strip_address("Nikita ist toll", BOT) == ("Nikita ist toll", False, False)
+    assert strip_address("Anton, wie spät ist es", BOT) == ("wie spät ist es", False, True)
+    assert strip_address("hey anton: Wetter", BOT)[0] == "Wetter"
+    assert strip_address("Anton ist toll", BOT) == ("Anton ist toll", False, False)
     assert strip_address("<@123> hallo", BOT) == ("<@123> hallo", False, False)
 
 
@@ -68,7 +68,7 @@ def test_mentions_and_the_name_are_removed_from_the_question():
 @pytest.mark.parametrize(
     ("author", "where", "expected"),
     [
-        # in the default channel Nikita answers everything of the owner and of trusted people
+        # in the default channel Anton answers everything of the owner and of trusted people
         (OWNER, {}, Reaction.ANSWER),
         (TRUSTED, {}, Reaction.ANSWER),
         (STRANGER, {}, Reaction.IGNORE),
@@ -77,7 +77,7 @@ def test_mentions_and_the_name_are_removed_from_the_question():
         (OWNER, {"channel_id": "801", "mentions_bot": True}, Reaction.ANSWER),
         (OWNER, {"channel_id": "801", "replies_to_bot": True}, Reaction.ANSWER),
         (OWNER, {"channel_id": "801", "in_bot_thread": True}, Reaction.ANSWER),
-        (OWNER, {"channel_id": "801", "content": "Nikita, hallo"}, Reaction.ANSWER),
+        (OWNER, {"channel_id": "801", "content": "Anton, hallo"}, Reaction.ANSWER),
         # a direct message
         (OWNER, {"guild_id": None}, Reaction.ANSWER),
         (TRUSTED, {"guild_id": None}, Reaction.ANSWER),
@@ -112,7 +112,7 @@ def test_the_question_is_cleaned_and_the_role_is_reported():
 def test_the_name_trigger_can_be_switched_off():
     off = policy(name_trigger=False)
     assert (
-        off.message(message(channel_id="801", content="Nikita, hallo")).reaction is Reaction.IGNORE
+        off.message(message(channel_id="801", content="Anton, hallo")).reaction is Reaction.IGNORE
     )
 
 

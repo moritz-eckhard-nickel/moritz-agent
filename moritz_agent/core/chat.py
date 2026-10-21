@@ -34,7 +34,7 @@ HISTORY_TURNS = 12
 
 
 class AccessDenied(PermissionError):
-    """The person has no right to talk to Nikita (unknown role)."""
+    """The person has no right to talk to Anton (unknown role)."""
 
 
 @dataclass

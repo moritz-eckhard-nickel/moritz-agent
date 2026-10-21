@@ -24,7 +24,7 @@ class VoiceResponder:
     ) -> None:
         self.core = core
         self.conversation = sessions.voice(channel_id)
-        self.speaker = speaker  # → (user id, display name) of whoever is talking to Nikita
+        self.speaker = speaker  # → (user id, display name) of whoever is talking to Anton
 
     async def respond(self, text: str, context: TurnContext) -> Reply:
         state = context.extras.setdefault("skills", RemoteSkillState())

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
 # Währungen der EZB-Referenzkurse mit gesprochenen Namen und Aliassen (docs/plan/13 §6.12).
-# `name`: so spricht Nikita die Währung (gilt für Einzahl und Mehrzahl); `aliases`: so nennt man sie.
+# `name`: so spricht Anton die Währung (gilt für Einzahl und Mehrzahl); `aliases`: so nennt man sie.
 # `ambiguous`: Wörter, die mehrere Währungen meinen können – es folgt eine Rückfrage.
 
 [ambiguous]

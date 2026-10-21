@@ -25,7 +25,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PRD-06 | Lizenzen: eigener Code **MSOL 1.1**, Scribbles/Logo alle Rechte vorbehalten, Fremdcode behält seine Lizenz (AGPL-3.0 KoboldCpp/SearXNG, MIT llama.cpp/ggml, GPL-2.0+ PJSIP); Copyright-Hinweise der Fremdteile bleiben erhalten (ADR-023, `LICENSING.md`). | MUSS | 1 |
 | PRD-07 | ~~Windows-Start (`moritz-agent.exe`)~~ – **entfällt** (Moritz, F-12: „niemals“). Zielplattform ist ausschließlich Linux (Ubuntu) im LXC. | – | – |
 | PRD-08 | Einheitliches Branding „moritz-agent“ / „m-agent“ mit monochromem Logo (**M + Scribbles**) überall, wo Nutzer etwas sehen (README, WebUI, Favicon, Icons, Metadaten). **Scribbles**, das LayerNX-Maskottchen, ist das Maskottchen von moritz-agent und erscheint überall, wo eine Figur sinnvoll ist ([Branding-Regeln](../../assets/branding/README.md)). KoboldCpp-Oberflächen sind entfernt (F-11). | MUSS | 1 |
-| PRD-10 | Der Assistent heißt **Nikita** (männlich, Stimme Thorsten-Voice Hessisch) – in Begrüßung, Systemprompt, Antworten, SIP-Anzeigename und Oberfläche. Technische Namen (Produkt `moritz-agent`, Repo, SIP-Konto `agent`) bleiben (ADR-026). | MUSS | 1 |
+| PRD-10 | Der Assistent heißt **Anton** (männlich, Stimme Thorsten-Voice Hessisch) – in Begrüßung, Systemprompt, Antworten, SIP-Anzeigename und Oberfläche. Technische Namen (Produkt `moritz-agent`, Repo, SIP-Konto `agent`) bleiben (ADR-026). | MUSS | 1 |
 | PRD-09 | Alle Programmbestandteile liegen **im Repository** und laufen als Teil des einen Programms: SearXNG (fertig gebaut), pjproject, VAD-Modell (ADR-021). Aus dem Netz kommen nur Abhängigkeiten (PyPI-Pakete mit Hashes, CUDA-Build-Toolchain, Systempakete) und die Hugging-Face-Modelle. | MUSS | 1 |
 
 ## 2. Telefonie (PHONE)
@@ -50,7 +50,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
 | PHONE-20 | Eingehenden internen Anruf automatisch annehmen – nach Klingeln (zufällig `phone.ring_seconds_min` … `ring_seconds_max`, Standard 4–8 s, beide 0 = sofort; der Anrufer hört den Freiton, 180 Ringing). Legt der Anrufer währenddessen auf, passiert nichts weiter. | MUSS | 1 |
-| PHONE-21 | Nach dem Abnehmen sofort die vorbereitete Begrüßung abspielen: „Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?“ (Name geändert, ADR-026) – aus einer zwischengespeicherten Audiodatei, **ohne LLM-Wartezeit**. | MUSS | 1 |
+| PHONE-21 | Nach dem Abnehmen sofort die vorbereitete Begrüßung abspielen: „Hallo Moritz, hier ist Anton. Was kann ich für dich tun?“ (Name geändert, ADR-026) – aus einer zwischengespeicherten Audiodatei, **ohne LLM-Wartezeit**. | MUSS | 1 |
 | PHONE-22 | Nach der Begrüßung zuhören, Sprachende per VAD erkennen, Äußerung auf Deutsch transkribieren. | MUSS | 1 |
 | PHONE-23 | Bei Uhrzeitfragen („Wie viel Uhr haben wir?“) ein **echtes Uhrzeit-Tool** aufrufen und kurz antworten („Es ist 19 Uhr 12.“). | MUSS | 1 |
 | PHONE-24 | Die Uhrzeit wird **unmittelbar vor der Ausgabe** aus der Systemuhr gelesen, Zeitzone `Europe/Berlin`, Sommerzeit automatisch. Keine vom LLM erfundene Uhrzeit (technisch abgesichert, siehe AGENT-06). | MUSS | 1 |
@@ -66,7 +66,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PHONE-34 | Sind STT oder TTS nicht bereit, wird kein normaler Gesprächsbetrieb vorgetäuscht Anruf annehmen → vorbereitete Störungsansage → auflegen. Fehlt der Ansagen-Cache selbst, registriert sich der Agent nicht (ADR-011). | MUSS | 1 |
 | PHONE-35 | Dauert die Antwort länger als `thinking_prompt_after_s` (Start: 2,5 s), wird eine vorbereitete Zwischenansage gespielt („Moment, ich schaue nach.“). | SOLL | 1 |
 | PHONE-36 | Optionaler Abschied per Sprache („Tschüss“, „Danke, das war’s“) → Verabschiedung und Auflegen. | SOLL | 1 |
-| PHONE-37 | Stimme: **Thorsten-Voice „Hessisch“** (Piper-Modell, lokal auf der CPU) ist Nikitas Stimme. Fehlt das Modell oder fällt es aus, spricht die lokale Notstimme espeak-ng; der Anruf bricht nie wegen der Stimme ab (ADR-027). | MUSS | 1 |
+| PHONE-37 | Stimme: **Thorsten-Voice „Hessisch“** (Piper-Modell, lokal auf der CPU) ist Antons Stimme. Fehlt das Modell oder fällt es aus, spricht die lokale Notstimme espeak-ng; der Anruf bricht nie wegen der Stimme ab (ADR-027). | MUSS | 1 |
 
 ### 2.3 Ressourcen, Parallelität, Datenschutz
 
@@ -88,14 +88,14 @@ Der Originalplan bleibt unverändert als Referenz.
 
 ## 2a. Discord (DISCORD)
 
-Nikita als Discord-Bot mit allen Funktionen (Moritz, 20.10.2026). Plan: [14-discord.md](14-discord.md);
+Anton als Discord-Bot mit allen Funktionen (Moritz, 20.10.2026). Plan: [14-discord.md](14-discord.md);
 Tickets P1-31 … P1-43 (Block D in [04](04-part1-umsetzung.md)); Entscheidungen ADR-033 … ADR-037.
 
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
-| DISCORD-01 | Nikita läuft als **offizieller Bot** einer eigenen Discord-Anwendung. Kein Benutzer-Token, kein Self-Bot (Discord-Nutzungsbedingungen). | MUSS | 1 |
-| DISCORD-02 | Server-Installation **und** Benutzer-Installation: Befehle im eigenen Server, in der DM mit Nikita und als Benutzer-App überall, wo Moritz Discord nutzt. | MUSS | 1 |
-| DISCORD-03 | „Public Bot“ aus; Nikita bleibt nur in `discord.allowed_guild_ids`, verlässt andere Server sofort und meldet das dem Owner. | MUSS | 1 |
+| DISCORD-01 | Anton läuft als **offizieller Bot** einer eigenen Discord-Anwendung. Kein Benutzer-Token, kein Self-Bot (Discord-Nutzungsbedingungen). | MUSS | 1 |
+| DISCORD-02 | Server-Installation **und** Benutzer-Installation: Befehle im eigenen Server, in der DM mit Anton und als Benutzer-App überall, wo Moritz Discord nutzt. | MUSS | 1 |
+| DISCORD-03 | „Public Bot“ aus; Anton bleibt nur in `discord.allowed_guild_ids`, verlässt andere Server sofort und meldet das dem Owner. | MUSS | 1 |
 | DISCORD-04 | Rollen Owner / Vertraut / Gast hängen an der Discord-Benutzer-ID; Standard: Unbekannte werden ignoriert, Gastmodus aus. | MUSS | 1 |
 | DISCORD-05 | Bot-Token nur in `passwords.txt` (`[discord] bot_token`), im Code als `Secret`; nie in Argumenten, Umgebungsvariablen, Logs, Statusdateien oder Antworten. | MUSS | 1 |
 | DISCORD-06 | Einrichtung im Installer (Phase `discord`): Token verdeckt per stdin, Prüfung gegen Discord, App-Besitzer als Owner übernehmen, Warnungen (Public Bot an, Message Content aus), Einladungslinks. Alternativ Token direkt in die Datei. | MUSS | 1 |
@@ -104,21 +104,21 @@ Tickets P1-31 … P1-43 (Block D in [04](04-part1-umsetzung.md)); Entscheidungen
 | DISCORD-09 | Eigener Worker-Prozess mit Neustart-Backoff und Statusdatei; Absturz oder Hänger beeinflusst das Telefon nicht (PRD-02). | MUSS | 1 |
 | DISCORD-10 | Telefon hat Vorrang: Discord-Worker mit niedrigerer CPU-Priorität; LLM-Warteschlange `PHONE > VOICE > INTERACTIVE > BACKGROUND`. | MUSS | 1 |
 | DISCORD-11 | Kein eingehender Port: nur ausgehende Verbindungen (Gateway/REST/CDN über TCP 443, Sprache über UDP). | MUSS | 1 |
-| DISCORD-12 | **Kanal-Parität:** jede Nikita-Funktion ist auf Discord verfügbar (Matrix [14 §6](14-discord.md#6-funktionsumfang-alle-funktionen-auf-allen-kanälen)); neue Funktionen bringen ihre Discord-Form im selben Ticket mit oder begründen die Ausnahme. | MUSS | 1–1.1+ |
-| DISCORD-13 | Text: Im **Standard-Textkanal** (ID `[discord] channel_id` in `passwords.txt`, beim Setup abgefragt) und in DMs antwortet Nikita auf jede Nachricht freigegebener Personen ohne Erwähnung; sonst bei Erwähnung, auf Antworten an sie, in ihren Threads, in weiteren Nikita-Kanälen und auf „Nikita, …“ am Satzanfang. | MUSS | 1 |
+| DISCORD-12 | **Kanal-Parität:** jede Anton-Funktion ist auf Discord verfügbar (Matrix [14 §6](14-discord.md#6-funktionsumfang-alle-funktionen-auf-allen-kanälen)); neue Funktionen bringen ihre Discord-Form im selben Ticket mit oder begründen die Ausnahme. | MUSS | 1–1.1+ |
+| DISCORD-13 | Text: Im **Standard-Textkanal** (ID `[discord] channel_id` in `passwords.txt`, beim Setup abgefragt) und in DMs antwortet Anton auf jede Nachricht freigegebener Personen ohne Erwähnung; sonst bei Erwähnung, auf Antworten an sie, in ihren Threads, in weiteren Anton-Kanälen und auf „Anton, …“ am Satzanfang. | MUSS | 1 |
 | DISCORD-14 | Alle Sofortauskünfte ([13](13-sofortauskuenfte.md)) als Text und als Slash-Befehl; Ausgabe als Karte mit Quelle und Lizenz in der Fußzeile. | MUSS | 1 |
 | DISCORD-15 | Rückfragen des Kerns erscheinen als Auswahlliste, Folgeaktionen als Knöpfe; beides zustandslos und neustartfest. | MUSS | 1 |
 | DISCORD-16 | Slash-Befehle laut [14 §7](14-discord.md#7-befehle-slash-befehle-kontextmenüs-autovervollständigung); registriert werden nur aktive Funktionen; Autovervollständigung für Orte/PLZ. | MUSS | 1 |
-| DISCORD-17 | Kontextmenüs: „Nikita fragen“, „Vorlesen“ (Part 1), „Zusammenfassen“, „Übersetzen“ (ab P1-09), „Merken“ (Part 8), „Bild lesen“ (1.1+). | SOLL | 1–1.1+ |
+| DISCORD-17 | Kontextmenüs: „Anton fragen“, „Vorlesen“ (Part 1), „Zusammenfassen“, „Übersetzen“ (ab P1-09), „Merken“ (Part 8), „Bild lesen“ (1.1+). | SOLL | 1–1.1+ |
 | DISCORD-18 | Ab P1-09: freie Fragen an das LLM mit Streaming, Websuche mit Quellen als Links; Uhrzeit- und Wetter-Garantie (AGENT-06, AGENT-11) gelten. | MUSS | 1 |
 | DISCORD-19 | Antworten halten Discords Grenzen ein (Aufteilen an Absätzen, Datei ab Grenze, Embed-Grenzen); `allowed_mentions` pingt nie `@everyone`, `@here` oder Rollen. | MUSS | 1 |
 | DISCORD-20 | Ausgabefilter: keine Secrets, keine internen Details in Serverkanälen; Admin- und persönliche Inhalte nur im DM oder nur für den Aufrufer sichtbar. | MUSS | 1 |
 | DISCORD-21 | Rate-Limits je Rolle, Eingabe- und Anhangsgrenzen; Anhänge nur vom Discord-CDN, nie ausgeführt, nicht dauerhaft gespeichert. | MUSS | 1 |
 | DISCORD-22 | Sprachkanal: `/joinvc` (Kanal von Moritz, sonst Standard-Sprachkanal) und `/leavevc`, optional automatisch beim Betreten durch den Owner; höchstens eine Sitzung; Verlassen nach Abschied, ohne Menschen nach 10 min, bei Höchstdauer oder Wartung. | SOLL | 1 |
-| DISCORD-23 | Sprachkanal **wie im Anruf**: Betritt Moritz den Kanal (oder ist schon da), läuft derselbe Gesprächsablauf wie am Telefon (`CallSession` über eine gemeinsame `MediaChannel`-Schnittstelle): Begrüßung, Zuhören, Antworten mit Nikitas Stimme, Stille-Nachfrage, Rückfragen, Abschied; Verlassen des Kanals = Auflegen. Kein Weckwort und keine Sprecherauswahl (Privatserver), Unterbrechen ≤ 300 ms, DAVE. | SOLL | 1 |
+| DISCORD-23 | Sprachkanal **wie im Anruf**: Betritt Moritz den Kanal (oder ist schon da), läuft derselbe Gesprächsablauf wie am Telefon (`CallSession` über eine gemeinsame `MediaChannel`-Schnittstelle): Begrüßung, Zuhören, Antworten mit Antons Stimme, Stille-Nachfrage, Rückfragen, Abschied; Verlassen des Kanals = Auflegen. Kein Weckwort und keine Sprecherauswahl (Privatserver), Unterbrechen ≤ 300 ms, DAVE. | SOLL | 1 |
 | DISCORD-24 | Ist DAVE-Empfang nicht stabil (Spike P1-32), läuft der Sprachkanal im Modus „nur sprechen“ (Text oder Sprachnachricht rein, Sprache raus); die Entscheidung ist dokumentiert (ADR-036). | MUSS | 1 |
 | DISCORD-25 | Kein Audio wird gespeichert, Puffer nur im RAM; Whisper/Piper im Discord-Worker nur während Sprachsitzungen geladen. | MUSS | 1 |
-| DISCORD-26 | Sprachnachrichten: Transkript sichtbar + Antwort; Antwort optional als Sprachnachricht bzw. Audiodatei mit Nikitas Stimme. | SOLL | 1 |
+| DISCORD-26 | Sprachnachrichten: Transkript sichtbar + Antwort; Antwort optional als Sprachnachricht bzw. Audiodatei mit Antons Stimme. | SOLL | 1 |
 | DISCORD-27 | Erinnerungen und Timer per Direktnachricht, neustartfest; verpasste werden bis 12 h später mit Hinweis nachgeholt. | SOLL | 1 |
 | DISCORD-28 | Proaktive Nachrichten nur mit Abo (Warnungen, Morgenbriefing, Müll, Anrufhinweise, Systemhinweise), Ruhezeiten und Drosselung. | SOLL | 1 |
 | DISCORD-29 | Persönliche Einstellungen je Person (Heimatort, Ruhezeit, Sprachantwort); ohne Einstellung gilt 35781 Weilburg. | SOLL | 1 |
@@ -134,12 +134,12 @@ Tickets P1-31 … P1-43 (Block D in [04](04-part1-umsetzung.md)); Entscheidungen
 | DISCORD-39 | Tests nach [14 §18](14-discord.md#18-tests) laufen ohne Netz in CI (Fake-Discord); Live-Tests nur manuell gegen einen privaten Test-Server. | MUSS | 1 |
 | DISCORD-40 | Lange Aufgaben (Recherche, Hintergrundaufgaben, Coding) laufen in eigenen Threads mit Fortschrittsanzeige. | SOLL | 3–9 |
 | DISCORD-41 | Sandbox- und Browser-Funktionen über Discord nur für den Owner und mit Bestätigung je riskanter Aktion (SBX-05 sinngemäß). | MUSS | 4/6 |
-| DISCORD-42 | Bot-Name „Nikita“ und Avatar aus `assets/branding/` (Scribbles), erzeugt mit `scripts/build_branding.py` (PRD-08, PRD-10). | SOLL | 1 |
+| DISCORD-42 | Bot-Name „Anton“ und Avatar aus `assets/branding/` (Scribbles), erzeugt mit `scripts/build_branding.py` (PRD-08, PRD-10). | SOLL | 1 |
 | DISCORD-43 | **Süßer Stil** („cutey“, `discord.style = "cute"`): herzlicher, verspielter Ton mit höchstens 1–2 Emojis und gelegentlichen Kaomojis; Fakten unverändert; Ernst-Modus ohne Späße bei Warnungen ab Stufe 2, Katastrophen, Admin, Sicherheit und Fehlern mit Datenverlust; gesprochene Antworten wie am Telefon. Bio und Avatar (Scribbles monochrom) passend. | SOLL | 1 |
 | DISCORD-44 | **Aktivitäten:** Grundliste schelmisch-lustiger Aktivitäten („Spielt mit deinen Daten 😈“, …) in `assets/data/discord/aktivitaeten.de.toml`, Wechsel alle 7–15 min ohne Wiederholung unter den letzten 10; keine Texte, die wie echte Vorfälle wirken; `/aktivitaet neu\|aus\|an\|vorschlag`. | SOLL | 1 |
-| DISCORD-45 | Der Standard-Textkanal wird beim Setup per ID oder Auswahlliste festgelegt (geprüft: existiert, Nikita darf schreiben) oder direkt in `passwords.txt` eingetragen; sein Server ist automatisch erlaubt; fehlt er, läuft Nikita ohne ihn weiter (Abos per DM, Hinweis im Status). | MUSS | 1 |
+| DISCORD-45 | Der Standard-Textkanal wird beim Setup per ID oder Auswahlliste festgelegt (geprüft: existiert, Anton darf schreiben) oder direkt in `passwords.txt` eingetragen; sein Server ist automatisch erlaubt; fehlt er, läuft Anton ohne ihn weiter (Abos per DM, Hinweis im Status). | MUSS | 1 |
 | DISCORD-46 | Privatserver-Annahme: keine Sprecher- oder Personenauswahl im Gespräch; Fremde werden als Sicherheitsnetz trotzdem ignoriert und einmal im Standardkanal gemeldet. | MUSS | 1 |
-| DISCORD-47 | Proaktive Nachrichten, Erinnerungen und Hinweise landen im Standardkanal (`discord.notify.target = "channel"`, wahlweise DM); Nikita meldet sich nach dem Start dort (abschaltbar). | SOLL | 1 |
+| DISCORD-47 | Proaktive Nachrichten, Erinnerungen und Hinweise landen im Standardkanal (`discord.notify.target = "channel"`, wahlweise DM); Anton meldet sich nach dem Start dort (abschaltbar). | SOLL | 1 |
 
 ## 3. Konfiguration & Zugangsdaten (CFG)
 
@@ -242,7 +242,7 @@ Deterministische Auskünfte **vor** dem Sprachmodell (Moritz, 18.10.2026). Plan 
 | SKILL-21 | Hessische und umgangssprachliche Formulierungen werden verstanden (Wörterbuch ≥ 50 Einträge, z. B. „Wedder“, „morsche“, „heit“, „isses“, „hammer“, „Guude“), jeder Eintrag mit Test. | MUSS | 1 |
 | SKILL-22 | Antworten: ≤ 3 kurze Sätze, wichtigste Angabe zuerst, gerundet wie gesprochen, keine Abkürzungen; Einheiten und Sonderfälle (Minusgrade, l/m², hPa, km/h, Spannen, PLZ ziffernweise) werden sprechbar normalisiert. | MUSS | 1 |
 | SKILL-23 | Jeder Skill ist zugleich ein Tool mit JSON-Schema für P1-07 (`{ok, data, sources, speakable}`), damit das spätere LLM dieselben Funktionen nutzt (AGENT-11). | MUSS | 1 |
-| SKILL-24 | Skills haben keine Seiteneffekte außerhalb von moritz-agent (keine Geräte, Anrufe, Nachrichten); lokale Notizen nur nach gesprochener Bestätigung, Löschen nur nach Rückfrage. Eine Erinnerung per Discord-Direktnachricht an die Person, die sie bestellt hat, ist eine zeitversetzte Antwort, keine Nachricht an Dritte ([14 §5.3](14-discord.md#53-was-nikita-auf-discord-nie-tut)). | MUSS | 1 |
+| SKILL-24 | Skills haben keine Seiteneffekte außerhalb von moritz-agent (keine Geräte, Anrufe, Nachrichten); lokale Notizen nur nach gesprochener Bestätigung, Löschen nur nach Rückfrage. Eine Erinnerung per Discord-Direktnachricht an die Person, die sie bestellt hat, ist eine zeitversetzte Antwort, keine Nachricht an Dritte ([14 §5.3](14-discord.md#53-was-anton-auf-discord-nie-tut)). | MUSS | 1 |
 | SKILL-25 | Datensparsamkeit: an Datendienste gehen nur gerundete Koordinaten, PLZ/Ortsnamen und fachliche Kennungen – nie Transkripte, Anrufer oder Zugangsdaten (außer dem Schlüssel des jeweiligen Dienstes); nur HTTPS an Hosts einer festen Liste (ADR-032). | MUSS | 1 |
 | SKILL-26 | `skills.online = false` oder Netzausfall: Offline-Skills laufen unverändert, Online-Skills antworten ehrlich; kein Anruf wartet länger als das Zeitbudget. | MUSS | 1 |
 | SKILL-27 | Testkorpus ≥ 800 Äußerungen (positiv, negativ, Dialekt, STT-Varianten) und Golden-Antworten mit fester Uhr und aufgezeichneten Antworten; Router + Offline-Skill p95 ≤ 20 ms. | MUSS | 1 |
