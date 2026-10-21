@@ -561,9 +561,16 @@ class VoiceManager:
             origin = Origin(user_id=str(member.id), where="S", guild_id=str(after.channel.guild.id))
             await self.join(origin, str(after.channel.id))
 
-    async def speak_answer(self, channel_id: int, text: str) -> None:
-        """Mode "nur sprechen": the answer to a message in the voice channel's chat, aloud."""
+    async def speak_answer(self, channel_id: int, text: str, *, user_id: str = "") -> None:
+        """The answer to a written message, aloud in the voice channel: for a message in the voice
+        channel's chat, and for any message of somebody sitting in the voice channel with Anton
+        (Moritz, 21.10.2026: "obwohl er im Call ist, antwortet er im Chat")."""
         session = self.session
-        if session is not None and session.channel.id == channel_id and not session.receiving:
+        if session is None or not text.strip():
+            return
+        in_channel = user_id.isdigit() and int(user_id) in getattr(
+            session.channel, "voice_states", {}
+        )
+        if session.channel.id == channel_id or in_channel:
             with contextlib.suppress(Exception):
                 await session.say(text)

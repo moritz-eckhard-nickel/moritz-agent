@@ -538,9 +538,18 @@ class Runtime:
                 self.repo.start_call(call_id, remote, codec)
 
     def callback_done(self, callback_id: int, outcome: str) -> None:
-        """The phone worker tried to call back. Nobody picked up: then nobody picked up (Moritz)."""
-        self.callbacks.done(callback_id)
+        """The phone worker tried to call back. Nobody picked up: then nobody picked up (Moritz).
+
+        Only when the PBX refuses the call at all, the owners get a system note – otherwise they
+        would never learn why the phone stays silent."""
+        call = self.callbacks.done(callback_id)
         log.info("Rückruf %d: %s", callback_id, outcome)
+        if outcome == "forbidden" and call is not None and self.scheduler is not None:
+            self.scheduler.system_event(
+                "callback_forbidden",
+                f"Ich darf die {call.extension} nicht anrufen – die Telefonanlage lehnt ab. Im Dialplan "
+                f"[from-agent] die {call.extension} erlauben (Anleitung: docs/asterisk-konfiguration.md).",
+            )
 
     def call_ended(self, call_id: str, reason: str = "") -> None:
         conversation = self._calls.pop(call_id, None)

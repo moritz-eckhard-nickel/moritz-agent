@@ -162,6 +162,17 @@ class SipCallMedia:
         return self._rx_packets
 
 
+def outbound_outcome(code: int, *, answered: bool) -> str:
+    """How a call Anton placed ended, from the last SIP status."""
+    if answered:
+        return "answered"
+    if code in (486, 600, 603):
+        return "busy"
+    if code in (401, 403, 404, 407, 484):  # the PBX does not let the agent account dial there
+        return "forbidden"
+    return "no_answer"
+
+
 @dataclass
 class Outbound:
     """A call Anton places (calling back): who answers hears ``factory``'s session."""
@@ -255,7 +266,7 @@ class SipPhone:
         on_result: Callable[[str], None],
     ) -> None:
         """Call ``extension`` (calling back). ``on_result`` gets answered | no_answer | busy |
-        not_registered | failed – on the SIP thread."""
+        forbidden | not_registered | failed – on the SIP thread."""
         self.submit(lambda: self._dial(extension, ring_s, factory, on_result))
 
     def reload(self, creds: SipCredentials, phone: Phone) -> None:
@@ -684,13 +695,14 @@ class SipPhone:
             return
         if outbound is not None:
             code = int(info.lastStatusCode)
-            outbound.report(
-                "answered"
-                if outbound.answered
-                else "busy"
-                if code in (486, 600, 603)
-                else "no_answer"
-            )
+            outcome = outbound_outcome(code, answered=outbound.answered)
+            if outcome == "forbidden":
+                log.warning(
+                    "Rückruf: die Telefonanlage lässt den Anruf nicht zu (SIP %d) – im Dialplan "
+                    "[from-agent] die Nebenstelle erlauben (docs/asterisk-konfiguration.md §3)",
+                    code,
+                )
+            outbound.report(outcome)
             self._outbound = None
         media = self._active_media if call is self._active else None
         log.info("Anruf beendet (SIP %s %s)", info.lastStatusCode, info.lastReason)

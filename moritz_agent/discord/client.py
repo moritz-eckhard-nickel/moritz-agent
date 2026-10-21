@@ -368,8 +368,10 @@ class AntonClient(discord.Client):
             return
         result = await self.dispatcher.message(info, origin, sender)
         voice = self.worker.voice
-        if result is not None and voice is not None and message.channel.id == voice.channel_id:
-            await voice.speak_answer(message.channel.id, result.text or result.markdown)
+        if result is not None and voice is not None:
+            await voice.speak_answer(
+                message.channel.id, result.text or result.markdown, user_id=origin.user_id
+            )
 
     # -- voice channel ---------------------------------------------------------------------------------------------
     async def on_voice_state_update(

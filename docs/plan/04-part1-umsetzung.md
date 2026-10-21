@@ -920,3 +920,19 @@ Moritz: „alle Emojis entfernen und im Text gegen :) :( :3 usw. austauschen ode
   👍/👎 **von Moritz** auf Antworten zählen weiter (das sind Eingaben, keine Ausgabe).
 - Terminal-Ausgaben der Skripte (✔/✘ in `test-2.sh`) bleiben – das sind Prüfzeichen, keine Antworten
   von Anton.
+
+### C.7 Zweiter Live-Test (21.10.2026, 18:30)
+
+- **Telefon-Befehle nur im Gespräch:** „Leg auf“, „sprich langsamer/schneller“, „lauter/leiser“ und „wie
+  lange telefonieren wir“ antworten im Text-Chat nur mit einem Hinweis („… geht nur, wenn wir telefonieren
+  oder im Sprachkanal reden“) – vorher hieß es im Discord-Chat „Alles klar, ich lege auf“.
+- **Rückruf → SIP 403:** Die eigene Anleitung sperrte `[from-agent]` komplett (`Hangup(21)` = 403). Jetzt
+  erlaubt `docs/asterisk-konfiguration.md` §3/§5 genau die `201`. Lehnt die Anlage trotzdem ab
+  (401/403/404/407/484 → Ergebnis `forbidden`), schreibt Anton eine klare Log-Warnung und schickt
+  höchstens einmal pro Stunde einen Systemhinweis; „keiner geht ran“ bleibt still (ADR-038).
+- **Sprachkanal:** Sitzt Moritz mit Anton im Sprachkanal, wird die Antwort auf eine **geschriebene**
+  Nachricht – egal in welchem Kanal – zusätzlich laut gesprochen (vorher nur im Chat des Sprachkanals).
+- **Zuhören im Sprachkanal** bleibt offen (P1-32): Discord verschlüsselt seit März 2026 jede
+  Sprachverbindung (DAVE); `discord-ext-voice-recv` auf PyPI (Stand Juni 2025) kann das nicht
+  entschlüsseln. Ein Community-Fork (`zacker150/discord-ext-voice-recv` mit einem discord.py-Fork)
+  soll DAVE-Empfang können – Kandidat für Part 2, nicht von PyPI und ungeprüft.

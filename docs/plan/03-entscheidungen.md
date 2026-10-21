@@ -657,9 +657,10 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
      (`ring_min_s`/`ring_max_s`), spricht `speak_after_s` (1 s) nach dem Abheben die Antwort plus „Das war's
      von mir. Tschüss, Moritz!“ und legt auf. Eingehendes Audio wird verworfen (kein STT, kein Zuhören).
   4. **Nicht erreicht** (besetzt, keine Antwort, Fehler): dann eben nicht – keine DM, kein zweiter
-     Versuch (Moritz: „wenn's keiner abnimmt, nimmt's keiner ab“). Auf Discord heißt es nur „📞 Okay,
+     Versuch. Nur wenn die Telefonanlage den Anruf **ablehnt** (SIP 403 u. ä.), kommt höchstens einmal pro
+     Stunde ein Systemhinweis, damit klar ist, warum es nie klingelt (Moritz: „wenn's keiner abnimmt, nimmt's keiner ab“). Auf Discord heißt es nur „📞 Okay,
      ich rufe dich an.“
-  5. **„Leg auf“** im normalen Gespräch ist ein Abschied – aber nur, wenn der **ganze Satz** die Bitte
+  5. **„Leg auf“** im Gespräch (Telefon, Sprachkanal; im Text-Chat nur ein Hinweis) ist ein Abschied – aber nur, wenn der **ganze Satz** die Bitte
      ist („Leg auf“, „Leg bitte auf“, „Du kannst jetzt auflegen“, „Häng auf, danke“), nicht bei „Wie leg
      ich den Hörer auf?“, „Leg nicht auf“ oder „Soll ich auflegen?“: „Alles klar, ich lege auf. Tschüss, Moritz – bis
      bald!“ und Auflegen.

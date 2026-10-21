@@ -33,6 +33,9 @@ _GOODBYE_WORDS = (
 # "Leg auf" only when the whole sentence asks Anton to hang up (Moritz, 21.10.2026: "dass man das
 # wirklich meint") – not "wie leg ich den Hörer auf", "leg nicht auf" or "soll ich auflegen".
 _NOW = r"(?:(?:jetzt|ruhig|einfach|gleich|dann|schon|bitte|mal|doch) )*"
+# Phone things answered in a text chat (Moritz, 21.10.2026: "Sachen, die telefonspezifisch sind,
+# sollen nur am Telefon gehen").
+ONLY_SPOKEN = "{what} geht nur, wenn wir telefonieren oder im Sprachkanal reden."
 _HANG_UP = re.compile(
     r"^(?:(?:okay|ok|gut|so|alles klar|danke|jo|ja|na dann|dann|anton)[ ,]+)*"
     rf"(?:(?:du kannst|kannst du|du darfst|würdest du|könntest du) )?{_NOW}"
@@ -59,6 +62,10 @@ async def talk_goodbye(req: Request) -> SkillResult:
     if re.search(r"\bgute nacht\b", req.text):
         return say("Gute Nacht, Moritz! Schlaf gut.", hangup=True)
     if _HANG_UP.match(req.text):  # "Leg auf": politely, then the line goes dead
+        if (
+            req.surface == "chat"
+        ):  # only in a call (Moritz, 21.10.2026: "das sollte nur im Call gehen")
+            return say(ONLY_SPOKEN.format(what="Auflegen"))
         return say("Alles klar, ich lege auf. Tschüss, Moritz – bis bald!", hangup=True)
     return SkillResult(prompt="goodbye", hangup=True)
 
@@ -320,6 +327,10 @@ async def talk_discord(req: Request) -> SkillResult:
 )
 async def talk_tempo(req: Request) -> SkillResult:
     slower = "langsamer" in req.text
+    if req.surface == "chat":
+        return say(
+            ONLY_SPOKEN.format(what="Langsamer sprechen" if slower else "Schneller sprechen")
+        )
     tempo = max(0.7, min(1.4, req.ctx.tempo * (0.85 if slower else 1.15)))
     if tempo == req.ctx.tempo:
         return say("Langsamer geht es nicht mehr." if slower else "Schneller geht es nicht mehr.")
@@ -342,6 +353,8 @@ async def talk_tempo(req: Request) -> SkillResult:
 )
 async def talk_loudness(req: Request) -> SkillResult:
     louder = "lauter" in req.text
+    if req.surface == "chat":
+        return say(ONLY_SPOKEN.format(what="Lauter" if louder else "Leiser"))
     db = max(-8.0, min(8.0, req.ctx.loudness_db + (3.0 if louder else -3.0)))
     if db == req.ctx.loudness_db:
         return say("Lauter geht es nicht mehr." if louder else "Leiser geht es nicht mehr.")
@@ -359,6 +372,8 @@ async def talk_loudness(req: Request) -> SkillResult:
     ),
 )
 async def talk_call_duration(req: Request) -> SkillResult:
+    if req.surface == "chat":
+        return say("Wir telefonieren doch gerade gar nicht ^^")
     seconds = max(0.0, req.svc.clock.monotonic() - req.ctx.started)
     return say(f"Seit {g.duration(timedelta(seconds=seconds), seconds=seconds < 600)}.")
 

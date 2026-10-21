@@ -114,14 +114,22 @@ exten => 999,1,NoOp(moritz-agent: Anruf von ${CALLERID(all)})
  same => n,Hangup()
 
 ; ---------------------------------------------------------------------------
-; Kontext des Agents selbst: darf NICHTS anrufen (Part 1 macht keine
-; ausgehenden Anrufe, PHONE-10). Schützt vor Missbrauch des Kontos.
+; Kontext des Agents selbst: darf NUR die Rückruf-Nebenstelle anrufen
+; (ADR-038, [phone.callback] extension, Standard 201) – sonst nichts.
+; Schützt vor Missbrauch des Kontos. 201 = das Telefon von Moritz.
 ; ---------------------------------------------------------------------------
 [from-agent]
+exten => 201,1,NoOp(moritz-agent: Rückruf an 201)
+ same => n,Dial(PJSIP/201,20)            ; Anton legt selbst nach 10–15 s auf
+ same => n,Hangup()
 exten => _X.,1,NoOp(moritz-agent darf nicht wählen)
  same => n,Hangup(21)
 exten => _[a-zA-Z*#+].,1,Hangup(21)
 ```
+
+Ohne die `201`-Zeilen lehnt Asterisk den Rückruf ab – im Log von Anton steht dann
+„Rückruf: die Telefonanlage lässt den Anruf nicht zu (SIP 403)“. Heißt das Telefon anders als
+`PJSIP/201`, die `Dial`-Zeile anpassen (`asterisk -rx "pjsip show endpoints"`).
 
 Danach: `asterisk -rx "dialplan reload"`.
 
@@ -155,6 +163,8 @@ FreePBX erzeugt `pjsip.conf` und `extensions.conf` selbst – dort nichts von Ha
     same => n,Hangup()
 
    [from-agent]
+   exten => 201,1,Dial(PJSIP/201,20)     ; nur der Rückruf (ADR-038)
+    same => n,Hangup()
    exten => _X.,1,Hangup(21)
    ```
 4. `fwconsole reload`.
@@ -208,6 +218,7 @@ korrekt.
 | Symptom | Ursache | Lösung |
 | --- | --- | --- |
 | Status „Registrierung fehlgeschlagen 401/403“ | Passwort/Benutzer in `passwords.txt` ≠ Asterisk | Werte angleichen, Reload in der Web-UI |
+| Rückruf: Log „lässt den Anruf nicht zu (SIP 403)“, Telefon klingelt nicht | `[from-agent]` sperrt die 201 | Abschnitt 3: die `201`-Zeilen in `[from-agent]` eintragen, `dialplan reload` |
 | Registrierung ok, 999 → „nicht verfügbar“ | 999 nicht im `<INTERN_CONTEXT>` | Abschnitt 3 prüfen, `dialplan show 999@…` |
 | Anruf wird angenommen, aber Stille | RTP blockiert (Firewall/NAT) | `direct_media = no`, Firewall RTP-Ports, `rtp_symmetric = yes` |
 | Nur eine Richtung Audio | Asymmetrisches RTP/NAT | `rewrite_contact`, `force_rport`, feste IP des LXC |
