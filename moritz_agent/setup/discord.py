@@ -140,5 +140,52 @@ async def setup_channel(
     return 0
 
 
+def store_voice_channel(config: Path, channel_id: str) -> bool:
+    """``default_channel_id`` under ``[discord.voice]``: where ``/joinvc`` goes when Moritz is in none."""
+    return files.update_file(
+        config,
+        lambda t: files.set_value(
+            t, "discord.voice", "default_channel_id", f'"{channel_id}"', keep_comment=True
+        ),
+        default_mode=0o640,
+    )
+
+
+async def setup_voice_channel(
+    config: Path,
+    token: str,
+    answer: str,
+    *,
+    out: TextIO = sys.stdout,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> int:
+    """Like :func:`setup_channel` for the voice channel; stored in the configuration."""
+    answer = answer.strip()
+    try:
+        async with api.DiscordRest(token, transport=transport) as rest:
+            channels = [
+                (guild["name"], channel["name"], str(channel["id"]))
+                for guild in await rest.guilds()
+                for channel in await rest.voice_channels(str(guild["id"]))
+            ]
+    except api.DiscordApiError as exc:
+        print(f"Fehler: {exc}", file=out)
+        return 1
+    if answer.isdigit() and 1 <= int(answer) <= len(channels):
+        chosen = channels[int(answer) - 1][2]
+    elif SNOWFLAKE.match(answer):
+        chosen = answer
+    else:
+        if not channels:
+            print("Auf Antons Servern gibt es keinen Sprachkanal, den er sehen darf.", file=out)
+            return 1
+        for number, (guild, channel, ident) in enumerate(channels, 1):
+            print(f"{number:2d}  {guild} / 🔊 {channel}  ({ident})", file=out)
+        return 3  # the caller asks for the number
+    store_voice_channel(config, chosen)
+    print(f"Sprachkanal gespeichert ({chosen}).", file=out)
+    return 0
+
+
 def run(coro) -> int:
     return int(asyncio.run(coro))

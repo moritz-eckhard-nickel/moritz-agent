@@ -68,12 +68,14 @@ ct_run() { host_run pct exec "${CTID}" -- "$@"; }
 # ct_query ARGS… – read-only command inside the container (also executed in --dry-run)
 ct_query() { pct exec "${CTID}" -- "$@"; }
 
-confirm_or_die() {
-	local question="$1" answer
+# confirm_or_die TEXT – no yes/no questions any more (Moritz, 21.10.2026): the plan is shown and done.
+# Only a container that moritz-agent did not create is refused unless --yes says so (see refuse_foreign).
+confirm_or_die() { log "$1 – ja"; }
+
+# refuse_foreign TEXT – never touch someone else's container by accident: stop unless --yes was given
+refuse_foreign() {
 	[[ ${ASSUME_YES} -eq 1 || ${DRY_RUN} -eq 1 ]] && return 0
-	[[ -t 0 ]] || die 2 "Rückfrage nötig, aber kein Terminal – mit --yes bestätigen"
-	read -r -p "${question} [j/N] " answer
-	[[ "${answer}" =~ ^[jJyY] ]] || die 1 "abgebrochen"
+	die 2 "$1 – mit --yes trotzdem"
 }
 
 # -- environment -------------------------------------------------------------------------------------

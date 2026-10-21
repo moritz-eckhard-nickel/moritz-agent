@@ -20,6 +20,8 @@ aktualisierbar per `moritz-update.sh`, beobachtbar über eine minimale Statussei
   6. **Kanal-Parität** (ADR-034, DISCORD-12): Eine neue Anton-Funktion ist im selben PR auf allen
      Kanälen nutzbar (Telefon, Discord, später WebUI) – oder die Ausnahme ist in der Matrix
      [14 §6](14-discord.md#6-funktionsumfang-alle-funktionen-auf-allen-kanälen) begründet.
+- **Testskript je Ausbaustufe:** Eine große Erweiterung bringt ein neues `test-N.sh` mit `setup` und
+  `run`, das alles Bisherige mit testet, ohne Ja/Nein-Fragen ([09 §5](09-tests-abnahme.md#5-testskripte-je-ausbaustufe-test-nsh)).
 - Hardware-abhängige Schritte (GPU, SIP-Anlage) werden mit einem **Testprotokoll** im PR
   belegt (Vorlage: [`09-tests-abnahme.md`](09-tests-abnahme.md)).
 

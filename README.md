@@ -110,6 +110,17 @@ sudo apt install build-essential python3-venv python3-dev swig pkg-config espeak
 ./test-1.sh run            # an der Telefonanlage anmelden und 999 anrufen
 ```
 
+## Alles auf einmal testen: `./test-2.sh`
+
+Testet alles, was Anton bis heute kann – Telefon, Stimme, Sofortauskünfte, Wetter, Discord (Textkanal,
+Sprachnachrichten, Sprachkanal) und den kompletten Dienst – ohne Ja/Nein-Fragen (Anleitung:
+[docs/test-2.md](docs/test-2.md)). Ab jetzt bekommt jede große Erweiterung ein neues `test-N.sh`.
+
+```bash
+./test-2.sh setup          # wie test-1, dazu Discord: Token, Textkanal, Sprachkanal (Enter = überspringen)
+./test-2.sh run            # automatische Tests, danach Live-Test (Strg+C beendet); --auto = nur automatisch
+```
+
 ## Installation auf Proxmox: `install.sh` / `update.sh`
 
 Auf dem Proxmox-Host (als root bzw. mit `sudo`) – legt den LXC an, kopiert das Programm hinein und
@@ -117,7 +128,7 @@ installiert alles darin; derselbe Aufruf aktualisiert einen vorhandenen Containe
 
 ```bash
 git clone https://github.com/moritz-eckhard-nickel/moritz-agent.git && cd moritz-agent
-sudo ./install.sh                            # LXC anlegen + installieren (fragt vorher nach, --dry-run zeigt nur)
+sudo ./install.sh                            # LXC anlegen + installieren (ohne Rückfrage, --dry-run zeigt nur)
 sudo ./update.sh                             # später: Snapshot, laufendes Gespräch abwarten, Update, bei Fehler Rollback
 ./install.sh --remote root@proxmox           # oder von Sophie-1s Konsole / einem anderen Rechner (scp + ssh)
 ```

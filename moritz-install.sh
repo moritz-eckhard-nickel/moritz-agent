@@ -264,8 +264,7 @@ phase_models() {
 		log "Modell-Download übersprungen"
 		return 0
 	fi
-	local args=(fetch --groups "stt,piper")
-	if [[ ${NON_INTERACTIVE} -eq 1 ]]; then args+=(--yes); fi
+	local args=(fetch --groups "stt,piper" --yes)
 	log "lade Modelle von Hugging Face (Whisper small ≈ 0,5 GB, Piper-Stimme ≈ 0,1 GB) …"
 	run env HF_HOME="${PREFIX}/runtime/hf-home" PYTHONPATH="${PREFIX}" \
 		"$(PY)" -m moritz_agent.phone.audio.models "${args[@]}"
@@ -351,24 +350,17 @@ phase_discord() {
 		return 0
 	fi
 	local answer=""
-	read -r -p "Discord-Bot einrichten? Anton antwortet dann auch auf Discord [j/N] " answer </dev/tty || answer=""
-	case "${answer}" in
-	j | J | y | Y | ja | Ja) ;;
-	*)
-		log "Discord übersprungen – Anleitung: ${PREFIX}/docs/discord-einrichtung.md"
-		return 0
-		;;
-	esac
 	cat <<'HINT'
-  Vorbereitung im Discord Developer Portal (einmalig, Anleitung: docs/discord-einrichtung.md):
+  Discord (optional): Anton antwortet dann auch auf Discord. Vorbereitung im Developer Portal
+  (einmalig, Anleitung: docs/discord-einrichtung.md):
     1. Anwendung "Anton" anlegen, unter "Bot": Public Bot AUS, Message Content Intent AN.
     2. Token kopieren ("Reset Token").
 HINT
 	local token=""
-	read -r -s -p "  Bot-Token (die Eingabe bleibt unsichtbar): " token </dev/tty || token=""
+	read -r -s -p "  Bot-Token (unsichtbar; Enter = ohne Discord): " token </dev/tty || token=""
 	printf '\n'
 	if [[ -z "${token}" ]]; then
-		warn "kein Token eingegeben – Discord bleibt aus"
+		log "Discord übersprungen – später: ${PREFIX}/docs/discord-einrichtung.md"
 		return 0
 	fi
 	# the token travels through a pipe (stdin) only: never as an argument, never in the environment
@@ -378,14 +370,20 @@ HINT
 		return 0
 	fi
 	token=""
-	log "Einladungslinks stehen oben. Anton muss auf deinen Server (Server-Link öffnen), dann geht es weiter."
-	read -r -p "  Ist Anton auf dem Server? [Enter = ja, n = später] " answer </dev/tty || answer="n"
-	if [[ "${answer}" != "n" && "${answer}" != "N" ]]; then
-		local rc=0
-		discord_setup discord-channel || rc=$?
-		if [[ ${rc} -eq 3 ]]; then
-			read -r -p "  Nummer des Standardkanals (oder Kanal-ID): " answer </dev/tty || answer=""
-			printf '%s\n' "${answer}" | discord_setup discord-channel --answer || warn "Standardkanal nicht gespeichert – channel_id in passwords.txt später eintragen"
+	log "Einladungslinks stehen oben. Anton muss auf deinen Server (Server-Link öffnen)."
+	read -r -p "  Enter drücken, sobald Anton auf dem Server ist … " answer </dev/tty || answer=""
+	local rc=0
+	discord_setup discord-channel || rc=$?
+	if [[ ${rc} -eq 3 ]]; then
+		read -r -p "  Textkanal für Nachrichten – Nummer oder Kanal-ID: " answer </dev/tty || answer=""
+		printf '%s\n' "${answer}" | discord_setup discord-channel --answer || warn "Standardkanal nicht gespeichert – channel_id in passwords.txt später eintragen"
+	fi
+	rc=0
+	discord_setup discord-voice || rc=$?
+	if [[ ${rc} -eq 3 ]]; then
+		read -r -p "  Sprachkanal für /joinvc – Nummer oder Kanal-ID (Enter = keiner): " answer </dev/tty || answer=""
+		if [[ -n "${answer}" ]]; then
+			printf '%s\n' "${answer}" | discord_setup discord-voice --answer || warn "Sprachkanal nicht gespeichert"
 		fi
 	fi
 }

@@ -33,10 +33,10 @@ usage() {
 	cat <<'USAGE'
 test-1.sh – Antons Telefon- und Stimmenteil testen (ohne Systeminstallation)
 
-  ./test-1.sh setup [--yes] [--skip-models]
+  ./test-1.sh setup [--skip-models]
         Richtet alles unter runtime/ und models/ ein: Python-Umgebung, PJSIP (SIP-Stack, wird
-        gebaut), Modelle (ca. 0,6 GB: Whisper small + Piper-Stimme „Hessisch“), Konfiguration.
-        --yes            Modell-Download ohne Rückfrage
+        gebaut), Modelle (ca. 0,6 GB: Whisper small + Piper-Stimme „Hessisch“, ohne Rückfrage),
+        Konfiguration.
         --skip-models    keine Modelle laden
   ./test-1.sh check [--sip] [--fallback-ok]
         Selbsttest: Umgebung, SIP-Stack, Modelle, Stimmen, Ansagen, Ports (--sip: auch Anmeldung).
@@ -144,10 +144,10 @@ ensure_user_files() {
 
 # -- setup ---------------------------------------------------------------------------------------
 cmd_setup() {
-	local assume_yes=0 models=1
+	local models=1
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
-		--yes | -y) assume_yes=1 ;;
+		--yes | -y) ;; # accepted for old habits – there is no question any more
 		--skip-models) models=0 ;;
 		-h | --help)
 			usage
@@ -168,8 +168,7 @@ cmd_setup() {
 	ensure_user_files
 
 	if [[ ${models} -eq 1 ]]; then
-		local fetch_args=(fetch --groups "stt,piper")
-		if [[ ${assume_yes} -eq 1 ]]; then fetch_args+=(--yes); fi
+		local fetch_args=(fetch --groups "stt,piper" --yes)
 		log "lade Modelle (Whisper small, Piper-Stimme Hessisch) von Hugging Face …"
 		PYTHONPATH="${ROOT}" "${VPY}" -m moritz_agent.phone.audio.models "${fetch_args[@]}"
 	fi

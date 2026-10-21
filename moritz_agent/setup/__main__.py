@@ -6,6 +6,7 @@ migrate            add missing sections/keys to passwords.txt (appends only, not
 discord-token      read the bot token from stdin, check it, store it, switch Discord on
 discord-channel    set the home channel: ``--id N``, or pick from a list (the answer comes from stdin)
 discord-pin        read a PIN for dangerous admin commands from stdin and store it
+discord-voice      set the voice channel for /joinvc: ``--id N``, or pick from a list (stdin)
 """
 
 from __future__ import annotations
@@ -75,6 +76,16 @@ def _discord_channel(args: argparse.Namespace) -> int:
     return setup_discord.run(setup_discord.setup_channel(passwords, token, answer))
 
 
+def _discord_voice(args: argparse.Namespace) -> int:
+    passwords, config = _paths(args)
+    token = _token_of(passwords)
+    if not token or config is None:
+        print("Zuerst den Token eintragen (discord-token).", file=sys.stderr)
+        return 2
+    answer = args.id or (sys.stdin.readline().strip() if args.answer else "")
+    return setup_discord.run(setup_discord.setup_voice_channel(config, token, answer))
+
+
 def _discord_pin(args: argparse.Namespace) -> int:
     passwords, _ = _paths(args)
     pin = sys.stdin.readline().strip()
@@ -103,6 +114,10 @@ def build_parser() -> argparse.ArgumentParser:
     channel.add_argument("--answer", action="store_true", help="die Auswahl von stdin lesen")
     channel.set_defaults(func=_discord_channel)
     sub.add_parser("discord-pin").set_defaults(func=_discord_pin)
+    voice = sub.add_parser("discord-voice")
+    voice.add_argument("--id", default="", help="Kanal-ID")
+    voice.add_argument("--answer", action="store_true", help="die Auswahl von stdin lesen")
+    voice.set_defaults(func=_discord_voice)
     return parser
 
 

@@ -138,12 +138,7 @@ def fetch(groups: list[str], root: Path = REPO_ROOT, assume_yes: bool = False) -
     if free < total * 1.1:
         print("FEHLER: zu wenig freier Speicherplatz.", file=sys.stderr)
         return 1
-    if not assume_yes and (
-        not sys.stdin.isatty()
-        or input("Jetzt von huggingface.co herunterladen? [j/N] ").strip().lower() not in ("j", "y")
-    ):
-        print("Abgebrochen (mit --yes ohne Rückfrage).")
-        return 1
+    # no question before the download (Moritz, 21.10.2026); ``assume_yes`` stays for old callers
     try:
         from huggingface_hub import hf_hub_download
     except ImportError:
@@ -191,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("command", choices=["status", "fetch"])
     parser.add_argument("--groups", default="stt,piper", help="Komma-getrennt: stt,piper")
     parser.add_argument("--root", type=Path, default=REPO_ROOT)
-    parser.add_argument("--yes", action="store_true", help="ohne Rückfrage laden")
+    parser.add_argument("--yes", action="store_true", help="(ohne Wirkung – es wird nie gefragt)")
     args = parser.parse_args(argv)
     groups = [g.strip() for g in args.groups.split(",") if g.strip()]
     if args.command == "status":
