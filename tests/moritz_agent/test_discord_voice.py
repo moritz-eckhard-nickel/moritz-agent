@@ -501,6 +501,8 @@ def test_saying_goodbye_ends_the_visit(tmp_path):
         await room.until(lambda: room.session.mode is VoiceMode.TALKING, "Gespräch")
         await room.talk()
         await room.until(lambda: not room.manager.active, "Nikita ist gegangen")
+        # the manager forgets the session first (no re-entry), then stop() disconnects
+        await room.until(lambda: room.vc.disconnected, "Verbindung getrennt")
         return room.vc.disconnected, room.worker.policy.extra_chat_channels
 
     disconnected, extra = room_test(tmp_path, body)

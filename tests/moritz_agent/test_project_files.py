@@ -230,6 +230,7 @@ def test_polly_hans_and_cosyvoice_are_gone():
     assert lock["python"]["locks"] == [
         "requirements/core.lock",
         "requirements/phone.lock",
+        "requirements/discord.lock",
         "requirements/searxng.lock",
     ]
     assert "cosyvoice" not in lock

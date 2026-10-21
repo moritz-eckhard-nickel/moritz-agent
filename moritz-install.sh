@@ -53,6 +53,7 @@ PHASES=(
 	"koboldcpp:KoboldCpp bauen (kommt mit Ticket P1-02)"
 	"searxng:SearXNG-Umgebung für die Websuche einrichten"
 	"models:Whisper small und Piper-Stimme Hessisch laden"
+	"geodata:Postleitzahlen und Orte von GeoNames laden (optional, CC BY 4.0)"
 	"secrets:passwords.txt anlegen (vorhandene bleibt unverändert)"
 	"config:config/moritz-agent.toml anlegen (vorhandene bleibt unverändert)"
 	"discord:Discord-Bot einrichten (optional, nur auf Wunsch)"
@@ -269,6 +270,22 @@ phase_models() {
 	run env HF_HOME="${PREFIX}/runtime/hf-home" PYTHONPATH="${PREFIX}" \
 		"$(PY)" -m moritz_agent.phone.audio.models "${args[@]}"
 	run chown -R "${SERVICE_USER}:${SERVICE_USER}" "${PREFIX}/models" "${PREFIX}/runtime"
+}
+
+phase_geodata() {
+	if [[ ${SKIP_MODELS} -eq 1 || ${SKIP_ENV} -eq 1 ]]; then
+		log "Ortsdaten-Download übersprungen"
+		return 0
+	fi
+	local geo="${PREFIX}/assets/data/geo"
+	if [[ -s "${geo}/de-places.tsv" && -s "${geo}/de-postcodes.tsv" ]]; then
+		log "Ortsdaten sind schon da (zum Erneuern: ${PREFIX}/scripts/build_geodata.py)"
+		return 0
+	fi
+	log "lade Postleitzahlen und Orte von GeoNames (CC BY 4.0, ca. 10 MB) …"
+	if ! run "$(PY)" "${PREFIX}/scripts/build_geodata.py"; then
+		warn "Ortsdaten konnten nicht geladen werden – Nikita kennt dann nur die mitgelieferte Grundmenge"
+	fi
 }
 
 phase_secrets() {

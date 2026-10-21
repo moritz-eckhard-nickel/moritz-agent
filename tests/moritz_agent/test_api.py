@@ -504,6 +504,7 @@ def test_a_turn_streams_the_reply_and_keeps_the_history(tmp_path):
             "prompt": None,
             "hangup": False,
             "skill_id": "time.now",
+            "timer": None,
         }
     ]
     assert "19 Uhr 12" in first[0]["text"]

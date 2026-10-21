@@ -190,7 +190,11 @@ def _sync(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="python -m moritz_agent.discord", description=__doc__)
+    parser = argparse.ArgumentParser(
+        prog="python -m moritz_agent.discord",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--config", default=None, help="Pfad zu config/moritz-agent.toml")
     parser.add_argument("--passwords", default=None, help="Pfad zu passwords.txt")
     sub = parser.add_subparsers(dest="command", required=True)

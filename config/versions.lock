@@ -20,7 +20,12 @@ vendored = "third_party/searxng"
 
 [python]
 # Python packages come from PyPI at install time, pinned with SHA-256 hashes (ADR-019).
-locks = ["requirements/core.lock", "requirements/phone.lock", "requirements/searxng.lock"]
+locks = [
+    "requirements/core.lock",
+    "requirements/phone.lock",
+    "requirements/discord.lock",
+    "requirements/searxng.lock",
+]
 
 [models.vad]
 name = "silero_vad"

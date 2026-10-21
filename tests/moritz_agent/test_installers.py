@@ -145,6 +145,7 @@ def make_source(directory: Path, version: str, extra_files: dict[str, str] | Non
     (directory / "requirements").mkdir()
     (directory / "requirements" / "core.lock").write_text("a==1\n")
     (directory / "requirements" / "phone.lock").write_text("b==1\n")
+    (directory / "requirements" / "discord.lock").write_text("c==1\n")
     (directory / "scripts").mkdir()
     write_script(directory / "scripts" / "build-pjsip.sh", "exit 0")
     write_script(directory / "scripts" / "setup-env.sh", "exit 0")
