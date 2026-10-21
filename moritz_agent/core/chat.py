@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
+from moritz_agent.core.callback import phone_request
 from moritz_agent.core.principal import Principal, Role
 from moritz_agent.core.surface import Surface
 from moritz_agent.core.turn import Turn, TurnResult, from_skill
@@ -155,6 +156,10 @@ class ChatService:
         context = conversation.context
         responder = self.runtime.skill_responder
         assert responder is not None
+        question = self._callback_question(turn)
+        if question is not None:
+            yield {"type": "result", "result": await self._call_back(turn, question)}
+            return
         chunks: list[str] = []
         context.extras["on_text"] = chunks.append if turn.surface is Surface.CHAT else None
         started = time.monotonic()
@@ -198,6 +203,61 @@ class ChatService:
         if result is None:
             raise ResponderUnavailable("answer cancelled")
         return result
+
+    # -- Anton calls back --------------------------------------------------------------------------------------
+    def _callback_question(self, turn: Turn) -> str | None:
+        """Only typed by the owner on Discord – never from a call or the voice channel."""
+        cfg = self.runtime.settings.phone
+        if (
+            not cfg.enabled
+            or not cfg.callback.enabled
+            or turn.principal.channel != "discord"
+            or turn.surface is not Surface.CHAT
+            or turn.place == "voice"
+            or turn.principal.role is not Role.OWNER
+        ):
+            return None
+        return phone_request(turn.text)
+
+    async def _call_back(self, turn: Turn, question: str) -> TurnResult:
+        """Answer the question as on the phone (spoken form) and hand it to the phone worker."""
+        responder = self.runtime.skill_responder
+        assert responder is not None
+        cfg = self.runtime.settings.phone
+        context = TurnContext(
+            f"callback-{turn.principal.user_id}",
+            cfg.assistant_name,
+            self.runtime.settings.general.timezone,
+        )
+        context.extras.update(
+            surface=Surface.SPOKEN.value, channel="phone", principal=turn.principal
+        )
+        skills = responder.context_for(context)
+        skills.role = turn.principal.role.value
+        skills.user_id = turn.principal.user_id
+        skills.home = self.home_of(turn.principal)
+        started = time.monotonic()
+        reply = await responder.respond(question, context)
+        text = (reply.text or "").strip()
+        if not text:
+            return TurnResult(
+                text="Darauf habe ich gerade keine Antwort, die ich dir am Telefon sagen könnte."
+            )
+        call = self.runtime.callbacks.add(
+            text,
+            cfg.callback.extension,
+            (cfg.callback.ring_min_s, cfg.callback.ring_max_s),
+            cfg.callback.speak_after_s,
+        )
+        if call is None:
+            return TurnResult(text="Ich hab schon genug Anrufe vor mir – gleich noch mal, ja?")
+        log.info(
+            "Rückruf %d an %s angefordert (%s)", call.id, call.extension, turn.principal.short()
+        )
+        message = "📞 Okay, ich rufe dich an."
+        return TurnResult(
+            text=message, markdown=message, ms=round((time.monotonic() - started) * 1000)
+        )
 
     # -- details ------------------------------------------------------------------------------------------------
     @staticmethod

@@ -125,6 +125,8 @@ oder `enabled = false`.
 | `check`: „Der Message Content Intent ist aus“ | Portal → Bot → *Message Content Intent* einschalten |
 | Anton antwortet nicht im Kanal | Kanal-ID stimmt? (`./test-1.sh discord check`), hat Anton dort „Nachrichten senden“? |
 | Slash-Befehle fehlen | Beim Start werden sie nur bei Änderungen registriert; erzwingen: `python -m moritz_agent.discord sync-commands`. Dauer bis zur Anzeige: wenige Minuten |
+| `setup`: „Anton ist auf keinem Server“, obwohl er drauf ist | Der Link war die *Benutzer-App*-Installation – die bringt den Bot auf keinen Server. Den Link **„Zum Server hinzufügen“** aus `setup` nehmen; `setup` sucht danach bis zu fünfmal neu |
+| „Mit dir darf ich leider nicht reden“ | Owner ist automatisch, wer die App im Developer Portal besitzt (bzw. ihr Team); andere Personen in `discord.owner_user_ids` oder als Vertraute eintragen (Abschnitt 5) |
 | „Der Bot-Token wurde abgelehnt“ | Token abgelaufen/zurückgesetzt – neuen eintragen |
 | Anton verlässt den Server | Es war nicht der Server des Standardkanals (Absicht, siehe oben) |
 | Sprachkanal: Anton hört nichts | Discord verschlüsselt Sprache Ende-zu-Ende (DAVE); der Empfang ist ein Prüfpunkt (Ticket P1-32) – ohne ihn bleibt „nur sprechen“ ([plan/14 §9.5](plan/14-discord.md#95-dave-und-rückfallwege-adr-036)) |

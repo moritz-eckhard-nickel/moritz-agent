@@ -12,7 +12,8 @@ Behaviour (PHONE-01 … PHONE-10, PHONE-40):
 * only accepts INVITEs from the configured source addresses (403 otherwise),
 * answers immediately, a second call while one is active gets 486 Busy Here,
 * negotiates G.722 > PCMA > PCMU, 16 kHz conference bridge, no sound device,
-* never places outgoing calls,
+* places an outgoing call only to call back (Discord: "Sag mir am Telefon …", Moritz 21.10.2026):
+  to the configured extension, ringing at most a few seconds, never while a call is active,
 * applies a changed SIP configuration by re-registering as soon as no call is active.
 """
 
@@ -161,6 +162,28 @@ class SipCallMedia:
         return self._rx_packets
 
 
+@dataclass
+class Outbound:
+    """A call Anton places (calling back): who answers hears ``factory``'s session."""
+
+    call: object
+    factory: Callable[[SipCallMedia, str], object]
+    on_result: Callable[[str], None]
+    answered: bool = False
+    reported: bool = False
+
+    def report(self, outcome: str) -> None:
+        if not self.reported:
+            self.reported = True
+            self.on_result(outcome)
+
+
+def dial_uri(extension: str, registrar: str, port: int = 5060, transport: str = "udp") -> str:
+    """``sip:201@192.168.1.176`` (port and transport only when they are not the default)."""
+    host = registrar if port == 5060 else f"{registrar}:{port}"
+    return f"sip:{extension}@{host}" + (";transport=tcp" if transport == "tcp" else "")
+
+
 class SipPhone:
     def __init__(
         self,
@@ -194,6 +217,7 @@ class SipPhone:
         self._log_writer = None
         self._active = None  # the call that is being served
         self._active_media: SipCallMedia | None = None
+        self._outbound: Outbound | None = None
         self._zombies: list[tuple[float, object]] = []
         self._pending_config: tuple[SipCredentials, Phone] | None = None
         self._retry_attempt = 0
@@ -222,6 +246,17 @@ class SipPhone:
     @property
     def busy(self) -> bool:
         return self._active is not None
+
+    def dial(
+        self,
+        extension: str,
+        ring_s: float,
+        factory: Callable[[SipCallMedia, str], object],
+        on_result: Callable[[str], None],
+    ) -> None:
+        """Call ``extension`` (calling back). ``on_result`` gets answered | no_answer | busy |
+        not_registered | failed – on the SIP thread."""
+        self.submit(lambda: self._dial(extension, ring_s, factory, on_result))
 
     def reload(self, creds: SipCredentials, phone: Phone) -> None:
         """Apply new SIP settings; re-registers once no call is active (PHONE-08)."""
@@ -472,6 +507,36 @@ class SipPhone:
 
         return Call
 
+    def _dial(self, extension: str, ring_s: float, factory, on_result) -> None:
+        if self._active is not None:
+            on_result("busy")
+            return
+        if self._account is None or self.registration.state != "registered":
+            on_result("not_registered")
+            return
+        if not hasattr(self, "_call_class"):
+            self._call_class = self._make_call_class()
+        call = self._call_class(self._account)
+        uri = dial_uri(extension, self.creds.registrar, self.creds.port, self.creds.transport)
+        outbound = Outbound(call, factory, on_result)
+        try:
+            call.makeCall(uri, pj.CallOpParam(True))
+        except Exception as exc:
+            log.warning("Rückruf an %s fehlgeschlagen: %s", extension, exc)
+            self._zombies.append((time.monotonic(), call))
+            on_result("failed")
+            return
+        self._active, self._active_media, self._outbound = call, None, outbound
+        self.calls_total += 1
+        log.info("Rufe %s an – lasse bis zu %.0f s klingeln", extension, ring_s)
+        self._schedule(ring_s, lambda: self._ring_timeout(outbound))
+
+    def _ring_timeout(self, outbound: Outbound) -> None:
+        if self._outbound is outbound and not outbound.answered:
+            log.info("Rückruf: niemand geht ran – lege auf")
+            outbound.report("no_answer")
+            self._hangup(outbound.call)
+
     def _on_incoming(self, account, prm) -> None:
         pjsua = pj
         if not hasattr(self, "_call_class"):
@@ -584,11 +649,15 @@ class SipPhone:
         self._active_media = media
         remote = str(info.remoteUri)
         log.info("Anruf %s: Medien aktiv (%s), Codec-Aushandlung abgeschlossen", call_id, remote)
-        asyncio.run_coroutine_threadsafe(self._run_session(media, remote), self.loop)
+        outbound = (
+            self._outbound if self._outbound is not None and call is self._outbound.call else None
+        )
+        factory = outbound.factory if outbound is not None else self.session_factory
+        asyncio.run_coroutine_threadsafe(self._run_session(media, remote, factory), self.loop)
 
-    async def _run_session(self, media: SipCallMedia, remote: str) -> None:
+    async def _run_session(self, media: SipCallMedia, remote: str, factory=None) -> None:
         try:
-            session = self.session_factory(media, remote)
+            session = (factory or self.session_factory)(media, remote)
             media.session = session
             reason = await session.run()
             log.debug("Sitzung %s beendet: %s", media.call_id, reason)
@@ -601,8 +670,28 @@ class SipPhone:
 
     def _on_call_state(self, call) -> None:
         info = call.getInfo()
+        outbound = (
+            self._outbound if self._outbound is not None and call is self._outbound.call else None
+        )
+        if (
+            outbound is not None
+            and info.state == pj.PJSIP_INV_STATE_CONFIRMED
+            and not outbound.answered
+        ):
+            outbound.answered = True
+            log.info("Rückruf: abgehoben")
         if info.state != pj.PJSIP_INV_STATE_DISCONNECTED:
             return
+        if outbound is not None:
+            code = int(info.lastStatusCode)
+            outbound.report(
+                "answered"
+                if outbound.answered
+                else "busy"
+                if code in (486, 600, 603)
+                else "no_answer"
+            )
+            self._outbound = None
         media = self._active_media if call is self._active else None
         log.info("Anruf beendet (SIP %s %s)", info.lastStatusCode, info.lastReason)
         if media is not None and media.session is not None and not media.we_hung_up:
@@ -617,6 +706,9 @@ class SipPhone:
         media = self._active_media
         self._active = None
         self._active_media = None
+        if self._outbound is not None and self._outbound.call is call:
+            self._outbound.report("answered" if self._outbound.answered else "no_answer")
+            self._outbound = None
         if media is not None:
             media.audio.clear()
             port, remote_audio = getattr(media, "port", None), getattr(media, "remote_audio", None)

@@ -642,3 +642,31 @@ def test_a_saying_with_a_control_character_is_refused_and_a_broken_file_stops_no
     assert asyncio.run(manager.change()) is not None
     assert "kaputt" in (manager.suggest("playing", "noch einer") or "")  # no overwrite, a hint
     assert "kaputt" in local.read_text(encoding="utf-8")
+
+
+def test_the_owner_of_the_bot_application_is_always_owner():
+    from moritz_agent.config.settings import Discord
+    from moritz_agent.core.principal import Role, discord_role, owner_ids, remember_app_owners
+
+    cfg = Discord(owner_user_ids=[])
+    try:
+        assert discord_role(cfg, "424242424242") is Role.UNKNOWN
+        remember_app_owners(["424242424242"])
+        assert discord_role(cfg, "424242424242") is Role.OWNER
+        assert owner_ids(Discord(owner_user_ids=["1111"])) == ["1111", "424242424242"]
+    finally:
+        remember_app_owners([])
+
+
+def test_activities_carry_their_verb_because_discord_only_shows_the_text():
+    from moritz_agent.discord.activities import Activity, load
+
+    assert Activity("playing", "im Regen ☔").status == "Spielt im Regen ☔"
+    assert Activity("listening", "Ebbelwoi-Lofi 🎶").status == "Hört Ebbelwoi-Lofi 🎶"
+    assert Activity("watching", ", ob der Toast schon fertig ist").status.startswith("Schaut, ob")
+    assert Activity("custom", "🧦 Sucht die zweite Socke").status == "🧦 Sucht die zweite Socke"
+    from moritz_agent.config.settings import REPO_ROOT
+
+    for entry in load(REPO_ROOT)["base"]:
+        status = Activity(entry["kind"], entry["text"]).status
+        assert len(status) <= 128 and "  " not in status, status

@@ -452,13 +452,7 @@ class AntonClient(discord.Client):
         if activity is None:
             await self.change_presence(status=discord.Status.online, activity=None)
             return
-        kinds = {
-            "playing": lambda t: discord.Game(name=t),
-            "listening": lambda t: discord.Activity(type=discord.ActivityType.listening, name=t),
-            "watching": lambda t: discord.Activity(type=discord.ActivityType.watching, name=t),
-            "competing": lambda t: discord.Activity(type=discord.ActivityType.competing, name=t),
-            "custom": lambda t: discord.CustomActivity(name=t),
-        }
+        # always a custom status with the whole sentence: Discord no longer shows "Spielt …" itself
         await self.change_presence(
-            status=discord.Status.online, activity=kinds[activity.kind](activity.text)
+            status=discord.Status.online, activity=discord.CustomActivity(name=activity.status)
         )

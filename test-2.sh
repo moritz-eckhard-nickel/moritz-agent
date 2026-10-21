@@ -98,14 +98,15 @@ HINT
 		return 0
 	fi
 
-	local rc=0
+	local rc=0 tries=0
 	setup_py discord-channel || rc=$?
-	if [[ ${rc} -eq 1 ]]; then
+	while [[ ${rc} -eq 1 && ${tries} -lt 5 ]]; do
 		discord invite || true
-		ask "  Anton ist noch auf keinem Server: Server-Link oben öffnen, dann Enter … "
+		ask "  Den Link Server (Anton holen) öffnen, deinen Server wählen, dann Enter … "
+		tries=$((tries + 1))
 		rc=0
 		setup_py discord-channel || rc=$?
-	fi
+	done
 	if [[ ${rc} -eq 3 ]]; then
 		ask "  Textkanal für Nachrichten – Nummer oder Kanal-ID (Enter = bisheriger): "
 		if [[ -n "${ANSWER}" ]]; then
@@ -137,9 +138,13 @@ cmd_setup() {
 		shift
 	done
 	"${ROOT}/test-1.sh" setup "${args[@]}"
-	log "Testwerkzeuge (pytest) in die Umgebung …"
-	"${VPY}" -m pip install --quiet --disable-pip-version-check pytest ||
-		warn "pytest ließ sich nicht installieren – Schritt 2 von run wird übersprungen"
+	if "${VPY}" -m pytest --version >/dev/null 2>&1; then
+		log "Testwerkzeuge (pytest) sind schon da"
+	else
+		log "Testwerkzeuge (pytest) in die Umgebung …"
+		"${VPY}" -m pip install --quiet --disable-pip-version-check pytest ||
+			warn "pytest ließ sich nicht installieren – Schritt 2 von run wird übersprungen"
+	fi
 	setup_py migrate >/dev/null
 	setup_discord
 	mkdir -p "${WORK}"
@@ -225,7 +230,7 @@ live() {
 
   Live-Test – Anton läuft jetzt komplett (Strg+C beendet). Zum Ausprobieren:
     Telefon     Nebenstelle 999 anrufen (passwords.txt [sip] muss stimmen): „Wie wird das Wetter morgen?“,
-                „Stell einen Timer auf eine Minute“, dazwischen reden (Unterbrechen), „Tschüss“
+                „Stell einen Timer auf eine Minute“, dazwischen reden (Unterbrechen), „Leg auf“
     Weboberfläche  https://<rechner>:${web:-3501}/ (ohne [web]-Login nur auf diesem Rechner)
 CHECKLIST
 	if has_token; then
@@ -235,6 +240,8 @@ CHECKLIST
                 eine Sprachnachricht schicken → Transkript und Antwort
                 Sprachkanal${voice:+ (${voice})}: hineingehen, /joinvc – Begrüßung, Fragen ohne „Anton“, Unterbrechen,
                 schweigen (Ruhe-Modus, „Anton“ weckt), „Tschüss“
+    Rückruf     im Textkanal oder per DM schreiben: „Sag mir am Telefon, wie viel Uhr es ist“ – Anton ruft
+                die 201 an ([phone.callback]), klingelt 10–15 s, spricht 1 s nach dem Abheben, verabschiedet sich
 CHECKLIST
 	fi
 	printf '\n'

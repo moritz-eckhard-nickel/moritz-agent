@@ -27,7 +27,15 @@ Danach fragt es nur drei Werte ab – **Enter** überspringt bzw. behält den bi
 | Textkanal für Nachrichten | Nummer aus der angezeigten Liste oder Kanal-ID | `passwords.txt` `[discord] channel_id` |
 | Sprachkanal für `/joinvc` | Nummer aus der Liste oder Kanal-ID | `config/moritz-agent.toml` `[discord.voice] default_channel_id` |
 
-Ist Anton noch auf keinem Server, zeigt `setup` die Einladungslinks und wartet auf Enter.
+Gibt es auf dem Server nur **einen** Text- bzw. **einen** Sprachkanal, wird er ohne Frage genommen.
+Ist Anton noch auf keinem Server, zeigt `setup` den Einladungslink und fragt bis zu fünfmal nach
+(Enter = nochmal suchen). Wichtig: den Link **„Zum Server hinzufügen“** nehmen – als *Benutzer-App*
+installiert, ist der Bot auf keinem Server.
+
+**Neue Version über den alten Ordner entpackt?** Einfach wieder `./test-2.sh setup`: Python-Umgebung,
+PJSIP-Build, Modelle und Ansagen bleiben und werden nur neu gebaut bzw. geladen, wenn sich etwas
+geändert hat (die Lock-Dateien, die PJSIP-Version oder ein Modell). Wer Discord-App-Besitzer ist, ist
+automatisch Owner – die eigene ID muss nirgends eingetragen werden.
 
 ## Testen
 
@@ -44,7 +52,7 @@ Ist Anton noch auf keinem Server, zeigt `setup` die Einladungslinks und wartet a
 | 4 | Datendienste | Open-Meteo, Bright Sky, DWD, NINA, Pegel, EZB …, dazu Wetter, Warnungen und Pollen für Weilburg | Internet |
 | 5 | Testanruf | echter SIP-Anruf an sich selbst mit Spracherkennung und Stimme | espeak-ng (`--no-call` überspringt) |
 | 6 | Discord | Token, Portal-Einstellungen, Server und Kanal; Slash-Befehle registrieren; Testnachricht | Token (`--no-discord` überspringt) |
-| 7 | Live | Anton komplett: Telefon (999), Discord (Text, Sprachnachricht, Sprachkanal), Weboberfläche – mit Checkliste | – |
+| 7 | Live | Anton komplett: Telefon (999, „Leg auf“), Discord (Text, Sprachnachricht, Sprachkanal, Rückruf auf die 201), Weboberfläche – mit Checkliste | – |
 
 Das Ergebnis steht am Ende als ✔/✘/– und in `runtime/test-2/ergebnis.txt`. Einzelbefehle (`speak`,
 `ask`, `call`, `discord …`) gibt es weiter in `./test-1.sh`.

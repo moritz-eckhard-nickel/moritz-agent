@@ -15,7 +15,7 @@ from datetime import date
 from typing import TYPE_CHECKING, Any
 
 from moritz_agent.config.settings import Discord, Settings
-from moritz_agent.core.principal import Role
+from moritz_agent.core.principal import Role, owner_ids
 from moritz_agent.core.turn import TurnResult
 from moritz_agent.discord import components
 from moritz_agent.discord.access import AccessPolicy, MessageInfo, RateLimiter, Reaction
@@ -271,7 +271,7 @@ class Dispatcher:
             return None
         if decoded.kind == components.CONFIRM:
             return await self._confirm(decoded, origin, sender)
-        if not components.may_press(user, decoded.user_id, self.cfg.owner_user_ids):
+        if not components.may_press(user, decoded.user_id, owner_ids(self.cfg)):
             await sender.begin()
             await sender.send(OutMessage(content="Das ist nicht deine Frage 🙈", ephemeral=True))
             return None

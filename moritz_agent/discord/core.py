@@ -155,6 +155,9 @@ class CoreApi:
     async def set_commands_hash(self, digest: str) -> None:
         await self._json("PUT", "/internal/discord/commands", json={"hash": digest})
 
+    async def set_app_owners(self, ids: list[str]) -> None:
+        await self._json("PUT", "/internal/discord/app-owners", json={"ids": ids})
+
     # -- status and admin ------------------------------------------------------------------------------------
     async def overview(self) -> dict[str, Any]:
         return await self._json("GET", "/internal/discord/overview")

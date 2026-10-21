@@ -983,3 +983,18 @@ def test_sync_commands_registers_what_the_worker_would_and_remembers_it(tmp_path
     assert {"joinvc", "leavevc", "Vorlesen"} <= names  # the voice parts are not forgotten
     stored = DiscordStore(Database(tmp_path / "db.sqlite3")).registered_hash()
     assert stored == commands.digest(built[0])  # the worker will not register a smaller set again
+
+
+def test_reconnecting_the_latency_is_infinite_and_the_status_still_works(tmp_path):
+    """Seen live (21.10.2026): ``round(inf * 1000)`` killed the heartbeat and the worker got restarted."""
+
+    async def body(system, worker, client):
+        worker.client = stub_client(home_channel())
+        worker.state = "ready"
+        worker.client.latency = float("inf")
+        first = worker.status_payload()
+        worker.client.latency = float("nan")
+        return first, worker.status_payload()
+
+    first, second = wired(tmp_path, body)
+    assert first["latency_ms"] is None and second["latency_ms"] is None

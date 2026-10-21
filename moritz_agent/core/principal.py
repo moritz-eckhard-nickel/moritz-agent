@@ -46,9 +46,26 @@ class Principal:
         return "…" + self.user_id[-4:]
 
 
+# Whoever owns the Discord application (or its team) is always an owner – also when
+# ``owner_user_ids`` is empty or out of date (Moritz, 21.10.2026). The Discord worker learns it at
+# login and tells the main process (``/internal/discord/app-owners``); each process keeps it here.
+_APP_OWNERS: set[str] = set()
+
+
+def remember_app_owners(ids: list[str] | set[str] | tuple[str, ...]) -> None:
+    _APP_OWNERS.clear()
+    _APP_OWNERS.update(str(i) for i in ids if str(i).isdigit())
+
+
+def owner_ids(cfg: Discord) -> list[str]:
+    """Configured owners first, then the owner(s) of the Discord application."""
+    return [*cfg.owner_user_ids, *sorted(_APP_OWNERS - set(cfg.owner_user_ids))]
+
+
 def discord_role(cfg: Discord, user_id: str) -> Role:
-    """Owner / trusted by the configured lists; guests only if ``guest_mode`` allows them."""
-    if user_id in cfg.owner_user_ids:
+    """Owner / trusted by the configured lists and the application owner; guests only if
+    ``guest_mode`` allows them."""
+    if user_id in cfg.owner_user_ids or user_id in _APP_OWNERS:
         return Role.OWNER
     if user_id in cfg.trusted_user_ids:
         return Role.TRUSTED

@@ -130,6 +130,24 @@ class RemoteResponder:
             )
         )
 
+    # -- Anton calls back ("Sag mir am Telefon …" on Discord) ----------------------------------------
+    async def next_callback(self) -> dict | None:
+        """A call to make, or ``None``. Never raises: the main process may be restarting."""
+        try:
+            response = await self._client.get("/internal/phone/callback", timeout=3.0)
+            call = response.json().get("call") if response.status_code == 200 else None
+        except (httpx.HTTPError, ValueError):
+            return None
+        return call if isinstance(call, dict) else None
+
+    def callback_done(self, callback_id: int, outcome: str) -> None:
+        self._spawn(
+            self._post(
+                "/internal/phone/event",
+                {"call_id": f"callback-{callback_id}", "event": "callback_done", "reason": outcome},
+            )
+        )
+
     # -- helpers --------------------------------------------------------------------------------------
     def _spawn(self, coroutine) -> None:
         task = asyncio.ensure_future(coroutine)

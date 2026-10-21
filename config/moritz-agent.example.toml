@@ -121,6 +121,13 @@ length_scale = 1.0                # < 1 schneller, > 1 langsamer
 voice = "de"                      # Notstimme (apt: espeak-ng); roboterhaft, aber immer verfügbar
 speed_wpm = 150
 
+[phone.callback]                  # Rückruf: auf Discord schreiben „Sag mir am Telefon, wie viel Uhr es ist“
+enabled = true                    # nur Textnachrichten des Owners, nie aus einem Gespräch heraus
+extension = "201"                 # die Nebenstelle, die Anton anruft
+ring_min_s = 10.0                 # so lange klingeln lassen (zufällig zwischen min und max) …
+ring_max_s = 15.0                 # … dann aufgeben und auf Discord Bescheid sagen
+speak_after_s = 1.0               # nach dem Abheben so lange warten, dann sprechen, verabschieden, auflegen
+
 [agent.phone]
 max_tool_steps = 3
 max_answer_tokens = 160

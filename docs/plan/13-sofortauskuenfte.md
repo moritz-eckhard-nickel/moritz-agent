@@ -52,7 +52,8 @@ Inhalt: [1 Leitlinien](#1-leitlinien) · [2 So klingt das](#2-so-klingt-das-beis
    wird abgelehnt statt geraten.
 7. **Keine Seiteneffekte.** Skills lesen nur. Einzige Ausnahme: lokale Notizen/Einkaufsliste in
    moritz-agent selbst, mit gesprochener Bestätigung (SKILL-24). Anton schaltet nichts, ruft
-   niemanden an (PHONE-10) und schickt nichts weg.
+   niemanden an (PHONE-10; einzige Ausnahme: der Rückruf auf die eigene Nebenstelle nach ADR-038) und
+   schickt nichts weg.
 8. **Datensparsam.** An Datendienste gehen nur gerundete Koordinaten, Postleitzahlen/Ortsnamen und
    fachliche Kennungen (Warnzelle, Pegel, Währung) – nie Transkripte, Rufnummern oder Zugangsdaten
    (SKILL-25, ADR-032).
@@ -1265,7 +1266,7 @@ Protokoll `docs/abnahme/sofortauskuenfte-<datum>.md`, Anruf an 999 über die ech
 | --- | --- |
 | Bus/Bahn (RMV, DB) | später mit Schlüssel und Haltestellen von Moritz (Part 7+), eigener Plan |
 | Kalender/Termine (CalDAV) | Part 8+ („Tools später: calendar“, 05) |
-| Erinnerung/Weckruf per Rückruf | **nein** ohne eigene Freigabe: Anton ruft nie selbst an (PHONE-10) – **auf Discord als Direktnachricht: ja** ([14 §11](14-discord.md#11-proaktive-nachrichten-und-erinnerungen)) |
+| Erinnerung/Weckruf per Rückruf | **nein** ohne eigene Freigabe: Anton ruft nicht von sich aus an (PHONE-10); nur sofort auf geschriebene Bitte des Owners auf Discord (ADR-038), nicht zeitversetzt – **auf Discord als Direktnachricht: ja** ([14 §11](14-discord.md#11-proaktive-nachrichten-und-erinnerungen)) |
 | Smart Home („Mach das Licht an“) | **nein** per Telefon (PHONE-46, Caller-ID ist keine Berechtigung) |
 | Regenradar „regnet es in 10 Minuten?“ | KANN: Bright-Sky-Radar (DWD RADOLAN) als Nowcasting, nach Welle C |
 | Wetterkarte, Diagramme | WebUI (Part 2) aus denselben Wetterpaketen |

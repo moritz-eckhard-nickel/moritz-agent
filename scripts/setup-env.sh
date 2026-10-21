@@ -93,11 +93,24 @@ if [[ ! -x "${VPY}" ]]; then
 	"${PYTHON}" -m venv "${VENV}" || die "venv fehlgeschlagen (Ubuntu: apt install python3-venv)"
 fi
 
-log "installiere Python-Pakete (exakte Versionen mit Prüfsummen, aus PyPI) …"
-"${VPY}" -m pip install --disable-pip-version-check --quiet --require-hashes \
-	-r "${ROOT}/requirements/core.lock" -r "${ROOT}/requirements/phone.lock" \
-	-r "${ROOT}/requirements/discord.lock" ||
-	die "Paketinstallation fehlgeschlagen (Netzwerk? Python-Version für die Lock-Dateien: 3.12–3.13)"
+# the packages are only installed again when a lock file or the Python version changed: a new
+# program version unpacked over the old one reuses the environment (Moritz, 21.10.2026)
+LOCKS=("${ROOT}/requirements/core.lock" "${ROOT}/requirements/phone.lock" "${ROOT}/requirements/discord.lock")
+STAMP="${VENV}/.moritz-locks"
+fingerprint="$({
+	cat "${LOCKS[@]}"
+	"${VPY}" --version 2>&1
+} | sha256sum | cut -d' ' -f1)"
+if [[ -f "${STAMP}" && "$(cat "${STAMP}")" == "${fingerprint}" ]]; then
+	log "Python-Pakete unverändert – vorhandene Umgebung wird weiter benutzt"
+else
+	log "installiere Python-Pakete (exakte Versionen mit Prüfsummen, aus PyPI) …"
+	rm -f "${STAMP}"
+	"${VPY}" -m pip install --disable-pip-version-check --quiet --require-hashes \
+		-r "${LOCKS[0]}" -r "${LOCKS[1]}" -r "${LOCKS[2]}" ||
+		die "Paketinstallation fehlgeschlagen (Netzwerk? Python-Version für die Lock-Dateien: 3.12–3.13)"
+	printf '%s\n' "${fingerprint}" >"${STAMP}"
+fi
 
 if [[ ${PJSIP} -eq 1 ]]; then
 	log "baue den SIP-Stack (PJSIP, einige Minuten beim ersten Mal) …"

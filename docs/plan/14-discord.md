@@ -338,7 +338,7 @@ wann die Funktion überhaupt existiert; auf Discord kommt sie im selben Ticket d
 | Region: Lahn-Pegel, Müll, Fußball, Schlagzeilen | 1 (S) | ✅ | ✅ | ✅ `/pegel` `/muell` `/fussball` `/nachrichten` | ✅ | Schlagzeilen mit Links |
 | Helfer: Buchstabieren, Würfel, Münze, Witz | 1 (S) | ✅ | ✅ | ✅ `/buchstabiere` `/wuerfel` `/muenze` | ✅ | |
 | Eieruhr / Timer | 1 (S) | ◐ nur im Gespräch | ✅ | ✅ `/timer` | ✅ | auf Discord echte Erinnerung, auch nach Ende |
-| Erinnerungen („erinnere mich morgen um 8 …“) | 1 (D) | – (kein Rückruf, PHONE-10) | ✅ | ✅ `/erinnere` | ✅ | per DM, übersteht Neustarts |
+| Erinnerungen („erinnere mich morgen um 8 …“) | 1 (D) | – (kein zeitversetzter Rückruf, PHONE-10) | ✅ | ✅ `/erinnere` | ✅ | per DM, übersteht Neustarts |
 | Notizen, Einkaufsliste | 1 (S) | ✅ | ✅ | ✅ `/notiz` `/einkauf` | ✅ | Liste als Nachricht mit Abhak-Knöpfen |
 | Tagesüberblick / Morgenbriefing | 1 (S) | ✅ auf „Guten Morgen“ | ✅ | ✅ `/briefing` | ✅ | auch als tägliches Abo (§11) |
 | Freie Fragen an das Sprachmodell | 1 (P1-09) | ✅ | ✅ | ✅ `/frag` | ✅ | Markdown, längere Antworten, Streaming |
@@ -661,7 +661,13 @@ wenn sie höchstens 12 Stunden alt sind.
   `discord.call_summaries = "topics"` zusätzlich die erkannten Themen (Skill-IDs: „Wetter,
   Uhrzeit“), mit `"transcript"` das Transkript – Standard `"off"`, weil es danach dauerhaft bei
   Discord liegt (§5.7).
-- **Kein Rückruf:** Discord kann keinen Telefonanruf auslösen (PHONE-10). Umgekehrt: „Schick mir das
+- **Rückruf (ADR-038):** Schreibt der Owner Anton auf Discord „Sag mir am Telefon, wie viel Uhr es
+  ist“ (oder „Ruf mich an und sag mir …“, „Wie spät ist es? Sag's mir am Telefon“), beantwortet Anton
+  die Frage sofort, ruft die Nebenstelle `phone.callback.extension` (Standard 201) an, lässt 10–15 s
+  klingeln und sagt die Antwort 1 s nach dem Abheben, verabschiedet sich und legt auf – ohne
+  zuzuhören. Geht niemand ran, war's das (keine DM). Gilt nur für geschriebenen Text des Owners
+  (nicht im Sprachkanal, nicht für Vertraute); höchstens 3 Rückrufe warten, älter als 5 min verfallen.
+  Sonst löst Discord keinen Anruf aus (PHONE-10). Umgekehrt: „Schick mir das
   auf Discord“ am Telefon → ab P1-39 mit Abo möglich (z. B. Wetter-Karte oder Rechenergebnis als DM an
   den Owner; der Anrufer wird über die Nebenstelle → Discord-ID-Zuordnung `discord.phone_extensions`
   erkannt, sonst nur an den Owner).
