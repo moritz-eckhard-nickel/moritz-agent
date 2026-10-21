@@ -23,9 +23,10 @@ from moritz_agent.supervisor import Supervisor
 from . import weather_fixtures as wf
 from .fake_model import FakeModel
 from .skills_util import SUNDAY_EVENING, default_routes
-from .system_util import ROOT, SIP_PASSWORD, WEB_PASSWORD, WEB_USER, make_tree
+from .system_util import BOT_TOKEN, ROOT, SIP_PASSWORD, WEB_PASSWORD, WEB_USER, make_tree
 
 FAKE_PHONE = Path(__file__).with_name("fake_phone.py")
+FAKE_DISCORD = Path(__file__).with_name("fake_discord.py")
 
 
 def run(coro):
@@ -81,6 +82,7 @@ def make(
         manage_processes=False,
         start_phone=start_phone,
         phone_argv=[sys.executable, str(FAKE_PHONE), str(tree), *phone_args],
+        discord_argv=[sys.executable, str(FAKE_DISCORD), str(tree)],
         runtime_options=options,
         **kwargs,
     )
@@ -97,6 +99,11 @@ async def until(check, timeout=8.0):
 
 def lines(tree: Path) -> list[str]:
     path = tree / "data" / "run" / "fake-phone.log"
+    return path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+
+
+def discord_lines(tree: Path) -> list[str]:
+    path = tree / "data" / "run" / "fake-discord.log"
     return path.read_text(encoding="utf-8").splitlines() if path.exists() else []
 
 
@@ -347,3 +354,76 @@ def test_secrets_never_reach_the_log(tmp_path):
     run(scenario())
     text = log_file.read_text(encoding="utf-8")
     assert SIP_PASSWORD not in text and "***" in text
+
+
+# -- the Discord worker (docs/plan/14 §4.2) ----------------------------------------------------------------------
+def test_the_discord_worker_starts_only_when_switched_on_and_has_a_token(tmp_path):
+    async def scenario(**tree_options):
+        folder = tmp_path / str(len(tree_options))
+        folder.mkdir()
+        sup = make(make_tree(folder, **tree_options), start_phone=False)
+        await sup.start()
+        try:
+            await asyncio.sleep(0.3)
+            return sup.discord is not None, sup.runtime.components().get("discord")
+        finally:
+            await sup.shutdown()
+
+    off = run(scenario())
+    assert off == (False, None)  # nothing about Discord shows up when it is not installed
+    on, component = run(scenario(discord=True))
+    assert on and component is not None
+
+
+def test_the_discord_worker_gets_the_internal_address_and_a_lower_priority(tmp_path):
+    tree = make_tree(tmp_path, discord=True)
+
+    async def scenario():
+        sup = make(tree, start_phone=False)
+        await sup.start()
+        try:
+            await until(lambda: any(line.startswith("overview") for line in discord_lines(tree)))
+            await until(lambda: sup.discord.status().state == "ready")
+            return sup.runtime.components()["discord"], sup._extra_status()
+        finally:
+            await sup.shutdown()
+
+    component, extra = run(scenario())
+    lines = discord_lines(tree)
+    assert lines[0].startswith("env ok") and "SIGTERM" in lines
+    assert int(lines[0].split("nice=")[1]) >= 5
+    assert component.state == "ready" and "1 Server" in component.message
+    assert extra["children"]["discord"]["state"] == "ready"
+
+
+def test_a_new_token_signals_the_worker_and_a_new_installation_starts_it(tmp_path):
+    tree = make_tree(tmp_path, discord=True)
+
+    async def scenario():
+        sup = make(tree, start_phone=False)
+        await sup.start()
+        try:
+            await until(lambda: sup.discord.status().state == "ready")
+            passwords = tree / "passwords.txt"
+            text = passwords.read_text(encoding="utf-8")
+            passwords.write_text(text.replace(BOT_TOKEN, BOT_TOKEN + "-new"), encoding="utf-8")
+            result = await sup.reload()
+            await until(lambda: "SIGHUP" in discord_lines(tree))
+            quiet_before = discord_lines(tree).count("SIGHUP")
+            await sup.reload()  # nothing changed: no signal
+            await asyncio.sleep(0.3)
+            # the token is taken away again: the worker is stopped
+            passwords.write_text(text.replace(BOT_TOKEN, ""), encoding="utf-8")
+            await sup.reload()
+            stopped = sup.discord is None
+            # … and put back: it starts again
+            passwords.write_text(text, encoding="utf-8")
+            await sup.reload()
+            await until(lambda: sup.discord is not None and sup.discord.status().state == "ready")
+            return result, quiet_before, discord_lines(tree).count("SIGHUP"), stopped
+        finally:
+            await sup.shutdown()
+
+    result, before, after, stopped = run(scenario())
+    assert result.ok and "passwords.discord" in result.changed
+    assert before == after == 1 and stopped

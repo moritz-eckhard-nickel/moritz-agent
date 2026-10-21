@@ -39,6 +39,7 @@ log = get_logger("discord")
 STREAM_EVERY_S = 1.2
 NOTICE_EVERY_S = 30.0
 MAX_STYLE_STATES = 200
+MAX_REMEMBERED = 500
 _SENTENCE_END = re.compile(r"[.!?…](?:\s|$)|\n")
 NEEDS_PIN = "pin"
 
@@ -77,6 +78,7 @@ class Dispatcher:
         self.local: LocalCommands | None = None
         self._states: dict[str, StyleState] = {}
         self._noticed_at: dict[str, float] = {}
+        self.skill_of: dict[int, str] = {}  # message id → skill of the answer (for 👍/👎)
 
     # -- small things ----------------------------------------------------------------------------------
     @property
@@ -199,6 +201,10 @@ class Dispatcher:
             rest = messages[1:]
         for message in rest:
             await sender.send(message)
+        for message_id in getattr(sender, "ids", []):
+            self.skill_of[message_id] = result.skill_id or "agent"
+        while len(self.skill_of) > MAX_REMEMBERED:
+            self.skill_of.pop(next(iter(self.skill_of)))
         if result.reminder is not None:
             await sender.react("✅")
         log.info(
@@ -283,6 +289,8 @@ class Dispatcher:
         assert self.local is not None
         user = origin.user_id
         pending = self.confirmations.peek(decoded.nonce, user)
+        if decoded.answer == "ok" and pending is not None and pending.needs_pin:
+            return NEEDS_PIN  # the PIN dialog has to be the first answer to the press
         await sender.begin()
         if decoded.answer != "ok":
             self.confirmations.take(decoded.nonce, user)
@@ -293,8 +301,6 @@ class Dispatcher:
                 OutMessage(content="Das ist abgelaufen. Bitte noch einmal.", ephemeral=True)
             )
             return None
-        if pending.needs_pin:
-            return NEEDS_PIN
         self.confirmations.take(decoded.nonce, user)
         await self.local.admin.execute(pending.action, origin, sender)
         return None

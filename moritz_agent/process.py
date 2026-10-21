@@ -217,7 +217,12 @@ class ManagedProcess:
                     self.log.error("%s reagiert nicht – wird neu gestartet", self.name)
                     await self._terminate(5.0)
                     return
-            await asyncio.sleep(self.health_interval_s)
+            # look more often while starting, so "ready" is noticed within a second
+            await asyncio.sleep(
+                min(self.health_interval_s, 1.0)
+                if self._status.state == "starting"
+                else self.health_interval_s
+            )
 
     async def _terminate(self, grace_s: float) -> None:
         proc = self._proc

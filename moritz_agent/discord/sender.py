@@ -46,7 +46,7 @@ class Origin:
 
     @property
     def foreign(self) -> bool:
-        return self.where == "U" and self.guild_id is not None
+        return self.where == "U"
 
     @property
     def place(self) -> str:

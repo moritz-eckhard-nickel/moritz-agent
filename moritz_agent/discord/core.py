@@ -159,6 +159,10 @@ class CoreApi:
     async def overview(self) -> dict[str, Any]:
         return await self._json("GET", "/internal/discord/overview")
 
+    async def situation(self) -> dict[str, Any]:
+        """What the activities react to: call, weather, warning level, data services."""
+        return dict((await self.overview()).get("situation") or {})
+
     async def admin_reload(self, user_id: str) -> dict[str, Any]:
         return await self._json(
             "POST", "/internal/discord/admin/reload", params={"user_id": user_id}

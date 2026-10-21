@@ -83,7 +83,7 @@ def diff(old: RuntimeConfig, new: RuntimeConfig) -> ReloadResult:
             result.changed.add(f"settings.{section}")
             if section in RESTART_SECTIONS:
                 result.restart_required.add(section)
-    for name in ("sip", "web_login", "sandbox_ssh", "optional_services"):
+    for name in ("sip", "web_login", "sandbox_ssh", "optional_services", "discord"):
         if getattr(old.passwords, name) != getattr(new.passwords, name):
             result.changed.add(f"passwords.{name}")
     if "passwords.web_login" in result.changed:

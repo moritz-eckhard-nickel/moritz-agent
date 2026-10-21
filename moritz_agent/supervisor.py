@@ -2,9 +2,9 @@
 """Supervisor: startup order, child processes, signals, shutdown (P1-04, docs/plan/02 §3–§4).
 
 Startup: config → logging → storage → runtime (skills, search, model: the two worker processes start
-in the background and may take a minute) → tokens and internal API → web interface → phone worker.
-The phone registers before the model is loaded (PHONE-33). Shutdown runs the other way round, with
-the phone first so that a running call gets its BYE (docs/plan/04 P1-04).
+in the background and may take a minute) → tokens and internal API → web interface → phone worker
+→ Discord worker. The phone registers before the model is loaded (PHONE-33). Shutdown runs the other
+way round, with the phone first so that a running call gets its BYE (docs/plan/04 P1-04).
 """
 
 from __future__ import annotations
@@ -29,6 +29,7 @@ from moritz_agent.api.tls import ensure_certificate
 from moritz_agent.config.reload import ConfigError, ConfigManager, ReloadResult
 from moritz_agent.config.settings import REPO_ROOT
 from moritz_agent.config.validate import effective_host
+from moritz_agent.discord import status as discord_status
 from moritz_agent.logging_setup import get_logger, setup_logging
 from moritz_agent.phone.control import read_status
 from moritz_agent.process import ManagedProcess, find_free_port
@@ -36,6 +37,7 @@ from moritz_agent.runtime import Component, Runtime
 
 log = get_logger("system")
 PHONE_STOP_GRACE_S = 10.0
+DISCORD_NICE = 5  # computes after the phone (docs/plan/14 §4.2)
 MAINTENANCE_INTERVAL_S = 60.0
 BACKUPS_KEPT = 7
 ADMIN_TOKEN_FILE = "admin.token"
@@ -59,8 +61,10 @@ class Supervisor:
         passwords_file: Path | None = None,
         serve_web: bool = True,
         start_phone: bool = True,
+        start_discord: bool = True,
         manage_processes: bool = True,
         phone_argv: list[str] | None = None,
+        discord_argv: list[str] | None = None,
         runtime_options: dict[str, Any] | None = None,
     ) -> None:
         self.root = root
@@ -69,13 +73,16 @@ class Supervisor:
         self.passwords_file = passwords_file
         self.serve_web = serve_web
         self.start_phone = start_phone
+        self.start_discord = start_discord
         self.manage_processes = manage_processes
         self.phone_argv = phone_argv
+        self.discord_argv = discord_argv
         self.runtime_options = runtime_options or {}
         self.config = ConfigManager(settings_file, passwords_file, root)
         self.runtime: Runtime | None = None
         self.ctx: AppContext | None = None
         self.phone: ManagedProcess | None = None
+        self.discord: ManagedProcess | None = None
         self.internal_port = 0
         self.web_state = Component("starting")
         self.exit_code = 0
@@ -150,7 +157,7 @@ class Supervisor:
             restart=self.request_restart,
             extra_status=self._extra_status,
         )
-        self.runtime.external_components = self._phone_component
+        self.runtime.external_components = self._child_components
         self._write_admin_token(state_dir / ADMIN_TOKEN_FILE, self.ctx.admin_token)
         await self._start_internal_api()
         if self.serve_web:
@@ -159,6 +166,8 @@ class Supervisor:
             self.web_state = Component("disabled", "nicht gestartet")
         if self.start_phone and settings.phone.enabled:
             await self._start_phone()
+        if self.start_discord:
+            await self._start_discord()
         self._spawn(self._maintenance())
 
     @staticmethod
@@ -255,6 +264,49 @@ class Supervisor:
     async def _phone_alive(self) -> bool:
         return await asyncio.to_thread(read_status, self.state_root) is not None
 
+    def _discord_wanted(self) -> bool:
+        return self.config.settings.discord.enabled and self.config.passwords.discord.enabled
+
+    async def _start_discord(self) -> None:
+        """The Discord worker is a child like the phone, but only if it is switched on and has a
+        token – otherwise nothing runs and nothing is logged about Discord (UPD-04)."""
+        if not self._discord_wanted() or (self.discord is not None and self.discord.running):
+            return
+        assert self.ctx is not None
+        argv = self.discord_argv or [sys.executable, "-m", "moritz_agent.discord"]
+        if self.discord_argv is None:
+            if self.settings_file:
+                argv += ["--config", str(self.settings_file)]
+            if self.passwords_file:
+                argv += ["--passwords", str(self.passwords_file)]
+            argv += ["run"]
+        from moritz_agent.discord.core import ENV_TOKEN, ENV_URL
+
+        self.discord = ManagedProcess(
+            "discord",
+            argv,
+            env={
+                ENV_URL: f"http://127.0.0.1:{self.internal_port}",
+                ENV_TOKEN: self.ctx.internal_token,
+            },
+            cwd=self.state_root,
+            health_check=self._discord_alive,
+            category="discord",
+            startup_timeout_s=120.0,
+            health_interval_s=10.0,
+            health_failures=6,
+            niceness=DISCORD_NICE,
+        )
+        await self.discord.start()
+
+    async def _discord_alive(self) -> bool:
+        return await asyncio.to_thread(discord_status.read_status, self.state_root) is not None
+
+    async def _stop_discord(self) -> None:
+        if self.discord is not None:
+            await self.discord.stop(PHONE_STOP_GRACE_S)
+            self.discord = None
+
     # -- running ------------------------------------------------------------------------------------
     def _spawn(self, coroutine) -> asyncio.Task[Any]:
         task = asyncio.ensure_future(coroutine)
@@ -268,6 +320,9 @@ class Supervisor:
         self.exit_code = 75  # EX_TEMPFAIL
         self._stop.set()
 
+    def _child_components(self) -> dict[str, Component]:
+        return {**self._phone_component(), **self._discord_component()}
+
     def _phone_component(self) -> dict[str, Component]:
         if not self.config.settings.phone.enabled:
             return {"phone": Component("disabled", "Telefon ausgeschaltet")}
@@ -278,11 +333,30 @@ class Supervisor:
         state = "ready" if registration.lower().startswith("regist") else "degraded"
         return {"phone": Component(state, f"Registrierung: {registration}")}
 
+    def _discord_component(self) -> dict[str, Component]:
+        if not self.config.settings.discord.enabled:
+            return {}  # not part of the installation: nothing to show
+        if not self.config.passwords.discord.enabled:
+            return {"discord": Component("disabled", "kein Bot-Token in passwords.txt")}
+        status = discord_status.read_status(self.state_root)
+        if status is None:
+            return {"discord": Component("failed", "Der Discord-Teil meldet sich nicht")}
+        state = {"ready": "ready", "connecting": "starting", "starting": "starting"}.get(
+            str(status.get("state")), "degraded"
+        )
+        note = str(status.get("error") or "")
+        if not note and status.get("default_channel") == "fehlt":
+            state, note = "degraded", "Standardkanal fehlt"
+        return {"discord": Component(state, note or f"{status.get('guilds', 0)} Server")}
+
     def _extra_status(self) -> dict[str, Any]:
         children: dict[str, Any] = {}
         if self.phone is not None:
             status = self.phone.status()
             children["phone"] = {"state": status.state, "restarts": status.restarts}
+        if self.discord is not None:
+            status = self.discord.status()
+            children["discord"] = {"state": status.state, "restarts": status.restarts}
         return {"web": self.web_state.as_dict(), "children": children}
 
     async def reload(self) -> ReloadResult:
@@ -297,7 +371,26 @@ class Supervisor:
             if pid:
                 with contextlib.suppress(ProcessLookupError):
                     os.kill(pid, signal.SIGHUP)  # the worker re-reads the files itself
+        if self.start_discord:
+            await self._reload_discord(result)
         return result
+
+    async def _reload_discord(self, result: ReloadResult) -> None:
+        """Switched on or a token appeared: start; switched off: stop; otherwise tell it to re-read."""
+        running = self.discord is not None and self.discord.running
+        if not self._discord_wanted():
+            if running:
+                await self._stop_discord()
+            return
+        if not running:
+            await self._start_discord()
+            return
+        assert self.discord is not None
+        if result.changed & {"settings.discord", "passwords.discord"}:
+            pid = self.discord.status().pid
+            if pid:
+                with contextlib.suppress(ProcessLookupError):
+                    os.kill(pid, signal.SIGHUP)
 
     async def _maintenance(self) -> None:
         """Every minute: optional file polling; every hour: retention; every day: a backup."""
@@ -333,6 +426,7 @@ class Supervisor:
         """Phone first (BYE), then the servers, then model and search, then the database."""
         for task in list(self._tasks):
             task.cancel()
+        await self._stop_discord()
         if self.phone is not None:
             await self.phone.stop(PHONE_STOP_GRACE_S)
         for server, task in reversed(self._servers):
