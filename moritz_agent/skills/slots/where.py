@@ -349,7 +349,7 @@ def _from_lookup(looked, name: str, svc: Services) -> Where:
     home = svc.gazetteer.home if svc.gazetteer else None
     if (
         home is not None
-        and best.how in {"exact", "stripped", "district"}
+        and best.how in {"exact", "stripped", "district", "alias"}
         and best.place.name == home.name
         and best.place.state == home.state
     ):
@@ -358,7 +358,8 @@ def _from_lookup(looked, name: str, svc: Services) -> Where:
     if looked.ambiguous and len(looked.hits) > 1:
         options = tuple(h.place for h in looked.hits[:2])
         return Where("ambiguous", options[0], _pretty(name), best.how, options=options, named=True)
-    return Where("place", best.place, _pretty(name), best.how, named=True)
+    spoken = best.place.spoken if best.how == "alias" else _pretty(name)  # "Malle" → "Palma …"
+    return Where("place", best.place, spoken, best.how, named=True)
 
 
 async def geocode_online(where: Where, svc: Services) -> Where:

@@ -264,6 +264,35 @@ def test_home_place_follows_the_settings():
     assert home_place(service).name == "Weilburg"
 
 
+def test_colloquial_names_and_countries_resolve_to_places(gaz):
+    for said, place in (
+        ("Malle", "Palma de Mallorca"),
+        ("Mainhattan", "Frankfurt am Main"),
+        ("Frankreich", "Paris"),
+        ("Österreich", "Wien"),
+        ("Neuseeland", "Auckland"),
+    ):
+        best = gaz.find(said).best
+        assert best is not None and best.place.name == place, said
+        assert best.how == "alias"
+    assert gaz.find("Weilburg").best.how == "exact"  # an alias never replaces a real place
+
+
+def test_the_weather_for_a_country_names_the_capital(svc):
+    where = find_where(prepare("wie ist das wetter in frankreich").text, svc)
+    assert where.kind == "place" and where.place.name == "Paris"
+    assert where.spoken == "Paris"
+
+
+def test_every_alias_points_at_a_place_that_exists(gaz):
+    import tomllib
+
+    tables = tomllib.loads((REPO_ROOT / "assets/data/geo/aliases.de.toml").read_text("utf-8"))
+    names = {fold(p.name) for p in gaz.places}
+    missing = [t for table in tables.values() for t in table.values() if fold(t) not in names]
+    assert not missing
+
+
 def test_data_files_are_consistent():
     seed = Path(REPO_ROOT / "assets/data/geo/seed-places.tsv").read_text(encoding="utf-8")
     rows = [line.split("\t") for line in seed.splitlines() if line and not line.startswith("#")]

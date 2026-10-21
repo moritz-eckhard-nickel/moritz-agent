@@ -21,6 +21,7 @@ import csv
 import difflib
 import math
 import re
+import tomllib
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -180,6 +181,7 @@ class Gazetteer:
         gaz._read_world(geo / "world-cities.tsv")
         gaz._read_ranges(geo / "plz-bereiche.tsv")
         gaz._index()
+        gaz._read_aliases(geo / "aliases.de.toml")
         return gaz
 
     @classmethod
@@ -277,6 +279,23 @@ class Gazetteer:
             place = by_name.get(name)
             if place and low.isdigit() and high.isdigit():
                 self._ranges.append((int(low), int(high), place))
+
+    def _read_aliases(self, path: Path) -> None:
+        """Colloquial names ("Malle") and countries (capital) pointing at places already loaded."""
+        if not path.is_file():
+            return
+        try:
+            tables = tomllib.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return
+        by_name = {fold(p.name): p for p in self.places if not p.parent}
+        for table in ("orte", "laender"):
+            for alias, target in (tables.get(table) or {}).items():
+                place = by_name.get(fold(str(target)))
+                key = fold(alias)
+                if place is not None and key and key not in self._by_key:
+                    self._by_key[key].append(_Entry(place, 1.0, "alias"))
+        self._keys = sorted(self._by_key)
 
     def _add(self, place: Place) -> None:
         self.places.append(place)
