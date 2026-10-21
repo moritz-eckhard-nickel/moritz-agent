@@ -3,7 +3,8 @@
 
 Written on Discord – never said in a call or in the voice channel – "Sag mir am Telefon, wie viel Uhr
 es ist" makes Anton call the internal extension (201), let it ring 10–15 s and, once somebody picks
-up, say the answer one second later, say goodbye and hang up without listening.
+up, say the answer one second later, say goodbye and hang up without listening. Nobody picks up:
+that's it – no message elsewhere.
 
 This module only finds such a request in a text and keeps the queue of calls to make; the phone
 worker fetches them (``/internal/phone/callback``) and places the call.
@@ -54,7 +55,6 @@ class Callback:
     extension: str
     ring_s: float
     speak_after_s: float
-    user_id: str = ""  # who asked (Discord) – told when nobody answered
     created: float = field(default_factory=time.monotonic)
 
 
@@ -75,15 +75,12 @@ class CallbackQueue:
         extension: str,
         ring_s: tuple[float, float],
         speak_after_s: float,
-        user_id: str = "",
     ) -> Callback | None:
         self._expire()
         if len(self._waiting) >= self.MAX_WAITING:
             return None
         low, high = sorted(ring_s)
-        call = Callback(
-            next(self._ids), text, extension, random.uniform(low, high), speak_after_s, user_id
-        )
+        call = Callback(next(self._ids), text, extension, random.uniform(low, high), speak_after_s)
         self._waiting.append(call)
         return call
 

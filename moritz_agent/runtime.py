@@ -538,18 +538,9 @@ class Runtime:
                 self.repo.start_call(call_id, remote, codec)
 
     def callback_done(self, callback_id: int, outcome: str) -> None:
-        """The phone worker tried to call back: on no answer, the text goes to Discord instead."""
-        call = self.callbacks.done(callback_id)
+        """The phone worker tried to call back. Nobody picked up: then nobody picked up (Moritz)."""
+        self.callbacks.done(callback_id)
         log.info("Rückruf %d: %s", callback_id, outcome)
-        if call is None or outcome == "answered" or self.discord_store is None:
-            return
-        user = call.user_id or next(iter(owner_ids(self.settings.discord)), None)
-        if not user or not self.settings.discord.enabled:
-            return
-        title = f"📞 Auf der {call.extension} nicht erreicht"
-        self.discord_store.enqueue(
-            "forward", f"dm:{user}", {"title": title, "text": call.text}, user_id=user
-        )
 
     def call_ended(self, call_id: str, reason: str = "") -> None:
         conversation = self._calls.pop(call_id, None)

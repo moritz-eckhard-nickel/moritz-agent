@@ -248,14 +248,13 @@ class ChatService:
             cfg.callback.extension,
             (cfg.callback.ring_min_s, cfg.callback.ring_max_s),
             cfg.callback.speak_after_s,
-            turn.principal.user_id,
         )
         if call is None:
             return TurnResult(text="Ich hab schon genug Anrufe vor mir – gleich noch mal, ja?")
         log.info(
             "Rückruf %d an %s angefordert (%s)", call.id, call.extension, turn.principal.short()
         )
-        message = f"📞 Okay, ich ruf dich auf der {call.extension} an und sag's dir."
+        message = "📞 Okay, ich rufe dich an."
         return TurnResult(
             text=message, markdown=message, ms=round((time.monotonic() - started) * 1000)
         )

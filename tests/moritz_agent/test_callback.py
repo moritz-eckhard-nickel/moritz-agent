@@ -15,6 +15,7 @@ from moritz_agent.core.turn import Turn
 from moritz_agent.phone.callback import GOODBYE, CallbackSession
 from moritz_agent.phone.sip import dial_uri
 
+from .skills_util import Session
 from .system_util import OWNER_ID, TRUSTED_ID, running_system
 
 
@@ -41,7 +42,7 @@ def test_a_call_back_is_only_asked_for_with_something_to_say(text, question):
 
 def test_the_queue_hands_out_each_call_once_and_keeps_it_small():
     queue = CallbackQueue()
-    first = queue.add("Es ist 19 Uhr 12.", "201", (10, 15), 1.0, "1")
+    first = queue.add("Es ist 19 Uhr 12.", "201", (10, 15), 1.0)
     assert first is not None and 10 <= first.ring_s <= 15
     assert all(queue.add("x", "201", (10, 15), 1.0) for _ in range(2))
     assert queue.add("zu viel", "201", (10, 15), 1.0) is None  # at most three waiting
@@ -62,7 +63,7 @@ def _turn(system, user, text, *, role, surface=Surface.CHAT, place="dm"):
     )
 
 
-def test_written_on_discord_the_answer_goes_to_the_phone_worker(tmp_path):
+def test_written_on_discord_the_answer_goes_to_the_phone_worker_and_nowhere_else(tmp_path):
     async def body(system):
         runtime = system.runtime
         answer = await runtime.chat.run(
@@ -85,13 +86,11 @@ def test_written_on_discord_the_answer_goes_to_the_phone_worker(tmp_path):
         return answer, order, empty, pending
 
     answer, order, empty, pending = run(_in(tmp_path, body))
-    assert "201" in answer.text and "ruf dich" in answer.text
+    assert answer.text == "📞 Okay, ich rufe dich an."
     assert order["extension"] == "201" and "19 Uhr 12" in order["text"]
     assert 10 <= order["ring_s"] <= 15 and order["speak_after_s"] == 1.0
     assert empty is None
-    notes = [p for p in pending if p["kind"] == "forward"]
-    assert notes and "nicht erreicht" in notes[0]["payload"]["title"]
-    assert "19 Uhr 12" in notes[0]["payload"]["text"]
+    assert not [p for p in pending if p["kind"] == "forward"]  # nobody picked up: nothing else
 
 
 @pytest.mark.parametrize(
@@ -117,7 +116,7 @@ def test_no_call_back_from_others_or_from_talking(tmp_path, user, role, surface,
         return result, system.runtime.callbacks.take()
 
     result, order = run(_in(tmp_path, body))
-    assert order is None and "ruf dich" not in result.text
+    assert order is None and "rufe dich" not in result.text
 
 
 async def _in(tmp_path, body):
@@ -186,3 +185,36 @@ def test_hanging_up_before_anton_speaks_ends_it_quietly():
 
     outcome, media, tts = run(scenario())
     assert outcome == "caller_hangup" and not tts.said and media.hung_up is None
+
+
+# -- "Leg auf" in a call ---------------------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Leg auf",
+        "Leg bitte auf",
+        "Anton, leg auf",
+        "Okay, du kannst jetzt auflegen",
+        "Kannst du auflegen?",
+        "Häng jetzt auf, danke",
+    ],
+)
+def test_leg_auf_meant_as_such_hangs_up_politely(text):
+    outcome = Session().route(text)
+    assert outcome.skill_id == "talk.goodbye" and outcome.result is not None
+    assert outcome.result.hangup and "lege auf" in outcome.result.text
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Wie leg ich den Hörer auf?",
+        "Leg nicht auf",
+        "Soll ich auflegen?",
+        "Leg das Handy auf den Tisch",
+        "Wann legst du auf?",
+    ],
+)
+def test_leg_auf_only_mentioned_does_not_hang_up(text):
+    outcome = Session().route(text)
+    assert outcome.result is None or not outcome.result.hangup

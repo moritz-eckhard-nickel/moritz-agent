@@ -665,7 +665,7 @@ wenn sie höchstens 12 Stunden alt sind.
   ist“ (oder „Ruf mich an und sag mir …“, „Wie spät ist es? Sag's mir am Telefon“), beantwortet Anton
   die Frage sofort, ruft die Nebenstelle `phone.callback.extension` (Standard 201) an, lässt 10–15 s
   klingeln und sagt die Antwort 1 s nach dem Abheben, verabschiedet sich und legt auf – ohne
-  zuzuhören. Geht niemand ran, kommt die Antwort als DM. Gilt nur für geschriebenen Text des Owners
+  zuzuhören. Geht niemand ran, war's das (keine DM). Gilt nur für geschriebenen Text des Owners
   (nicht im Sprachkanal, nicht für Vertraute); höchstens 3 Rückrufe warten, älter als 5 min verfallen.
   Sonst löst Discord keinen Anruf aus (PHONE-10). Umgekehrt: „Schick mir das
   auf Discord“ am Telefon → ab P1-39 mit Abo möglich (z. B. Wetter-Karte oder Rechenergebnis als DM an

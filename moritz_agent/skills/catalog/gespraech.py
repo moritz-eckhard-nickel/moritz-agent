@@ -28,10 +28,17 @@ _HELP_GROUPS = (
 )
 _GOODBYE_WORDS = (
     r"tschüss|tschüs|tschau|ciao|auf wiederhören|auf wiedersehen|wiederhören|bis bald|bis später|"
-    r"mach's gut|mach es gut|das war's|das war es|das wars|auflegen|ich lege (?:jetzt )?auf|bis dann|bis zum nächsten mal|"
-    r"leg(?:e)? (?:(?:jetzt|bitte|mal|doch|ruhig|einfach|gleich) )*auf|häng (?:(?:jetzt|bitte|mal) )*auf"
+    r"mach's gut|mach es gut|das war's|das war es|das wars|ich lege (?:jetzt )?auf|bis dann|bis zum nächsten mal"
 )
-_HANG_UP = re.compile(r"\b(?:auflegen|leg(?:e)? (?:\w+ )*auf|häng (?:\w+ )*auf)\b")
+# "Leg auf" only when the whole sentence asks Anton to hang up (Moritz, 21.10.2026: "dass man das
+# wirklich meint") – not "wie leg ich den Hörer auf", "leg nicht auf" or "soll ich auflegen".
+_NOW = r"(?:(?:jetzt|ruhig|einfach|gleich|dann|schon|bitte|mal|doch) )*"
+_HANG_UP = re.compile(
+    r"^(?:(?:okay|ok|gut|so|alles klar|danke|jo|ja|na dann|dann|anton)[ ,]+)*"
+    rf"(?:(?:du kannst|kannst du|du darfst|würdest du|könntest du) )?{_NOW}"
+    rf"(?:auflegen|leg(?:e)? {_NOW}auf|häng(?:e)? {_NOW}auf)"
+    r"(?:[ ,]+(?:jetzt|danke|tschüss|tschüs|anton|bis dann|bis bald))*$"
+)
 
 
 @skill(
@@ -43,6 +50,7 @@ _HANG_UP = re.compile(r"\b(?:auflegen|leg(?:e)? (?:\w+ )*auf|häng (?:\w+ )*auf)
     max_words=7,
     patterns=(
         rf"\b(?:{_GOODBYE_WORDS})\b",
+        _HANG_UP.pattern,
         r"\bgute nacht\b",
         r"\bdanke,? (?:das war alles|das reicht|mehr brauche ich nicht)\b",
     ),
@@ -50,7 +58,7 @@ _HANG_UP = re.compile(r"\b(?:auflegen|leg(?:e)? (?:\w+ )*auf|häng (?:\w+ )*auf)
 async def talk_goodbye(req: Request) -> SkillResult:
     if re.search(r"\bgute nacht\b", req.text):
         return say("Gute Nacht, Moritz! Schlaf gut.", hangup=True)
-    if _HANG_UP.search(req.text):  # "Leg auf": politely, then the line goes dead
+    if _HANG_UP.match(req.text):  # "Leg auf": politely, then the line goes dead
         return say("Alles klar, ich lege auf. Tschüss, Moritz – bis bald!", hangup=True)
     return SkillResult(prompt="goodbye", hangup=True)
 
