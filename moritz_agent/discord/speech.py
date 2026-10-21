@@ -25,8 +25,10 @@ from moritz_agent.config.settings import Settings
 from moritz_agent.logging_setup import get_logger
 
 if TYPE_CHECKING:
+    from moritz_agent.phone.audio.announcements import AnnouncementStore
     from moritz_agent.phone.audio.stt import SpeechToText, Transcript
     from moritz_agent.phone.audio.tts import TtsService
+    from moritz_agent.phone.audio.vad import SileroVad
 
 log = get_logger("discord")
 RATE = 16_000
@@ -120,15 +122,21 @@ class SpeechService:
         *,
         stt_factory: Callable[[], SpeechToText] | None = None,
         tts_factory: Callable[[], TtsService] | None = None,
+        vad_factory: Callable[[], SileroVad] | None = None,
+        announcements_factory: Callable[[TtsService], AnnouncementStore] | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self.settings = settings
         self.root = root
         self._stt_factory = stt_factory
         self._tts_factory = tts_factory
+        self._vad_factory = vad_factory
+        self._announcements_factory = announcements_factory
         self._clock = clock
         self._stt: SpeechToText | None = None
         self._tts: TtsService | None = None
+        self._vad: SileroVad | None = None
+        self._announcements: AnnouncementStore | None = None
         self._lock = threading.Lock()
         self._last_used = clock()
         self.active = 0  # >0: a voice session needs the models, never unload
@@ -158,7 +166,10 @@ class SpeechService:
                 else:
                     from moritz_agent.phone.audio.factory import build_stt
 
-                    self._stt = build_stt(self.settings(), self.root)
+                    # Whisper gets the threads meant for Discord, the phone keeps its own setting
+                    settings = self.settings().model_copy(deep=True)
+                    settings.phone.stt.cpu_threads = settings.discord.voice.stt_threads
+                    self._stt = build_stt(settings, self.root)
             return self._stt
 
     def _load_tts(self) -> TtsService:
@@ -171,6 +182,55 @@ class SpeechService:
 
                     self._tts = build_tts(self.settings(), self.root)
             return self._tts
+
+    def load_vad(self) -> SileroVad:
+        with self._lock:
+            if self._vad is None:
+                if self._vad_factory is not None:
+                    self._vad = self._vad_factory()
+                else:
+                    from moritz_agent.phone.audio.factory import build_vad
+
+                    self._vad = build_vad(self.settings(), self.root)
+            return self._vad
+
+    def load_announcements(self) -> AnnouncementStore:
+        """The announcement cache of the phone (same files); missing ones are rendered now."""
+        tts = self._load_tts()
+        with self._lock:
+            if self._announcements is None:
+                if self._announcements_factory is not None:
+                    self._announcements = self._announcements_factory(tts)
+                else:
+                    from moritz_agent.phone.audio.announcements import (
+                        AnnouncementStore,
+                        load_catalog,
+                    )
+                    from moritz_agent.phone.worker import PROMPT_CATALOG
+
+                    phone = self.settings().phone
+                    catalog = load_catalog(
+                        self.root / PROMPT_CATALOG,
+                        {
+                            "greeting_text": phone.greeting_text,
+                            "assistant_name": phone.assistant_name,
+                        },
+                    )
+                    self._announcements = AnnouncementStore(tts, catalog)
+        self._announcements.ensure()
+        return self._announcements
+
+    def load_stt(self) -> SpeechToText:
+        return self._load_stt()
+
+    async def prepare_voice(self) -> tuple[SpeechToText, SileroVad, TtsService, AnnouncementStore]:
+        """Everything a voice session needs, loaded in a thread (5–15 s the first time)."""
+        stt = await asyncio.to_thread(self._load_stt)
+        vad = await asyncio.to_thread(self.load_vad)
+        tts = await asyncio.to_thread(self._load_tts)
+        announcements = await asyncio.to_thread(self.load_announcements)
+        self._last_used = self._clock()
+        return stt, vad, tts, announcements
 
     # -- use ---------------------------------------------------------------------------------------------------
     async def transcribe(self, pcm: bytes) -> Transcript:
@@ -195,7 +255,8 @@ class SpeechService:
         if self._clock() - self._last_used < minutes * 60:
             return False
         with self._lock:
-            tts, self._stt, self._tts = self._tts, None, None
+            tts = self._tts
+            self._stt = self._tts = self._vad = self._announcements = None
         if tts is not None:
             _close(tts)
         log.info("Sprachmodelle entladen (lange nicht gebraucht)")

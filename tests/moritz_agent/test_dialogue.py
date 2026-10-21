@@ -378,3 +378,57 @@ def test_the_responder_is_told_when_a_call_begins_and_ends(tmp_path):
 
     events, reason = run(scenario())
     assert events == [("started", "test-call", "sip:20@test"), ("ended", "test-call", reason)]
+
+
+# -- Discord voice (docs/plan/14 §9) ---------------------------------------------------------------------------------
+def test_a_session_woken_from_rest_says_yes_instead_of_the_greeting(tmp_path):
+    async def scenario():
+        h = Harness(tmp_path, FakeStt("x"), TestResponder())
+        h.store.catalog["yes"] = Prompt("yes", "Ja?", False)
+        h.store.ensure()
+        h.session = CallSession("c", h.media, h.deps, first_prompt="yes")
+        h._feeder = asyncio.ensure_future(h._feed())
+        task = asyncio.ensure_future(h.session.run())
+        await h.wait_for(lambda: h.played("yes"), "Ja?")
+        h.session.remote_hangup()
+        await h.finish(task)
+        return h
+
+    h = run(scenario())
+    assert not h.played("greeting")
+
+
+def test_falling_silent_says_the_going_quiet_line(tmp_path):
+    async def scenario():
+        h = Harness(tmp_path, FakeStt("x"), TestResponder())
+        h.store.catalog["going_quiet"] = Prompt("going_quiet", "Ich bin dann mal still.", False)
+        h.store.ensure()
+        h.session = CallSession("c", h.media, h.deps, silence_goodbye="going_quiet")
+        h._feeder = asyncio.ensure_future(h._feed())
+        task = asyncio.ensure_future(h.session.run())
+        return h, await h.finish(task)
+
+    h, reason = run(scenario())
+    assert reason == "silence_timeout" and h.played("going_quiet") and not h.played("goodbye")
+
+
+def test_talking_over_the_answer_stops_it_and_the_first_words_are_not_lost(tmp_path):
+    async def scenario():
+        stt = FakeStt("Wie spät ist es?", "Und wie ist das Datum?")
+        h = Harness(tmp_path, stt, SlowResponder(0.0, "Das ist eine lange Antwort. " * 3))
+        h.media.speedup = 0.5  # slow playback: the answer lasts a while
+        task = await h.start()
+        await h.wait_for(lambda: h.played("greeting"), "Begrüßung")
+        await h.wait_for(lambda: h.session.state is State.LISTENING, "zuhören")
+        await h.say()
+        await h.wait_for(lambda: h.session.state is State.SPEAKING, "Antwort läuft")
+        cleared = h.media.cleared
+        h.session.barge_in(speech_frames(10)[0] * 10 + silence_frames(1)[0] * 10)
+        # the replayed first words are enough for a complete utterance: it is recognised at once
+        await h.wait_for(lambda: stt.calls >= 2, "die Unterbrechung wird erkannt")
+        h.session.remote_hangup()
+        await h.finish(task)
+        return h, cleared, stt
+
+    h, cleared, stt = run(scenario())
+    assert h.media.cleared > cleared and stt.calls >= 2

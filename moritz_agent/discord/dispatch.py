@@ -105,31 +105,30 @@ class Dispatcher:
         await sender.send(self.say(kind))
 
     # -- messages --------------------------------------------------------------------------------------
-    async def message(self, info: MessageInfo, origin: Origin, sender: Sender) -> bool:
-        """Answer a message if it is meant for Nikita; ``True`` when it was answered."""
+    async def message(self, info: MessageInfo, origin: Origin, sender: Sender) -> TurnResult | None:
+        """Answer a message if it is meant for Nikita; returns the answer (``None``: not answered)."""
         decision = self.policy.message(info, today=self.today())
         if decision.reaction is Reaction.IGNORE:
-            return False
+            return None
         if decision.reaction is Reaction.NOTICE:
             await sender.send(OutMessage(content=decision.text))
-            return False
+            return None
         user = origin.user_id
         if self.draining():
             await self._refuse(sender, "maintenance", once_for=f"drain:{user}")
-            return False
+            return None
         if not self.limiter.allow(user, decision.role):
             await self._refuse(sender, "rate_limited", once_for=f"rate:{user}")
-            return False
+            return None
         text = decision.text
         if not text.strip():
-            return False
+            return None
         limit = self.cfg.max_message_chars
         if len(text) > limit:
             text = text[:limit]
             self.styler.style = self.cfg.style
             await sender.send(OutMessage(content=self.styler.phrase("input_cut", n=str(limit))))
-        result = await self.ask(text, origin, sender)
-        return result is not None
+        return await self.ask(text, origin, sender)
 
     # -- the core ----------------------------------------------------------------------------------------
     async def ask(

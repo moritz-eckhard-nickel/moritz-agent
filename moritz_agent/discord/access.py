@@ -90,6 +90,9 @@ class AccessPolicy:
         self.bot_id = bot_id
         self._noticed: dict[str, str] = {}  # stranger → day of the last notice
         self._announced: set[str] = set()  # strangers the default channel was told about
+        self.extra_chat_channels: set[str] = (
+            set()
+        )  # e.g. the chat of the voice channel Nikita is in
 
     def configure(self, cfg: Discord, default_channel_id: str) -> None:
         self.cfg = cfg
@@ -105,7 +108,11 @@ class AccessPolicy:
         return guild_id == self.default_guild_id or guild_id in self.cfg.allowed_guild_ids
 
     def in_chat_channel(self, channel_id: str) -> bool:
-        return channel_id == self.default_channel_id or channel_id in self.cfg.chat_channel_ids
+        return (
+            channel_id == self.default_channel_id
+            or channel_id in self.cfg.chat_channel_ids
+            or channel_id in self.extra_chat_channels
+        )
 
     # -- messages --------------------------------------------------------------------------------------------
     def message(self, msg: MessageInfo, *, today: str = "") -> Decision:

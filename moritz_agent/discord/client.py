@@ -321,7 +321,22 @@ class NikitaClient(discord.Client):
             and await self.voice_messages.handle(message, origin, sender)
         ):
             return
-        await self.dispatcher.message(info, origin, sender)
+        result = await self.dispatcher.message(info, origin, sender)
+        voice = self.worker.voice
+        if result is not None and voice is not None and message.channel.id == voice.channel_id:
+            await voice.speak_answer(message.channel.id, result.text or result.markdown)
+
+    # -- voice channel ---------------------------------------------------------------------------------------------
+    async def on_voice_state_update(
+        self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState
+    ) -> None:
+        voice = self.worker.voice
+        if voice is None:
+            return
+        try:
+            await voice.on_voice_state(member, before, after)
+        except Exception:
+            log.exception("Discord: Sprachkanal-Ereignis konnte nicht verarbeitet werden")
 
     # -- reactions -------------------------------------------------------------------------------------------------
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:

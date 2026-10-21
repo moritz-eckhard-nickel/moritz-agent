@@ -15,7 +15,7 @@ import signal
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import discord
 
@@ -35,12 +35,10 @@ from moritz_agent.discord.setup import invite_links
 from moritz_agent.discord.speech import SpeechService
 from moritz_agent.discord.status import write_status
 from moritz_agent.discord.style import Styler
+from moritz_agent.discord.voice.session import VoiceManager
 from moritz_agent.discord.voice_messages import VoiceMessages
 from moritz_agent.logging_setup import get_logger, setup_logging
 from moritz_agent.phone.control import DRAIN_FILE, run_dir
-
-if TYPE_CHECKING:
-    from moritz_agent.discord.commands.handlers import VoiceControl
 
 log = get_logger("discord")
 
@@ -77,7 +75,7 @@ class DiscordWorker:
         self.policy: AccessPolicy
         self.dispatcher: Dispatcher
         self.activity: ActivityManager
-        self.voice: VoiceControl | None = None
+        self.voice: VoiceManager | None = None
         self.speech_service: SpeechService | None = None
         self.voice_messages: VoiceMessages | None = None  # voice messages and "Vorlesen"
         self.stop_event = asyncio.Event()
@@ -207,9 +205,9 @@ class DiscordWorker:
     def _attach_voice(self) -> None:
         """Voice messages and the voice channel are optional parts; where Whisper or Piper are not
         installed the commands are simply not registered (docs/plan/14 §9.5)."""
-        if self.cfg.voice_messages.enabled:
+        if self.cfg.voice_messages.enabled or self.cfg.voice.enabled:
             self.speech_service = SpeechService(self.settings, self.root)
-            if self.speech_service.stt_available():
+            if self.cfg.voice_messages.enabled and self.speech_service.stt_available():
                 self.voice_messages = VoiceMessages(
                     self.dispatcher,
                     self.speech_service,
@@ -217,6 +215,11 @@ class DiscordWorker:
                 )
             else:
                 log.info("Discord: Spracherkennung nicht installiert – keine Sprachnachrichten")
+        if self.cfg.voice.enabled and self.speech_service is not None:
+            if self.speech_service.stt_available() or self.speech_service.tts_available():
+                self.voice = VoiceManager(self)
+            else:
+                log.info("Discord: keine Sprachmodelle – kein Sprachkanal")
         if self.dispatcher.local is not None:
             self.dispatcher.local.voice = self.voice
 
@@ -254,6 +257,9 @@ class DiscordWorker:
 
     async def shutdown(self) -> None:
         self.state = "stopped"
+        if self.voice is not None:
+            with contextlib.suppress(Exception):
+                await asyncio.wait_for(self.voice.shutdown(), 8.0)
         for task in list(self._tasks):
             task.cancel()
         await asyncio.gather(*self._tasks, return_exceptions=True)

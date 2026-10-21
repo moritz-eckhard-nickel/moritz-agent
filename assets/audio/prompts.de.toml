@@ -56,3 +56,18 @@ required = false
 [timer_done]
 text = "Die Zeit ist um."
 required = false
+
+# -- Discord-Sprachkanal (docs/plan/14 §9.1) --------------------------------------------------------
+# Nicht `required`: das Telefon braucht sie nicht; ohne Vorrendern spricht der Sprachkanal sie live.
+
+[yes]
+text = "Ja?"
+required = false
+
+[going_quiet]
+text = "Ich bin dann mal still. Sag einfach Nikita, wenn du mich brauchst."
+required = false
+
+[waking_up]
+text = "Einen Moment, ich wache auf."
+required = false

@@ -32,6 +32,8 @@ class State(StrEnum):
 class CallAnswered:
     """The call is connected and media is flowing."""
 
+    prompt: str = "greeting"  # what to say first (a Discord session woken from rest: "yes")
+
 
 @dataclass(frozen=True)
 class PlaybackDone:
@@ -66,6 +68,11 @@ class TimerFired:
 
 
 @dataclass(frozen=True)
+class BargeIn:
+    """Somebody started talking while Nikita was speaking (Discord voice only)."""
+
+
+@dataclass(frozen=True)
 class RemoteHangup:
     reason: str = "caller_hangup"
 
@@ -78,6 +85,7 @@ Event = (
     | ReplyReady
     | ReplyFailed
     | TimerFired
+    | BargeIn
     | RemoteHangup
 )
 
@@ -96,6 +104,11 @@ class PlayText:
 @dataclass(frozen=True)
 class StartListening:
     """Reset the VAD and start accepting caller audio."""
+
+
+@dataclass(frozen=True)
+class StopPlayback:
+    """Stop talking at once: cancel the synthesis and drop what is queued."""
 
 
 @dataclass(frozen=True)
@@ -138,6 +151,7 @@ Action = (
     PlayPrompt
     | PlayText
     | StartListening
+    | StopPlayback
     | Transcribe
     | RequestReply
     | CancelReply
@@ -158,6 +172,7 @@ class MachineConfig:
     max_unclear_hangup: int = 4
     max_call_duration_s: float = 1800.0
     max_failures: int = 3
+    silence_goodbye: str = "goodbye"  # said before giving up on silence (Discord: "going quiet")
 
 
 class CallStateMachine:
@@ -232,7 +247,10 @@ class CallStateMachine:
     def _ringing(self, event: Event) -> list[Action]:
         if isinstance(event, CallAnswered):
             self.state = State.GREETING
-            return [ArmTimer("max_duration", self.cfg.max_call_duration_s), PlayPrompt("greeting")]
+            return [
+                ArmTimer("max_duration", self.cfg.max_call_duration_s),
+                PlayPrompt(event.prompt),
+            ]
         return []
 
     def _greeting(self, event: Event) -> list[Action]:
@@ -249,7 +267,7 @@ class CallStateMachine:
             if not self._silence_prompted:
                 self._silence_prompted = True
                 return self._speak(PlayPrompt("still_there"))
-            return self._goodbye("silence_timeout")
+            return self._goodbye("silence_timeout", self.cfg.silence_goodbye)
         return []
 
     def _transcribing(self, event: Event) -> list[Action]:
@@ -309,6 +327,8 @@ class CallStateMachine:
     def _speaking(self, event: Event) -> list[Action]:
         if isinstance(event, PlaybackDone):
             return self._listen()
+        if isinstance(event, BargeIn):  # talked over: stop at once, listen
+            return [StopPlayback(), *self._listen()]
         return []
 
     def _ending(self, event: Event) -> list[Action]:

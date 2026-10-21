@@ -233,3 +233,57 @@ def test_events_that_do_not_apply_are_ignored():
     assert m.state is State.LISTENING
     greeting = CallStateMachine()
     assert greeting.handle(UtteranceEnded()) == []
+
+
+# -- Discord voice: first prompt, going quiet, being talked over (docs/plan/14 §9) ------------------------------
+def test_the_first_prompt_can_be_something_else_than_the_greeting():
+    from moritz_agent.phone.state_machine import CallAnswered, CallStateMachine, PlayPrompt
+
+    machine = CallStateMachine()
+    actions = machine.handle(CallAnswered("yes"))
+    assert PlayPrompt("yes") in actions
+    assert PlayPrompt("greeting") in CallStateMachine().handle(CallAnswered())
+
+
+def test_silence_ends_with_the_configured_last_words():
+    from moritz_agent.phone.state_machine import (
+        CallAnswered,
+        CallStateMachine,
+        MachineConfig,
+        PlaybackDone,
+        PlayPrompt,
+        TimerFired,
+    )
+
+    machine = CallStateMachine(MachineConfig(silence_goodbye="going_quiet"))
+    machine.handle(CallAnswered())
+    machine.handle(PlaybackDone())
+    machine.handle(TimerFired("silence"))  # "Bist du noch da?"
+    machine.handle(PlaybackDone())
+    actions = machine.handle(TimerFired("silence"))
+    assert PlayPrompt("going_quiet") in actions
+
+
+def test_talking_over_nikita_stops_the_playback_and_listens():
+    from moritz_agent.phone.state_machine import (
+        ArmTimer,
+        BargeIn,
+        CallAnswered,
+        CallStateMachine,
+        PlaybackDone,
+        StartListening,
+        State,
+        StopPlayback,
+    )
+
+    machine = CallStateMachine()
+    machine.handle(CallAnswered())
+    assert machine.state is State.GREETING
+    assert machine.handle(BargeIn()) == []  # the greeting is not interrupted
+    machine.handle(PlaybackDone())
+    machine.state = State.SPEAKING
+    actions = machine.handle(BargeIn())
+    assert actions[0] == StopPlayback() and StartListening() in actions
+    assert any(isinstance(a, ArmTimer) and a.name == "silence" for a in actions)
+    assert machine.state is State.LISTENING
+    assert machine.handle(BargeIn()) == []  # already listening

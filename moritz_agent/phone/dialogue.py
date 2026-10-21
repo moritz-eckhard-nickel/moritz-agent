@@ -16,18 +16,20 @@ import asyncio
 import contextlib
 import time
 from dataclasses import dataclass
-from typing import Protocol
 
 from moritz_agent.config.settings import Phone
 from moritz_agent.logging_setup import get_logger
 from moritz_agent.phone.audio.announcements import AnnouncementStore
+from moritz_agent.phone.audio.pcm import chunk_frames
 from moritz_agent.phone.audio.stt import SpeechToText
 from moritz_agent.phone.audio.tts import TtsError, TtsService
 from moritz_agent.phone.audio.vad import SileroVad, UtteranceEnd
+from moritz_agent.phone.media import CallMedia
 from moritz_agent.phone.responder import Responder, ResponderUnavailable, TurnContext
 from moritz_agent.phone.state_machine import (
     Action,
     ArmTimer,
+    BargeIn,
     CallAnswered,
     CallStateMachine,
     CancelReply,
@@ -45,6 +47,7 @@ from moritz_agent.phone.state_machine import (
     RequestReply,
     StartListening,
     State,
+    StopPlayback,
     TimerFired,
     Transcribe,
     TranscriptReady,
@@ -53,25 +56,6 @@ from moritz_agent.phone.state_machine import (
 
 log = get_logger("phone")
 SILENCE_RETRY_S = 1.5  # the silence timer fired while the caller is mid-sentence: look again soon
-
-
-class CallMedia(Protocol):
-    """The audio side of one call (implemented by the SIP layer; faked in tests). Thread-safe."""
-
-    def play(self, pcm: bytes) -> None:
-        """Queue mono PCM16 16 kHz for playback to the caller."""
-
-    def clear_playback(self) -> None:
-        """Drop everything not yet played."""
-
-    def pending_ms(self) -> int:
-        """Milliseconds of queued audio that has not been played yet."""
-
-    def hangup(self, reason: str) -> None:
-        """End the call (BYE)."""
-
-    def rx_packets(self) -> int | None:
-        """Number of RTP packets received so far, or None if the media layer cannot tell."""
 
 
 @dataclass
@@ -85,8 +69,9 @@ class SessionDeps:
     timezone: str = "Europe/Berlin"
 
 
-def machine_config(phone: Phone) -> MachineConfig:
+def machine_config(phone: Phone, silence_goodbye: str = "goodbye") -> MachineConfig:
     return MachineConfig(
+        silence_goodbye=silence_goodbye,
         silence_prompt_s=phone.silence_prompt_s,
         silence_hangup_s=phone.silence_hangup_s,
         thinking_prompt_after_s=phone.thinking_prompt_after_s,
@@ -98,12 +83,22 @@ def machine_config(phone: Phone) -> MachineConfig:
 
 
 class CallSession:
-    def __init__(self, call_id: str, media: CallMedia, deps: SessionDeps, remote: str = "") -> None:
+    def __init__(
+        self,
+        call_id: str,
+        media: CallMedia,
+        deps: SessionDeps,
+        remote: str = "",
+        *,
+        first_prompt: str = "greeting",
+        silence_goodbye: str = "goodbye",
+    ) -> None:
         self.call_id = call_id
+        self.first_prompt = first_prompt  # "greeting"; a Discord session woken from rest says "yes"
         self.remote = remote
         self.media = media
         self.deps = deps
-        self.machine = CallStateMachine(machine_config(deps.phone))
+        self.machine = CallStateMachine(machine_config(deps.phone, silence_goodbye))
         self._loop = asyncio.get_running_loop()  # sessions are created on the event loop thread
         self._events: asyncio.Queue[Event] = asyncio.Queue()
         self._rx: asyncio.Queue[bytes] = asyncio.Queue()
@@ -125,6 +120,8 @@ class CallSession:
         self._listening = False
         self._busy = False  # an item is being synthesized/played
         self._utterance = b""
+        self._prebuffer = b""  # the first words of an interruption, replayed into the VAD
+        self._player_task: asyncio.Task | None = None
         self._last_rx = self._loop.time()
         self._turn_clock: dict[str, float] = {}
 
@@ -134,6 +131,15 @@ class CallSession:
 
     def remote_hangup(self, reason: str = "caller_hangup") -> None:
         self._loop.call_soon_threadsafe(self._events.put_nowait, RemoteHangup(reason))
+
+    def barge_in(self, heard: bytes = b"") -> None:
+        """Somebody talks over Nikita (Discord voice, docs/plan/14 §9.3): stop talking and listen.
+        ``heard`` is what was said so far (PCM16 16 kHz); it is replayed so no word is lost."""
+        self._loop.call_soon_threadsafe(self._interrupt, heard)
+
+    def _interrupt(self, heard: bytes) -> None:
+        self._prebuffer = heard
+        self._events.put_nowait(BargeIn())
 
     # -- main loop ---------------------------------------------------------------------
     @property
@@ -147,9 +153,10 @@ class CallSession:
         if self.deps.stt is None:
             return await self._out_of_service()
         self._notify("call_started", self.remote)
-        for coroutine in (self._rx_loop(), self._player_loop(), self._watchdog()):
+        self._player_task = self._spawn(self._player_loop())
+        for coroutine in (self._rx_loop(), self._watchdog()):
             self._spawn(coroutine)
-        self._events.put_nowait(CallAnswered())
+        self._events.put_nowait(CallAnswered(self.first_prompt))
         try:
             while self.machine.state is not State.ENDED:
                 event = await self._events.get()
@@ -234,6 +241,12 @@ class CallSession:
                 self._segmenter.reset()
                 self._drain_rx()
                 self._listening = True
+                if self._prebuffer:  # an interruption: its first words are not lost
+                    for frame in chunk_frames(self._prebuffer):
+                        self._rx.put_nowait(frame)
+                    self._prebuffer = b""
+            case StopPlayback():
+                await self._stop_playback()
             case Transcribe():
                 self._listening = False
                 self._spawn(self._transcribe(self._utterance))
@@ -254,6 +267,20 @@ class CallSession:
                 self.media.hangup(reason)
             case Cleanup():
                 pass  # _shutdown() runs when the loop ends
+
+    async def _stop_playback(self) -> None:
+        """Drop everything queued or being synthesized and play nothing more (barge-in)."""
+        self.deps.tts.cancel()
+        while not self._items.empty():
+            self._items.get_nowait()
+        task = self._player_task
+        if task is not None:
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await task
+        self.media.clear_playback()
+        self._busy = False
+        self._player_task = self._spawn(self._player_loop())
 
     # -- timers ------------------------------------------------------------------------
     def _arm(self, name: str, seconds: float) -> None:
