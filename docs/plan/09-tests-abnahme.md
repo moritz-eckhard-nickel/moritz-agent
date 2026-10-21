@@ -88,5 +88,7 @@ setup und run.“ Regeln:
   wird aufgerufen, nicht kopiert.
 - **Keine Ja/Nein-Fragen**: Downloads und Einrichtung laufen ohne Rückfrage; abgefragt werden nur Werte
   (Token, Kanal-IDs), Enter überspringt bzw. behält. Secrets nur unsichtbar über stdin (CLAUDE.md).
+- `test-clearup.sh` entfernt alles, was die Testskripte anlegen (`--venv`: nur die Python-Umgebungen);
+  neue Testskripte legen ihre Dateien nur dort ab, wo es aufräumt (`runtime/`, `models/`, `data/`, Caches).
 - Neue Skripte stehen in `deploy/payload.txt`, in der CI (`shellcheck … test-*.sh`) und in
   `tests/moritz_agent/test_project_files.py`; Anleitung `docs/test-N.md`.

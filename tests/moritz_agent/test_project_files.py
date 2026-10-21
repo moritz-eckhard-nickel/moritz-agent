@@ -257,6 +257,7 @@ def test_voice_in_versions_lock_matches_the_download_manifest():
 EXECUTABLE_SCRIPTS = (
     "test-1.sh",
     "test-2.sh",
+    "test-clearup.sh",
     "install.sh",
     "update.sh",
     "moritz-install.sh",
@@ -327,3 +328,57 @@ def test_test_2_covers_everything_and_asks_no_yes_no_questions():
     for path in ("test-1.sh", "test-2.sh", "moritz-install.sh", "deploy/lib/host.sh"):
         text = (REPO_ROOT / path).read_text(encoding="utf-8")
         assert not re.search(r"\[j/N\]|\[J/n\]|\[y/N\]|\[Y/n\]", text), path
+
+
+def _clearup_tree(tmp_path: Path) -> Path:
+    import shutil
+
+    root = tmp_path / "repo"
+    (root / "moritz_agent").mkdir(parents=True)
+    (root / "moritz_agent" / "__init__.py").write_text("")
+    shutil.copy(REPO_ROOT / "test-clearup.sh", root / "test-clearup.sh")
+    for folder in (
+        "runtime/venv/bin",
+        "runtime/venv.prev",
+        "runtime/searxng-venv",
+        "runtime/pjsip-build",
+        "runtime/test-2",
+        "models/stt",
+        "assets/audio/cache",
+        "data/run",
+        "moritz_agent/__pycache__",
+        ".pytest_cache",
+    ):
+        (root / folder).mkdir(parents=True, exist_ok=True)
+    (root / "passwords.txt").write_text("[discord]\nbot_token = placeholder\n")
+    (root / "config").mkdir()
+    (root / "config" / "moritz-agent.toml").write_text("[phone]\n")
+    return root
+
+
+def test_clearup_removes_every_test_thing_but_keeps_the_users_values(tmp_path):
+    root = _clearup_tree(tmp_path)
+    result = subprocess.run(
+        ["bash", str(root / "test-clearup.sh")], capture_output=True, text=True, check=False
+    )
+    assert result.returncode == 0, result.stderr
+    for gone in ("runtime", "models", "assets/audio/cache", "data", ".pytest_cache"):
+        assert not (root / gone).exists(), gone
+    assert not (root / "moritz_agent" / "__pycache__").exists()
+    assert (root / "passwords.txt").is_file() and (root / "config" / "moritz-agent.toml").is_file()
+    assert (root / "moritz_agent" / "__init__.py").is_file()
+
+
+def test_clearup_with_venv_removes_only_the_python_environments(tmp_path):
+    root = _clearup_tree(tmp_path)
+    result = subprocess.run(
+        ["bash", str(root / "test-clearup.sh"), "--venv"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    for gone in ("runtime/venv", "runtime/venv.prev", "runtime/searxng-venv"):
+        assert not (root / gone).exists(), gone
+    for kept in ("runtime/pjsip-build", "runtime/test-2", "models/stt", "data/run"):
+        assert (root / kept).exists(), kept

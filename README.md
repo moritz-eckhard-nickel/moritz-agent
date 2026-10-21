@@ -119,6 +119,7 @@ Sprachnachrichten, Sprachkanal) und den kompletten Dienst – ohne Ja/Nein-Frage
 ```bash
 ./test-2.sh setup          # wie test-1, dazu Discord: Token, Textkanal, Sprachkanal (Enter = überspringen)
 ./test-2.sh run            # automatische Tests, danach Live-Test (Strg+C beendet); --auto = nur automatisch
+./test-clearup.sh          # alles Getestete wieder entfernen (--venv: nur die Python-Umgebungen)
 ```
 
 ## Installation auf Proxmox: `install.sh` / `update.sh`
