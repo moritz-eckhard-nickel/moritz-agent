@@ -19,7 +19,7 @@ from moritz_agent.core.principal import Role, discord_role
 
 _MENTION = re.compile(r"<@!?(\d+)>")
 _TRIGGER = re.compile(r"^\s*(?:(?:hey|hi|hallo|moin|guude)\s+)?anton\s*[,:!]\s*", re.IGNORECASE)
-NOTICE_STRANGER = "Psst, da ist jemand Neues auf dem Server 👀 – mit dem rede ich nicht."
+NOTICE_STRANGER = "Psst, da ist jemand Neues auf dem Server – mit dem rede ich nicht."
 NOTICE_ONCE_A_DAY = "Ich spreche nur mit freigegebenen Personen."
 
 

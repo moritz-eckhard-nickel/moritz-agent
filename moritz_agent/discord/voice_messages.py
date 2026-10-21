@@ -134,7 +134,7 @@ class VoiceMessages:
             )
             return True
         text = transcript.text.strip()
-        await sender.send(OutMessage(content=f"🎤 *{redact(text, self.dispatcher.secrets())}*"))
+        await sender.send(OutMessage(content=f"*{redact(text, self.dispatcher.secrets())}*"))
         result = await self.dispatcher.ask(text, origin, sender)
         if result is not None and await self._wants_voice(origin.user_id, True):
             await self._reply_with_voice(result.text or result.markdown, sender)

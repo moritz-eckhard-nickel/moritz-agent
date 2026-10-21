@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
 # Schelmische Aktivitäten von Anton (docs/plan/14 §8.5, ADR-037). Eigene Texte.
+# Keine Emojis (Moritz, 21.10.2026) – höchstens Textsmileys wie :) :( :3 ^^.
 # Regeln: nur Spaß, der nicht beunruhigt – nichts, was wie ein echter Vorfall aussieht ("hackt deinen
 # Server", "Festplatte kaputt"), nichts über echte Personen, nichts Gemeines. Höchstens 128 Zeichen.
 # kind: playing = "Spielt …", listening = "Hört …", watching = "Schaut …", competing = "Tritt an …",
@@ -8,7 +9,7 @@
 
 [[base]]
 kind = "playing"
-text = "mit deinen Daten 😈"
+text = "mit deinen Daten >:)"
 [[base]]
 kind = "playing"
 text = "Verstecken mit deinen Bits"
@@ -17,7 +18,7 @@ kind = "playing"
 text = "Tetris mit deinem RAM"
 [[base]]
 kind = "playing"
-text = "Wetterfrosch 🐸"
+text = "Wetterfrosch"
 [[base]]
 kind = "playing"
 text = "Mikado mit Telefonkabeln"
@@ -26,7 +27,7 @@ kind = "playing"
 text = "Schach gegen den Router (und verliert)"
 [[base]]
 kind = "playing"
-text = "mit Scribbles 🐾"
+text = "mit Scribbles :3"
 [[base]]
 kind = "playing"
 text = "Bingo mit Postleitzahlen"
@@ -41,7 +42,7 @@ kind = "listening"
 text = "deinem Kühlschrank zu"
 [[base]]
 kind = "listening"
-text = "Ebbelwoi-Lofi 🎶"
+text = "Ebbelwoi-Lofi"
 [[base]]
 kind = "listening"
 text = "dem Rauschen der Lahn zu"
@@ -56,7 +57,7 @@ kind = "listening"
 text = "Wettervorhersagen als Hörbuch"
 [[base]]
 kind = "watching"
-text = "Wolken über Weilburg zu ☁️"
+text = "Wolken über Weilburg zu"
 [[base]]
 kind = "watching"
 text = "deinen Logs beim Wachsen zu"
@@ -65,7 +66,7 @@ kind = "watching"
 text = ", ob der Toast schon fertig ist"
 [[base]]
 kind = "watching"
-text = "dir über die Schulter 👀"
+text = "dir über die Schulter ^^"
 [[base]]
 kind = "watching"
 text = "dem Lahn-Pegel beim Steigen zu"
@@ -86,54 +87,54 @@ kind = "competing"
 text = "beim Langsamer-Sprechen-Wettbewerb"
 [[base]]
 kind = "custom"
-text = "🍪 Isst gerade deine Cookies"
+text = "Isst gerade deine Cookies :3"
 [[base]]
 kind = "custom"
-text = "🧠 Denkt über die 42 nach"
+text = "Denkt über die 42 nach"
 [[base]]
 kind = "custom"
-text = "🔌 Hängt am Strom (wie immer)"
+text = "Hängt am Strom (wie immer)"
 [[base]]
 kind = "custom"
-text = "🧦 Sucht die zweite Socke"
+text = "Sucht die zweite Socke :("
 [[base]]
 kind = "custom"
-text = "📎 Sortiert Büroklammern nach Farbe"
+text = "Sortiert Büroklammern nach Farbe"
 
 # -- lagebezogen (hat Vorrang vor der Grundliste) -------------------------------------------------------
 [situation.call]
 kind = "custom"
-text = ["📞 Telefoniert gerade – psst!"]
+text = ["Telefoniert gerade – psst!"]
 [situation.voice]
 kind = "custom"
-text = ["🎧 Quatscht mit Moritz im Sprachkanal"]
+text = ["Quatscht mit Moritz im Sprachkanal"]
 [situation.night]
 kind = "custom"
-text = ["💤 Träumt von Gigabytes", "💤 Zählt elektrische Schäfchen"]
+text = ["Träumt von Gigabytes", "Zählt elektrische Schäfchen"]
 [situation.rain]
 kind = "playing"
-text = ["im Regen ☔"]
+text = ["im Regen"]
 [situation.snow]
 kind = "custom"
-text = ["⛄ Baut einen Schneemann"]
+text = ["Baut einen Schneemann :3"]
 [situation.hot]
 kind = "custom"
-text = ["🫠 Schmilzt langsam"]
+text = ["Schmilzt langsam :("]
 [situation.thunder]
 kind = "custom"
-text = ["⛈️ Versteckt sich vorm Donner"]
+text = ["Versteckt sich vorm Donner"]
 [situation.warning]            # Ernst-Modus: keine Witze
 kind = "custom"
-text = ["⚠️ Achtet auf das Unwetter in Weilburg"]
+text = ["Achtet auf das Unwetter in Weilburg"]
 [situation.startup]
 kind = "custom"
-text = ["✨ Wacht gerade auf"]
+text = ["Wacht gerade auf"]
 [situation.maintenance]
 kind = "custom"
-text = ["🔧 Wird gerade frisch gemacht"]
+text = ["Wird gerade frisch gemacht"]
 [situation.offline]
 kind = "custom"
-text = ["🔍 Sucht das Internet"]
+text = ["Sucht das Internet"]
 
 # -- Sonderdaten (Monat/Tag oder Ostern±Tage) -----------------------------------------------------------
 [[special]]
@@ -141,26 +142,26 @@ name = "christmas"
 from = "12-24"
 to = "12-26"
 kind = "custom"
-text = "🎁 Packt Geschenke ein"
+text = "Packt Geschenke ein"
 [[special]]
 name = "halloween"
 from = "10-31"
 to = "10-31"
 kind = "custom"
-text = "👻 Spukt in deinen Kabeln"
+text = "Spukt in deinen Kabeln"
 [[special]]
 name = "new_year"
 from = "12-31"
 to = "01-01"
 kind = "custom"
-text = "🎆 Zählt runter"
+text = "Zählt runter"
 [[special]]
 name = "easter"
 easter = [-1, 1]
 kind = "custom"
-text = "🥚 Versteckt Eier im Dateisystem"
+text = "Versteckt Eier im Dateisystem"
 [[special]]
 name = "carnival"
 easter = [-52, -46]            # Weiberfastnacht bis Aschermittwoch
 kind = "custom"
-text = "🎭 Helau aus dem Serverraum"
+text = "Helau aus dem Serverraum"

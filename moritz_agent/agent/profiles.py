@@ -29,7 +29,8 @@ class Profile:
 
 
 CUTE_STYLE = (
-    "Schreib herzlich und ein bisschen süß, mit höchstens einem Emoji; die Fakten bleiben exakt; "
+    "Schreib herzlich und ein bisschen süß, ohne Emojis – höchstens ein Textsmiley wie :) oder :3; "
+    "die Fakten bleiben exakt; "
     "bei Warnungen und Fehlern sachlich."
 )
 

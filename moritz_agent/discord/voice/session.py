@@ -25,6 +25,7 @@ import discord
 
 from moritz_agent.core.principal import Role
 from moritz_agent.discord.sender import Origin
+from moritz_agent.discord.style import plain
 from moritz_agent.discord.voice import receive
 from moritz_agent.discord.voice.pipeline import BargeInDetector, is_wake_word
 from moritz_agent.discord.voice.playback import DiscordMedia
@@ -428,11 +429,7 @@ class VoiceManager:
         return self.session.channel.id if self.session else None
 
     def _style(self, text: str) -> str:
-        return (
-            text
-            if self.worker.dispatcher.styler.cute
-            else text.replace(" ✨", "").replace(" 👋", "")
-        )
+        return text if self.worker.dispatcher.styler.cute else plain(text)
 
     # -- /joinvc -------------------------------------------------------------------------------------------------------
     def _channel_of(self, user_id: str) -> Any | None:
@@ -467,15 +464,15 @@ class VoiceManager:
             return "Ich bin gerade dabei …"
         channel = self._resolve(origin.user_id, channel_id)
         if channel is None or not isinstance(channel, discord.VoiceChannel | discord.StageChannel):
-            return "Ich weiß nicht, in welchen Sprachkanal ich soll 🤔 Geh in einen hinein oder sag mir einen."
+            return "Ich weiß nicht, in welchen Sprachkanal ich soll :/ Geh in einen hinein oder sag mir einen."
         if not self.policy.guild_allowed(str(channel.guild.id)):
             return styler.error("forbidden")
         if isinstance(channel, discord.StageChannel) and not self.cfg.voice.stage_fallback:
             return "Bühnenkanäle sind bei mir ausgeschaltet."
         if self.session is not None:
             if self.session.channel.id == channel.id:
-                return self._style("Ich bin schon da ✨")
-            return f"Ich bin schon in 🔊 {self.session.channel.name}. Erst `/leavevc`."
+                return self._style("Ich bin schon da :)")
+            return f"Ich bin schon in {self.session.channel.name}. Erst `/leavevc`."
         me = channel.guild.me
         if me is not None:
             permissions = channel.permissions_for(me)
@@ -493,7 +490,7 @@ class VoiceManager:
     async def _connect(self, origin: Origin, channel: Any) -> str:
         speech = self.speech
         if not (speech.stt_available() or speech.tts_available()):
-            return "Meine Stimme und mein Gehör sind gerade nicht installiert 🙈"
+            return "Meine Stimme und mein Gehör sind gerade nicht installiert :("
         receiving = receive.available()
         vc = await channel.connect(
             cls=receive.client_class(), timeout=CONNECT_TIMEOUT_S, reconnect=True, self_deaf=False
@@ -534,7 +531,7 @@ class VoiceManager:
         log.info("Discord: Sprachkanal verlassen (%s)", why)
         if announce and self.worker.client is not None:
             await self.worker.say_in_default_channel(
-                self.worker.client, self._style(f"Ich bin raus aus 🔊 {name} ({why}) 👋")
+                self.worker.client, self._style(f"Ich bin raus aus {name} ({why}). Tschüss!")
             )
 
     async def shutdown(self) -> None:

@@ -37,8 +37,8 @@ FLAG_MESSAGE_CONTENT_LIMITED = 1 << 19  # … switched on in the Developer Porta
 TEXT_CHANNEL_TYPES = {0, 5}  # text, announcement
 VOICE_CHANNEL_TYPES = {2, 13}  # voice, stage
 BIO = (
-    "Guude! Ich bin Anton ✨ Moritz’ kleiner Helfer aus Weilburg – Telefon 999, Wetter, Uhrzeit & "
-    "ganz viel Quatsch. Frag mich einfach 🐾"
+    "Guude! Ich bin Anton :3 Moritz’ kleiner Helfer aus Weilburg – Telefon 999, Wetter, Uhrzeit & "
+    "ganz viel Quatsch. Frag mich einfach :)"
 )
 
 

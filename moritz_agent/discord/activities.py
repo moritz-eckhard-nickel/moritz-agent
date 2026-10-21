@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from moritz_agent.config.settings import DiscordActivities
+from moritz_agent.discord.style import no_emoji
 from moritz_agent.logging_setup import get_logger
 from moritz_agent.skills.calendar.holidays import easter
 
@@ -42,12 +43,13 @@ class Activity:
 
     @property
     def status(self) -> str:
-        """The full sentence as Discord shows it: "Spielt im Regen ☔", "Hört Ebbelwoi-Lofi 🎶"."""
+        """The full sentence as Discord shows it: "Spielt im Regen", "Hört Ebbelwoi-Lofi"."""
         verb = VERBS.get(self.kind)
+        text = no_emoji(self.text)  # also the owner's own sayings: no emoji (Moritz, 21.10.2026)
         if not verb:
-            return self.text[:MAX_TEXT]
-        gap = "" if self.text.startswith(",") else " "  # "Schaut, ob der Toast …"
-        return f"{verb}{gap}{self.text}"[:MAX_TEXT]
+            return text[:MAX_TEXT]
+        gap = "" if text.startswith(",") else " "  # "Schaut, ob der Toast …"
+        return f"{verb}{gap}{text}"[:MAX_TEXT]
 
 
 def load(root: Path, local: Path | None = None) -> dict[str, Any]:

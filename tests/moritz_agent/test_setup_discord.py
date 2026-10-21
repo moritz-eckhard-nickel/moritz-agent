@@ -301,7 +301,7 @@ def test_the_voice_channel_is_chosen_by_list_number_or_id_and_lands_in_the_confi
         return code, out.getvalue()
 
     code, listing = voice("")  # the only voice channel is taken without asking
-    assert code == 0 and "Einziger Sprachkanal: Zuhause / 🔊 Sprache" in listing
+    assert code == 0 and "Einziger Sprachkanal: Zuhause / Sprache" in listing
     assert voice("1")[0] == 0
     text = config.read_text(encoding="utf-8")
     assert 'default_channel_id = "5550003"' in text and "Sprachkanal für /joinvc" in text

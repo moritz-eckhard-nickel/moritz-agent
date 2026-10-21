@@ -46,7 +46,7 @@ def test_the_owner_asks_in_a_direct_message(tmp_path):
 
     sent = run_in(tmp_path, body)
     assert len(sent.sent) == 1 and "19 Uhr 12" in sent.text
-    assert sent.typed == 1 and sent.sent[0].content.endswith(("⏰", "✨", "🐾"))
+    assert sent.typed == 1 and sent.sent[0].content.endswith((":)", ":3", "^^"))
 
 
 def test_a_stranger_is_ignored_and_a_notice_comes_once_a_day(tmp_path):
@@ -286,7 +286,7 @@ def test_a_reminder_goes_to_the_place_it_was_asked_in(tmp_path):
         return dm, home, [r["target"] for r in rows]
 
     dm, home, targets = run_in(tmp_path, body)
-    assert dm.reactions == ["✅"] and home.reactions == ["✅"]
+    assert dm.reactions == [] and home.reactions == []  # no emoji reaction (Moritz, 21.10.2026)
     assert targets == ["dm:1001", "default"]
 
 
@@ -544,9 +544,7 @@ def test_calls_are_listed_without_content(tmp_path):
     }
     text = format_calls(overview, "Europe/Berlin")
     assert "18.10. 19:03" in text and "3 min" in text and "Nebenstelle 20" in text
-    assert "frei" in text and format_calls({"phone": {"in_call": True}}, "UTC").startswith(
-        "📞 Gerade"
-    )
+    assert "frei" in text and format_calls({"phone": {"in_call": True}}, "UTC").startswith("Gerade")
 
 
 def test_help_lists_only_what_the_person_may_and_what_works(tmp_path):
@@ -560,7 +558,7 @@ def test_help_lists_only_what_the_person_may_and_what_works(tmp_path):
     owner, trusted, privacy, admin = run_in(tmp_path, body)
     assert "/wetter" in owner.text and "/notiz" in owner.text and "/hilfe" in owner.text
     assert "/notiz" not in trusted.text and "/anrufe" not in trusted.text
-    assert "😇" in privacy.text and "nur für den Owner" in admin.text
+    assert "^^" in privacy.text and "nur für den Owner" in admin.text
 
 
 # -- admin ----------------------------------------------------------------------------------------------------------------

@@ -25,6 +25,7 @@ from moritz_agent.discord.commands import spec as commands
 from moritz_agent.discord.dispatch import NEEDS_PIN, Dispatcher, ephemeral_for
 from moritz_agent.discord.render import OutMessage
 from moritz_agent.discord.sender import Origin, Sender
+from moritz_agent.discord.style import no_emoji
 from moritz_agent.logging_setup import get_logger
 
 if TYPE_CHECKING:
@@ -84,8 +85,9 @@ def view_for(out: OutMessage) -> discord.ui.View | None:
 
 def kwargs_for(out: OutMessage, *, edit: bool = False) -> dict[str, Any]:
     """Arguments for ``send``/``edit``; empty things are left out (or cleared when editing)."""
-    kwargs: dict[str, Any] = {"content": out.content or (None if edit else discord.utils.MISSING)}
-    embed = discord.Embed.from_dict(out.embed) if out.embed else None
+    content = no_emoji(out.content) if out.content else ""
+    kwargs: dict[str, Any] = {"content": content or (None if edit else discord.utils.MISSING)}
+    embed = discord.Embed.from_dict(embed_without_emoji(out.embed)) if out.embed else None
     if edit:
         kwargs["embed"] = embed
         kwargs["view"] = view_for(out)
@@ -99,6 +101,26 @@ def kwargs_for(out: OutMessage, *, edit: bool = False) -> dict[str, Any]:
         file = discord.File(io.BytesIO(out.file[1]), filename=out.file[0])
         kwargs["attachments" if edit else "file"] = [file] if edit else file
     return {k: v for k, v in kwargs.items() if v is not discord.utils.MISSING}
+
+
+def embed_without_emoji(embed: dict[str, Any]) -> dict[str, Any]:
+    """Title, description, fields and footer of an embed without emoji (Moritz, 21.10.2026)."""
+    clean = dict(embed)
+    for key in ("title", "description"):
+        if clean.get(key):
+            clean[key] = no_emoji(str(clean[key])) or "·"
+    if clean.get("fields"):
+        clean["fields"] = [
+            {
+                **f,
+                "name": no_emoji(str(f["name"])) or "·",
+                "value": no_emoji(str(f["value"])) or "·",
+            }
+            for f in clean["fields"]
+        ]
+    if isinstance(clean.get("footer"), dict) and clean["footer"].get("text"):
+        clean["footer"] = {**clean["footer"], "text": no_emoji(str(clean["footer"]["text"]))}
+    return clean
 
 
 def only_asker(user: discord.abc.Snowflake | None) -> discord.AllowedMentions:

@@ -254,7 +254,7 @@ class ChatService:
         log.info(
             "Rückruf %d an %s angefordert (%s)", call.id, call.extension, turn.principal.short()
         )
-        message = "📞 Okay, ich rufe dich an."
+        message = "Okay, ich rufe dich an."
         return TurnResult(
             text=message, markdown=message, ms=round((time.monotonic() - started) * 1000)
         )

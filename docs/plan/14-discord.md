@@ -70,22 +70,23 @@ Inhalt: [1 Leitlinien](#1-leitlinien) · [2 So sieht das aus](#2-so-sieht-das-au
     Erinnerungen, Warnungen und Hinweise. Im Sprachkanal gibt es **keine Sprecherauswahl und kein
     Weckwort** – wer mit Anton im Kanal ist, ist „der Anrufer“ (§9). Die Allowlist bleibt nur als
     Sicherheitsnetz, falls doch einmal jemand Fremdes auf den Server kommt (ADR-035).
-11. **Ein bisschen süß.** Auf Discord ist Anton „cutey“: verspielter Ton, kleine Emojis und
-    Kaomojis, schelmische Aktivitäten („Spielt mit deinen Daten 😈“). Die Fakten bleiben exakt, bei
+11. **Ein bisschen süß.** Auf Discord ist Anton „cutey“: verspielter Ton, Textsmileys
+    wie :) :( :3 – **keine Emojis** (Moritz, 21.10.2026) –, schelmische Aktivitäten („Spielt mit deinen
+    Daten >:)“). Die Fakten bleiben exakt, bei
     Unwettern, Fehlern und Admin-Sachen ist Schluss mit lustig (§8.2, §8.5, ADR-037).
 12. **Alles muss gehen – auch in Zukunft.** Kanal-Parität ist Pflicht für jedes künftige Ticket (§6).
 
 ## 2. So sieht das aus
 
 ```text
-Mitgliederliste:  🟢 Anton ✨   Spielt mit deinen Daten 😈        (Aktivität wechselt alle paar Minuten, §8.5)
+Mitgliederliste:  Anton   Spielt mit deinen Daten >:)            (Aktivität wechselt alle paar Minuten, §8.5)
 
 Standard-Textkanal #anton (keine Erwähnung nötig)
   Moritz:  wie isses wedder morsche?
-  Anton:  Morgen wird’s in Weilburg ein bisschen ungemütlich ☔ (｡•́︿•̀｡)
+  Anton:  Morgen wird’s in Weilburg ein bisschen ungemütlich :(
            ┌ Wetter morgen in Weilburg ─────────────────────────┐
            │ Mittwoch, 21. Oktober · wechselhaft · 8 bis 13 °C  │
-           │ 🌧 Regen 70 % (vormittags) · 💨 Böen 45 km/h SW     │
+           │ Regen 70 % (vormittags) · Böen 45 km/h SW          │
            │ Wetterdaten: Open-Meteo.com (CC BY 4.0) · DWD      │
            └────────────────────────────────────────────────────┘
            [Heute] [Wochenende] [7 Tage] [Warnungen] [Andere Stadt …]
@@ -95,12 +96,12 @@ Slash-Befehl in einem beliebigen Chat (Benutzer-App)
 
 Mehrdeutig
   Moritz:  wetter in neustadt
-  Anton:  Uii, da gibt’s mehrere 👀 Welches Neustadt meinst du?
+  Anton:  Uii, da gibt’s mehrere ^^ Welches Neustadt meinst du?
            [Auswahl: Neustadt (Hessen) · Neustadt an der Weinstraße · …]
 
 Sprachkanal – „wie im Anruf“ (§9)
   Moritz:  /joinvc
-  Anton:  Bin unterwegs in 🔊 Quatschecke ✨                (Text)
+  Anton:  Bin unterwegs in Quatschecke :)                  (Text)
   … Moritz ist im Sprachkanal →
   Anton (spricht):  Hallo Moritz, hier ist Anton. Was kann ich für dich tun?
   Moritz (spricht):  Wann geht die Sonne unter?              (kein „Anton, …“ nötig)
@@ -109,14 +110,14 @@ Sprachkanal – „wie im Anruf“ (§9)
   Anton (spricht):  Alles klar, bis bald!                    (Gespräch zu Ende wie beim Auflegen)
 
 Sprachnachricht
-  Moritz schickt 🎤 0:04 „Wie viele Tage noch bis Weihnachten?“
-  Anton:  🎤 *Wie viele Tage noch bis Weihnachten?*
-           Noch 65 Tage bis Heiligabend 🎄✨  (+ auf Wunsch als Sprachnachricht mit Antons Stimme)
+  Moritz schickt eine Sprachnachricht (0:04) „Wie viele Tage noch bis Weihnachten?“
+  Anton:  *Wie viele Tage noch bis Weihnachten?*
+           Noch 65 Tage bis Heiligabend :D  (+ auf Wunsch als Sprachnachricht mit Antons Stimme)
 
 Proaktiv im Standardkanal (abonniert)
-  Anton (06:45):  Guten Morgen, Moritz ☀️ Heute ist Donnerstag, der 22. Oktober. In Weilburg bewölkt bis
-                   12 °C, ab Mittag Regen. Morgen wird die Biotonne abgeholt 🗑️
-  Anton (sofort): ⚠️ Unwetterwarnung für Weilburg: Sturmböen bis 85 km/h, bis heute 22 Uhr. [Details]
+  Anton (06:45):  Guten Morgen, Moritz :) Heute ist Donnerstag, der 22. Oktober. In Weilburg bewölkt bis
+                   12 °C, ab Mittag Regen. Morgen wird die Biotonne abgeholt.
+  Anton (sofort): Achtung: Unwetterwarnung für Weilburg: Sturmböen bis 85 km/h, bis heute 22 Uhr. [Details]
                    (ernst, ohne Späße)
 ```
 
@@ -199,7 +200,7 @@ moritz_agent/discord/
 │   └── playback.py    TTS/Ansagen → 48 kHz Stereo → Opus → Discord
 ├── voice_messages.py  Sprachnachrichten empfangen/senden
 ├── notify.py          proaktive Nachrichten, Erinnerungen, ruhige Zeiten, Drosselung (Ziel: Standardkanal)
-├── style.py           süßer Stil: Emojis, Kaomojis, Floskeln, Ernst-Modus (§8.2)
+├── style.py           süßer Stil: Textsmileys, Floskeln, Emoji-Filter, Ernst-Modus (§8.2)
 ├── activities.py      rotierende schelmische Aktivitäten + lagebezogene (§8.5)
 ├── admin.py           Owner-Befehle mit Bestätigung
 └── setup.py           Token prüfen, App-Infos lesen, Einladungslinks, Avatar
@@ -255,7 +256,7 @@ Owner sieht).
 - **Standard-Textkanal** (`[discord] channel_id` in `passwords.txt`, beim Setup abgefragt): Antons
   Zuhause. Dort antwortet sie auf **jede** Nachricht von Moritz (keine Erwähnung nötig), dort landen
   Erinnerungen, Abos, Anruf- und Systemhinweise, dort meldet sie sich nach dem Start („Bin wieder
-  wach ✨“, abschaltbar). Der Server dieses Kanals ist automatisch erlaubt – eine eigene Server-ID
+  wach :)“, abschaltbar). Der Server dieses Kanals ist automatisch erlaubt – eine eigene Server-ID
   muss man nicht angeben.
 - **Direktnachrichten:** Owner und Vertraute (alles, was im Standardkanal geht).
 - **Server:** der Server des Standardkanals plus optional `discord.allowed_guild_ids`. Wird Anton in
@@ -267,7 +268,7 @@ Owner sieht).
 - **Privatserver-Annahme:** Auf dem Server sind nur Moritz und Anton. Deshalb entscheidet Anton
   nicht, „wer gemeint ist“ – sie redet mit dem Menschen, der da ist. Taucht doch eine fremde Person
   auf (nicht Owner/Vertraut), ignoriert Anton sie und schreibt einmal einen Hinweis in den
-  Standardkanal („Psst, da ist jemand Neues auf dem Server 👀 – mit dem rede ich nicht.“).
+  Standardkanal („Psst, da ist jemand Neues auf dem Server – mit dem rede ich nicht.“).
 - **Benutzer-App** (Befehle in fremden Servern/DMs): nur Owner und Vertraute; Antworten dort
   standardmäßig nur für den Aufrufer sichtbar (fremde Server erlauben externe Apps oft nicht öffentlich).
 
@@ -419,7 +420,7 @@ was wirklich geht.
 
 - **Kurzantwort:** normaler Text mit Markdown (fett für die Kernaussage).
 - **Karte (Embed):** Wetter, Warnungen, Pollen, Sonne/Mond, Kalender, Status. Farbe nach Lage
-  (Warnstufe gelb/orange/rot/violett, Wetterklasse), Felder mit Emojis (🌡 🌧 💨 ☀️), Fußzeile mit
+  (Warnstufe gelb/orange/rot/violett, Wetterklasse), Felder ohne Emojis, Fußzeile mit
   Quelle und Lizenz („Wetterdaten: Open-Meteo.com (CC BY 4.0) · Warnungen: DWD“) – die
   Namensnennung aus SKILL-14 ist damit auf Discord immer erfüllt.
 - **Folgeaktionen:** Knöpfe aus `SkillResult.actions` („Morgen“, „Wochenende“, „7 Tage“, „Mehr
@@ -430,38 +431,39 @@ was wirklich geht.
 - **Streaming (LLM):** erste Nachricht nach dem ersten vollständigen Satz, Bearbeitung höchstens alle
   1,2 s, am Ende finale Fassung mit Quellen.
 - **Threads:** Recherche, Aufgaben, Coding und lange Gespräche in einem Kanal laufen in einem eigenen
-  Thread („🔎 Recherche: …“), damit der Kanal sauber bleibt.
+  Thread („Recherche: …“), damit der Kanal sauber bleibt.
 
 ### 8.2 Persönlichkeit: Anton, ein bisschen süß (ADR-037)
 
 Moritz: „Mache den User bitte bissl cutey.“ Auf Discord schreibt Anton verspielt und herzlich – er
-bleibt Anton (männlich, duzt, hessischer Einschlag: „Guude~ ✨“), aber mit Zucker obendrauf.
+bleibt Anton (männlich, duzt, hessischer Einschlag: „Guude~ :3“), aber mit Zucker obendrauf.
 Stil `discord.style = "cute"` (Standard) oder `"normal"`.
 
 | Regel | Beispiel |
 | --- | --- |
-| Kernaussage zuerst, sachlich korrekt – der Zucker kommt **drumherum**, nie in die Zahlen | „Noch 65 Tage bis Heiligabend 🎄✨“ |
-| höchstens 1–2 Emojis pro Nachricht, passend zum Inhalt (☀️ ☔ ❄️ 🌸 ✨ 🐾 👀 🙈 💤) | „Morgen wird’s sonnig ☀️“ |
-| ab und zu ein Kaomoji (etwa jede fünfte Nachricht, nie zweimal hintereinander) | „Hab ich notiert (｡•̀ᴗ-)✧“ |
-| kleine Ausrufe und Verkleinerungen sparsam: „uii“, „hihi“, „ein Momentchen“ | „Ein Momentchen, ich schau nach 👀“ |
-| Fehler charmant, aber klar | „Uff, an die Wetterdaten komm ich gerade nicht ran 🙈 Versuch’s gleich nochmal.“ |
-| Begrüßung/Abschied mit Herz | „Guude, Moritz ✨“ · „Bis bald 👋🐾“ |
-| **Ernst-Modus** (keine Emojis, keine Späße): Warnungen ab Stufe 2, Hochwasser/Katastrophe, Admin-Befehle, Sicherheitshinweise, Fehler mit Datenverlust | „⚠️ Unwetterwarnung für Weilburg: …“ (nur das Warnsymbol) |
-| Gesprochene Antworten (Sprachkanal) bleiben wie am Telefon: ohne Emojis, kurz, freundlich | – |
+| Kernaussage zuerst, sachlich korrekt – der Zucker kommt **drumherum**, nie in die Zahlen | „Noch 65 Tage bis Heiligabend :D“ |
+| **keine Emojis** (Moritz, 21.10.2026) – höchstens **ein** Textsmiley pro Nachricht, passend zum Inhalt (`:)` `:(` `:3` `^^` `:D` `<3`) | „Morgen wird’s sonnig :D“ · „Morgen regnet’s :(“ |
+| kleine Ausrufe und Verkleinerungen sparsam: „uii“, „hihi“, „ein Momentchen“ | „Ein Momentchen, ich schau nach …“ |
+| Fehler charmant, aber klar | „Uff, an die Wetterdaten komm ich gerade nicht ran :( Versuch’s gleich nochmal.“ |
+| Begrüßung/Abschied mit Herz | „Guude, da bin ich wieder :)“ · „Gern geschehen :3“ |
+| **Ernst-Modus** (keine Smileys, keine Späße): Warnungen ab Stufe 2, Hochwasser/Katastrophe, Admin-Befehle, Sicherheitshinweise, Fehler mit Datenverlust | „Achtung: Unwetterwarnung für Weilburg: …“ |
+| Gesprochene Antworten (Sprachkanal) bleiben wie am Telefon: ohne Smileys, kurz, freundlich | – |
 
-Umsetzung: Die Kern-Antwort bleibt neutral; ein **Stil-Renderer** im Discord-Adapter ergänzt Emoji,
-Kaomoji und Floskeln aus eigenen Textlisten (`assets/data/discord/stil.de.toml`, MSOL) –
-deterministisch je Nachricht (Startwert aus Nachrichten-ID), damit Tests stabil sind. Beim LLM
-(ab P1-09) kommt eine Zeile in das Profil `discord_chat`: „Schreib herzlich und ein bisschen süß, mit
-höchstens einem Emoji; Fakten exakt; bei Warnungen und Fehlern sachlich.“ Zahlen mit Einheiten als
-Ziffern („12 °C“ – textnorm gilt nur für gesprochene Ausgabe). Reaktionen von Anton: ✅ für
-Erledigtes, gelegentlich 💛 auf ein „Danke“.
+Umsetzung: Die Kern-Antwort bleibt neutral; ein **Stil-Renderer** im Discord-Adapter ergänzt einen
+Smiley und Floskeln aus eigenen Textlisten (`assets/data/discord/stil.de.toml`, MSOL) –
+deterministisch je Nachricht (Startwert aus Nachrichten-ID), damit Tests stabil sind. Kaomojis gibt es
+nicht mehr. Ein **Emoji-Filter** (`style.no_emoji`) nimmt beim Senden alle Emojis aus Text, Karten und
+Status – auch aus Antworten des Sprachmodells und aus eigenen Aktivitäts-Sprüchen. Beim LLM steht im
+Profil `discord_chat`: „Benutze keine Emojis.“ und im süßen Stil „höchstens ein Textsmiley wie :) oder
+:3“. Zahlen mit Einheiten als Ziffern („12 °C“ – textnorm gilt nur für gesprochene Ausgabe). Anton
+reagiert nicht mit Emojis (früher ✅ bei Erinnerungen); 👍/👎 von Moritz auf Antworten zählen weiter
+für die Statistik (§8.3).
 
 **Profil des Bots:** Name „Anton“, Avatar = Scribbles **weiß auf dunklem, rundem Grund** (Branding-Regel
 „monochrom, nicht neu zeichnen“ – süß wird es über den Ton; eine extra niedliche Scribbles-Pose kann nur
 Moritz zeichnen, F-38), Banner = Scribbles-Muster monochrom; Bio („Über mich“):
-„Guude! Ich bin Anton ✨ Moritz’ kleiner Helfer aus Weilburg – Telefon 999, Wetter, Uhrzeit & ganz viel
-Quatsch. Frag mich einfach 🐾“. Avatar und Banner erzeugt `scripts/build_branding.py`; das Setup lädt
+„Guude! Ich bin Anton :3 Moritz’ kleiner Helfer aus Weilburg – Telefon 999, Wetter, Uhrzeit & ganz viel
+Quatsch. Frag mich einfach :)“. Avatar und Banner erzeugt `scripts/build_branding.py`; das Setup lädt
 sie auf Wunsch hoch.
 
 ### 8.3 Reaktionen
@@ -488,23 +490,23 @@ freien Status – alle werden genutzt.
 
 | Art | Aktivitäten |
 | --- | --- |
-| Spielt | mit deinen Daten 😈 · Verstecken mit deinen Bits · Tetris mit deinem RAM · Wetterfrosch 🐸 · Mikado mit Telefonkabeln · Schach gegen den Router (und verliert) · mit Scribbles 🐾 · Bingo mit Postleitzahlen · „Wer hat an der Uhr gedreht?“ · Kopf oder Zahl mit sich selbst |
-| Hört | deinem Kühlschrank zu · Ebbelwoi-Lofi 🎶 · dem Rauschen der Lahn · Hessisch für Fortgeschrittene · dem Lüfter beim Singen zu · Wettervorhersagen als Hörbuch |
-| Schaut | Wolken über Weilburg zu ☁️ · deinen Logs beim Wachsen zu · ob der Toast schon fertig ist · dir über die Schulter 👀 · dem Lahn-Pegel beim Steigen zu · Sekunden beim Vergehen zu |
+| Spielt | mit deinen Daten >:) · Verstecken mit deinen Bits · Tetris mit deinem RAM · Wetterfrosch · Mikado mit Telefonkabeln · Schach gegen den Router (und verliert) · mit Scribbles · Bingo mit Postleitzahlen · „Wer hat an der Uhr gedreht?“ · Kopf oder Zahl mit sich selbst |
+| Hört | deinem Kühlschrank zu · Ebbelwoi-Lofi · dem Rauschen der Lahn · Hessisch für Fortgeschrittene · dem Lüfter beim Singen zu · Wettervorhersagen als Hörbuch |
+| Schaut | Wolken über Weilburg zu · deinen Logs beim Wachsen zu · ob der Toast schon fertig ist · dir über die Schulter · dem Lahn-Pegel beim Steigen zu · Sekunden beim Vergehen zu |
 | Tritt an in | Wer zuerst die Uhrzeit sagt · Wetterraten-Weltmeisterschaft · Kopfrechnen gegen einen Taschenrechner · Langsamer-Sprechen-Wettbewerb |
-| Freier Status | 🍪 isst gerade deine Cookies · 🧠 denkt über die 42 nach · 🔌 hängt am Strom (wie immer) · 🧦 sucht die zweite Socke · 📎 sortiert Büroklammern nach Farbe |
+| Freier Status | isst gerade deine Cookies :3 · denkt über die 42 nach · hängt am Strom (wie immer) · sucht die zweite Socke :( · sortiert Büroklammern nach Farbe |
 
 **Lagebezogen (hat Vorrang vor der Grundliste):**
 
 | Lage | Aktivität |
 | --- | --- |
-| Anruf an 999 läuft | 📞 Telefoniert gerade – psst! |
-| Sprachkanal-Gespräch läuft | 🎧 Quatscht mit Moritz im Sprachkanal |
-| Nachts (23–6 Uhr) | 💤 Träumt von Gigabytes · Zählt elektrische Schäfchen |
-| Regen / Schnee / Hitze ≥ 30 °C / Gewitter in Weilburg (aus dem Wetter-Cache) | Spielt im Regen ☔ · Baut einen Schneemann ⛄ · Schmilzt langsam 🫠 · Versteckt sich vorm Donner ⛈️ |
-| Unwetterwarnung ab Stufe 3 | ⚠️ Achtet auf das Unwetter in Weilburg (Ernst-Modus, keine Witze) |
-| Sonderdaten (13 §8.2) | Weihnachten: Packt Geschenke ein 🎁 · Halloween: Spukt in deinen Kabeln 👻 · Silvester: Zählt runter 🎆 · Ostern: Versteckt Eier im Dateisystem 🥚 · Fastnacht: Helau aus dem Serverraum 🎭 |
-| Start · Wartung/Update · Datendienst gestört | Wacht gerade auf ✨ · 🔧 Wird gerade frisch gemacht · Sucht das Internet 🔍 |
+| Anruf an 999 läuft | Telefoniert gerade – psst! |
+| Sprachkanal-Gespräch läuft | Quatscht mit Moritz im Sprachkanal |
+| Nachts (23–6 Uhr) | Träumt von Gigabytes · Zählt elektrische Schäfchen |
+| Regen / Schnee / Hitze ≥ 30 °C / Gewitter in Weilburg (aus dem Wetter-Cache) | Spielt im Regen · Baut einen Schneemann :3 · Schmilzt langsam · Versteckt sich vorm Donner |
+| Unwetterwarnung ab Stufe 3 | Achtet auf das Unwetter in Weilburg (Ernst-Modus, keine Witze) |
+| Sonderdaten (13 §8.2) | Weihnachten: Packt Geschenke ein · Halloween: Spukt in deinen Kabeln · Silvester: Zählt runter · Ostern: Versteckt Eier im Dateisystem · Fastnacht: Helau aus dem Serverraum |
+| Start · Wartung/Update · Datendienst gestört | Wacht gerade auf · Wird gerade frisch gemacht · Sucht das Internet |
 
 **Regeln:**
 
@@ -515,7 +517,7 @@ freien Status – alle werden genutzt.
 - `/aktivitaet neu` wechselt sofort, `/aktivitaet aus` zeigt nur noch „online“, `/aktivitaet vorschlag`
   speichert einen eigenen Spruch des Owners lokal (`data/discord/aktivitaeten.local.toml`), der in die
   Rotation kommt.
-- `/hilfe datenschutz` stellt klar: „Keine Sorge – ich spiele nicht wirklich mit deinen Daten 😇“.
+- `/hilfe datenschutz` stellt klar: „Keine Sorge – ich spiele nicht wirklich mit deinen Daten ^^“.
 - Wechsel höchstens alle 5 Minuten (Discords Präsenz-Limits); bei Lagewechsel (Anruf beginnt) sofort.
 
 ## 9. Sprachkanal
@@ -530,7 +532,7 @@ Schnittstelle `MediaChannel` (Audio rein in 16-kHz-Rahmen, Audio raus, „aufgel
 Umsetzungen: SIP-Anruf und Discord-Sprachkanal (P1-36).
 
 ```text
-/joinvc ──► [Wartet]  Anton sitzt still im Sprachkanal, Aktivität „🎧 Wartet im Sprachkanal“
+/joinvc ──► [Wartet]  Anton sitzt still im Sprachkanal, Aktivität „Wartet im Sprachkanal“
                │  Moritz ist schon da oder kommt dazu
                ▼
             [Im Gespräch]  = Anruf angenommen:
@@ -553,7 +555,7 @@ Umsetzungen: SIP-Anruf und Discord-Sprachkanal (P1-36).
 
 - `/joinvc [kanal]`: ohne Angabe der Sprachkanal, in dem Moritz gerade ist, sonst
   `discord.voice.default_channel_id` (beim Setup abfragbar), sonst Rückfrage mit Auswahlliste.
-  Textantwort im Stil von §8.2: „Bin unterwegs in 🔊 Quatschecke ✨“.
+  Textantwort im Stil von §8.2: „Bin unterwegs in Quatschecke :)“.
 - Optional `discord.voice.auto_join = true`: Anton kommt von selbst, sobald Moritz einen Sprachkanal
   des Servers betritt (Standard aus, F-31).
 - Kein Klingeln: Anton wartet nach dem Betreten von Moritz 1 s (Audio steht), dann kommt die Begrüßung.
@@ -626,7 +628,7 @@ Umsetzungen: SIP-Anruf und Discord-Sprachkanal (P1-36).
 - **Empfangen:** Sprachnachricht (oder Audiodatei ≤ 5 min, ≤ 25 MB) von einer freigegebenen Person
   in DM/Anton-Kanal → Herunterladen in den RAM → Dekodieren (PyAV, schon in `phone.lock`) → 16 kHz →
   Whisper → Kern (`surface = chat`) → Antwort als Text; das Transkript erscheint klein darüber
-  („🎤 *Wie viele Tage noch bis Weihnachten?*“), damit Erkennungsfehler sichtbar sind.
+  („*Wie viele Tage noch bis Weihnachten?*“), damit Erkennungsfehler sichtbar sind.
 - **Antwort als Sprache:** `discord.voice_messages.reply_with_voice = "mirror"` (Standard: Sprachnachricht
   → auch als Sprachnachricht antworten, sonst Text) | `"always"` | `"never"`. Erzeugt mit Piper,
   kodiert als OGG/Opus 48 kHz mit Wellenform; ob Bots echte Sprachnachrichten senden dürfen, klärt
@@ -646,7 +648,7 @@ Discord-Nachrichten sind keine Anrufe – Anton darf hier von sich aus schreiben
 | Morgenbriefing | Skill `briefing` als Karte | tägliche Uhrzeit (z. B. 06:45), nur Mo–Fr optional | aus |
 | Müllabfuhr | „Morgen: Biotonne“ | Vorabend 19:00 | aus |
 | Erinnerungen/Timer | bestellter Text | Zeitpunkt (sekundengenau ± 5 s), übersteht Neustarts, nachgeholt mit Hinweis | – |
-| Anrufe | „📞 Anruf von Nebenstelle 20, 3 min“ (§12) | Anrufende | aus |
+| Anrufe | „Anruf von Nebenstelle 20, 3 min“ (§12) | Anrufende | aus |
 | Systemhinweise (nur Owner) | SIP > 5 min nicht registriert, Dienst neu gestartet, Datendienst > 1 h gestört, Platte > 90 %, Update-Ergebnis | Statusänderung, max. 1 je Art und Stunde | Owner: an |
 
 Erinnerungen und Abos liegen bis zur Datenbank (P1-06) in `data/discord/` (JSON, 0600), danach in
@@ -720,7 +722,7 @@ Nicht vorgesehen: Updates (laufen vom Proxmox-Host, ADR-028), Shell, Dateizugrif
   bei Enter wartet das Setup, bis Anton im Server ist, und zeigt die Textkanäle nummeriert zur
   Auswahl; die ID wird geprüft (Kanal existiert, Anton darf dort schreiben) und zeilenweise als
   `channel_id` in `passwords.txt` geschrieben → Testnachricht in den Kanal („Guude! Ich bin jetzt
-  hier zu Hause ✨“) → optional Avatar, Banner und Bio des Bots setzen.
+  hier zu Hause :)“) → optional Avatar, Banner und Bio des Bots setzen.
 - **Ohne Installer:** Token und Kanal-ID direkt in `passwords.txt` eintragen und `discord.enabled =
   true` setzen – beim nächsten Start/Reload liest Anton die Anwendungsdaten selbst und schreibt die
   Einladungslinks ins Log und in `data/run/discord-status.json`. Fehlt die Kanal-ID, läuft Anton trotzdem
@@ -765,7 +767,7 @@ trusted_user_ids = []
 allowed_guild_ids = []               # weitere Server (der Server des Standardkanals ist immer erlaubt)
 chat_channel_ids = []                # weitere Kanäle, in denen Anton auf jede Nachricht antwortet (Standardkanal steht in passwords.txt)
 style = "cute"                       # "cute" | "normal" (§8.2)
-startup_message = true               # „Bin wieder wach ✨“ im Standardkanal nach dem Start
+startup_message = true               # „Bin wieder wach :)“ im Standardkanal nach dem Start
 name_trigger = true                  # „Anton, …“ am Satzanfang wirkt wie eine Erwähnung
 guest_mode = "off"                   # "off" | "skills"
 unknown_users = "ignore"             # "ignore" | "notice"

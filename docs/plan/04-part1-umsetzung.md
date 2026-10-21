@@ -904,3 +904,19 @@ rund 50 Fehler gefunden; alle bestätigten sind behoben und mit Regressionstests
   Lock-Dateien (`runtime/venv/.moritz-locks`) und überspringt `pip install`, wenn sie gleich sind;
   Modelle, PJSIP-Build und Ansagen-Cache werden ohnehin wiederverwendet.
 - **„Leg auf“ und Rückruf** auf die 201: ADR-038.
+
+### C.6 Keine Emojis mehr (21.10.2026, vorgezogen für Part 2)
+
+Moritz: „alle Emojis entfernen und im Text gegen :) :( :3 usw. austauschen oder halt weglassen“.
+
+- `stil.de.toml` hat nur noch Textsmileys (`[smiley]`, `[smiley_text]`); höchstens **einer** pro
+  Nachricht, Kaomojis sind entfallen. `style = "normal"` nimmt auch die Smileys heraus.
+- **Emoji-Filter** `discord/style.py: no_emoji()` an der einzigen Ausgangsstelle (`client.kwargs_for`:
+  Text, Embed-Titel/-Beschreibung/-Felder/-Fußzeile) und im Status (`Activity.status`) – greift auch für
+  Antworten des Sprachmodells und eigene `/aktivitaet`-Sprüche. Das Profil `discord_chat` sagt
+  „Benutze keine Emojis.“
+- Aktivitäten, Admin-Status (Zustand als Wort statt Farbpunkt), Abo-/Erinnerungs-Titel („Erinnerung“,
+  „Achtung: …“), Hilfe- und Einstellungs-Texte ohne Emojis. Anton reagiert nicht mehr mit ✅;
+  👍/👎 **von Moritz** auf Antworten zählen weiter (das sind Eingaben, keine Ausgabe).
+- Terminal-Ausgaben der Skripte (✔/✘ in `test-2.sh`) bleiben – das sind Prüfzeichen, keine Antworten
+  von Anton.

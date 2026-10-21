@@ -302,7 +302,7 @@ async def talk_discord(req: Request) -> SkillResult:
         return say("Ich habe noch nichts gesagt, das ich dir schicken könnte.")
     return SkillResult(
         text="Okay, ich habe es dir auf Discord geschickt.",
-        forward=("📲 Von Anton (Telefon)", req.ctx.last_text),
+        forward=("Von Anton (Telefon)", req.ctx.last_text),
     )
 
 

@@ -493,7 +493,7 @@ class DiscordWorker:
             await guild.leave()
         await self.say_in_default_channel(
             client,
-            f"Jemand hat mich auf einen fremden Server geholt ({guild.name}) – ich bin sofort wieder gegangen 🚪",
+            f"Jemand hat mich auf einen fremden Server geholt ({guild.name}) – ich bin sofort wieder gegangen.",
         )
 
     # -- loops ----------------------------------------------------------------------------------------------------------------

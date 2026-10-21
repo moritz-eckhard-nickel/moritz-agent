@@ -86,7 +86,7 @@ def test_written_on_discord_the_answer_goes_to_the_phone_worker_and_nowhere_else
         return answer, order, empty, pending
 
     answer, order, empty, pending = run(_in(tmp_path, body))
-    assert answer.text == "📞 Okay, ich rufe dich an."
+    assert answer.text == "Okay, ich rufe dich an."
     assert order["extension"] == "201" and "19 Uhr 12" in order["text"]
     assert 10 <= order["ring_s"] <= 15 and order["speak_after_s"] == 1.0
     assert empty is None

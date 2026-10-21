@@ -618,11 +618,12 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   Sachen haben wie ‚spielt mit deinen Daten‘ – schelmisch, funny.“
 - **Entscheidung:**
   1. **Stil** `discord.style = "cute"` (Standard): Die Kern-Antwort bleibt neutral und exakt; ein
-     Stil-Renderer im Discord-Adapter ergänzt höchstens 1–2 passende Emojis, gelegentlich ein Kaomoji
-     und herzliche Floskeln aus eigenen Textlisten (`assets/data/discord/stil.de.toml`), deterministisch
+     Stil-Renderer im Discord-Adapter ergänzt höchstens einen passenden Textsmiley (:) :( :3 ^^) – **keine
+     Emojis und keine Kaomojis** (Moritz, 21.10.2026: „alle Emojis entfernen und gegen :) :( :3 austauschen
+     oder weglassen“; ein Filter nimmt sie aus allem, was Anton sendet) – und herzliche Floskeln aus eigenen Textlisten (`assets/data/discord/stil.de.toml`), deterministisch
      je Nachricht. **Ernst-Modus** ohne Späße bei Warnungen ab Stufe 2, Katastrophen, Admin,
      Sicherheit und Fehlern mit Datenverlust. Gesprochene Antworten bleiben wie am Telefon.
-  2. **Aktivitäten:** rotierende, schelmisch-lustige Aktivitäten („Spielt mit deinen Daten 😈“, „Hört
+  2. **Aktivitäten:** rotierende, schelmisch-lustige Aktivitäten („Spielt mit deinen Daten >:)“, „Hört
      deinem Kühlschrank zu“, „Schaut Wolken über Weilburg zu“ …) aus
      `assets/data/discord/aktivitaeten.de.toml`, alle 7–15 min, keine Wiederholung unter 10; lagebezogene
      Aktivitäten haben Vorrang (Anruf, Sprachkanal, Nacht, Wetter, Sonderdaten, Wartung, Unwetter im

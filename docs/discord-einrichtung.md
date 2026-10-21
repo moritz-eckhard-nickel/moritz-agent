@@ -99,7 +99,7 @@ als eigener Prozess; ein Fehler dort stört das Telefon nicht.
   antwortet (auch als Audio, einstellbar mit `/einstellungen sprachantwort`).
 * **Sprachkanal**: in einen Sprachkanal gehen, `/joinvc` – Anton kommt dazu und verhält sich wie im
   Anruf. Siehe [plan/14 §9](plan/14-discord.md#9-sprachkanal).
-* **Süß und schelmisch**: Anton schreibt freundlich mit Emojis und zeigt wechselnde Aktivitäten
+* **Süß und schelmisch**: Anton schreibt freundlich mit Textsmileys wie :) :( :3 (Emojis gibt es keine) und zeigt wechselnde Aktivitäten
   („Spielt Verstecken mit deinen Bits“). Mit `style = "normal"` unter `[discord]` ist das aus,
   `/aktivitaet aus` blendet die Aktivitäten aus.
 
