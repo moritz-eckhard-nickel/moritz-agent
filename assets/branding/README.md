@@ -22,6 +22,7 @@
 | WebUI | Login-Seite, Lade- und Wartezustände („Scribbles denkt nach …“), leere Listen, Fehler- und 404-Seiten, Über-Seite |
 | Statusseite (Part 1) | Kopfzeile mit Logo; Scribbles bei „Alles läuft“ bzw. Störung |
 | Doku / README / GitHub | Logo im README, Scribbles in Branding- und Hilfeseiten |
+| Discord | Profilbild des Bots Nikita (`discord-avatar.png`) |
 | Android-App (später) | App-Icon = Logo, Splash-Screen = Scribbles |
 
 Regeln:
@@ -44,6 +45,7 @@ Regeln:
 | `scribbles/scribbles-white.svg`, `-white-512.png` | Scribbles weiß, vektorisiert |
 | `m-agent-logo.svg`, `-512.png`, `-192.png`, `-64.png` | Logo: fettes M + Scribbles im abgerundeten Rahmen |
 | `m-agent.ico` | Icon 16–256 px (identisch mit `niko.ico` / `nikogreen.ico` im Wurzelverzeichnis) |
+| `discord-avatar.png` | Profilbild für den Discord-Bot Nikita: weiße Scribbles auf Dunkel, 512 × 512 (`python -m moritz_agent.discord profile` lädt es hoch) |
 
 ## Neu erzeugen
 
