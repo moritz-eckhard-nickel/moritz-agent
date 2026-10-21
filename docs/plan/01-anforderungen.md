@@ -43,7 +43,7 @@ Der Originalplan bleibt unverändert als Referenz.
 | PHONE-07 | Registrierungsfehler werden mit begrenztem exponentiellem Backoff wiederholt; Status ist in UI/API sichtbar. | MUSS | 1 |
 | PHONE-08 | SIP-Änderungen in `passwords.txt` lösen nach kontrolliertem Reload eine Neuregistrierung aus, **sobald kein Gespräch aktiv ist**. | MUSS | 1 |
 | PHONE-09 | Eingehende INVITEs werden nur von der konfigurierten Telefonanlage (Registrar-IP bzw. Allowlist) angenommen; alles andere wird abgewiesen (Schutz vor SIP-Scannern). | MUSS | 1 |
-| PHONE-10 | Part 1 startet **keine ausgehenden Anrufe**. | MUSS | 1 |
+| PHONE-10 | Part 1 startet **keine ausgehenden Anrufe** – einzige Ausnahme ist der **Rückruf** (ADR-038): nur auf die konfigurierte interne Nebenstelle (`phone.callback.extension`, Standard 201), nur auf eine geschriebene Bitte des Owners auf Discord („Sag mir am Telefon, …“), 10–15 s Klingeln, sprechen, verabschieden, auflegen – nie zuhören. | MUSS | 1 |
 
 ### 2.2 Gesprächsablauf
 

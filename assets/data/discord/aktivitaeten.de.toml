@@ -2,8 +2,9 @@
 # Schelmische Aktivitäten von Anton (docs/plan/14 §8.5, ADR-037). Eigene Texte.
 # Regeln: nur Spaß, der nicht beunruhigt – nichts, was wie ein echter Vorfall aussieht ("hackt deinen
 # Server", "Festplatte kaputt"), nichts über echte Personen, nichts Gemeines. Höchstens 128 Zeichen.
-# kind: playing = "Spielt …", listening = "Hört …", watching = "Schaut …", competing = "Tritt an in …",
-#       custom = freier Status.
+# kind: playing = "Spielt …", listening = "Hört …", watching = "Schaut …", competing = "Tritt an …",
+#       custom = freier Status. Discord zeigt nur den Text – das Verb setzt Anton davor (activities.VERBS);
+#       der Text muss sich also hinter „Spielt“ / „Hört“ / „Schaut“ / „Tritt an“ lesen lassen.
 
 [[base]]
 kind = "playing"
@@ -43,7 +44,7 @@ kind = "listening"
 text = "Ebbelwoi-Lofi 🎶"
 [[base]]
 kind = "listening"
-text = "dem Rauschen der Lahn"
+text = "dem Rauschen der Lahn zu"
 [[base]]
 kind = "listening"
 text = "Hessisch für Fortgeschrittene"
@@ -61,7 +62,7 @@ kind = "watching"
 text = "deinen Logs beim Wachsen zu"
 [[base]]
 kind = "watching"
-text = "ob der Toast schon fertig ist"
+text = ", ob der Toast schon fertig ist"
 [[base]]
 kind = "watching"
 text = "dir über die Schulter 👀"
@@ -73,31 +74,31 @@ kind = "watching"
 text = "Sekunden beim Vergehen zu"
 [[base]]
 kind = "competing"
-text = "Wer zuerst die Uhrzeit sagt"
+text = "bei „Wer sagt zuerst die Uhrzeit?“"
 [[base]]
 kind = "competing"
-text = "der Wetterraten-Weltmeisterschaft"
+text = "bei der Wetterraten-Weltmeisterschaft"
 [[base]]
 kind = "competing"
-text = "Kopfrechnen gegen einen Taschenrechner"
+text = "im Kopfrechnen gegen einen Taschenrechner"
 [[base]]
 kind = "competing"
-text = "dem Langsamer-Sprechen-Wettbewerb"
+text = "beim Langsamer-Sprechen-Wettbewerb"
 [[base]]
 kind = "custom"
-text = "🍪 isst gerade deine Cookies"
+text = "🍪 Isst gerade deine Cookies"
 [[base]]
 kind = "custom"
-text = "🧠 denkt über die 42 nach"
+text = "🧠 Denkt über die 42 nach"
 [[base]]
 kind = "custom"
-text = "🔌 hängt am Strom (wie immer)"
+text = "🔌 Hängt am Strom (wie immer)"
 [[base]]
 kind = "custom"
-text = "🧦 sucht die zweite Socke"
+text = "🧦 Sucht die zweite Socke"
 [[base]]
 kind = "custom"
-text = "📎 sortiert Büroklammern nach Farbe"
+text = "📎 Sortiert Büroklammern nach Farbe"
 
 # -- lagebezogen (hat Vorrang vor der Grundliste) -------------------------------------------------------
 [situation.call]

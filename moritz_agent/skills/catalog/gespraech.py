@@ -28,8 +28,10 @@ _HELP_GROUPS = (
 )
 _GOODBYE_WORDS = (
     r"tschüss|tschüs|tschau|ciao|auf wiederhören|auf wiedersehen|wiederhören|bis bald|bis später|"
-    r"mach's gut|mach es gut|das war's|das war es|das wars|auflegen|ich lege (?:jetzt )?auf|bis dann|bis zum nächsten mal"
+    r"mach's gut|mach es gut|das war's|das war es|das wars|auflegen|ich lege (?:jetzt )?auf|bis dann|bis zum nächsten mal|"
+    r"leg(?:e)? (?:(?:jetzt|bitte|mal|doch|ruhig|einfach|gleich) )*auf|häng (?:(?:jetzt|bitte|mal) )*auf"
 )
+_HANG_UP = re.compile(r"\b(?:auflegen|leg(?:e)? (?:\w+ )*auf|häng (?:\w+ )*auf)\b")
 
 
 @skill(
@@ -48,6 +50,8 @@ _GOODBYE_WORDS = (
 async def talk_goodbye(req: Request) -> SkillResult:
     if re.search(r"\bgute nacht\b", req.text):
         return say("Gute Nacht, Moritz! Schlaf gut.", hangup=True)
+    if _HANG_UP.search(req.text):  # "Leg auf": politely, then the line goes dead
+        return say("Alles klar, ich lege auf. Tschüss, Moritz – bis bald!", hangup=True)
     return SkillResult(prompt="goodbye", hangup=True)
 
 

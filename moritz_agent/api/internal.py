@@ -34,7 +34,7 @@ class CallBody(BaseModel):
 
 class EventBody(BaseModel):
     call_id: str = Field(max_length=100)
-    event: str = Field(pattern=r"^(call_started|call_ended)$")
+    event: str = Field(pattern=r"^(call_started|call_ended|callback_done)$")
     remote: str = Field(default="", max_length=200)
     codec: str = Field(default="", max_length=40)
     reason: str = Field(default="", max_length=100)
@@ -89,6 +89,27 @@ async def cancel(body: CallBody, ctx: AppContext = Depends(require_internal)):
 async def event(body: EventBody, ctx: AppContext = Depends(require_internal)):
     if body.event == "call_started":
         ctx.runtime.call_started(body.call_id, body.remote, body.codec)
+    elif body.event == "callback_done":  # call_id "callback-<n>", reason = answered | no_answer | …
+        number = body.call_id.removeprefix("callback-")
+        if number.isdigit():
+            ctx.runtime.callback_done(int(number), body.reason)
     else:
         ctx.runtime.call_ended(body.call_id, body.reason)
     return {"ok": True}
+
+
+@router.get("/callback")
+async def next_callback(ctx: AppContext = Depends(require_internal)):
+    """The phone worker asks every few seconds whether it should call somebody (Anton calls back)."""
+    call = ctx.runtime.callbacks.take()
+    if call is None:
+        return {"call": None}
+    return {
+        "call": {
+            "id": call.id,
+            "extension": call.extension,
+            "text": call.text,
+            "ring_s": round(call.ring_s, 1),
+            "speak_after_s": call.speak_after_s,
+        }
+    }

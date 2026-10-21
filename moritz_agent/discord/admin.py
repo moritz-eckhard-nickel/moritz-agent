@@ -95,7 +95,7 @@ def status_card(overview: dict[str, Any], local: dict[str, Any], data_root: Path
         {
             "name": "💬 Discord",
             "value": (
-                f"Latenz {local.get('latency_ms', '?')} ms · {local.get('guilds', 0)} Server\n"
+                f"Latenz {local.get('latency_ms') or '?'} ms · {local.get('guilds', 0)} Server\n"
                 + ("🔊 Sprachsitzung läuft" if local.get("voice") else "keine Sprachsitzung")
             ),
             "inline": True,

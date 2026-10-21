@@ -636,3 +636,31 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 - **Konsequenzen:** DISCORD-43, DISCORD-44, Ticket P1-43, Risiko R34; `/hilfe datenschutz` stellt klar,
   dass Anton nicht wirklich mit Daten spielt.
 - **Status:** beschlossen (Plan).
+
+## ADR-038 – Rückruf auf die eigene Nebenstelle
+
+- **Kontext (Moritz, 21.10.2026):** „Ich will, dass er mich auf der 201 intern anrufen kann, um mir
+  Sachen mitzuteilen – wenn ich auf Discord frage ‚sag mir am Telefon, wie viel Uhr es ist‘, ruft er an,
+  lässt 10–15 s klingeln, spricht nach 1 s, verabschiedet sich und legt auf und hört nicht zu.“ Dazu:
+  „Wenn ich im Call ‚leg auf‘ sage, verabschiedet er sich höflich und legt auf.“
+- **Entscheidung:**
+  1. **Ausnahme von PHONE-10:** Ausgehende Anrufe gibt es nur als Rückruf auf **eine** konfigurierte
+     Nebenstelle (`[phone.callback]`, Standard `extension = "201"`, `enabled = true`), gewählt über den
+     Registrar (`sip:<nebenstelle>@<registrar>`).
+  2. **Auslöser:** nur **geschriebener** Discord-Text des **Owners** (DM oder Textkanal, nicht der Chat
+     des Sprachkanals, nicht gesprochen); erkannt an festen Mustern („sag mir am/übers Telefon …“,
+     „ruf mich an und sag mir …“, „… sag's mir am Telefon“). Ohne Inhalt („Ruf mich an“) kein Anruf.
+  3. **Ablauf:** Anton beantwortet die Frage sofort wie am Telefon (gesprochene Fassung) und legt den
+     Rückruf in eine kleine Warteschlange im Hauptprozess (höchstens 3, verfallen nach 5 min). Der
+     Phone-Worker holt ihn nur, wenn er registriert und frei ist, klingelt zufällig 10–15 s
+     (`ring_min_s`/`ring_max_s`), spricht `speak_after_s` (1 s) nach dem Abheben die Antwort plus „Das war's
+     von mir. Tschüss, Moritz!“ und legt auf. Eingehendes Audio wird verworfen (kein STT, kein Zuhören).
+  4. **Nicht erreicht** (besetzt, keine Antwort, Fehler): die Antwort kommt als DM an den Owner
+     („📞 Auf der 201 nicht erreicht“).
+  5. **„Leg auf“** im normalen Gespräch ist ein Abschied: „Alles klar, ich lege auf. Tschüss, Moritz – bis
+     bald!“ und Auflegen.
+- **Alternativen:** Rückruf auf beliebige Nummern (Missbrauch, Kosten – abgelehnt); Erkennung über das
+  Sprachmodell (nicht deterministisch); zeitversetzte Weckrufe (bleiben ausgeschlossen).
+- **Konsequenzen:** PHONE-10 geändert; Phone-Worker kann `makeCall`; neuer interner Endpunkt
+  `GET /internal/phone/callback` und Ereignis `callback_done`; Live-Test in `test-2.sh`.
+- **Status:** beschlossen (Moritz, 21.10.2026); gegen eine echte Telefonanlage noch ungeprüft (C.3).

@@ -58,7 +58,10 @@ def invite_links(application_id: int | str) -> list[str]:
     user = urlencode(
         {"client_id": application_id, "scope": "applications.commands", "integration_type": 1}
     )
-    return [f"Server (Anton holen): {INVITE}?{guild}", f"Benutzer-App (überall): {INVITE}?{user}"]
+    return [
+        f"Server (Anton holen): {INVITE}?{guild}",
+        f"Benutzer-App (nur Befehle überall, NICHT für deinen Server): {INVITE}?{user}",
+    ]
 
 
 class DiscordApiError(RuntimeError):
@@ -167,6 +170,21 @@ class DiscordRest:
             await self.call("PATCH", "/applications/@me", json={"description": bio})
 
 
+def no_server_hint(application: dict[str, Any]) -> str:
+    """Why Anton sees no server – the usual reason is the wrong one of the two invite links."""
+    if application.get("approximate_user_install_count") and not application.get(
+        "approximate_guild_count"
+    ):
+        return (
+            "Anton ist nur als Benutzer-App installiert, auf keinem Server. Für deinen Server den "
+            "Link „Server (Anton holen)“ öffnen – nicht „Benutzer-App“."
+        )
+    return (
+        "Anton ist noch auf keinem Server – den Link „Server (Anton holen)“ öffnen und deinen "
+        "Server auswählen (invite zeigt ihn)."
+    )
+
+
 def owner_ids_of(application: dict[str, Any]) -> list[str]:
     """The person (or the team members) behind the application – candidates for ``owner_user_ids``."""
     team = application.get("team")
@@ -229,14 +247,15 @@ async def check(
                     )
         try:
             report.guilds = {str(g["id"]): g["name"] for g in await rest.guilds()}
-        except DiscordApiError:
+        except DiscordApiError as exc:
+            # never report "no server" when the list simply could not be read
+            report.add("error", f"Die Serverliste ist nicht lesbar ({exc})")
             report.guilds = {}
-        if report.guilds:
-            report.add("ok", "Anton ist auf: " + ", ".join(report.guilds.values()))
         else:
-            report.add(
-                "warn", "Anton ist noch auf keinem Server – Einladungslink benutzen (invite)"
-            )
+            if report.guilds:
+                report.add("ok", "Anton ist auf: " + ", ".join(report.guilds.values()))
+            else:
+                report.add("warn", no_server_hint(app))
         if channel_id:
             try:
                 channel = await rest.channel(channel_id)

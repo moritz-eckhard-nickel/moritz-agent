@@ -30,11 +30,24 @@ MAX_TEXT = 128
 WARNING_LEVEL = 3
 
 
+# Discord only shows the text of a status, not "Spielt …" (Moritz, 21.10.2026): the verb is written out.
+VERBS = {"playing": "Spielt", "listening": "Hört", "watching": "Schaut", "competing": "Tritt an"}
+
+
 @dataclass(frozen=True)
 class Activity:
     kind: str
     text: str
     serious: bool = False
+
+    @property
+    def status(self) -> str:
+        """The full sentence as Discord shows it: "Spielt im Regen ☔", "Hört Ebbelwoi-Lofi 🎶"."""
+        verb = VERBS.get(self.kind)
+        if not verb:
+            return self.text[:MAX_TEXT]
+        gap = "" if self.text.startswith(",") else " "  # "Schaut, ob der Toast …"
+        return f"{verb}{gap}{self.text}"[:MAX_TEXT]
 
 
 def load(root: Path, local: Path | None = None) -> dict[str, Any]:

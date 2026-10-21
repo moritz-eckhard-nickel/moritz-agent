@@ -27,6 +27,7 @@ from moritz_agent.phone.audio.factory import build_stt, build_tts, build_vad
 from moritz_agent.phone.audio.stt import SpeechToText, Transcript
 from moritz_agent.phone.audio.tts import TtsService
 from moritz_agent.phone.audio.vad import SileroVad
+from moritz_agent.phone.callback import CallbackSession
 from moritz_agent.phone.control import PhoneControl
 from moritz_agent.phone.dialogue import CallSession, SessionDeps
 from moritz_agent.phone.responder import Responder, TestResponder
@@ -212,12 +213,14 @@ class PhoneWorker:
         return False
 
     async def _heartbeat(self) -> None:
-        """Once a second: publish the status file; every 30 s: log changes."""
+        """Once a second: publish the status file; every 2 s: a call to make? every 30 s: log."""
         last, ticks, draining = "", 0, False
         while True:
             await asyncio.sleep(1)
             if self.sip is None:
                 continue
+            if ticks % 2 == 0:
+                await self._maybe_call_back()
             state = self.sip.status()
             state["skills"] = self._skills_status()
             await asyncio.to_thread(self.control.write_status, state)
@@ -233,6 +236,36 @@ class PhoneWorker:
             if line != last:
                 log.info("Status: %s", line)
                 last = line
+
+    async def _maybe_call_back(self) -> None:
+        """Anton calls back ("Sag mir am Telefon …" on Discord): fetch the order from the main
+        process and dial – only when registered, idle and not in maintenance."""
+        if not isinstance(self.responder, remote.RemoteResponder) or self.sip is None:
+            return
+        if self.sip.busy or self.control.draining() or self.sip.registration.state != "registered":
+            return
+        order = await self.responder.next_callback()
+        if not order or self.tts is None:
+            return
+        loop = asyncio.get_running_loop()
+        responder, tts = self.responder, self.tts
+        callback_id = int(order["id"])
+        text = str(order.get("text") or "")
+        speak_after = float(order.get("speak_after_s", 1.0))
+        guard = self.settings.phone.playback_tail_guard_ms
+
+        def factory(media: SipCallMedia, remote_uri: str) -> CallbackSession:
+            return CallbackSession(media, tts, text, speak_after_s=speak_after, tail_guard_ms=guard)
+
+        def on_result(outcome: str) -> None:  # on the SIP thread
+            loop.call_soon_threadsafe(responder.callback_done, callback_id, outcome)
+
+        self.sip.dial(
+            str(order.get("extension") or self.settings.phone.callback.extension),
+            float(order.get("ring_s", 12.0)),
+            factory,
+            on_result,
+        )
 
     def _reload(self) -> None:
         """SIGHUP: re-read settings and passwords.txt; SIP changes apply once no call is active."""

@@ -25,8 +25,9 @@ from moritz_agent.agent.profiles import chat_profile, phone_profile
 from moritz_agent.agent.responder import AgentResponder
 from moritz_agent.config.reload import ConfigManager, ReloadResult, RuntimeConfig
 from moritz_agent.config.settings import REPO_ROOT
+from moritz_agent.core.callback import CallbackQueue
 from moritz_agent.core.chat import ChatService
-from moritz_agent.core.principal import discord_role
+from moritz_agent.core.principal import discord_role, owner_ids
 from moritz_agent.core.scheduler import Scheduler
 from moritz_agent.core.turn import Turn, TurnResult
 from moritz_agent.inference import InferenceClient, InferenceQueue, Priority
@@ -145,6 +146,7 @@ class Runtime:
         )
         self.discord_store: DiscordStore | None = None
         self.chat: ChatService = ChatService(self)
+        self.callbacks = CallbackQueue()  # "Sag mir am Telefon …": calls the phone worker makes
         self.scheduler: Scheduler | None = None
         self.external_components: Callable[[], dict[str, Component]] = dict
         self._calls: dict[str, _Conversation] = {}
@@ -521,7 +523,7 @@ class Runtime:
             return
         match = re.search(r"sip:([^@;>]+)", self._call_remote.get(call_id, ""))
         user = cfg.phone_extensions.get(match.group(1)) if match else None
-        user = user or next(iter(cfg.owner_user_ids), None)
+        user = user or next(iter(owner_ids(cfg)), None)
         if user is None:
             return
         title, text = forward
@@ -534,6 +536,20 @@ class Runtime:
         if self.repo is not None:
             with contextlib.suppress(Exception):
                 self.repo.start_call(call_id, remote, codec)
+
+    def callback_done(self, callback_id: int, outcome: str) -> None:
+        """The phone worker tried to call back: on no answer, the text goes to Discord instead."""
+        call = self.callbacks.done(callback_id)
+        log.info("Rückruf %d: %s", callback_id, outcome)
+        if call is None or outcome == "answered" or self.discord_store is None:
+            return
+        user = call.user_id or next(iter(owner_ids(self.settings.discord)), None)
+        if not user or not self.settings.discord.enabled:
+            return
+        title = f"📞 Auf der {call.extension} nicht erreicht"
+        self.discord_store.enqueue(
+            "forward", f"dm:{user}", {"title": title, "text": call.text}, user_id=user
+        )
 
     def call_ended(self, call_id: str, reason: str = "") -> None:
         conversation = self._calls.pop(call_id, None)

@@ -13,6 +13,7 @@ import pytest
 
 from moritz_agent.config.secrets import parse_passwords
 from moritz_agent.config.settings import parse_settings
+from moritz_agent.discord import setup as setup_api
 from moritz_agent.setup import __main__ as cli
 from moritz_agent.setup import discord as setup_discord
 from moritz_agent.setup import files
@@ -299,11 +300,70 @@ def test_the_voice_channel_is_chosen_by_list_number_or_id_and_lands_in_the_confi
         )
         return code, out.getvalue()
 
-    code, listing = voice("")
-    assert code == 3 and "Zuhause / 🔊 Sprache" in listing and "#anton" not in listing
+    code, listing = voice("")  # the only voice channel is taken without asking
+    assert code == 0 and "Einziger Sprachkanal: Zuhause / 🔊 Sprache" in listing
     assert voice("1")[0] == 0
     text = config.read_text(encoding="utf-8")
     assert 'default_channel_id = "5550003"' in text and "Sprachkanal für /joinvc" in text
     assert load_settings(config).discord.voice.default_channel_id == "5550003"
     assert voice("5550099")[0] == 0  # an id is taken as it is
     assert load_settings(config).discord.voice.default_channel_id == "5550099"
+
+
+def _one_channel_api(guilds):
+    def handler(request):
+        path = request.url.path
+        if path.endswith("/users/@me/guilds"):
+            return httpx.Response(200, json=guilds)
+        if path.endswith("/applications/@me"):
+            return httpx.Response(
+                200,
+                json={
+                    "id": "7000",
+                    "approximate_guild_count": 0,
+                    "approximate_user_install_count": 1,
+                },
+            )
+        if path.endswith("/guilds/9000/channels"):
+            return httpx.Response(
+                200,
+                json=[
+                    {"id": CHANNEL_ID, "type": 0, "name": "anton", "position": 0},
+                    {"id": "5550003", "type": 2, "name": "Sprache", "position": 2},
+                ],
+            )
+        if path.endswith(f"/channels/{CHANNEL_ID}"):
+            return httpx.Response(
+                200, json={"id": CHANNEL_ID, "type": 0, "name": "anton", "guild_id": "9000"}
+            )
+        return httpx.Response(404)
+
+    return httpx.MockTransport(handler)
+
+
+def test_the_only_text_channel_is_taken_without_asking(files_in, monkeypatch):
+    passwords, _ = files_in
+    setup_discord.store_token(passwords, BOT_TOKEN)
+
+    async def no_check(token, channel_id="", configured_owners=None, *, transport=None):
+        return setup_api.Report()
+
+    monkeypatch.setattr(setup_api, "check", no_check)
+    out = io.StringIO()
+    transport = _one_channel_api([{"id": "9000", "name": "Zuhause"}])
+    code = asyncio.run(
+        setup_discord.setup_channel(passwords, BOT_TOKEN, "", out=out, transport=transport)
+    )
+    assert code == 0 and "Einziger Textkanal: Zuhause / #anton" in out.getvalue()
+    assert parse_passwords(passwords.read_text(encoding="utf-8")).discord.channel_id == CHANNEL_ID
+
+
+def test_no_server_explains_the_user_app_link(files_in):
+    passwords, _ = files_in
+    out = io.StringIO()
+    code = asyncio.run(
+        setup_discord.setup_channel(
+            passwords, BOT_TOKEN, "", out=out, transport=_one_channel_api([])
+        )
+    )
+    assert code == 1 and "nur als Benutzer-App" in out.getvalue()

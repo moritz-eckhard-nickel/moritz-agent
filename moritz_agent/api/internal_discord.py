@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 from moritz_agent import __version__
 from moritz_agent.api.context import AppContext, require_internal
 from moritz_agent.core.chat import AccessDenied
-from moritz_agent.core.principal import Role, discord_role
+from moritz_agent.core.principal import Role, discord_role, remember_app_owners
 from moritz_agent.core.surface import Surface
 from moritz_agent.core.turn import Turn
 from moritz_agent.logging_setup import get_logger
@@ -214,6 +214,17 @@ async def set_commands_hash(body: HashBody, ctx: AppContext = Depends(require_in
     store = ctx.runtime.discord_store
     assert store is not None
     store.save_registered_hash(body.hash)
+    return {"ok": True}
+
+
+class OwnersBody(BaseModel):
+    ids: list[str] = Field(max_length=25)
+
+
+@router.put("/app-owners")
+async def app_owners(body: OwnersBody, ctx: AppContext = Depends(require_internal)):
+    """The owner(s) of the Discord application, as the worker saw them at login: always owners."""
+    remember_app_owners([i for i in body.ids if re.fullmatch(_ID, i)])
     return {"ok": True}
 
 

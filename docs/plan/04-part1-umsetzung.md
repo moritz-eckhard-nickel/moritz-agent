@@ -858,7 +858,7 @@ Alles hier ist **ungeprüft** und gehört in die Abnahmen P1-18, P1-30, P1-32 un
    GeoNames – das Netz-Wächter-Testset (`pytest -m network`) prüft Form und Plausibilität, wurde aber
    wegen fehlenden Internets nur als „übersprungen“ gesehen.
 5. KoboldCpp-Tool-Call-Vorlage und echtes Sprachmodell (Agent-Schleife hinter den Skills).
-6. SIP-Registrierung, Klingeln und Audio auf Sophie-1 (P1-18).
+6. SIP-Registrierung, Klingeln und Audio auf Sophie-1 (P1-18); der Rückruf (ADR-038, `makeCall` auf die 201) ist nur mit Unit-Tests geprüft.
 
 ### C.4 Fehlerdurchgang nach PR #8 (21.10.2026)
 
@@ -886,3 +886,21 @@ rund 50 Fehler gefunden; alle bestätigten sind behoben und mit Regressionstests
 - **Rechnen/Kalender:** kaufmännisches Runden (statt „Banker's Rounding“), Mehrwertsteuer „plus/auf/von“
   rechnet drauf, Zeitrechnung über die Zeitumstellung in UTC, Mariä Himmelfahrt (15.8.) als eigener Tag.
 - **Orte:** „Wo liegt Gießen?“ beantwortet `geo.region_of` (nur bei sicher erkannten Namen).
+
+### C.5 Nach dem ersten echten Discord-Test (21.10.2026)
+
+- **Owner ohne Eintrag:** Wer die Discord-App besitzt (bzw. das Team der App), gilt automatisch als
+  Owner – gelernt beim Anmelden über `application_info()` und an den Hauptprozess gemeldet
+  (`PUT /internal/discord/app-owners`). `discord.owner_user_ids` bleibt zusätzlich gültig. Vorher hieß
+  es „Mit dir darf ich leider nicht reden“, solange die eigene ID nicht eingetragen war.
+- **Aktivitäten mit Verb:** Discord zeigt bei Bots „Spielt …/Hört …“ nicht mehr zuverlässig an. Anton
+  setzt deshalb immer einen Benutzerstatus mit dem ganzen Satz („Spielt im Regen“, „Hört dem Rauschen
+  der Lahn zu“); die Texte in `aktivitaeten.de.toml` sind darauf angepasst (ADR-037 unverändert).
+- **Einrichtung:** Server-Erkennung meldet Fehler beim Abfragen ehrlich und erklärt, dass ein Link als
+  *Benutzer-App* den Bot auf keinen Server bringt; `test-2.sh setup` fragt bis zu fünfmal nach.
+  Gibt es auf dem Server genau **einen** Text- bzw. **einen** Sprachkanal, wird er ohne Frage gewählt
+  (Sprachkanal → `[discord.voice] default_channel_id`).
+- **Neu entpackt über den alten Ordner:** `scripts/setup-env.sh` merkt sich einen Fingerabdruck der
+  Lock-Dateien (`runtime/venv/.moritz-locks`) und überspringt `pip install`, wenn sie gleich sind;
+  Modelle, PJSIP-Build und Ansagen-Cache werden ohnehin wiederverwendet.
+- **„Leg auf“ und Rückruf** auf die 201: ADR-038.

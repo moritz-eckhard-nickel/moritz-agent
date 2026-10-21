@@ -197,6 +197,9 @@
 {"say": "Bis bald", "skill": "talk.goodbye"}
 {"say": "Gute Nacht", "skill": "talk.goodbye"}
 {"say": "Auflegen", "skill": "talk.goodbye"}
+{"say": "Leg auf", "skill": "talk.goodbye"}
+{"say": "Leg bitte auf", "skill": "talk.goodbye"}
+{"say": "Okay, du kannst jetzt auflegen", "skill": "talk.goodbye"}
 {"say": "Tschüss Anton", "skill": "talk.goodbye"}
 {"say": "Guude!", "skill": "talk.greeting"}
 {"say": "Hallo", "skill": "talk.greeting"}

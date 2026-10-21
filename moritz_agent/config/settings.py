@@ -137,6 +137,22 @@ class Tts(_Section):
     espeak: EspeakSettings = EspeakSettings()
 
 
+class PhoneCallback(_Section):
+    """Anton calls back (Discord text: "Sag mir am Telefon, …")."""
+
+    enabled: bool = True
+    extension: str = Field("201", pattern=r"^[0-9*#+]{1,20}$")
+    ring_min_s: float = Field(10.0, ge=3, le=60)
+    ring_max_s: float = Field(15.0, ge=3, le=60)
+    speak_after_s: float = Field(1.0, ge=0, le=10)
+
+    @model_validator(mode="after")
+    def _ring_range(self) -> PhoneCallback:
+        if self.ring_max_s < self.ring_min_s:
+            raise ValueError("ring_max_s darf nicht kleiner sein als ring_min_s")
+        return self
+
+
 class Phone(_Section):
     enabled: bool = True
     assistant_name: str = "Anton"
@@ -163,6 +179,7 @@ class Phone(_Section):
     vad: Vad = Vad()
     stt: Stt = Stt()
     tts: Tts = Tts()
+    callback: PhoneCallback = PhoneCallback()
 
     @model_validator(mode="after")
     def _ring_range(self) -> Phone:

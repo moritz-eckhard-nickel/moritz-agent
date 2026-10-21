@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import math
 import os
 import signal
 import sqlite3
@@ -23,6 +24,7 @@ import discord
 from moritz_agent import __version__
 from moritz_agent.config.reload import ConfigError, ConfigManager
 from moritz_agent.config.settings import REPO_ROOT, Discord, Settings
+from moritz_agent.core.principal import owner_ids, remember_app_owners
 from moritz_agent.discord.access import AccessPolicy, RateLimiter
 from moritz_agent.discord.admin import AdminCommands
 from moritz_agent.discord.client import AntonClient
@@ -158,8 +160,11 @@ class DiscordWorker:
 
     def local_status(self) -> dict[str, Any]:
         client = self.client
+        latency = client.latency if client and client.is_ready() else None
+        if latency is not None and not math.isfinite(latency):
+            latency = None  # discord.py reports inf (or nan) while the gateway reconnects
         return {
-            "latency_ms": round(client.latency * 1000) if client and client.is_ready() else None,
+            "latency_ms": round(latency * 1000) if latency is not None else None,
             "guilds": len(client.guilds) if client else 0,
             "voice": bool(self.voice and getattr(self.voice, "active", False)),
         }
@@ -390,6 +395,7 @@ class DiscordWorker:
     async def ready(self, client: AntonClient) -> None:
         assert client.user is not None
         self.policy.bot_id = str(client.user.id)
+        await self._learn_app_owners(client)
         self.state = "ready"
         self.last_error = ""
         log.info("Discord: verbunden als %s auf %d Server(n)", client.user.name, len(client.guilds))
@@ -437,6 +443,26 @@ class DiscordWorker:
             text = "Ich bin wieder da."
         await self.say_in_default_channel(client, text)
 
+    async def _learn_app_owners(self, client: AntonClient) -> None:
+        """Whoever owns the bot application (or its team) is an owner, configured or not."""
+        try:
+            info = await client.application_info()
+        except Exception as exc:  # never stops the start: the configured owners still count
+            log.warning("Discord: Besitzer der Anwendung unbekannt (%s)", type(exc).__name__)
+            return
+        team = getattr(info, "team", None)
+        if team is not None:
+            ids = [str(m.id) for m in getattr(team, "members", [])]
+        else:
+            ids = [str(info.owner.id)] if getattr(info, "owner", None) is not None else []
+        remember_app_owners(ids)
+        if ids:
+            log.info(
+                "Discord: Besitzer der Anwendung ist Owner (…%s)", ", …".join(i[-4:] for i in ids)
+            )
+        with contextlib.suppress(CoreUnavailable, CoreForbidden):
+            await self.core.set_app_owners(ids)
+
     async def say_in_default_channel(self, client: AntonClient, text: str) -> bool:
         """Into the home channel; without one as a direct message to the owner."""
         kwargs = _plain(OutMessage(content=text))
@@ -446,7 +472,7 @@ class DiscordWorker:
             if self.default_channel is not None:
                 await self.default_channel.send(**kwargs)
                 return True
-            owner = next(iter(self.cfg.owner_user_ids), None)
+            owner = next(iter(owner_ids(self.cfg)), None)
             if owner:
                 await (await client.fetch_user(int(owner))).send(**kwargs)
                 return True
@@ -490,7 +516,11 @@ class DiscordWorker:
 
     async def _heartbeat(self) -> None:
         while True:
-            write_status(self.state_root, self.status_payload())
+            try:
+                write_status(self.state_root, self.status_payload())
+            # a dead heartbeat looks like a hung worker and the supervisor would restart it
+            except Exception:
+                log.exception("Discord: Status konnte nicht geschrieben werden")
             await asyncio.sleep(HEARTBEAT_EVERY_S)
 
     async def _housekeeping(self) -> None:

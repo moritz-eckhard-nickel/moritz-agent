@@ -119,12 +119,12 @@ async def setup_channel(
         chosen = channels[int(answer) - 1][2]  # a number from the list
     elif SNOWFLAKE.match(answer):
         chosen = answer
+    elif not answer and len(channels) == 1:
+        chosen = channels[0][2]  # only one text channel: nothing to choose
+        print(f"Einziger Textkanal: {channels[0][0]} / #{channels[0][1]}", file=out)
     else:
         if not channels:
-            print(
-                "Anton ist noch auf keinem Server oder darf keine Kanäle sehen. Einladungslink benutzen.",
-                file=out,
-            )
+            print(await _no_channels_hint(token, transport), file=out)
             return 1
         for number, (guild, channel, ident) in enumerate(channels, 1):
             print(f"{number:2d}  {guild} / #{channel}  ({ident})", file=out)
@@ -175,6 +175,9 @@ async def setup_voice_channel(
         chosen = channels[int(answer) - 1][2]
     elif SNOWFLAKE.match(answer):
         chosen = answer
+    elif not answer and len(channels) == 1:
+        chosen = channels[0][2]  # only one voice channel: nothing to choose
+        print(f"Einziger Sprachkanal: {channels[0][0]} / 🔊 {channels[0][1]}", file=out)
     else:
         if not channels:
             print("Auf Antons Servern gibt es keinen Sprachkanal, den er sehen darf.", file=out)
@@ -185,6 +188,19 @@ async def setup_voice_channel(
     store_voice_channel(config, chosen)
     print(f"Sprachkanal gespeichert ({chosen}).", file=out)
     return 0
+
+
+async def _no_channels_hint(token: str, transport: httpx.AsyncBaseTransport | None) -> str:
+    """No text channel: on no server at all (usually the user-app link was used) or no channels."""
+    try:
+        async with api.DiscordRest(token, transport=transport) as rest:
+            guilds = await rest.guilds()
+            app = {} if guilds else await rest.application()
+    except api.DiscordApiError as exc:
+        return f"Fehler: {exc}"
+    if not guilds:
+        return api.no_server_hint(app)
+    return "Anton ist auf dem Server, sieht dort aber keinen Textkanal – Rechte „Kanäle ansehen“ prüfen."
 
 
 def run(coro) -> int:
