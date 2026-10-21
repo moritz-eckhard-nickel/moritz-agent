@@ -165,8 +165,11 @@ def test_the_phone_worker_reaches_the_main_process_through_the_internal_api(tmp_
         await sup.start()
         try:
             await until(lambda: any(line.startswith("reply") for line in lines(tree)))
+            # the end of the call arrives fire-and-forget after the reply: wait for it, not the row
             await until(
-                lambda: sup.runtime.db.query("SELECT end_reason FROM calls WHERE id = 'fake-call'")
+                lambda: sup.runtime.db.query(
+                    "SELECT 1 FROM calls WHERE id = 'fake-call' AND end_reason IS NOT NULL"
+                )
             )
             return [
                 dict(r) for r in sup.runtime.db.query("SELECT codec, end_reason, turns FROM calls")
