@@ -25,7 +25,7 @@ from moritz_agent.config.reload import ConfigError, ConfigManager
 from moritz_agent.config.settings import REPO_ROOT, Discord, Settings
 from moritz_agent.discord.access import AccessPolicy, RateLimiter
 from moritz_agent.discord.admin import AdminCommands
-from moritz_agent.discord.client import NikitaClient
+from moritz_agent.discord.client import AntonClient
 from moritz_agent.discord.commands import spec as commands
 from moritz_agent.discord.commands.handlers import LocalCommands
 from moritz_agent.discord.core import CoreApi, CoreForbidden, CoreUnavailable
@@ -72,7 +72,7 @@ class DiscordWorker:
         self.state_root = options.state_root or root
         self.config = ConfigManager(options.config, options.passwords, root)
         self.core: CoreApi = core  # type: ignore[assignment]
-        self.client: NikitaClient | None = None
+        self.client: AntonClient | None = None
         self.policy: AccessPolicy
         self.dispatcher: Dispatcher
         self.activity: ActivityManager
@@ -301,7 +301,7 @@ class DiscordWorker:
         delay = RECONNECT_BACKOFF[0]
         while not self.stop_event.is_set():
             token = self.config.passwords.discord.bot_token
-            self.client = NikitaClient(self)
+            self.client = AntonClient(self)
             self.state = "connecting"
             started = time.monotonic()
             try:
@@ -364,10 +364,10 @@ class DiscordWorker:
             await self.sync_commands(self.client)
 
     # -- hooks of the client --------------------------------------------------------------------------------------------------
-    async def setup(self, client: NikitaClient) -> None:
+    async def setup(self, client: AntonClient) -> None:
         await self.sync_commands(client)
 
-    async def sync_commands(self, client: NikitaClient, *, force: bool = False) -> bool:
+    async def sync_commands(self, client: AntonClient, *, force: bool = False) -> bool:
         """Register the commands with Discord – only if they differ from the last registration."""
         payloads = client.build_commands(self.features())
         digest = commands.digest(payloads)
@@ -387,7 +387,7 @@ class DiscordWorker:
         log.info("Discord: %d Befehle registriert", len(payloads))
         return True
 
-    async def ready(self, client: NikitaClient) -> None:
+    async def ready(self, client: AntonClient) -> None:
         assert client.user is not None
         self.policy.bot_id = str(client.user.id)
         self.state = "ready"
@@ -408,7 +408,7 @@ class DiscordWorker:
         await asyncio.sleep(STARTUP_STATE_S)
         self.activity.flags["startup"] = False
 
-    async def _find_default_channel(self, client: NikitaClient) -> None:
+    async def _find_default_channel(self, client: AntonClient) -> None:
         channel_id = self.config.passwords.discord.channel_id
         self.default_channel = None
         if not channel_id:
@@ -425,7 +425,7 @@ class DiscordWorker:
             self.default_channel = channel
             self.policy.default_guild_id = str(channel.guild.id)  # type: ignore[union-attr]
 
-    async def _startup_message(self, client: NikitaClient) -> None:
+    async def _startup_message(self, client: AntonClient) -> None:
         if (
             not self.cfg.startup_message
             or self.options.no_startup_message
@@ -437,7 +437,7 @@ class DiscordWorker:
             text = "Ich bin wieder da."
         await self.say_in_default_channel(client, text)
 
-    async def say_in_default_channel(self, client: NikitaClient, text: str) -> bool:
+    async def say_in_default_channel(self, client: AntonClient, text: str) -> bool:
         """Into the home channel; without one as a direct message to the owner."""
         kwargs = _plain(OutMessage(content=text))
         # nobody is pinged – the text may carry a server name like "@everyone"
@@ -458,8 +458,8 @@ class DiscordWorker:
             )
         return False
 
-    async def guild_joined(self, client: NikitaClient, guild: discord.Guild) -> None:
-        """Nikita lives on one private server; she leaves every other one at once (§5.2)."""
+    async def guild_joined(self, client: AntonClient, guild: discord.Guild) -> None:
+        """Anton lives on one private server; she leaves every other one at once (§5.2)."""
         if self.policy.guild_allowed(str(guild.id)) or not self.policy.default_guild_id:
             return
         log.warning("Discord: fremder Server %s – ich verlasse ihn", guild.id)
@@ -538,7 +538,7 @@ class DiscordWorker:
                 await self.core.ack(item["id"], delivered)
         return sent
 
-    async def _deliver(self, client: NikitaClient, item: dict[str, Any]) -> bool:
+    async def _deliver(self, client: AntonClient, item: dict[str, Any]) -> bool:
         target = item["target"]
         try:
             destination = await self._destination(client, target, item.get("user_id"))
@@ -580,7 +580,7 @@ class DiscordWorker:
         await destination.send(**kwargs)
 
     async def _destination(
-        self, client: NikitaClient, target: str, user_id: Any
+        self, client: AntonClient, target: str, user_id: Any
     ) -> discord.abc.Messageable | None:
         if target.startswith("dm:"):
             return await client.fetch_user(int(target[3:]))
@@ -623,7 +623,7 @@ async def sync_once(options: WorkerOptions, root: Path = REPO_ROOT) -> int:
     if not token:
         print("In passwords.txt fehlt [discord] bot_token.")
         return 2
-    client = NikitaClient(worker)
+    client = AntonClient(worker)
     try:
         await client.login(token.reveal())
         payloads = client.build_commands(worker.standalone_features())

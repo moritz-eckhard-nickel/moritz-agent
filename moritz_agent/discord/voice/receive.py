@@ -5,7 +5,7 @@ discord.py itself only *sends* audio. Receiving needs an extension (``discord-ex
 also decrypts Discord's end-to-end encryption (DAVE) – at the time of writing that is the open
 question of the spike P1-32. So this module works with whatever is installed: if the extension is
 missing or cannot decrypt, ``available()`` is false and the voice channel runs in the mode "nur
-sprechen" (Nikita answers text and voice messages with his voice, docs/plan/14 §9.5, result B).
+sprechen" (Anton answers text and voice messages with his voice, docs/plan/14 §9.5, result B).
 """
 
 from __future__ import annotations
@@ -69,7 +69,7 @@ def make_sink(listener: Listener) -> Any:
     if module is None:
         raise RuntimeError("discord-ext-voice-recv ist nicht installiert")
 
-    class NikitaSink(module.AudioSink):  # type: ignore[name-defined]
+    class AntonSink(module.AudioSink):  # type: ignore[name-defined]
         def wants_opus(self) -> bool:
             return False
 
@@ -81,7 +81,7 @@ def make_sink(listener: Listener) -> Any:
         def cleanup(self) -> None:
             return None
 
-    return NikitaSink()
+    return AntonSink()
 
 
 def client_class() -> Any:

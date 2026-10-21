@@ -2,8 +2,8 @@
 """Audio plumbing of the voice channel (docs/plan/14 §9.3): formats, interruption, wake word.
 
 Discord speaks 48 kHz stereo in 20 ms frames, the conversation (``CallSession``) 16 kHz mono. These
-are the converters, the detector that notices somebody talking over Nikita, and the matcher for
-"Nikita …" in rest mode. No Discord objects here – everything is tested with plain bytes.
+are the converters, the detector that notices somebody talking over Anton, and the matcher for
+"Anton …" in rest mode. No Discord objects here – everything is tested with plain bytes.
 """
 
 from __future__ import annotations
@@ -68,10 +68,10 @@ class Segmenter(Protocol):
 
 
 class BargeInDetector:
-    """Notices that somebody keeps talking while Nikita speaks (docs/plan/14 §9.3).
+    """Notices that somebody keeps talking while Anton speaks (docs/plan/14 §9.3).
 
     Watches the speech detector of the incoming audio; after ``min_ms`` of continuous speech while
-    Nikita is talking it hands back what was said so far (so the interruption loses no word), once
+    Anton is talking it hands back what was said so far (so the interruption loses no word), once
     per episode. Short noises and coughs stay below the threshold.
     """
 
@@ -106,14 +106,22 @@ class BargeInDetector:
         return None
 
 
-_NAME = "nikita"
+_NAME = "anton"
 _WORD = re.compile(r"[a-zäöüß]+")
 
 
+# real words that sound too much like the name ("das kann ich dir nicht antun")
+_NOT_THE_NAME = frozenset({"antun"})
+
+
 def is_wake_word(text: str, name: str = _NAME) -> bool:
-    """ "Nikita …" in the first words of an utterance, also as Whisper mishears it ("Nikida", "Nikitta")."""
+    """ "Anton …" in the first words of an utterance, also as Whisper mishears it ("Antonn",
+    "Andon", "Anthon"). The start of the word must match: "Kanton" or "Santo" do not wake him."""
     words = _WORD.findall(text.lower())[:4]
     return any(
-        len(word) >= 4 and difflib.SequenceMatcher(None, word, name).ratio() >= 0.75
+        len(word) >= 4
+        and word[:2] == name[:2]
+        and word not in _NOT_THE_NAME
+        and difflib.SequenceMatcher(None, word, name).ratio() >= 0.75
         for word in words
     )

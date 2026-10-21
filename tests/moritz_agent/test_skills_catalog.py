@@ -148,11 +148,11 @@ GOLDEN = [
     ("Was heißt Guude?", "Guude heißt einfach: Guten Tag."),
     (
         "Wer bist du?",
-        "Ich bin Nikita, Moritz’ Telefonassistent – ein Computerprogramm, kein Mensch.",
+        "Ich bin Anton, Moritz’ Telefonassistent – ein Computerprogramm, kein Mensch.",
     ),
     (
         "Bist du eine KI?",
-        "Ich bin Nikita, ein Computerprogramm – kein Mensch, aber ich gebe mir Mühe.",
+        "Ich bin Anton, ein Computerprogramm – kein Mensch, aber ich gebe mir Mühe.",
     ),
     ("Gute Nacht", "Gute Nacht, Moritz! Schlaf gut."),
     ("Hörst du mich?", "Ja, ich höre dich gut."),

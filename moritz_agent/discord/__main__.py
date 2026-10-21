@@ -4,7 +4,7 @@
 run            start the bot (the supervisor does this; ``--standalone`` brings the main process along)
 check          test token, application settings, server and home channel
 invite         print the invite links (server and user installation)
-channels       list the text channels of the servers Nikita is on (to pick the home channel)
+channels       list the text channels of the servers Anton is on (to pick the home channel)
 sync-commands  register the slash commands with Discord now
 say TEXT       send a test message into the home channel
 profile        set avatar and bio of the bot
@@ -123,7 +123,7 @@ def _channels(args: argparse.Namespace) -> int:
         print(f"Fehler: {exc}", file=sys.stderr)
         return 1
     if not found:
-        print("Nikita ist auf keinem Server oder darf keine Kanäle sehen.", file=sys.stderr)
+        print("Anton ist auf keinem Server oder darf keine Kanäle sehen.", file=sys.stderr)
         return 1
     for number, (guild, channel, ident) in enumerate(found, 1):
         print(f"{number:2d}  {guild} / #{channel}  ({ident})")

@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-"""Nikita's voice into the voice channel: ``CallMedia`` for Discord (docs/plan/14 §9.1, §9.3).
+"""Anton's voice into the voice channel: ``CallMedia`` for Discord (docs/plan/14 §9.1, §9.3).
 
 ``CallSession`` hands over mono 16 kHz audio sentence by sentence (``play``); here it becomes 20 ms
 frames of 48 kHz stereo that discord.py's player thread takes one by one (``PcmSource``), encodes to
 Opus and sends (encrypted, DAVE). The player is started when there is something to say and ends
-after half a second of nothing, so Nikita does not sit there as "speaking" all the time.
+after half a second of nothing, so Anton does not sit there as "speaking" all the time.
 """
 
 from __future__ import annotations

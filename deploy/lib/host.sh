@@ -208,7 +208,7 @@ create_container() {
 		--cores "${CORES}" --cpuunits "${CPUUNITS}" --memory "${MEMORY_MB}" --swap "${SWAP_MB}"
 		--rootfs "${ROOTFS_STORAGE}:${DISK_GB}" --net0 "${net}"
 		--features nesting=1 --onboot 1 --timezone "${TIMEZONE}"
-		--description "moritz-agent Nikita - ${CT_MARKER}"
+		--description "moritz-agent Anton - ${CT_MARKER}"
 	)
 	if [[ -n "${NAMESERVER}" ]]; then args+=(--nameserver "${NAMESERVER}"); fi
 	if [[ -n "${SEARCHDOMAIN}" ]]; then args+=(--searchdomain "${SEARCHDOMAIN}"); fi

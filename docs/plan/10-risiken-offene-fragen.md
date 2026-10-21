@@ -26,12 +26,12 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | R19 | **Neu:** `install.sh`/`update.sh`/`moritz-install.sh` sind nur gegen einen simulierten Proxmox-Host und ein Fake-System getestet, nicht auf echter Hardware (apt, systemd, unprivilegierter LXC, PJSIP-Build und Modell-Download dort; Ubuntu 26.04 mit Python 3.14) | „automatisch aufsetzen oder updaten“ | `--dry-run`; alle Skripte wiederholbar (setzen fort); Proxmox-Snapshot vor jedem Update; Rollback im Container; erster echter Lauf als Protokoll in P1-18 (09) | P1-15 |
 | R20 | **Neu:** Open-Meteo ändert Bedingungen/Kontingente oder fällt aus (freie API nur nicht kommerziell, < 10.000 Aufrufe/Tag) | „Wetter in der Region“ | Vorabruf statt Abruf je Frage (≈ 50–150 Aufrufe/Tag), Rückfall Bright Sky (DWD), Cache bis 6 h; beide Dienste sind Open Source – notfalls eigene Instanz, nur Adresse ändern (ADR-030, SKILL-35) | P1-22 |
 | R21 | **Neu:** Whisper erkennt Postleitzahlen und Ortsnamen am Telefon schlecht (Zahlen zerstückelt, „Weilborg“) | – | Ziffernfolgen zusammenführen, unscharfe/phonetische Ortssuche, PLZ in der Antwort mit Ortsname wiederholen, Rückfrage bei niedriger Konfidenz, `initial_prompt`/`hotwords` gemessen (13 §9.2) | P1-21, P1-29 |
-| R22 | **Neu:** Moritz’ Formulierungen (Hessisch, Umgangssprache) sind nicht abgedeckt → zu viele „nicht verstanden“ | „nikita erkennt mein gelaber“ | Dialekt-Wörterbuch, Liste nicht erkannter Fragen (`./test-1.sh misses`), Korpus wächst mit echten (nachgestellten) Sätzen | P1-19, P1-29 |
+| R22 | **Neu:** Moritz’ Formulierungen (Hessisch, Umgangssprache) sind nicht abgedeckt → zu viele „nicht verstanden“ | „anton erkennt mein gelaber“ | Dialekt-Wörterbuch, Liste nicht erkannter Fragen (`./test-1.sh misses`), Korpus wächst mit echten (nachgestellten) Sätzen | P1-19, P1-29 |
 | R23 | **Neu:** Falsch-positive Erkennung – ein Skill antwortet, obwohl etwas anderes gemeint war („Um wie viel Uhr fährt der Zug?“) | – | Ausschlusslisten, Score-Schwellen, lange Sätze ausgenommen, ≥ 150 Negativbeispiele im Korpus (0 Fehlzuordnungen als Abnahmekriterium) | P1-19 |
 | R24 | **Neu:** Schnittstellen von Bright Sky/DWD/NINA/PEGELONLINE ändern sich unangekündigt | – | Schema-Prüfung je Antwort, Netz-Schema-Tests (`-m network`) regelmäßig, Status `degraded` statt falscher Antwort | P1-23, P1-27 |
 | R25 | **Neu:** Gepflegte Daten veralten (Schulferien, neue Feiertage, GeoNames-PLZ) | – | Selbsttest warnt < 12 Monate Ferien-Vorlauf; jährlicher Daten-PR; Erzeugung per Skript mit Prüfsummen | P1-20, P1-21 |
 | R26 | **Neu:** Piper spricht Fachwörter/Ortsnamen falsch („Böen“, „Hektopascal“, „Limburg-Weilburg“) | – | Ausspracheliste per Hörtest, Renderer schreibt Abkürzungen/Himmelsrichtungen aus (13 §9.3) | P1-29 |
-| R27 | **Neu:** DAVE-Empfang (E2EE seit März 2026 Pflicht) ist in Python nur über Forks gelöst → Nikita hört im Discord-Sprachkanal evtl. nicht zuverlässig zu | „Discord mit allen Features“ | Spike P1-32 mit festen Kriterien; Rückfall „nur sprechen“ + Sprachnachrichten + Bühnenkanal; neuer Spike bei offizieller Unterstützung (ADR-036) | P1-32 |
+| R27 | **Neu:** DAVE-Empfang (E2EE seit März 2026 Pflicht) ist in Python nur über Forks gelöst → Anton hört im Discord-Sprachkanal evtl. nicht zuverlässig zu | „Discord mit allen Features“ | Spike P1-32 mit festen Kriterien; Rückfall „nur sprechen“ + Sprachnachrichten + Bühnenkanal; neuer Spike bei offizieller Unterstützung (ADR-036) | P1-32 |
 | R28 | **Neu:** Discord ändert API/Regeln, Bibliothek hinkt hinterher | – | gepinnt, isolierter Worker, schneller Update-Weg (ADR-028) | P1-33 |
 | R29 | **Neu:** Bot-Token gelangt nach außen | – | `passwords.txt` 0600, Redaction, Public Bot aus, Owner-Bestätigung, Reset-Anleitung (T25) | P1-41 |
 | R30 | **Neu:** Inhalte liegen dauerhaft bei Discord (kein E2EE für Text) | – | Standards „aus“ für Transkripte/Notizen/Gedächtnis, `/hilfe datenschutz` (DISCORD-35) | P1-34 |
@@ -67,7 +67,7 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | F-15 | ~~Bundesland?~~ | **beantwortet:** Hessen (`fastpaths.state = "HE"`, [12-fast-paths.md](12-fast-paths.md) §4) |
 | F-16 | ~~HF-Modelle ins Repo?~~ | **beantwortet:** nein, HF-Modelle lädt der Installer; alles andere ins Repo, Python-Requirements dürfen aus dem Netz kommen |
 | F-17 | ~~Lizenz Scribbles?~~ | **beantwortet:** alle Rechte vorbehalten (© LayerNX) |
-| F-18 | Soll Nikita nach der Begrüßung von selbst auf Wetterwarnungen hinweisen – ab welcher Stufe? | ja, ab „Unwetter“ (Stufe 3) – [13 §19](13-sofortauskuenfte.md#19-offene-fragen-an-moritz) |
+| F-18 | Soll Anton nach der Begrüßung von selbst auf Wetterwarnungen hinweisen – ab welcher Stufe? | ja, ab „Unwetter“ (Stufe 3) – [13 §19](13-sofortauskuenfte.md#19-offene-fragen-an-moritz) |
 | F-19 | Uhrzeit „19 Uhr 12“ oder umgangssprachlich („Viertel nach sieben“)? | „19 Uhr 12“ |
 | F-20 | Pollen: Allergien (nur diese nennen)? Region Mittelgebirge oder Rhein-Main? | alle Arten, Mittelgebirge |
 | F-21 | Müllabfuhr: Link zum Abfallkalender für Straße/Stadtteil? | aus |
@@ -78,15 +78,15 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | F-26 | Nachrichten-Schlagzeilen am Telefon? Quelle? | aus |
 | F-27 | Einkaufsliste/Notizen per Telefon (jeder interne Anrufer kann sie hören)? | aus |
 | F-28 | Wetterquelle von sich aus nennen oder nur auf Nachfrage? | nur auf Nachfrage |
-| F-29 | ~~Eigener Discord-Server? Kanal für alles?~~ | **beantwortet:** Privatserver Moritz + Nikita; Standard-Textkanal per ID im Setup oder in der TXT (DISCORD-45) |
-| F-30 | Wer außer dir darf Nikita auf Discord nutzen? Gastmodus nur mit Sofortauskünften? | nur du; Gastmodus aus |
-| F-31 | Soll Nikita zusätzlich zu `/joinvc` von selbst kommen, wenn du einen Sprachkanal betrittst? | nein – [14 §23](14-discord.md#23-offene-fragen-an-moritz) |
+| F-29 | ~~Eigener Discord-Server? Kanal für alles?~~ | **beantwortet:** Privatserver Moritz + Anton; Standard-Textkanal per ID im Setup oder in der TXT (DISCORD-45) |
+| F-30 | Wer außer dir darf Anton auf Discord nutzen? Gastmodus nur mit Sofortauskünften? | nur du; Gastmodus aus |
+| F-31 | Soll Anton zusätzlich zu `/joinvc` von selbst kommen, wenn du einen Sprachkanal betrittst? | nein – [14 §23](14-discord.md#23-offene-fragen-an-moritz) |
 | F-32 | Welche Abos (Warnungen, Morgenbriefing + Uhrzeit, Müll, Systemhinweise)? | Warnungen ab Unwetter + Systemhinweise |
 | F-33 | Anrufhinweise auf Discord? Mit Themen oder Transkript? | aus |
-| F-34 | ~~Bot-Name, Stil, Status?~~ | **beantwortet:** „Nikita“, süß, schelmische Aktivitäten (ADR-037) |
+| F-34 | ~~Bot-Name, Stil, Status?~~ | **beantwortet:** „Anton“, süß, schelmische Aktivitäten (ADR-037) |
 | F-35 | Auf Sprachnachrichten mit Sprachnachricht antworten? | ja („mirror“) |
 | F-36 | PIN für gefährliche Admin-Befehle? | keine PIN, Bestätigungsknopf |
 | F-37 | ~~Antworten im Kanal oder per DM?~~ | **beantwortet:** Standardkanal für alles |
 | F-38 | Eine extra niedliche Scribbles-Pose für den Avatar zeichnen? (neue Posen nur von dir) | Scribbles weiß auf dunklem Grund |
-| F-39 | Sprachkanal bei langer Stille: still bleiben und auf „Nikita“ hören oder gehen wie beim Auflegen? | still bleiben |
+| F-39 | Sprachkanal bei langer Stille: still bleiben und auf „Anton“ hören oder gehen wie beim Auflegen? | still bleiben |
 | F-40 | Eigene Lieblingssprüche für die Aktivitäten? | Liste aus 14 §8.5 |

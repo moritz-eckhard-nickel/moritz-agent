@@ -113,7 +113,7 @@ class Stt(_Section):
     cpu_threads: int = Field(8, ge=0)
     no_speech_threshold: float = 0.6
     min_avg_logprob: float = -1.0
-    initial_prompt: str = "Nikita, Moritz, Weilburg, Limburg, Lahn, Wetzlar, Hessen, Frankfurt, Wetter, Postleitzahl, Grad."
+    initial_prompt: str = "Anton, Moritz, Weilburg, Limburg, Lahn, Wetzlar, Hessen, Frankfurt, Wetter, Postleitzahl, Grad."
 
 
 class PiperSettings(_Section):
@@ -139,8 +139,8 @@ class Tts(_Section):
 
 class Phone(_Section):
     enabled: bool = True
-    assistant_name: str = "Nikita"
-    greeting_text: str = "Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?"
+    assistant_name: str = "Anton"
+    greeting_text: str = "Hallo Moritz, hier ist Anton. Was kann ich für dich tun?"
     local_sip_port: int = Field(5060, ge=1, le=65535)
     rtp_port_start: int = Field(40000, ge=1024, le=65000)
     rtp_port_count: int = Field(200, ge=4, le=10000)

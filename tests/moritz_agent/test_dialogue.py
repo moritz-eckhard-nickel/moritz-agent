@@ -18,7 +18,7 @@ from .fakes import FakeEngine, FakeMedia, FakeStt, FakeVad, silence_frames, spee
 PROMPTS = {
     pid: Prompt(pid, text, True)
     for pid, text in {
-        "greeting": "Hallo Moritz, hier ist Nikita.",
+        "greeting": "Hallo Moritz, hier ist Anton.",
         "not_understood": "Das habe ich nicht verstanden.",
         "not_understood_again": "Ich verstehe dich schlecht.",
         "still_there": "Bist du noch da?",

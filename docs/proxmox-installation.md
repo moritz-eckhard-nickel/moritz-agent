@@ -1,6 +1,6 @@
 # moritz-agent auf Proxmox einrichten und aktualisieren
 
-`install.sh` und `update.sh` richten Nikita **vom Proxmox-Host aus** ein: Sie legen den LXC-Container an
+`install.sh` und `update.sh` richten Anton **vom Proxmox-Host aus** ein: Sie legen den LXC-Container an
 (oder verwenden ihn weiter), kopieren das Programm hinein und starten dort den Installer bzw. Updater.
 Entscheidung und Hintergründe: ADR-028 in [`plan/03-entscheidungen.md`](plan/03-entscheidungen.md).
 
@@ -120,7 +120,7 @@ pct exec <ID> -- journalctl -u moritz-agent -n 50         # Log
 2. **Asterisk:** Die Adresse des Containers (am Ende der Installation genannt) gehört in die ACL –
    [`asterisk-konfiguration.md`](asterisk-konfiguration.md). Der Installer verändert Asterisk nie.
 3. **Testanruf:** Nebenstelle **999** wählen: Begrüßung, „Wie viel Uhr haben wir?“, „Tschüss“.
-4. Ohne Sprachmodell antwortet Nikita auf alles außer den Sofort-Antworten (Uhrzeit, Datum …) mit „Ich habe
+4. Ohne Sprachmodell antwortet Anton auf alles außer den Sofort-Antworten (Uhrzeit, Datum …) mit „Ich habe
    verstanden: …“ – das Sprachmodell kommt mit den nächsten Tickets.
 
 ## Was am Proxmox-Host verändert wird

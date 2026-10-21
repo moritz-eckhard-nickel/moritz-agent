@@ -65,7 +65,7 @@ text = "Ja?"
 required = false
 
 [going_quiet]
-text = "Ich bin dann mal still. Sag einfach Nikita, wenn du mich brauchst."
+text = "Ich bin dann mal still. Sag einfach Anton, wenn du mich brauchst."
 required = false
 
 [waking_up]

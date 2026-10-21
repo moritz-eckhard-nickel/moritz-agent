@@ -36,7 +36,7 @@ from .test_discord_client import stub_client, wired
 PROMPTS = {
     pid: Prompt(pid, text, False)
     for pid, text in {
-        "greeting": "Hallo Moritz, hier ist Nikita.",
+        "greeting": "Hallo Moritz, hier ist Anton.",
         "yes": "Ja?",
         "going_quiet": "Ich bin dann mal still.",
         "still_there": "Bist du noch da?",
@@ -86,7 +86,7 @@ def segmenter_with(frames: list[bytes]) -> BargeInDetector:
     return BargeInDetector(FakeSegmenter(min_speech_frames=3, end_silence_frames=50), min_ms=300)
 
 
-def test_talking_over_nikita_is_noticed_after_300_ms_and_only_once():
+def test_talking_over_anton_is_noticed_after_300_ms_and_only_once():
     detector = segmenter_with([])
     quiet, loud = silence_frames(1)[0], speech_frames(1)[0]
     assert all(detector.feed(quiet, True) is None for _ in range(10))
@@ -95,12 +95,12 @@ def test_talking_over_nikita_is_noticed_after_300_ms_and_only_once():
     assert 14 <= first <= 16 and sum(1 for heard in fired if heard) == 1  # 300 ms of 20 ms frames
     heard = fired[first]
     assert len(heard) >= 15 * 640  # the first words are handed over
-    detector.feed(loud, False)  # Nikita stopped: the next time counts again
+    detector.feed(loud, False)  # Anton stopped: the next time counts again
     again = [detector.feed(loud, True) for _ in range(20)]
     assert any(again)
 
 
-def test_coughs_and_other_nikita_free_moments_do_not_interrupt():
+def test_coughs_and_other_anton_free_moments_do_not_interrupt():
     detector = BargeInDetector(FakeSegmenter(min_speech_frames=3, end_silence_frames=1), min_ms=300)
     loud, quiet = speech_frames(1)[0], silence_frames(1)[0]
     for _ in range(5):  # short noises, each below 300 ms
@@ -108,23 +108,28 @@ def test_coughs_and_other_nikita_free_moments_do_not_interrupt():
         assert detector.feed(quiet, True) is None
     assert all(
         detector.feed(loud, False) is None for _ in range(40)
-    )  # Nikita is silent: no interruption
+    )  # Anton is silent: no interruption
 
 
 def test_the_wake_word_is_found_also_as_whisper_mishears_it():
     for text in (
-        "Nikita, bist du da?",
-        "Hey Nikita",
-        "Nikida hörst du mich",
-        "nikitta",
-        "Ähm Nikita wie spät",
+        "Anton, bist du da?",
+        "Hey Anton",
+        "Antonn hörst du mich",
+        "andon",
+        "Anthon wie spät",
+        "Ähm Anton wie spät",
     ):
         assert is_wake_word(text), text
     for text in (
         "Wie spät ist es",
         "Nikolaus kommt bald",
+        "Das kann ich dir nicht antun",
+        "Der Kanton Bern",
+        "Santo Domingo",
+        "Unten im Keller",
         "",
-        "Ich habe gestern mit Nikita gesprochen und es war schön",
+        "Ich habe gestern mit Anton gesprochen und es war schön",
     ):
         assert not is_wake_word(text), text
 
@@ -496,9 +501,9 @@ def test_leaving_the_channel_ends_the_conversation_like_hanging_up(tmp_path):
     assert room_test(tmp_path, body) == 2
 
 
-def test_silence_makes_nikita_go_quiet_and_his_name_wakes_him(tmp_path):
+def test_silence_makes_anton_go_quiet_and_his_name_wakes_him(tmp_path):
     async def body(room: Room):
-        room.stt.texts = ["Nikita, hörst du mich?"]
+        room.stt.texts = ["Anton, hörst du mich?"]
         await room.join()
         room.enter(OWNER_ID)
         await room.until(lambda: room.session.mode is VoiceMode.TALKING, "Gespräch")
@@ -512,7 +517,7 @@ def test_silence_makes_nikita_go_quiet_and_his_name_wakes_him(tmp_path):
         await asyncio.sleep(0.3)
         still_resting = room.session.mode is VoiceMode.RESTING
         # … his name does, and he answers with "Ja?" instead of the greeting
-        room.stt.texts = ["Nikita, hörst du mich?"]
+        room.stt.texts = ["Anton, hörst du mich?"]
         for frame in speech_frames(14) + silence_frames(12):
             room.session.on_audio(int(OWNER_ID), frame)
             await asyncio.sleep(0.003)
@@ -530,7 +535,7 @@ def test_saying_goodbye_ends_the_visit(tmp_path):
         room.enter(OWNER_ID)
         await room.until(lambda: room.session.mode is VoiceMode.TALKING, "Gespräch")
         await room.talk()
-        await room.until(lambda: not room.manager.active, "Nikita ist gegangen")
+        await room.until(lambda: not room.manager.active, "Anton ist gegangen")
         # the manager forgets the session first (no re-entry), then stop() disconnects
         await room.until(lambda: room.vc.disconnected, "Verbindung getrennt")
         return room.vc.disconnected, room.worker.policy.extra_chat_channels
@@ -539,7 +544,7 @@ def test_saying_goodbye_ends_the_visit(tmp_path):
     assert disconnected and extra == set()
 
 
-def test_after_goodbye_nikita_can_stay_and_rest(tmp_path):
+def test_after_goodbye_anton_can_stay_and_rest(tmp_path):
     async def body(room: Room):
         room.worker.config.settings.discord.voice.after_goodbye = "stay"
         room.stt.texts = ["Tschüss"]
@@ -625,12 +630,12 @@ def test_joining_is_checked_before_connecting(tmp_path):
     assert "raus aus" in results["leave"] and "keinem Sprachkanal" in results["nothing"]
 
 
-def test_nobody_there_for_long_makes_nikita_leave_and_say_so(tmp_path):
+def test_nobody_there_for_long_makes_anton_leave_and_say_so(tmp_path):
     async def body(room: Room):
         room.worker.config.settings.discord.voice.idle_leave_minutes = 1
         await room.join()
         room.session._empty_since -= 61
-        await room.until(lambda: not room.manager.active, "Nikita geht")
+        await room.until(lambda: not room.manager.active, "Anton geht")
         await room.until(lambda: room.worker.default_channel.send.await_args, "Hinweis im Kanal")
         return room.worker.default_channel.send.await_args.kwargs["content"]
 
@@ -649,7 +654,7 @@ def test_a_lost_connection_ends_the_session(tmp_path):
     assert "Verbindung verloren" in room_test(tmp_path, body)
 
 
-def test_the_owner_arriving_can_bring_nikita_along_if_switched_on(tmp_path):
+def test_the_owner_arriving_can_bring_anton_along_if_switched_on(tmp_path):
     async def body(room: Room):
         room.worker.config.settings.discord.voice.auto_join = True
         member = SimpleNamespace(id=int(OWNER_ID))

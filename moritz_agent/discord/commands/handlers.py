@@ -179,7 +179,7 @@ def help_text(
         return (
             "**Sprachkanal** 🔊\n"
             "Mit `/joinvc` komme ich in deinen Sprachkanal und verhalte mich wie am Telefon: du "
-            "sprichst, ich antworte. Sag „Nikita, …“, damit ich weiß, dass du mich meinst, und „Tschüss“, "
+            "sprichst, ich antworte. Sag „Anton, …“, damit ich weiß, dass du mich meinst, und „Tschüss“, "
             "wenn wir fertig sind. Sprachnachrichten verstehe ich auch."
         )
     if topic == "admin":

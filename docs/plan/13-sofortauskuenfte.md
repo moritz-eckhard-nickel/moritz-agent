@@ -5,11 +5,11 @@ Stand: 18.10.2026 (Umsetzungsstand und Abweichungen: [04 Anhang C](04-part1-umse
 Entscheidungen: ADR-029 … ADR-032 ([03](03-entscheidungen.md)).
 
 > Moritz, 18.10.2026: „Plane nun bitte, bevor wir LLM und richtige Agent-Instanzen machen, dass ich
-> Nikita nach Uhrzeit, Datum und simplen Sachen wie dem Wetter in der Region fragen kann. Standard
+> Anton nach Uhrzeit, Datum und simplen Sachen wie dem Wetter in der Region fragen kann. Standard
 > ist 35781 Weilburg als Wetter, außer PLZ oder was anderes wird gesagt. Mache dafür den
 > detailliertesten Plan ever mit wirklich so vielen Funktionen wie möglich.“
 
-**Ziel:** Nikita beantwortet am Telefon – noch **ohne Sprachmodell** – alles, was sich aus Uhr,
+**Ziel:** Anton beantwortet am Telefon – noch **ohne Sprachmodell** – alles, was sich aus Uhr,
 Kalender, Rechnung, mitgelieferten Daten oder einem offenen Datendienst eindeutig bestimmen lässt:
 Uhrzeit, Datum, Feiertage, Ferien, **Wetter für Weilburg (35781) oder jeden genannten Ort/jede
 genannte PLZ**, Warnungen, Pollen, Sonne und Mond, Rechnen, Umrechnen, Lahn-Pegel, Müllabfuhr und
@@ -33,7 +33,7 @@ Inhalt: [1 Leitlinien](#1-leitlinien) · [2 So klingt das](#2-so-klingt-das-beis
 
 1. **Deterministisch statt geraten.** Jede Zahl, jedes Datum, jede Wetterangabe stammt aus der
    Systemuhr, einer Rechnung, einer mitgelieferten Datei oder einem Datenabruf – nie aus einem
-   Sprachmodell, nie „ungefähr erfunden“ (SKILL-02). Fehlt etwas, sagt Nikita das ehrlich.
+   Sprachmodell, nie „ungefähr erfunden“ (SKILL-02). Fehlt etwas, sagt Anton das ehrlich.
 2. **Nur bei eindeutiger Erkennung.** Ein Skill antwortet nur, wenn Absicht und Angaben sicher
    erkannt sind. Sonst: kurze Rückfrage (wenn genau eine Angabe fehlt oder mehrdeutig ist) oder
    Weitergabe – heute an den Testmodus („Ich habe verstanden: …“), später an den Agenten (SKILL-01).
@@ -51,7 +51,7 @@ Inhalt: [1 Leitlinien](#1-leitlinien) · [2 So klingt das](#2-so-klingt-das-beis
    Vorhersage“), ab Tag 7 als Tendenz; Datenalter über einer Stunde wird genannt; zu weit Entferntes
    wird abgelehnt statt geraten.
 7. **Keine Seiteneffekte.** Skills lesen nur. Einzige Ausnahme: lokale Notizen/Einkaufsliste in
-   moritz-agent selbst, mit gesprochener Bestätigung (SKILL-24). Nikita schaltet nichts, ruft
+   moritz-agent selbst, mit gesprochener Bestätigung (SKILL-24). Anton schaltet nichts, ruft
    niemanden an (PHONE-10) und schickt nichts weg.
 8. **Datensparsam.** An Datendienste gehen nur gerundete Koordinaten, Postleitzahlen/Ortsnamen und
    fachliche Kennungen (Warnzelle, Pegel, Währung) – nie Transkripte, Rufnummern oder Zugangsdaten
@@ -70,30 +70,30 @@ Inhalt: [1 Leitlinien](#1-leitlinien) · [2 So klingt das](#2-so-klingt-das-beis
 ## 2. So klingt das (Beispielanruf)
 
 ```text
-Nikita:  Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?
+Anton:  Hallo Moritz, hier ist Anton. Was kann ich für dich tun?
          Übrigens: Für Weilburg gilt bis heute 22 Uhr eine Unwetterwarnung vor Sturmböen.   (nur bei Warnung ≥ Stufe 3)
 Moritz:  Wie isses Wedder?
-Nikita:  In Weilburg sind es gerade 11 Grad, stark bewölkt, Wind aus Südwest mit Böen bis 70 Kilometer pro Stunde.
+Anton:  In Weilburg sind es gerade 11 Grad, stark bewölkt, Wind aus Südwest mit Böen bis 70 Kilometer pro Stunde.
 Moritz:  Und morsche?
-Nikita:  Morgen, Montag, wird es in Weilburg wechselhaft bei 8 bis 13 Grad. Vormittags Schauer, nachmittags trockener.
+Anton:  Morgen, Montag, wird es in Weilburg wechselhaft bei 8 bis 13 Grad. Vormittags Schauer, nachmittags trockener.
 Moritz:  Brauch isch en Schirm?
-Nikita:  Morgen früh ja, bis etwa 11 Uhr sind Schauer wahrscheinlich. Am Nachmittag eher nicht.
+Anton:  Morgen früh ja, bis etwa 11 Uhr sind Schauer wahrscheinlich. Am Nachmittag eher nicht.
 Moritz:  Wie wird's am Wochenende in sechs null drei eins eins?
-Nikita:  Für 60311, das ist Frankfurt am Main: Samstag sonnig bis 16 Grad, Sonntag Regen bei höchstens 12 Grad.
+Anton:  Für 60311, das ist Frankfurt am Main: Samstag sonnig bis 16 Grad, Sonntag Regen bei höchstens 12 Grad.
 Moritz:  Und in Limburg?
-Nikita:  In Limburg an der Lahn am Wochenende: Samstag sonnig bis 15 Grad, Sonntag Regen bei 11 Grad.
+Anton:  In Limburg an der Lahn am Wochenende: Samstag sonnig bis 15 Grad, Sonntag Regen bei 11 Grad.
 Moritz:  Wann geht morgen die Sonne auf?
-Nikita:  Morgen geht in Weilburg die Sonne um 7 Uhr 58 auf und um 18 Uhr 19 unter.
+Anton:  Morgen geht in Weilburg die Sonne um 7 Uhr 58 auf und um 18 Uhr 19 unter.
 Moritz:  Wie viele Tage noch bis Weihnachten?
-Nikita:  Noch 67 Tage bis Heiligabend.
+Anton:  Noch 67 Tage bis Heiligabend.
 Moritz:  Wann sind die nächsten Ferien?
-Nikita:  Die Weihnachtsferien in Hessen beginnen am Montag, 21. Dezember.   (aus der gepflegten Ferientabelle)
+Anton:  Die Weihnachtsferien in Hessen beginnen am Montag, 21. Dezember.   (aus der gepflegten Ferientabelle)
 Moritz:  Was sind 19 Prozent von 249 Euro?
-Nikita:  19 Prozent von 249 Euro sind 47 Euro 31.
+Anton:  19 Prozent von 249 Euro sind 47 Euro 31.
 Moritz:  Wie hoch steht die Lahn?
-Nikita:  Die Lahn am Pegel Leun steht bei 1 Meter 42, leicht steigend, etwas über dem mittleren Wasserstand.
+Anton:  Die Lahn am Pegel Leun steht bei 1 Meter 42, leicht steigend, etwas über dem mittleren Wasserstand.
 Moritz:  Danke, tschüss.
-Nikita:  Gerne! Bis bald.                                                        (legt auf)
+Anton:  Gerne! Bis bald.                                                        (legt auf)
 ```
 
 Werte in diesem Beispiel sind erfunden und dienen nur der Form – die echten Antworten kommen aus
@@ -305,7 +305,7 @@ jederzeit gelöscht werden. Der Updater sichert den Cache nicht.
 
 1. **Normalisieren:** Kleinschreibung, Satzzeichen weg (Ziffern-Punkte in Datumsangaben bleiben:
    „24.12.“), Mehrfach-Leerzeichen, Füllwörter am Rand („äh“, „ähm“, „also“, „mal“, „bitte“, „sag
-   mal“, „kannst du mir sagen“, „weißt du“, „hey Nikita“).
+   mal“, „kannst du mir sagen“, „weißt du“, „hey Anton“).
 2. **Dialekt/Umgangssprache → Standard** (Wörterbuch §9.1, ganze Wörter, Groß-/Kleinschreibung egal):
    „wedder“ → „wetter“, „morsche“ → „morgen“, „heit“ → „heute“, „isses“ → „ist es“, „hammer“ → „haben
    wir“ …
@@ -407,7 +407,7 @@ abhängt; sonst plausibelste Deutung **mit Nennung** in der Antwort.
   Skill) · „Und in Limburg?“, „Und in 60311?“, „Und dort?“ (neuer Ort, alter Skill/Zeitraum) · „Und der
   Wind?“, „Wie warm?“, „Regnet es?“ (neuer Aspekt) · „Mehr Details“, „Genauer?“, „Was noch?“
   (Detail-Text) · „Woher weißt du das?“ (Quelle der letzten Auskunft).
-- **Rückfragen:** höchstens eine pro Auskunft; versteht Nikita die Antwort nicht, nimmt sie die
+- **Rückfragen:** höchstens eine pro Auskunft; versteht Anton die Antwort nicht, nimmt er die
   plausibelste Option **mit Nennung** statt ein zweites Mal zu fragen.
 - Ein Ortswechsel gilt nur für den laufenden Anruf; der Heimatort ändert sich nie per Sprache.
 
@@ -680,14 +680,14 @@ nicht teilen.“ Einheiten aus `assets/data/einheiten.toml` (Faktor + Offset fü
 | `timer.left` | „Wie lange noch?“ (bei laufendem Timer) | „Noch 1 Minute 20.“ | C | K |
 | `count.down` | „Zähl von 10 runter“ | „Zehn, neun, …, null.“ | A | K |
 
-### 6.15 Gespräch und Nikita
+### 6.15 Gespräch und Anton
 
 | ID | Beispiele | Antwort | W | P |
 | --- | --- | --- | --- | --- |
 | `talk.greeting` | „Guude!“, „Hallo“, „Moin“, „Servus“ | „Guude! Was kann ich für dich tun?“ | A | M |
 | `talk.thanks` | „Danke“, „Merci“, „Super, danke“ | „Gerne!“ (ohne Auflegen; „Danke, das war’s“ = Abschied) | A | M |
 | `talk.how_are_you` | „Wie geht’s dir?“, „Alles klar bei dir?“ | „Mir geht’s gut, danke! Alles läuft.“ bzw. ehrliche Störung (Datendienst/Stimme) | A | M |
-| `talk.identity` | „Wer bist du?“, „Wie heißt du?“, „Bist du ein Mensch?“ | „Ich bin Nikita, Moritz’ Telefonassistent – ein Computerprogramm, kein Mensch.“ | A | M |
+| `talk.identity` | „Wer bist du?“, „Wie heißt du?“, „Bist du ein Mensch?“ | „Ich bin Anton, Moritz’ Telefonassistent – ein Computerprogramm, kein Mensch.“ | A | M |
 | `talk.help` | „Was kannst du?“, „Hilfe“, „Was kann ich dich fragen?“ | aus aktiven Skills erzeugt, max. 3 Beispiele + „Frag zum Beispiel: Wie wird das Wetter morgen?“; „Mehr“ → nächste Gruppe | A | M |
 | `talk.repeat` | „Was hast du gesagt?“, „Nochmal bitte“ | letzte Antwort (aus RAM-Cache) | A | M |
 | `talk.slower` / `talk.faster` | „Sprich langsamer“, „Etwas schneller bitte“ | Sprechtempo für den Rest des Anrufs (Piper `length_scale` ± 15 %, Grenzen 0,8–1,4) + Bestätigung im neuen Tempo | A | S |
@@ -978,8 +978,8 @@ Mindestens 50 Einträge zum Start (SKILL-21); jeder Eintrag hat einen Test.
 
 ### 9.2 Spracherkennung auf Orte und Zahlen trimmen
 
-- `phone.stt.initial_prompt` (heute „Nikita, Moritz, Hessen, Frankfurt.“) wird um Heimatort und
-  Fachwörter erweitert: „Nikita, Moritz, Weilburg, Limburg, Lahn, Wetzlar, Hessen, Wetter,
+- `phone.stt.initial_prompt` (heute „Anton, Moritz, Hessen, Frankfurt.“) wird um Heimatort und
+  Fachwörter erweitert: „Anton, Moritz, Weilburg, Limburg, Lahn, Wetzlar, Hessen, Wetter,
   Postleitzahl, Grad.“ – **gemessen** mit `./test-1.sh bench` und dem Satzkorpus, weil ein langer
   Prompt Halluzinationen fördern kann. faster-whisper kennt zusätzlich `hotwords`; Vergleich beider
   Varianten in P1-29, Gewinner wird Standard.
@@ -1265,7 +1265,7 @@ Protokoll `docs/abnahme/sofortauskuenfte-<datum>.md`, Anruf an 999 über die ech
 | --- | --- |
 | Bus/Bahn (RMV, DB) | später mit Schlüssel und Haltestellen von Moritz (Part 7+), eigener Plan |
 | Kalender/Termine (CalDAV) | Part 8+ („Tools später: calendar“, 05) |
-| Erinnerung/Weckruf per Rückruf | **nein** ohne eigene Freigabe: Nikita ruft nie selbst an (PHONE-10) – **auf Discord als Direktnachricht: ja** ([14 §11](14-discord.md#11-proaktive-nachrichten-und-erinnerungen)) |
+| Erinnerung/Weckruf per Rückruf | **nein** ohne eigene Freigabe: Anton ruft nie selbst an (PHONE-10) – **auf Discord als Direktnachricht: ja** ([14 §11](14-discord.md#11-proaktive-nachrichten-und-erinnerungen)) |
 | Smart Home („Mach das Licht an“) | **nein** per Telefon (PHONE-46, Caller-ID ist keine Berechtigung) |
 | Regenradar „regnet es in 10 Minuten?“ | KANN: Bright-Sky-Radar (DWD RADOLAN) als Nowcasting, nach Welle C |
 | Wetterkarte, Diagramme | WebUI (Part 2) aus denselben Wetterpaketen |
@@ -1283,7 +1283,7 @@ Bis zur Antwort gilt der Default (eingetragen in [10 §3](10-risiken-offene-frag
 
 | # | Frage | Default |
 | --- | --- | --- |
-| F-18 | Soll Nikita nach der Begrüßung von selbst auf Warnungen hinweisen – ab welcher Stufe? | ja, ab „Unwetter“ (Stufe 3) |
+| F-18 | Soll Anton nach der Begrüßung von selbst auf Warnungen hinweisen – ab welcher Stufe? | ja, ab „Unwetter“ (Stufe 3) |
 | F-19 | Uhrzeit lieber „19 Uhr 12“ oder umgangssprachlich („Viertel nach sieben“)? | „19 Uhr 12“ |
 | F-20 | Pollen: hast du Allergien (nur diese nennen)? Pollenregion Mittelgebirge oder Rhein-Main? | alle Arten, Mittelgebirge |
 | F-21 | Müllabfuhr: Link zum Abfallkalender (AWB Limburg-Weilburg) für deine Straße/deinen Stadtteil? | aus |
@@ -1293,4 +1293,4 @@ Bis zur Antwort gilt der Default (eingetragen in [10 §3](10-risiken-offene-frag
 | F-25 | Spritpreise: willst du einen Tankerkönig-Schlüssel (kostenlos) eintragen? Welche Sorte? | aus, E10 |
 | F-26 | Nachrichten-Schlagzeilen am Telefon gewünscht? Welche Quelle? | aus |
 | F-27 | Einkaufsliste/Notizen per Telefon gewünscht (jeder interne Anrufer kann sie hören)? | aus |
-| F-28 | Soll Nikita die Wetterquelle von sich aus nennen oder nur auf Nachfrage? | nur auf Nachfrage |
+| F-28 | Soll Anton die Wetterquelle von sich aus nennen oder nur auf Nachfrage? | nur auf Nachfrage |

@@ -17,7 +17,7 @@ import httpx
 API = "https://discord.com/api/v10"
 INVITE = "https://discord.com/oauth2/authorize"
 
-# Bit positions of the permissions Nikita asks for (docs/plan/14 §14.1) – no admin rights.
+# Bit positions of the permissions Anton asks for (docs/plan/14 §14.1) – no admin rights.
 PERMISSION_BITS = {
     "add_reactions": 6,
     "view_channel": 10,
@@ -36,7 +36,7 @@ FLAG_MESSAGE_CONTENT = 1 << 18  # application flags: Message Content Intent (app
 FLAG_MESSAGE_CONTENT_LIMITED = 1 << 19  # … switched on in the Developer Portal (small bots)
 TEXT_CHANNEL_TYPES = {0, 5}  # text, announcement
 BIO = (
-    "Guude! Ich bin Nikita ✨ Moritz’ kleiner Helfer aus Weilburg – Telefon 999, Wetter, Uhrzeit & "
+    "Guude! Ich bin Anton ✨ Moritz’ kleiner Helfer aus Weilburg – Telefon 999, Wetter, Uhrzeit & "
     "ganz viel Quatsch. Frag mich einfach 🐾"
 )
 
@@ -57,7 +57,7 @@ def invite_links(application_id: int | str) -> list[str]:
     user = urlencode(
         {"client_id": application_id, "scope": "applications.commands", "integration_type": 1}
     )
-    return [f"Server (Nikita holen): {INVITE}?{guild}", f"Benutzer-App (überall): {INVITE}?{user}"]
+    return [f"Server (Anton holen): {INVITE}?{guild}", f"Benutzer-App (überall): {INVITE}?{user}"]
 
 
 class DiscordApiError(RuntimeError):
@@ -197,7 +197,7 @@ async def check(
             if app.get("bot_public"):
                 report.add(
                     "warn",
-                    "„Public Bot“ ist an – jeder könnte Nikita auf seinen Server holen. "
+                    "„Public Bot“ ist an – jeder könnte Anton auf seinen Server holen. "
                     "Im Developer Portal unter Bot ausschalten.",
                 )
             else:
@@ -208,7 +208,7 @@ async def check(
             else:
                 report.add(
                     "error",
-                    "Der Message Content Intent ist aus – ohne ihn sieht Nikita keine Nachrichten. "
+                    "Der Message Content Intent ist aus – ohne ihn sieht Anton keine Nachrichten. "
                     "Im Developer Portal unter Bot einschalten.",
                 )
             if configured_owners is not None and report.owner_ids:
@@ -224,10 +224,10 @@ async def check(
         except DiscordApiError:
             report.guilds = {}
         if report.guilds:
-            report.add("ok", "Nikita ist auf: " + ", ".join(report.guilds.values()))
+            report.add("ok", "Anton ist auf: " + ", ".join(report.guilds.values()))
         else:
             report.add(
-                "warn", "Nikita ist noch auf keinem Server – Einladungslink benutzen (invite)"
+                "warn", "Anton ist noch auf keinem Server – Einladungslink benutzen (invite)"
             )
         if channel_id:
             try:
@@ -240,9 +240,7 @@ async def check(
                 if channel.get("type") not in TEXT_CHANNEL_TYPES:
                     report.add("error", "Die Kanal-ID gehört nicht zu einem Textkanal")
                 elif str(channel.get("guild_id")) not in report.guilds:
-                    report.add(
-                        "error", "Der Kanal liegt auf einem Server, auf dem Nikita nicht ist"
-                    )
+                    report.add("error", "Der Kanal liegt auf einem Server, auf dem Anton nicht ist")
                 else:
                     report.add("ok", f"Standardkanal: #{channel.get('name', '?')}")
         else:

@@ -27,7 +27,7 @@ GetSituation = Callable[[], Awaitable[dict[str, Any]]]
 
 
 class ActivityManager:
-    """Decides what Nikita shows, when it changes, and keeps the owner's own sayings."""
+    """Decides what Anton shows, when it changes, and keeps the owner's own sayings."""
 
     def __init__(
         self,

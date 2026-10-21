@@ -140,7 +140,7 @@ class Services:
     status_fn: Callable[[], dict[str, Any]] | None = None
     version: str = ""
     started_at: float = 0.0
-    assistant_name: str = "Nikita"
+    assistant_name: str = "Anton"
     store: Any = None  # notes / reminders store (P1-27)
     db: Any = None  # moritz_agent.storage.Database
     repo: Any = None  # moritz_agent.storage.Repo (calls, tool calls, missed questions)

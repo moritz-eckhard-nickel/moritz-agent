@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-# Der süße Stil von Nikita auf Discord (docs/plan/14 §8.2, ADR-037): Emojis, Kaomojis und Floskeln.
+# Der süße Stil von Anton auf Discord (docs/plan/14 §8.2, ADR-037): Emojis, Kaomojis und Floskeln.
 # Der Zucker kommt drumherum, nie in die Zahlen. Bei Warnungen, Fehlern und Admin-Sachen bleibt es sachlich.
 
 [emoji]            # nach Skill-Gruppe (Anfang der Skill-ID); "default" für alles andere

@@ -28,9 +28,9 @@ Stand der Entwicklung: **offen** – alle Zeilen unten sind noch auszufüllen.
 | 4 | … 60 Minuten ohne Abbruch | keine Ausnahmen im Log, Latenz konstant | offen | |
 | 5 | … Sprecherwechsel (zweite freigegebene Person spricht) | Audio je Person getrennt zugeordnet | offen | |
 | 6 | … Schlüsselwechsel (jemand betritt/verlässt den Kanal) | Gespräch läuft weiter | offen | |
-| 7 | … Reconnect (WLAN kurz weg, Sprachserver wechselt) | Nikita verbindet sich neu, Sitzung bleibt | offen | |
+| 7 | … Reconnect (WLAN kurz weg, Sprachserver wechselt) | Anton verbindet sich neu, Sitzung bleibt | offen | |
 | 8 | … CPU-Last des Discord-Workers im Gespräch | < 1 Kern im Schnitt; Telefon-Latenz unverändert | offen | |
-| 9 | Barge-in: über Nikitas Antwort sprechen | Nikita verstummt ≤ 300 ms, versteht den Satz | offen | |
+| 9 | Barge-in: über Antons Antwort sprechen | Anton verstummt ≤ 300 ms, versteht den Satz | offen | |
 | 10 | Dürfen Bots echte Sprachnachrichten senden (Flag, Wellenform, Dauer)? | ja/nein; heute senden wir eine OGG-Audiodatei | offen | |
 | 11 | Upload-Grenze ohne Boost | tatsächliche Größe notieren (Plan: ≈ 10 MB) | offen | |
 | 12 | Wheels für Python 3.12–3.14 (`davey`, PyNaCl) | `pip install --require-hashes -r requirements/discord.lock` ohne Compiler | offen | |

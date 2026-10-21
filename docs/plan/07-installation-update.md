@@ -58,12 +58,12 @@ Anforderungen: INST-01…15, UPD-01…07, CFG-01…10.
   `data/ssh/id_ed25519` erzeugen und Public Key anzeigen), optionale Passphrase; Host-Key per
   `ssh-keyscan` holen, **Fingerprint anzeigen und bestätigen lassen**, in TXT speichern,
   Testverbindung `ssh -o StrictHostKeyChecking=yes … true`. Bei 2: `enabled = false`.
-- **Stimme:** keine Abfrage – Nikita spricht mit Thorsten-Voice „Hessisch“ (Piper, lokal, keine Zugangsdaten; ADR-027).
+- **Stimme:** keine Abfrage – Anton spricht mit Thorsten-Voice „Hessisch“ (Piper, lokal, keine Zugangsdaten; ADR-027).
 - **Discord:** Auswahl `[1] jetzt einrichten  [2] später`. Bei 1: Kurzanleitung Developer Portal
   (Public Bot aus, Message Content an), Token mit `read -rs` (kein Echo, per stdin an
   `moritz_agent.setup set-discord-token`), Anzeige des Bot-Namens, Auswahl des Owners bei Team-Apps,
   Einladungslinks für Server- und Benutzer-Installation, dann Standard-Textkanal (ID eingeben oder aus
-  der Liste wählen, sobald Nikita im Server ist; `set-discord-channel` per stdin), optional Avatar,
+  der Liste wählen, sobald Anton im Server ist; `set-discord-channel` per stdin), optional Avatar,
   Banner und Bio setzen. Bei 2: leere `bot_token`/`channel_id`, `discord.enabled = false`.
 - **SIP:** keine Abfrage bei Ersteinrichtung (Startwerte aus Vorlage). Warnung bei
   `password = agent`. Option `--reconfigure-sip` für spätere interaktive Änderung.

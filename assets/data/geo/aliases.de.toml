@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
 # Umgangssprachliche Namen für Orte und Länder (docs/plan/13 §11). Schlüssel kleingeschrieben, ohne
 # Umlaut-Tricks; der Wert ist der Ortsname exakt wie in seed-places.tsv / world-cities.tsv.
-# „Wetter in Frankreich“ beantwortet Nikita mit dem Wetter der Hauptstadt und nennt sie dabei („In Paris …“).
+# „Wetter in Frankreich“ beantwortet Anton mit dem Wetter der Hauptstadt und nennt sie dabei („In Paris …“).
 
 [orte]
 malle = "Palma de Mallorca"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-"""A scripted caller for testing Nikita without a real phone (ticket P1-11).
+"""A scripted caller for testing Anton without a real phone (ticket P1-11).
 
 It places a SIP call, listens to the agent, speaks the given sentences (synthesized with
 espeak-ng or taken from WAV files) whenever the agent has finished talking, measures how long

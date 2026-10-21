@@ -31,7 +31,7 @@ die() {
 
 usage() {
 	cat <<'USAGE'
-test-1.sh – Nikitas Telefon- und Stimmenteil testen (ohne Systeminstallation)
+test-1.sh – Antons Telefon- und Stimmenteil testen (ohne Systeminstallation)
 
   ./test-1.sh setup [--yes] [--skip-models]
         Richtet alles unter runtime/ und models/ ein: Python-Umgebung, PJSIP (SIP-Stack, wird
@@ -41,7 +41,7 @@ test-1.sh – Nikitas Telefon- und Stimmenteil testen (ohne Systeminstallation)
   ./test-1.sh check [--sip] [--fallback-ok]
         Selbsttest: Umgebung, SIP-Stack, Modelle, Stimmen, Ansagen, Ports (--sip: auch Anmeldung).
   ./test-1.sh speak "Text" [--out datei.wav] [--engine piper|espeak] [--play]
-        Einen Satz mit Nikitas Stimme in eine WAV-Datei sprechen.
+        Einen Satz mit Antons Stimme in eine WAV-Datei sprechen.
   ./test-1.sh prompts [--warm-times]
         Alle Ansagen vorrendern und im Cache ablegen (assets/audio/cache/).
   ./test-1.sh bench
@@ -52,10 +52,10 @@ test-1.sh – Nikitas Telefon- und Stimmenteil testen (ohne Systeminstallation)
   ./test-1.sh skills [help|corpus]
         help: alle Sofortauskünfte mit Beispielen; corpus: den Testkorpus durchspielen.
   ./test-1.sh call [--quick] ["Satz" …]
-        Testanruf ohne Telefonanlage: startet Nikita und ruft sich selbst an (Aufnahme in
+        Testanruf ohne Telefonanlage: startet Anton und ruft sich selbst an (Aufnahme in
         runtime/test-1/anruf.wav). --quick: nur Notstimme + festes Text-Skript, ohne Modelle.
   ./test-1.sh run [--no-register] [--engines …] …
-        Nikita starten, bei der Telefonanlage anmelden (passwords.txt, [sip]) und Anrufe annehmen.
+        Anton starten, bei der Telefonanlage anmelden (passwords.txt, [sip]) und Anrufe annehmen.
   ./test-1.sh models [status|fetch] [--groups stt,piper] [--yes]
         Modell-Download verwalten.
   ./test-1.sh discord token|channel|pin|check|invite|channels|profile|say "Text"|run
@@ -176,7 +176,7 @@ cmd_setup() {
 
 	log "Einrichtung abgeschlossen. Als Nächstes:"
 	printf '  ./test-1.sh check              Selbsttest\n'
-	printf '  ./test-1.sh speak "Hallo"      Nikitas Stimme hören\n'
+	printf '  ./test-1.sh speak "Hallo"      Antons Stimme hören\n'
 	printf '  ./test-1.sh call               Testanruf ohne Telefonanlage\n'
 	printf '  ./test-1.sh run                an der Telefonanlage anmelden (Nummer 999 anrufen)\n'
 }
@@ -285,24 +285,24 @@ cmd_call() {
 	trap stop_agent EXIT
 	trap 'stop_agent; exit 130' INT TERM
 	: >"${WORK}/agent.log"
-	log "starte Nikita (Log: ${WORK}/agent.log) …"
+	log "starte Anton (Log: ${WORK}/agent.log) …"
 	PYTHONPATH="${ROOT}" "${VPY}" -m moritz_agent.phone run "${run_args[@]}" >"${WORK}/agent.log" 2>&1 &
 	agent_pid=$!
 
 	local waited=0
-	until grep -q "Nikita ist bereit" "${WORK}/agent.log" 2>/dev/null; do
+	until grep -q "Anton ist bereit" "${WORK}/agent.log" 2>/dev/null; do
 		kill -0 "${agent_pid}" 2>/dev/null || {
 			tail -20 "${WORK}/agent.log" >&2
-			die "Nikita ist nicht gestartet (siehe ${WORK}/agent.log)"
+			die "Anton ist nicht gestartet (siehe ${WORK}/agent.log)"
 		}
-		((waited < wait_s)) || die "Nikita ist nach ${wait_s} s nicht bereit (siehe ${WORK}/agent.log)"
+		((waited < wait_s)) || die "Anton ist nach ${wait_s} s nicht bereit (siehe ${WORK}/agent.log)"
 		if ((waited > 0 && waited % 30 == 0)); then
 			log "warte auf die Stimmen … ($(tail -1 "${WORK}/agent.log" | cut -c1-120))"
 		fi
 		sleep 1
 		waited=$((waited + 1))
 	done
-	log "Nikita ist bereit nach ${waited} s – rufe an …"
+	log "Anton ist bereit nach ${waited} s – rufe an …"
 
 	local say_args=() sentence rc=0
 	for sentence in "${say[@]}"; do say_args+=(--say "${sentence}"); done
@@ -313,7 +313,7 @@ cmd_call() {
 	stop_agent
 	trap - EXIT INT TERM
 
-	log "Aufnahme von Nikitas Antworten: ${WORK}/anruf.wav"
+	log "Aufnahme von Antons Antworten: ${WORK}/anruf.wav"
 	log "Verlauf des Anrufs: grep -E 'Runde|Anruf' ${WORK}/agent.log"
 	return "${rc}"
 }

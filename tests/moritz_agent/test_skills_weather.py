@@ -33,7 +33,7 @@ def test_weather_now_names_the_home_place_and_what_is_coming():
 
 def test_dialect_and_politeness_do_not_matter():
     session = weather_session()
-    assert session.skill("Nikita, wie isses Wedder drauße?") == "weather.now"
+    assert session.skill("Anton, wie isses Wedder drauße?") == "weather.now"
     assert session.skill("Sag mal, wie ist eigentlich das Wetter?") == "weather.now"
     assert session.skill("wetter") == "weather.now"
 

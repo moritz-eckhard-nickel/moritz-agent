@@ -418,7 +418,7 @@ def test_build_geodata_and_load_the_result(tmp_path, monkeypatch):
         ),
         ("Wo liegt Gießen?", "Gießen gehört zum Landkreis Gießen in Hessen."),
         ("Wo liegt Paris?", "Paris liegt in Frankreich."),
-        ("Wo ist Moritz?", None),  # not "Moers": only names Nikita really knows
+        ("Wo ist Moritz?", None),  # not "Moers": only names Anton really knows
         ("Wo ist mein Schlüssel?", None),
     ],
 )

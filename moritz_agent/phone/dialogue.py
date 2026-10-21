@@ -5,7 +5,7 @@
 voice activity detection, speech recognition, the responder and the voice. It performs the
 actions of :class:`CallStateMachine` and feeds the results back as events.
 
-Half duplex (PHONE-29): while Nikita speaks – and for a short guard time afterwards – incoming
+Half duplex (PHONE-29): while Anton speaks – and for a short guard time afterwards – incoming
 audio is discarded, so the voice is never "heard" and transcribed. Hanging up from either side
 cancels recognition, the answer in progress, the synthesis and the playback (PHONE-28).
 """
@@ -135,7 +135,7 @@ class CallSession:
         self._loop.call_soon_threadsafe(self._events.put_nowait, RemoteHangup(reason))
 
     def barge_in(self, heard: bytes = b"") -> None:
-        """Somebody talks over Nikita (Discord voice, docs/plan/14 §9.3): stop talking and listen.
+        """Somebody talks over Anton (Discord voice, docs/plan/14 §9.3): stop talking and listen.
         ``heard`` is what was said so far (PCM16 16 kHz); it is replayed so no word is lost."""
         self._loop.call_soon_threadsafe(self._interrupt, heard)
 
@@ -383,7 +383,7 @@ class CallSession:
         )
 
     def _arm_kitchen_timer(self, reply) -> None:
-        """ "Stell einen Timer auf 10 Minuten": when the time is up Nikita says so (SKILL "Eieruhr")."""
+        """ "Stell einen Timer auf 10 Minuten": when the time is up Anton says so (SKILL "Eieruhr")."""
         timer = getattr(getattr(reply, "result", None), "start_timer", None) or (
             reply.meta or {}
         ).get("timer")

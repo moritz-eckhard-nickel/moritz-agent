@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-"""Piper – Nikitas Stimme: Thorsten-Voice "Hessisch" (ADR-027).
+"""Piper – Antons Stimme: Thorsten-Voice "Hessisch" (ADR-027).
 
 Piper runs in-process on the CPU, much faster than real time, with a model of ~110 MB and
 well under 1 GB of RAM. Any Piper voice can be used (``phone.tts.piper.voice``).

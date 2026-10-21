@@ -284,7 +284,7 @@ phase_geodata() {
 	fi
 	log "lade Postleitzahlen und Orte von GeoNames (CC BY 4.0, ca. 10 MB) …"
 	if ! run "$(PY)" "${PREFIX}/scripts/build_geodata.py"; then
-		warn "Ortsdaten konnten nicht geladen werden – Nikita kennt dann nur die mitgelieferte Grundmenge"
+		warn "Ortsdaten konnten nicht geladen werden – Anton kennt dann nur die mitgelieferte Grundmenge"
 	fi
 }
 
@@ -311,7 +311,8 @@ phase_secrets() {
 		# as root: the service user may not create files next to passwords.txt (the program tree is
 		# read-only for it); owner and mode of the file are kept
 		env -C "${PREFIX}" PYTHONPATH="${PREFIX}" \
-			"$(PY)" -m moritz_agent.setup --passwords "${file}" migrate || warn "passwords.txt konnte nicht ergänzt werden"
+			"$(PY)" -m moritz_agent.setup --passwords "${file}" --config "${PREFIX}/config/moritz-agent.toml" \
+			migrate || warn "passwords.txt konnte nicht ergänzt werden"
 	fi
 }
 
@@ -350,7 +351,7 @@ phase_discord() {
 		return 0
 	fi
 	local answer=""
-	read -r -p "Discord-Bot einrichten? Nikita antwortet dann auch auf Discord [j/N] " answer </dev/tty || answer=""
+	read -r -p "Discord-Bot einrichten? Anton antwortet dann auch auf Discord [j/N] " answer </dev/tty || answer=""
 	case "${answer}" in
 	j | J | y | Y | ja | Ja) ;;
 	*)
@@ -360,7 +361,7 @@ phase_discord() {
 	esac
 	cat <<'HINT'
   Vorbereitung im Discord Developer Portal (einmalig, Anleitung: docs/discord-einrichtung.md):
-    1. Anwendung "Nikita" anlegen, unter "Bot": Public Bot AUS, Message Content Intent AN.
+    1. Anwendung "Anton" anlegen, unter "Bot": Public Bot AUS, Message Content Intent AN.
     2. Token kopieren ("Reset Token").
 HINT
 	local token=""
@@ -377,8 +378,8 @@ HINT
 		return 0
 	fi
 	token=""
-	log "Einladungslinks stehen oben. Nikita muss auf deinen Server (Server-Link öffnen), dann geht es weiter."
-	read -r -p "  Ist Nikita auf dem Server? [Enter = ja, n = später] " answer </dev/tty || answer="n"
+	log "Einladungslinks stehen oben. Anton muss auf deinen Server (Server-Link öffnen), dann geht es weiter."
+	read -r -p "  Ist Anton auf dem Server? [Enter = ja, n = später] " answer </dev/tty || answer="n"
 	if [[ "${answer}" != "n" && "${answer}" != "N" ]]; then
 		local rc=0
 		discord_setup discord-channel || rc=$?

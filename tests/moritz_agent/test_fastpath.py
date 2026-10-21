@@ -56,8 +56,8 @@ def test_goodbye_hangs_up_with_prerecorded_announcement():
 
 
 def test_identity_uses_the_configured_name():
-    result = answer("Wer bist du?", assistant_name="Nikita")
-    assert result is not None and "Nikita" in (result.text or "")
+    result = answer("Wer bist du?", assistant_name="Anton")
+    assert result is not None and "Anton" in (result.text or "")
 
 
 def test_repeat_returns_last_reply():

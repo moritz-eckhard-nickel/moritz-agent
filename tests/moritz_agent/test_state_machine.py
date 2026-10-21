@@ -264,7 +264,7 @@ def test_silence_ends_with_the_configured_last_words():
     assert PlayPrompt("going_quiet") in actions
 
 
-def test_talking_over_nikita_stops_the_playback_and_listens():
+def test_talking_over_anton_stops_the_playback_and_listens():
     from moritz_agent.phone.state_machine import (
         ArmTimer,
         BargeIn,

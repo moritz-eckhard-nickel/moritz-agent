@@ -27,7 +27,7 @@ def test_template_matches_plan_start_values():
     assert sip.username == "agent"
     assert sip.auth_username == "agent"
     assert sip.password.reveal() == "agent"
-    assert sip.display_name == "Nikita"
+    assert sip.display_name == "Anton"
     assert sip.registrar == "192.168.1.176"
     assert sip.port == 5060
     assert sip.transport == "udp"

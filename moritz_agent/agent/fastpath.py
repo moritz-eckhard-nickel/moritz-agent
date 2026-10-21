@@ -126,7 +126,7 @@ def _day_phrase(moment: datetime, label: str) -> str:
 
 def answer(
     utterance: str,
-    assistant_name: str = "Nikita",
+    assistant_name: str = "Anton",
     last_reply: str | None = None,
     timezone: str = DEFAULT_TIMEZONE,
 ) -> FastPathResult | None:

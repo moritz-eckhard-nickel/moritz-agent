@@ -1,7 +1,7 @@
 # Asterisk-Konfiguration für moritz-agent
 
 Diese Anleitung beschreibt **alles, was auf der Telefonanlage `192.168.1.176` vorhanden sein
-muss**, damit Moritz intern die **999** wählen kann und bei **Nikita** (dem Agent) landet. Der moritz-agent-
+muss**, damit Moritz intern die **999** wählen kann und bei **Anton** (dem Agent) landet. Der moritz-agent-
 Installer ändert an Asterisk **nichts** (Anforderung PHONE-02, INST-09) – diese Schritte
 macht der Admin der Anlage einmalig von Hand.
 
@@ -78,7 +78,7 @@ context = from-agent          ; eigener, abgeschotteter Kontext (Abschnitt 3)
 auth = agent
 aors = agent
 acl = agent-acl
-callerid = Nikita <999>
+callerid = Anton <999>
 disallow = all
 allow = g722                  ; 16 kHz HD-Audio → bessere Spracherkennung
 allow = alaw                  ; G.711 a-law (Europa)

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-"""What Nikita answers: the interface between the phone and the agent (P1-09 plugs in here).
+"""What Anton answers: the interface between the phone and the agent (P1-09 plugs in here).
 
 The phone part only needs ``Responder.respond(text, context) -> Reply``. The real agent (language
 model, tools, web search) will implement it; until then :class:`TestResponder` answers the fast
@@ -28,7 +28,7 @@ class Reply:
 @dataclass
 class TurnContext:
     call_id: str
-    assistant_name: str = "Nikita"
+    assistant_name: str = "Anton"
     timezone: str = "Europe/Berlin"
     turn: int = 0
     last_reply: str | None = None

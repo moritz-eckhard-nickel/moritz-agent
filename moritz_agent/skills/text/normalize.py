@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from moritz_agent.skills.text.dialect import to_standard
 from moritz_agent.skills.text.numbers import clock_phrases, words_to_digits
 
-_NAME = r"n[iy][kg]h?[iy][dt]{1,2}h?[ae]"  # Nikita, Nikida, Nikitta, Nigita …
+_NAME = r"an[td]h?on{1,2}"  # Anton, Antonn, Andon, Anthon (as speech recognition hears it)
 _ADDRESS = re.compile(rf"^(?:(?:hey|hallo|hi|ok|okay|na|also)\s+)*{_NAME}\b[,:!.\s]*")
 _NAME_ONLY = re.compile(rf"^(?:hey |hallo |hi )?{_NAME}$")
 _CONTRACTION = re.compile(
@@ -42,7 +42,7 @@ class Utterance:
     raw: str
     text: str  # prepared text: lower case, dialect resolved, digits instead of number words
     stt_logprob: float | None = None
-    addressed: bool = False  # started with "Nikita, …"
+    addressed: bool = False  # started with "Anton, …"
 
     @property
     def tokens(self) -> tuple[str, ...]:
@@ -77,7 +77,7 @@ def prepare(
     text = _CONTRACTION.sub(lambda m: f"{m.group(1)} es", text)
     addressed = False
     if _NAME_ONLY.match(text):
-        return Utterance(raw, "nikita", stt_logprob, addressed=True)
+        return Utterance(raw, "anton", stt_logprob, addressed=True)
     stripped = _ADDRESS.sub("", text, count=1)
     if stripped != text and stripped:
         addressed, text = True, stripped

@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
 """Command line of the phone part:  python -m moritz_agent.phone <command>
 
-run      start Nikita: register at the PBX and answer calls
+run      start Anton: register at the PBX and answer calls
 check    self-test of every component (config, SIP stack, VAD, Whisper, voices, ports)
-speak    synthesize a sentence to a WAV file – to hear Nikita's voice without a call
+speak    synthesize a sentence to a WAV file – to hear Anton's voice without a call
 prompts  render all announcements into the cache (with the main voice, waits for it)
 bench    measure speech recognition and voice speed on this machine
 """
@@ -27,7 +27,7 @@ from moritz_agent.phone.audio import pcm
 from moritz_agent.phone.audio.tts import TtsService
 
 BENCH_SENTENCES = [
-    "Hallo Moritz, hier ist Nikita. Was kann ich für dich tun?",
+    "Hallo Moritz, hier ist Anton. Was kann ich für dich tun?",
     "Es ist neunzehn Uhr zwölf.",
     "Heute ist Freitag, der sechzehnte Oktober zweitausendsechsundzwanzig.",
     "Laut Tagesschau wird es morgen in Frankfurt regnen, bei etwa zwölf Grad.",
@@ -247,7 +247,7 @@ def _bench_stt(settings: Settings, args) -> int:
         return 1
     for text in (
         "Wie viel Uhr haben wir?",
-        "Hallo Nikita, wie wird das Wetter morgen in Frankfurt?",
+        "Hallo Anton, wie wird das Wetter morgen in Frankfurt?",
     ):
         sample = _speech_sample(text)
         if sample is None:
@@ -375,7 +375,7 @@ def cmd_check(args) -> int:
                 )
                 continue
             started = time.monotonic()
-            data = tts.render_blocking("Hallo Moritz, hier ist Nikita.", engine_name=name)
+            data = tts.render_blocking("Hallo Moritz, hier ist Anton.", engine_name=name)
             work, audio = time.monotonic() - started, pcm.duration_s(data)
             report.ok(
                 f"Stimme {name}",
@@ -468,7 +468,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-v", "--verbose", action="store_true", help="Debug-Ausgaben")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    run = sub.add_parser("run", help="Nikita starten")
+    run = sub.add_parser("run", help="Anton starten")
     run.add_argument(
         "--stt",
         default="whisper",
@@ -507,7 +507,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     speak = sub.add_parser("speak", help="Satz in WAV-Datei sprechen")
     speak.add_argument("text")
-    speak.add_argument("--out", default="nikita.wav")
+    speak.add_argument("--out", default="anton.wav")
     speak.add_argument("--engine", help="piper oder espeak (Standard: Hauptstimme)")
     speak.add_argument("--play", action="store_true")
     speak.add_argument("--engines", help=argparse.SUPPRESS)

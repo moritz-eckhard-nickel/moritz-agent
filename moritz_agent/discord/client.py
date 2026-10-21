@@ -180,7 +180,7 @@ class InteractionSender:
 
     @contextlib.asynccontextmanager
     async def typing(self) -> AsyncIterator[None]:
-        yield  # the deferred "Nikita denkt nach …" is the indicator
+        yield  # the deferred "Anton denkt nach …" is the indicator
 
     async def react(self, emoji: str) -> None:
         return None
@@ -193,7 +193,7 @@ class PinModal(discord.ui.Modal):
         label="PIN", min_length=1, max_length=64, style=discord.TextStyle.short
     )
 
-    def __init__(self, client: NikitaClient, nonce: str) -> None:
+    def __init__(self, client: AntonClient, nonce: str) -> None:
         super().__init__(title="Bitte bestätigen", timeout=120)
         self.client = client
         self.nonce = nonce
@@ -205,7 +205,7 @@ class PinModal(discord.ui.Modal):
 
 
 # -- the client -------------------------------------------------------------------------------------------------
-class NikitaClient(discord.Client):
+class AntonClient(discord.Client):
     def __init__(self, worker: DiscordWorker) -> None:
         intents = discord.Intents.default()
         intents.message_content = (

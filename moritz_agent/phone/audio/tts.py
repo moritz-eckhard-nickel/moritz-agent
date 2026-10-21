@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
 """Text-to-speech service: engine choice, sentence streaming and caching (ADR-027).
 
-Nikita's voice is Thorsten-Voice "Hessisch" as a Piper model on the CPU (espeak-ng is the
+Anton's voice is Thorsten-Voice "Hessisch" as a Piper model on the CPU (espeak-ng is the
 last-resort voice). Pre-recorded announcements and fixed phrases are rendered once and cached on
 disk, so they play instantly; live answers are spoken sentence by sentence, so the first sentence
 is audible while the rest is still being synthesized.

@@ -71,7 +71,7 @@ def test_the_default_channel_answers_everything_other_channels_need_a_mention(tm
         await b.dispatcher.message(
             b.info("<@5000> Wie spät ist es?", origin, mentions_bot=True), origin, mention
         )
-        named = await b.say("Nikita, wie spät ist es?", where="S", channel="123")
+        named = await b.say("Anton, wie spät ist es?", where="S", channel="123")
         return home, elsewhere, mention, named
 
     home, elsewhere, mention, named = run_in(tmp_path, body)
@@ -124,7 +124,7 @@ def test_maintenance_mode_also_holds_back_menus_and_buttons(tmp_path):
     async def body(b):
         b.draining[0] = True
         menu = Recorder(ephemeral=True)
-        await b.dispatcher.context_menu("Nikita fragen", "Wie spät ist es?", b.origin(), menu)
+        await b.dispatcher.context_menu("Anton fragen", "Wie spät ist es?", b.origin(), menu)
         button = Recorder()
         custom_id = components.encode_action(OWNER_ID, "Wie spät ist es?")
         await b.dispatcher.component(custom_id, [], b.origin(), button)
