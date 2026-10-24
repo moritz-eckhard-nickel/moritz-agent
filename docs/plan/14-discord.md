@@ -394,6 +394,7 @@ Beschreibung deutsch. Kontexte: **S** = Server-Installation, **DM** = Direktnach
 | `/aktivitaet` | `neu` (sofort wechseln), `aus`/`an`, `vorschlag` (eigenen Spruch hinzufügen, Owner) | S DM | O | 1 |
 | `/anrufe` | – (Status, letzte Anrufe ohne Inhalt) | DM U | O | 1 |
 | `/hilfe` | `thema` (Befehle, Datenschutz, Sprache, Admin) | S DM U | alle | 1 |
+| `/flushcontext` | – (Kurzzeitgedächtnis dieses Chats leeren, wie „Vergiss unser Gespräch“) | S DM U | O V | 1 |
 | `/admin status` · `neu-laden` · `wartung` · `logs` · `version` · `neustart` | je nach Befehl | DM | O | 1 |
 | `/admin modell` | `laden`/`entladen`/`status` | DM | O | 2 |
 | `/suche` | `text`, `anzahl` | S DM U | O V | 1 (ab P1-08/09) |
@@ -519,6 +520,16 @@ freien Status – alle werden genutzt.
   Rotation kommt.
 - `/hilfe datenschutz` stellt klar: „Keine Sorge – ich spiele nicht wirklich mit deinen Daten ^^“.
 - Wechsel höchstens alle 5 Minuten (Discords Präsenz-Limits); bei Lagewechsel (Anruf beginnt) sofort.
+
+### 8.6 Kurzzeitgedächtnis
+
+- Anton merkt sich in jedem Chat die letzten **30 Wechsel** – auch Sofortauskünfte wie das Wetter, die ohne
+  Sprachmodell beantwortet wurden. So geht „und morgen?“ oder „was hab ich eben gefragt?“.
+- Kommt in einem Discord-Chat **30 Minuten** keine Nachricht (`discord.memory_minutes`, 0 = nie), leert er das
+  Gedächtnis und schreibt: „Ich hab mein Kurzzeitgedächtnis geleert – 30 Minuten war Ruhe. Wir fangen frisch an.“
+- `/flushcontext`, „Vergiss unser Gespräch“ oder „Lösch deinen Kontext“ leeren es sofort.
+- Im Telefonat und im Sprachkanal gilt das Gedächtnis für das ganze Gespräch, ohne Hinweis.
+- Das Langzeitgedächtnis (`/merke`, Part 8) ist davon getrennt.
 
 ## 9. Sprachkanal
 
@@ -769,6 +780,7 @@ Neue Sektion in `config/moritz-agent.example.toml` (P1-33/P1-41; IDs sind keine 
 ```toml
 [discord]
 enabled = false                      # true, sobald bot_token in passwords.txt steht (Setup setzt das)
+memory_minutes = 30                  # Kurzzeitgedächtnis eines Chats nach so viel Ruhe leeren (§8.6, 0 = nie)
 owner_user_ids = []                  # Discord-Benutzer-IDs (Setup übernimmt den App-Besitzer)
 trusted_user_ids = []
 allowed_guild_ids = []               # weitere Server (der Server des Standardkanals ist immer erlaubt)

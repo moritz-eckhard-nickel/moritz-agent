@@ -96,6 +96,7 @@ class SkillResult:
         None  # (when, text): chat surfaces keep it, restart-proof
     )
     forward: tuple[str, str] | None = None  # (title, text) to send to the caller's Discord (P1-39)
+    forget: bool = False  # "Vergiss unser Gespräch" / /flushcontext: the conversation starts fresh
 
 
 # -- context -------------------------------------------------------------------------------

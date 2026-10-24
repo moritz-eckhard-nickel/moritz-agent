@@ -225,7 +225,7 @@ def test_phone_ports_raise_sip_changed_but_the_greeting_does_not(tree):
 def test_sections_that_need_a_restart_are_named(tree):
     cfg = manager(tree)
     cfg.load()
-    edit_toml(tree, "context_size = 4096", "context_size = 8192")
+    edit_toml(tree, "context_size = 8192", "context_size = 16384")
     result = cfg.reload()
     assert result.ok and result.restart_required == {"inference"}
 

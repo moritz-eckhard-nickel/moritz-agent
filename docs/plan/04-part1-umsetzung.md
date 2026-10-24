@@ -1028,3 +1028,35 @@ Verbindung und antwortete nicht.
   - Der Supervisor fragt die Python vor jedem Neustart neu ab und startet dann das gepinnte discord.py
     2.7.1. Text und Sprechen gehen weiter, nur das Zuhören ist aus.
   - `./test-3.sh setup` schaltet den Fork wieder ein, `./test-3.sh run` meldet den Zustand.
+
+### C.11 Dritter Lauf von test-3 (24.10.2026, 19:00)
+
+Moritz: „Er hört einem in Discord noch immer nicht zu, nur per Chat … beim Auflegen muss das LLM auch den
+Goodbye-Befehl kriegen … er muss klarer schreiben, damit das hessische Piper-Modell es einfacher aussprechen
+kann … Context Remembrance … nach 30 Minuten ohne Nachricht sagt er, dass er sein Kurzzeitgedächtnis geleert
+hat … oder mit /flushcontext.“
+
+- **Zuhören im Sprachkanal:** Der Sprachkanal verband sich, DAVE war bereit, aber es kam keine Runde an.
+  - Pakete, bei denen der Fork den Sprecher noch nicht kennt, wurden bisher verworfen. Jetzt sucht der
+    Empfänger den Sprecher über die SSRC. Ist nur ein Mensch im Kanal, gehört das Audio ihm.
+  - Alle 10 s steht im Log „Discord-Empfang: N Pakete, M gehört (Pegel … dBFS), …“ mit den
+    Zählern des Forks (RTP, DAVE entschlüsselt/fehlgeschlagen). Kommen nach 15 s gar keine Pakete,
+    warnt der Log einmal. Damit ist beim nächsten Lauf sichtbar, an welcher Stelle es hängt.
+- **Auflegen durch das Sprachmodell:** neues Werkzeug `end_call` (`moritz_agent/tools/call_tool.py`).
+  - Das Modell ruft es auf, wenn Moritz sich verabschiedet oder auflegen will, und verabschiedet sich in
+    seiner Antwort. Nach der Antwort ist das Gespräch zu Ende.
+  - Der Abschiedsfilter für kurze Sätze („tschüss“) bleibt.
+  - Nur Telefon und Sprachkanal bekommen das Werkzeug, auch wenn es nicht in `agent.phone.tools` steht.
+    Der Text-Chat bekommt es nie.
+- **Sprechfreundlich:** Die Telefon-Systemanweisung verlangt kurze Hauptsätze in klarem Hochdeutsch.
+  Erlaubt sind keine Klammern, keine Abkürzungen, keine Sonderzeichen, keine Einheitenzeichen.
+  Den hessischen Klang macht die Stimme, nicht der Text.
+- **Kurzzeitgedächtnis** (14 §8.6):
+  - `inference.context_size` ist jetzt 8192. Systemanweisung und Werkzeuge brauchen ≈ 3.100 Tokens, bei 4096
+    blieb kaum Verlauf. `./test-3.sh run` schreibt den Wert vor dem Messen in die Konfiguration
+    (`bench_llm.py --context 8192`).
+  - Gemerkt werden bis zu 30 Wechsel, auch Sofortauskünfte ohne Sprachmodell (Wetter, Uhrzeit).
+  - Nach `discord.memory_minutes` (30) ohne Nachricht leert Anton das Gedächtnis eines Discord-Text-Chats
+    und schreibt das in den Chat.
+  - `/flushcontext`, „Vergiss unser Gespräch“ oder „Lösch deinen Kontext“ (Sofortauskunft `talk.forget`)
+    leeren es sofort.

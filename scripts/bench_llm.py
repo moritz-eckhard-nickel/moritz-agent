@@ -302,12 +302,10 @@ def markdown(
     return "\n".join(lines) + "\n"
 
 
-def save_layers(config_file: Path, n: int) -> None:
+def save_inference(config_file: Path, key: str, value: int) -> None:
     files.update_file(
         config_file,
-        lambda text: files.set_value(
-            text, "inference", "moe_cpu_layers", str(n), keep_comment=True
-        ),
+        lambda text: files.set_value(text, "inference", key, str(value), keep_comment=True),
         default_mode=0o640,
     )
 
@@ -321,12 +319,20 @@ async def main_async(args: argparse.Namespace) -> int:
         print(f"Modelldatei fehlt: {settings.inference.model} (./test-3.sh setup)", file=sys.stderr)
         return 2
     loads: list[Load] = []
+    if args.context and args.context != settings.inference.context_size:
+        # the conversation needs room: the system prompt and the tools alone take ≈ 3100 tokens
+        save_inference(config_file, "context_size", args.context)
+        print(
+            f"→ context_size = {args.context} in config/moritz-agent.toml gespeichert", flush=True
+        )
+        config.load()
+        settings = config.settings
     best = settings.inference.moe_cpu_layers
     if args.tune:
         print("Suche --moecpu (mindestens 600 MB VRAM frei) …", flush=True)
         best, loads = await tune(settings)
         if best != settings.inference.moe_cpu_layers:
-            save_layers(config_file, best)
+            save_inference(config_file, "moe_cpu_layers", best)
             print(f"→ moe_cpu_layers = {best} in config/moritz-agent.toml gespeichert", flush=True)
             config.load()
             settings = config.settings
@@ -383,6 +389,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--tune", action="store_true", help="--moecpu suchen und speichern")
     parser.add_argument("--limit", type=int, default=0, help="nur die ersten N Fragen")
+    parser.add_argument("--context", type=int, default=0, help="Kontextgröße setzen (z. B. 8192)")
     parser.add_argument("--out", default=str(ROOT / "runtime" / "test-3"))
     parser.add_argument("--config", default=str(ROOT / "config" / "moritz-agent.toml"))
     parser.add_argument("--passwords", default=str(ROOT / "passwords.txt"))

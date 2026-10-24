@@ -188,7 +188,7 @@ Tickets P1-31 … P1-43 (Block D in [04](04-part1-umsetzung.md)); Entscheidungen
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
 | INF-01 | KoboldCPP läuft als isolierter Child-Prozess, nur auf `127.0.0.1` gebunden, interner Port. | MUSS | 1 |
-| INF-02 | Genau **ein** geladenes großes Sprachmodell: **Qwen3-30B-A3B-Instruct-2507 (MoE), GGUF UD-Q3_K_XL, ≈ 13,8 GB**, etwa **halb VRAM / halb RAM** (Moritz, R3; ADR-016). Kontext 4.096. | MUSS | 1 |
+| INF-02 | Genau **ein** geladenes großes Sprachmodell: **Qwen3-30B-A3B-Instruct-2507 (MoE), GGUF UD-Q3_K_XL, ≈ 13,8 GB**, etwa **halb VRAM / halb RAM** (Moritz, R3; ADR-016). Kontext 8.192 (24.10.2026: Systemanweisung + Werkzeuge ≈ 3.100 Tokens, 4.096 ließ kaum Platz für den Verlauf; Plan 04 Anhang C.11). | MUSS | 1 |
 | INF-03 | Eine Generierung gleichzeitig; Prioritäts-Warteschlange (Telefon > interaktiv > Hintergrund). | MUSS | 1 |
 | INF-04 | Kein Draft-/Zweitmodell, kein dauerhaft geladenes Embedding-Modell im Startprofil. | MUSS | 1 |
 | INF-05 | 8.192 Kontext erst nach Messung mit ausreichender Reserve. Swap ist kein Modellspeicher. | MUSS | 1 |

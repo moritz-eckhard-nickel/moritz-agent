@@ -115,7 +115,7 @@ class AgentLoop:
         result.tools = sorted(turn.called)
         result.sources = turn.sources
         result.dropped_turns = built.dropped_turns
-        result.hangup = guard.is_farewell(user_text)
+        result.hangup = guard.is_farewell(user_text) or "end_call" in turn.called
         result.ms = round((time.monotonic() - started) * 1000)
         log.info(
             "Agent: %d Schritte, Werkzeuge %s, %d ms%s",

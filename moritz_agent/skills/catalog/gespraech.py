@@ -553,6 +553,27 @@ ROASTS = (
 
 
 @skill(
+    "talk.forget",
+    group="gespraech",
+    priority="K",
+    help="mein Kurzzeitgedächtnis leeren",
+    examples=("Vergiss unser Gespräch", "Lösch deinen Kontext"),
+    max_words=8,
+    patterns=(
+        r"\bvergiss (?:unser |das |dieses )?(?:gespräch|unterhaltung|alles(?: was ich (?:dir )?gesagt habe)?)\b",
+        r"\b(?:lösch|lösche|leer|leere) (?:deinen |dein |den )?(?:kontext|context|kurzzeitgedächtnis|gedächtnis|verlauf)\b",
+        r"^/?flush ?context$",
+        r"^(?:lass uns |wir fangen )?(?:neu|von vorne) (?:anfangen|an)$",
+    ),
+)
+async def talk_forget(req: Request) -> SkillResult:
+    """Moritz, 24.10.2026: "mit /flushcontext soll er den Kontext auch löschen"."""
+    return SkillResult(
+        text="Erledigt, mein Kurzzeitgedächtnis ist leer. Worum geht's?", forget=True
+    )
+
+
+@skill(
     "talk.roast",
     group="gespraech",
     priority="K",

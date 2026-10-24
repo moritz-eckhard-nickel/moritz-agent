@@ -69,7 +69,7 @@ class Inference(_Section):
     koboldcpp_script: str = "koboldcpp.py"
     python: str = ""  # leer: KoboldCpps Build-Umgebung (conda/envs/linux), sonst diese Python
     model: str = "models/llm/Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"
-    context_size: int = Field(4096, ge=512)
+    context_size: int = Field(8192, ge=512)  # INF-05: gemessen auf Sophie-1 (24.10.2026)
     gpu_layers: int = 999
     moe_cpu_layers: int = Field(24, ge=0)
     use_cuda: bool = True
@@ -445,6 +445,7 @@ class Discord(_Section):
     enabled: bool = False
     # leer: runtime/discord-venv (mit Zuhören im Sprachkanal, ./test-3.sh setup), sonst diese Python
     python: str = ""
+    memory_minutes: int = Field(30, ge=0)  # Kurzzeitgedächtnis eines Chats; 0 = bis zum Neustart
     owner_user_ids: IdList = []
     trusted_user_ids: IdList = []
     allowed_guild_ids: IdList = []

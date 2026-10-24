@@ -253,6 +253,13 @@ POSITIVE: dict[str, list[str]] = {
         "Mach mich fertig",
         "Sag was Gemeines über mich",
     ],
+    "talk.forget": [
+        "Vergiss unser Gespräch",
+        "Lösch deinen Kontext",
+        "Leere dein Kurzzeitgedächtnis",
+        "Lass uns von vorne anfangen",
+        "/flushcontext",
+    ],
     "talk.how_are_you": ["Wie geht's dir?", "Wie geht es dir?", "Alles klar bei dir?", "Wie gehts"],
     "talk.identity": [
         "Wer bist du?",

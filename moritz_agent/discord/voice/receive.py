@@ -14,8 +14,12 @@ from __future__ import annotations
 
 import asyncio
 import importlib
+import math
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any
+
+import numpy as np
 
 from moritz_agent.discord.voice.pipeline import Downmix
 from moritz_agent.logging_setup import get_logger
@@ -44,17 +48,35 @@ class Listener:
     """
 
     def __init__(
-        self, allowed: Callable[[int], bool], deliver: Callable[[int, bytes], None]
+        self,
+        allowed: Callable[[int], bool],
+        deliver: Callable[[int, bytes], None],
+        only_person: Callable[[], int | None] = lambda: None,
     ) -> None:
         self.allowed = allowed
         self.deliver = deliver
+        self.only_person = only_person  # the one allowed person in the channel, if there is one
         self._downmix: dict[int, Downmix] = {}
         self.dropped = 0
+        self.stats = ReceiveStats()
 
     def on_audio(self, user_id: int | None, pcm48_stereo: bytes) -> None:
-        if user_id is None or not self.allowed(user_id):
+        self.stats.packets += 1
+        if user_id is None:
+            # Seen on Sophie-1 (24.10.2026): the fork knows the speaker only once the member is
+            # cached – until then the audio has no user. With one allowed person in the channel it
+            # can only be them.
+            user_id = self.only_person()
+            if user_id is None:
+                self.stats.no_user += 1
+                self.dropped += 1
+                return
+            self.stats.assigned += 1
+        if not self.allowed(user_id):
+            self.stats.not_allowed += 1
             self.dropped += 1
             return
+        self.stats.heard(pcm48_stereo)
         mixer = self._downmix.get(user_id)
         if mixer is None:
             mixer = self._downmix[user_id] = Downmix()
@@ -64,6 +86,32 @@ class Listener:
 
     def forget(self, user_id: int) -> None:
         self._downmix.pop(user_id, None)
+
+
+@dataclass
+class ReceiveStats:
+    """What arrived from the voice channel – logged every few seconds while listening."""
+
+    packets: int = 0
+    no_user: int = 0  # audio nobody could be assigned to
+    assigned: int = 0  # audio without user, given to the only allowed person
+    not_allowed: int = 0
+    delivered: int = 0
+    peak: int = 0  # loudest sample since the last report (0 = only silence arrived)
+
+    def heard(self, pcm: bytes) -> None:
+        self.delivered += 1
+        usable = len(pcm) - len(pcm) % 2
+        if usable:
+            loudest = int(np.abs(np.frombuffer(pcm[:usable], dtype="<i2").astype(np.int32)).max())
+            self.peak = max(self.peak, loudest)
+
+    def line(self) -> str:
+        level = f"{20 * math.log10(self.peak / 32768):.0f} dBFS" if self.peak else "still"
+        return (
+            f"{self.packets} Pakete, {self.delivered} gehört (Pegel {level}), {self.assigned} zugeordnet, "
+            f"{self.no_user} ohne Sprecher, {self.not_allowed} nicht erlaubt"
+        )
 
 
 def make_sink(listener: Listener) -> Any:
@@ -78,8 +126,14 @@ def make_sink(listener: Listener) -> Any:
 
         def write(self, user: Any, data: Any) -> None:
             pcm = getattr(data, "pcm", None)
-            if pcm:
-                listener.on_audio(getattr(user, "id", None), bytes(pcm))
+            if not pcm:
+                return
+            user_id = getattr(user, "id", None)
+            if user_id is None:  # the member is not cached: ask the voice client by SSRC
+                ssrc = getattr(getattr(data, "packet", None), "ssrc", None)
+                mapping = getattr(getattr(self, "voice_client", None), "_ssrc_to_id", None) or {}
+                user_id = mapping.get(ssrc) if ssrc is not None else None
+            listener.on_audio(user_id, bytes(pcm))
 
         def cleanup(self) -> None:
             return None
@@ -100,6 +154,26 @@ async def dave_ready(vc: Any, timeout_s: float = 10.0) -> bool:
             return False
         await asyncio.sleep(0.1)
     return True
+
+
+def diagnostics(vc: Any) -> str:
+    """The fork's own receive counters that matter (DAVE decryption, unknown speakers)."""
+    try:
+        data = vc.get_recv_diagnostics()
+    except Exception:
+        return ""
+    if not isinstance(data, dict):
+        return ""
+    keys = (
+        "rtp_packets",
+        "rtp_unknown_ssrc_dropped",
+        "dave_inner_decrypt_ok",
+        "dave_inner_decrypt_failed",
+        "dave_plaintext_rejected",
+        "dave_inner_defer_drop_expired",
+    )
+    found = {k: v for k, v in data.items() if k in keys or (k.startswith("dave_") and "fail" in k)}
+    return ", ".join(f"{k}={v}" for k, v in sorted(found.items()))
 
 
 def client_class() -> Any:

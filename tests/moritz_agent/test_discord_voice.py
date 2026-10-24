@@ -726,3 +726,38 @@ def test_listening_waits_for_the_encrypted_group():
         return plain, later, never
 
     assert asyncio.run(scenario()) == (True, True, False)
+
+
+def test_audio_without_a_known_speaker_goes_to_the_only_person_in_the_channel(monkeypatch):
+    """Seen on Sophie-1 (24.10.2026): "hört zu", but 0 rounds – the fork delivered audio whose
+    speaker it could not resolve, and Anton dropped all of it."""
+    monkeypatch.setattr(receive, "Downmix", lambda: SimpleNamespace(feed=lambda pcm: pcm[:320]))
+    got: list[tuple[int, int]] = []
+    loud = (np.ones(960, dtype="<i2") * 8000).tobytes()
+    alone = receive.Listener(
+        lambda uid: uid == 1001, lambda uid, pcm: got.append((uid, len(pcm))), lambda: 1001
+    )
+    alone.on_audio(None, loud)
+    alone.on_audio(1001, loud)
+    alone.on_audio(4242, loud)  # somebody not allowed
+    assert [uid for uid, _ in got] == [1001, 1001]
+    assert alone.stats.assigned == 1 and alone.stats.not_allowed == 1 and alone.stats.peak == 8000
+    assert "3 Pakete, 2 gehört" in alone.stats.line()
+    crowded = receive.Listener(
+        lambda uid: True, lambda uid, pcm: got.append((uid, 0)), lambda: None
+    )
+    crowded.on_audio(None, loud)  # two people: nobody can tell whose it was
+    assert crowded.stats.no_user == 1 and crowded.dropped == 1
+
+
+def test_the_sink_finds_the_speaker_by_ssrc_when_the_member_is_unknown(monkeypatch):
+    heard: list[int | None] = []
+    fake_module = SimpleNamespace(AudioSink=type("AudioSink", (), {}))
+    monkeypatch.setattr(receive, "extension", lambda: fake_module)
+    listener = SimpleNamespace(on_audio=lambda uid, pcm: heard.append(uid))
+    sink = receive.make_sink(listener)  # type: ignore[arg-type]
+    sink.voice_client = SimpleNamespace(_ssrc_to_id={77: 1001})
+    sink.write(None, SimpleNamespace(pcm=b"\x01\x00" * 10, packet=SimpleNamespace(ssrc=77)))
+    sink.write(SimpleNamespace(id=1002), SimpleNamespace(pcm=b"\x01\x00" * 10, packet=None))
+    sink.write(None, SimpleNamespace(pcm=b"", packet=None))  # nothing decoded: nothing to do
+    assert heard == [1001, 1002]
