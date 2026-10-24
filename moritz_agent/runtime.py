@@ -26,7 +26,7 @@ from moritz_agent.agent.responder import AgentResponder
 from moritz_agent.config.reload import ConfigManager, ReloadResult, RuntimeConfig
 from moritz_agent.config.settings import REPO_ROOT
 from moritz_agent.core.callback import CallbackQueue
-from moritz_agent.core.chat import ChatService
+from moritz_agent.core.chat import MEMORY_NOTICE, ChatService, forget, remember
 from moritz_agent.core.principal import discord_role, owner_ids
 from moritz_agent.core.scheduler import Scheduler
 from moritz_agent.core.turn import Turn, TurnResult
@@ -44,6 +44,7 @@ from moritz_agent.skills.responder import SkillResponder
 from moritz_agent.skills.services import build_services
 from moritz_agent.skills.tools import skill_tools
 from moritz_agent.storage import Database, DiscordStore, Repo
+from moritz_agent.tools.call_tool import EndCall
 from moritz_agent.tools.registry import ToolRegistry
 from moritz_agent.tools.time_tool import GetCurrentTime
 from moritz_agent.tools.web_search import WebSearch
@@ -264,6 +265,7 @@ class Runtime:
         assert self.svc is not None
         registry = ToolRegistry(repo=self.repo)
         registry.register(GetCurrentTime(settings.general.timezone, clock=self.svc.now))
+        registry.register(EndCall())
         if self.search is not None:
             registry.register(WebSearch(self.search))
         from moritz_agent.skills.router import Router
@@ -453,8 +455,10 @@ class Runtime:
         reply = task.result()
         context.turn += 1
         context.last_reply = reply.text or context.last_reply
-        context.history.append((text, reply.text or reply.prompt or ""))
-        del context.history[:-12]
+        if getattr(reply.result, "forget", False):
+            forget(context)
+        else:
+            remember(context, text, reply)
         if reply.skill_id:
             self._call_topics.setdefault(call_id, []).append(reply.skill_id)
         self._forward_to_discord(call_id, reply)
@@ -644,10 +648,21 @@ class Runtime:
                 beat += 1
                 if beat % 6 == 0:
                     self.watch_components()
+                    self.sweep_chat_memory()
             except asyncio.CancelledError:
                 raise
             except Exception:
                 log.exception("Planer fehlgeschlagen")
+
+    def sweep_chat_memory(self, now: float | None = None) -> None:
+        """Chats quiet for ``[discord] memory_minutes``: memory emptied, and Anton says so there."""
+        minutes = self.settings.discord.memory_minutes
+        for target in self.chat.sweep_idle(minutes, now):
+            log.info("Kurzzeitgedächtnis geleert (%s, %d min Ruhe)", target, minutes)
+            if self.discord_store is not None:
+                self.discord_store.enqueue(
+                    "note", target, {"text": MEMORY_NOTICE.format(minutes=minutes)}
+                )
 
     def watch_components(self, now: float | None = None) -> None:
         """A note for the owners when a part is down for more than five minutes (once an hour)."""

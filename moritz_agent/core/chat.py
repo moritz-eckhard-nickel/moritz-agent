@@ -31,7 +31,10 @@ log = get_logger("system")
 
 CONVERSATION_TTL_S = 3600
 CONVERSATIONS_MAX = 200
-HISTORY_TURNS = 12
+HISTORY_TURNS = 30  # the context builder drops the oldest turns that do not fit
+MEMORY_NOTICE = (
+    "Ich hab mein Kurzzeitgedächtnis geleert – {minutes} Minuten war Ruhe. Wir fangen frisch an."
+)
 
 
 class AccessDenied(PermissionError):
@@ -43,6 +46,8 @@ class _Conversation:
     context: TurnContext
     touched: float
     task: asyncio.Task[Reply] | None = None
+    target: str = ""  # where a note about this conversation goes (Discord reply target)
+    notify: bool = False  # a written chat: say so when the memory is emptied after a quiet time
 
 
 class ChatService:
@@ -101,7 +106,37 @@ class ChatService:
                 context, time.monotonic()
             )
         conversation.touched = time.monotonic()
+        conversation.target = turn.reply_target or conversation.target
+        conversation.notify = (
+            turn.surface is Surface.CHAT
+            and turn.principal.channel == "discord"
+            and turn.place != "voice"
+        )
         return conversation
+
+    def sweep_idle(self, minutes: int, now: float | None = None) -> list[str]:
+        """Empty the short-term memory of chats that were quiet for ``minutes`` (Moritz, 24.10.2026:
+        "wenn im Discord-Chat 30 Minuten keine Nachricht kam, sagt er, dass er sein Kurzzeitgedächtnis
+        geleert hat"). Returns the places that get a note."""
+        if minutes <= 0:
+            return []
+        now = time.monotonic() if now is None else now
+        noted: list[str] = []
+        for conversation in self._conversations.values():
+            context = conversation.context
+            if not context.history or now - conversation.touched < minutes * 60:
+                continue
+            forget(context)
+            if conversation.notify and conversation.target:
+                noted.append(conversation.target)
+        return noted
+
+    def flush(self, conversation_id: str) -> bool:
+        conversation = self._conversations.get(conversation_id)
+        if conversation is None or not conversation.context.history:
+            return False
+        forget(conversation.context)
+        return True
 
     def _expire(self) -> None:
         now = time.monotonic()
@@ -280,8 +315,10 @@ class ChatService:
     def _remember(context: TurnContext, turn: Turn, reply: Reply) -> None:
         context.turn += 1
         context.last_reply = reply.text or context.last_reply
-        context.history.append((turn.text, reply.text or reply.prompt or ""))
-        del context.history[:-HISTORY_TURNS]
+        if getattr(reply.result, "forget", False):
+            forget(context)
+            return
+        remember(context, turn.text, reply)
 
     def _keep_reminder(self, turn: Turn, reply: Reply, result: TurnResult) -> None:
         """Reminders and timers of a chat live in the database and are delivered where asked."""
@@ -313,3 +350,20 @@ def _seconds(value: float):
     from datetime import timedelta
 
     return timedelta(seconds=value)
+
+
+def remember(context: TurnContext, heard: str, reply: Reply) -> None:
+    """One exchange into the short-term memory – instant answers too, so the language model knows
+    what was asked and said ("wie ist das Wetter?" … "und morgen?")."""
+    context.history.append((heard, reply.text or reply.prompt or ""))
+    del context.history[:-HISTORY_TURNS]
+
+
+def forget(context: TurnContext) -> None:
+    """The short-term memory starts fresh: no history, no follow-up state of the instant answers."""
+    context.history.clear()
+    skills = context.extras.get("skills")
+    if skills is not None:
+        skills.last = None
+        skills.pending = None
+        skills.last_text = ""

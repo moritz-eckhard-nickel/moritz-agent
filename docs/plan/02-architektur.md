@@ -250,7 +250,7 @@ laufen; die harte Grenze setzt der LXC (`cores: 18`), nicht die Konfiguration.
 | Max. Antwort-Tokens | 160 |
 | Temperatur | 0,3 |
 | Gesamtdeadline je Turn | 15 s (danach Fehleransage) |
-| Historie | Turns des aktuellen Anrufs, gekürzt auf Budget (4.096 − System − Tools − 300 Reserve) |
+| Historie | bis zu 30 Turns des aktuellen Anrufs bzw. Chats, auch Sofortauskünfte ohne Sprachmodell; gekürzt auf Budget (8.192 − System − Tools − 300 Reserve) |
 | Denkmodus | aus (NoThink-Adapter / `enable_thinking=false`, je nach Modell) |
 | Systemanweisung | `moritz_agent/agent/prompts/phone.de.md` (Entwurf siehe 04, Ticket P1-09) |
 

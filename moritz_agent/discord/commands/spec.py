@@ -342,6 +342,13 @@ SPECS: tuple[Spec, ...] = (
     ),
     Spec("muenze", "Münze werfen", (), EVERYONE, lambda v: "Wirf eine Münze"),
     Spec(
+        "flushcontext",
+        "Antons Kurzzeitgedächtnis für diesen Chat leeren",
+        (),
+        TRUSTED,
+        lambda v: "Vergiss unser Gespräch",
+    ),
+    Spec(
         "zufall",
         "Zufallszahl",
         (

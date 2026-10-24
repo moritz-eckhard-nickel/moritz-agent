@@ -12,7 +12,13 @@ import pytest
 from moritz_agent.agent import guard
 from moritz_agent.agent.context import ContextBuilder, estimate_tokens
 from moritz_agent.agent.loop import DEADLINE_TEXT, AgentLoop
-from moritz_agent.agent.profiles import FORBIDDEN_TOOLS, Profile, phone_profile, render_prompt
+from moritz_agent.agent.profiles import (
+    FORBIDDEN_TOOLS,
+    Profile,
+    chat_profile,
+    phone_profile,
+    render_prompt,
+)
 from moritz_agent.agent.responder import AgentResponder
 from moritz_agent.agent.speakable import clean, make_speakable, sentences
 from moritz_agent.config.settings import Settings
@@ -20,6 +26,7 @@ from moritz_agent.inference import InferenceClient, InferenceQueue
 from moritz_agent.phone.responder import ResponderUnavailable, TurnContext
 from moritz_agent.research.search import SearchHit, SearchOutcome
 from moritz_agent.tools.base import ToolContext
+from moritz_agent.tools.call_tool import EndCall
 from moritz_agent.tools.registry import ToolRegistry
 from moritz_agent.tools.time_tool import GetCurrentTime
 from moritz_agent.tools.web_search import WebSearch
@@ -489,6 +496,26 @@ def test_farewells_hang_up():
     rig = Rig()
     rig.model.script = [text_chunks("Tschüss, Moritz!")]
     assert rig.ask("Danke, tschüss!").hangup is True
+
+
+def test_the_model_hangs_up_with_end_call_when_the_goodbye_is_longer():
+    rig = Rig()
+    rig.registry.register(EndCall())
+    rig.profile = Profile(
+        name="phone", system_prompt="Du bist Anton.", tools=frozenset(rig.registry.names())
+    )
+    rig.loop = AgentLoop(rig.queue, rig.registry, rig.profile, context_size=4096)
+    rig.model.script = [tool_chunks("end_call", "{}"), text_chunks("Alles klar, bis später!")]
+    result = rig.ask("Okay danke dir, ich muss jetzt echt los, wir hören uns morgen wieder")
+    assert result.hangup is True and result.tools == ["end_call"]
+    assert result.text == "Alles klar, bis später!"
+    rig.model.script = [text_chunks("Klar, ich bleib dran.")]
+    assert rig.ask("Wie funktioniert eigentlich das Auflegen bei dir genau?").hangup is False
+
+
+def test_only_the_spoken_profiles_can_hang_up():
+    assert "end_call" in phone_profile(Settings(), ROOT).tools
+    assert "end_call" not in chat_profile(Settings(), ROOT).tools
 
 
 # -- the responder ----------------------------------------------------------------------------------

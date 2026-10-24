@@ -10,6 +10,8 @@ from moritz_agent.config.settings import Settings
 
 # tools no profile of Part 1 may use (PHONE-45: no shell, no SSH, no sandbox)
 FORBIDDEN_TOOLS = frozenset({"shell", "ssh", "sandbox", "run_command", "write_file"})
+# only where something is spoken: the phone and the Discord voice channel can hang up, a chat cannot
+SPOKEN_TOOLS = frozenset({"end_call"})
 
 
 @dataclass(frozen=True)
@@ -53,7 +55,7 @@ def phone_profile(settings: Settings, root: Path) -> Profile:
     cfg = settings.agent.phone
     path = settings.resolve(cfg.system_prompt_file, root)
     prompt = render_prompt(path.read_text(encoding="utf-8"), settings)
-    tools = frozenset(cfg.tools) - FORBIDDEN_TOOLS
+    tools = (frozenset(cfg.tools) | SPOKEN_TOOLS) - FORBIDDEN_TOOLS
     return Profile(
         name="phone",
         system_prompt=prompt,
@@ -77,7 +79,7 @@ def chat_profile(settings: Settings, root: Path) -> Profile:
     return Profile(
         name=DISCORD_CHAT.name,
         system_prompt=prompt,
-        tools=frozenset(cfg.tools) - FORBIDDEN_TOOLS,
+        tools=frozenset(cfg.tools) - FORBIDDEN_TOOLS - SPOKEN_TOOLS,
         max_tool_steps=cfg.max_tool_steps,
         max_answer_tokens=DISCORD_CHAT.max_answer_tokens,
         temperature=cfg.temperature,

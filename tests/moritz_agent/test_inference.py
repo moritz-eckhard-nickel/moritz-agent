@@ -340,7 +340,7 @@ def test_koboldcpp_arguments(tmp_path):
     assert (
         pairs["--host"] == "127.0.0.1" and pairs["--port"] == "5123"
     )  # never reachable from the LAN
-    assert pairs["--contextsize"] == "4096" and pairs["--parallelrequests"] == "1"
+    assert pairs["--contextsize"] == "8192" and pairs["--parallelrequests"] == "1"
     assert pairs["--model"].endswith("Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf")
     assert (
         pairs["--moecpu"] == "24" and pairs["--threads"] == "12" and pairs["--blasthreads"] == "12"

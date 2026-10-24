@@ -261,6 +261,8 @@ def render_notification(
             "footer": str(payload.get("source", "")),
         }
         return OutMessage(content=mention or "", embed=build_embed(card))
+    if kind == "note":  # a plain sentence of Anton's ("Kurzzeitgedächtnis geleert …")
+        return OutMessage(content=text)
     colors = {
         "reminder": "good",
         "briefing": "info",

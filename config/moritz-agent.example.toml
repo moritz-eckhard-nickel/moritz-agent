@@ -35,7 +35,7 @@ enabled = true                    # false: nur Sofortauskünfte, kein Sprachmode
 koboldcpp_script = "koboldcpp.py" # Upstream-Einstieg, als Child-Prozess (ADR-003)
 python = ""                       # leer: Python aus KoboldCpps Build-Umgebung (conda/envs/linux, ./koboldcpp.sh rebuild)
 model = "models/llm/Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"   # ADR-016
-context_size = 4096               # 8192 erst nach Messung (INF-05)
+context_size = 8192               # gemessen (INF-05): Platz für Systemanweisung, Werkzeuge und den Gesprächsverlauf
 gpu_layers = 999                  # alle Schichten auf die GPU …
 moe_cpu_layers = 24               # … aber Experten der ersten N Schichten im RAM (--moecpu), ≈ halb/halb
 use_cuda = true
@@ -262,6 +262,7 @@ connect_timeout_s = 10
 [discord]                         # docs/plan/14-discord.md, Einrichtung: docs/discord-einrichtung.md
 enabled = false                   # true, sobald bot_token in passwords.txt steht (das Setup setzt das)
 python = ""                       # leer: runtime/discord-venv, falls vorhanden (hört im Sprachkanal zu, P1-32), sonst die Haupt-Python
+memory_minutes = 30               # nach so vielen Minuten Ruhe leert Anton sein Kurzzeitgedächtnis eines Chats und sagt es (0 = nie)
 owner_user_ids = []               # Discord-Benutzer-IDs (das Setup übernimmt den Besitzer der Anwendung)
 trusted_user_ids = []
 allowed_guild_ids = []            # weitere Server (der Server des Standardkanals ist immer erlaubt)

@@ -221,6 +221,11 @@
 {"say": "Roast mich mal", "skill": "talk.roast"}
 {"say": "Mach mich fertig", "skill": "talk.roast"}
 {"say": "Sag was Gemeines über mich", "skill": "talk.roast"}
+{"say": "Vergiss unser Gespräch", "skill": "talk.forget"}
+{"say": "Lösch deinen Kontext", "skill": "talk.forget"}
+{"say": "Leere dein Kurzzeitgedächtnis", "skill": "talk.forget"}
+{"say": "Lass uns von vorne anfangen", "skill": "talk.forget"}
+{"say": "/flushcontext", "skill": "talk.forget"}
 {"say": "Wie geht's dir?", "skill": "talk.how_are_you"}
 {"say": "Wie geht es dir?", "skill": "talk.how_are_you"}
 {"say": "Alles klar bei dir?", "skill": "talk.how_are_you"}

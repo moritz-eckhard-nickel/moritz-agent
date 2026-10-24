@@ -42,6 +42,7 @@ START_DELAY_S = 1.0  # after somebody arrives: the audio stands, then the greeti
 CHECK_EVERY_S = 5.0
 CONNECT_TIMEOUT_S = 20.0
 DAVE_WAIT_S = 10  # the encrypted group needs a moment before audio can be decrypted
+RECEIVE_REPORT_S = 10.0  # how often the receive counters are logged while listening
 REST_MAX_PENDING = 1
 HEARD_WINDOW_S = 35.0  # who spoke within this time counts for the next answer (> one utterance)
 VOICE_ROLES = frozenset({Role.OWNER, Role.TRUSTED})  # only they are heard (§9.2)
@@ -115,6 +116,7 @@ class VoiceSession:
         self._call_task: asyncio.Task[str] | None = None
         self._start_task: asyncio.Task[None] | None = None
         self._watch: asyncio.Task[None] | None = None
+        self.listener: receive.Listener | None = None
         self._empty_since: float | None = time.monotonic()
         self._greeted = False
         self._conversations = 0
@@ -192,7 +194,9 @@ class VoiceSession:
         self.detector = BargeInDetector(make()) if cfg.voice.barge_in else None
         self.rest = RestListener(make(), self._transcribe_text, self._wake)
         if self.receiving:
-            listener = receive.Listener(self.allowed, self._deliver)
+            listener = self.listener = receive.Listener(
+                self.allowed, self._deliver, self._only_person
+            )
             try:
                 self.vc.listen(receive.make_sink(listener))
             except Exception:
@@ -201,7 +205,44 @@ class VoiceSession:
                 )
                 self.receiving = False
         self._watch = asyncio.ensure_future(self._watcher())
+        if self.receiving:
+            self._spawn(self._report_receiving())
         self.update()
+
+    def _only_person(self) -> int | None:
+        humans = self.humans()
+        return humans[0] if len(humans) == 1 else None
+
+    async def _report_receiving(self) -> None:
+        """Every few seconds: what arrived from the channel (Moritz, 24.10.2026: "er hört nicht zu" –
+        this says whether nothing arrives, nothing is decrypted, or nobody could be assigned)."""
+        listener = self.listener
+        if listener is None:
+            return
+        last = -1
+        warned = False
+        started = time.monotonic()
+        while not self._closing:
+            await asyncio.sleep(RECEIVE_REPORT_S)
+            stats = listener.stats
+            if stats.packets != last:
+                last = stats.packets
+                extra = receive.diagnostics(self.vc)
+                log.info("Discord-Empfang: %s%s", stats.line(), f" · {extra}" if extra else "")
+                stats.peak = 0
+            elif (
+                stats.packets == 0
+                and self.humans()
+                and not warned
+                and time.monotonic() - started > 15
+            ):
+                warned = True
+                extra = receive.diagnostics(self.vc)
+                log.warning(
+                    "Discord-Empfang: seit %.0f s kommt kein Audio an, obwohl jemand im Kanal ist%s",
+                    time.monotonic() - started,
+                    f" · {extra}" if extra else "",
+                )
 
     async def _transcribe_text(self, pcm: bytes) -> str:
         return (await self.manager.speech.transcribe(pcm)).text
