@@ -2,14 +2,17 @@
 """Listening in the voice channel (docs/plan/14 §9.2, §9.5, ADR-036).
 
 discord.py itself only *sends* audio. Receiving needs an extension (``discord-ext-voice-recv``) that
-also decrypts Discord's end-to-end encryption (DAVE) – at the time of writing that is the open
-question of the spike P1-32. So this module works with whatever is installed: if the extension is
-missing or cannot decrypt, ``available()`` is false and the voice channel runs in the mode "nur
-sprechen" (Anton answers text and voice messages with his voice, docs/plan/14 §9.5, result B).
+also decrypts Discord's end-to-end encryption (DAVE). The PyPI release cannot (June 2025); the fork
+``zacker150/discord-ext-voice-recv`` with its discord.py fork can (spike P1-32, 24.10.2026). It
+lives in its own environment ``runtime/discord-venv`` (scripts/setup-discord-voice.sh), because it
+replaces the pinned discord.py. This module works with whatever is installed: if the extension is
+missing, ``available()`` is false and the voice channel runs in the mode "nur sprechen" (Anton
+answers text and voice messages with his voice, docs/plan/14 §9.5, result B).
 """
 
 from __future__ import annotations
 
+import asyncio
 import importlib
 from collections.abc import Callable
 from typing import Any
@@ -82,6 +85,21 @@ def make_sink(listener: Listener) -> Any:
             return None
 
     return AntonSink()
+
+
+async def dave_ready(vc: Any, timeout_s: float = 10.0) -> bool:
+    """Wait until the end-to-end encrypted group is ready (the DAVE fork's ``dave_ready``).
+
+    Clients without the attribute (no DAVE fork) count as ready."""
+    if not hasattr(vc, "dave_ready"):
+        return True
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout_s
+    while not getattr(vc, "dave_ready", True):
+        if loop.time() >= deadline:
+            return False
+        await asyncio.sleep(0.1)
+    return True
 
 
 def client_class() -> Any:

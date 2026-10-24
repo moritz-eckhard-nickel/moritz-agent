@@ -100,6 +100,44 @@ def _discord_pin(args: argparse.Namespace) -> int:
     return 0
 
 
+# what the test scripts may set in config/moritz-agent.toml (never secrets – those live in passwords.txt)
+SETTABLE = {
+    ("inference", "use_cuda"): ("true", "false"),
+    ("inference", "moe_cpu_layers"): None,  # a number
+    ("inference", "model"): None,  # a path
+    ("inference", "koboldcpp_script"): None,  # a path (the installer: koboldcpp/koboldcpp.py)
+}
+
+
+def _config_set(args: argparse.Namespace) -> int:
+    allowed = SETTABLE.get((args.section, args.key), "missing")
+    if allowed == "missing":
+        print(f"{args.section}.{args.key} darf hier nicht gesetzt werden.", file=sys.stderr)
+        return 2
+    if allowed is not None and args.value not in allowed:
+        print(f"{args.section}.{args.key}: erlaubt sind {', '.join(allowed)}.", file=sys.stderr)
+        return 2
+    if args.key == "moe_cpu_layers" and not args.value.isdigit():
+        print("moe_cpu_layers braucht eine Zahl.", file=sys.stderr)
+        return 2
+    value = args.value if allowed is not None or args.value.isdigit() else _toml_string(args.value)
+    _, config = _paths(args)
+    if config is None:
+        print("config/moritz-agent.toml fehlt.", file=sys.stderr)
+        return 1
+    files.update_file(
+        config,
+        lambda text: files.set_value(text, args.section, args.key, value, keep_comment=True),
+        default_mode=0o640,
+    )
+    print(f"{args.section}.{args.key} = {value}")
+    return 0
+
+
+def _toml_string(value: str) -> str:
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m moritz_agent.setup", description=__doc__)
     parser.add_argument("--passwords", default=None)
@@ -118,6 +156,13 @@ def build_parser() -> argparse.ArgumentParser:
     voice.add_argument("--id", default="", help="Kanal-ID")
     voice.add_argument("--answer", action="store_true", help="die Auswahl von stdin lesen")
     voice.set_defaults(func=_discord_voice)
+    setter = sub.add_parser(
+        "config-set", help="einen nicht geheimen Wert in der Konfiguration setzen"
+    )
+    setter.add_argument("section")
+    setter.add_argument("key")
+    setter.add_argument("value")
+    setter.set_defaults(func=_config_set)
     return parser
 
 

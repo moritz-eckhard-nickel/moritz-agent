@@ -10,12 +10,34 @@ from moritz_agent.config.settings import Settings
 from moritz_agent.inference.client import InferenceClient
 from moritz_agent.process import ManagedProcess, find_free_port
 
+# ``./koboldcpp.sh rebuild`` (ADR-015) builds the libraries next to koboldcpp.py and a Python with
+# KoboldCpp's own packages (jinja2 for --jinja, CUDA runtime) in this micromamba environment –
+# both relative to the folder of koboldcpp.py (the repository, or <prefix>/koboldcpp when installed).
+CONDA_PYTHON = "conda/envs/linux/bin/python"
+GPU_LIBRARY = "koboldcpp_cublas.so"
+CPU_LIBRARY = "koboldcpp_default.so"
+
+
+def koboldcpp_python(settings: Settings, root: Path) -> str:
+    """``[inference] python`` if set, else KoboldCpp's build environment, else this Python."""
+    cfg = settings.inference
+    if cfg.python:
+        return str(settings.resolve(cfg.python, root))
+    conda = settings.resolve(cfg.koboldcpp_script, root).parent / CONDA_PYTHON
+    return str(conda) if conda.is_file() else sys.executable
+
+
+def koboldcpp_built(settings: Settings, root: Path) -> bool:
+    """Is the KoboldCpp library for this configuration there (``./test-3.sh setup`` builds it)?"""
+    script = settings.resolve(settings.inference.koboldcpp_script, root)
+    return (script.parent / (GPU_LIBRARY if settings.inference.use_cuda else CPU_LIBRARY)).is_file()
+
 
 def build_argv(settings: Settings, root: Path, port: int, python: str | None = None) -> list[str]:
     """The KoboldCpp command line for the configured model (loopback only, one request at a time)."""
     cfg = settings.inference
     argv = [
-        python or sys.executable,
+        python or koboldcpp_python(settings, root),
         str(settings.resolve(cfg.koboldcpp_script, root)),
         "--model",
         str(settings.resolve(cfg.model, root)),

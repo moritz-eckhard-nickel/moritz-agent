@@ -1,9 +1,15 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-"""Model files for the phone voice (downloaded from Hugging Face, never stored in git).
+"""Model files (downloaded from Hugging Face, never stored in git).
 
 Groups:
-    stt     Whisper small (faster-whisper / CTranslate2)                       ≈ 0.5 GB
-    piper   Piper voice "Thorsten-Voice Hessisch" (high quality, CC0, ADR-027)  ≈ 0.11 GB
+    stt           Whisper small (faster-whisper / CTranslate2)                       ≈ 0.5 GB
+    piper         Piper voice "Thorsten-Voice Hessisch" (high quality, CC0, ADR-027)  ≈ 0.11 GB
+    llm           the language model of ADR-016 (Qwen3-30B-A3B-Instruct-2507 UD-Q3_K_XL) ≈ 13.8 GB
+    llm-fallback  the fallbacks of ADR-016 (Q3_K_S, Q4_K_M, dense Qwen3-14B Q4_K_M)   ≈ 40.9 GB
+
+The models directory is ``models/`` next to the program; the test scripts and the installer make
+it a link to a shared cache (``/home/models``, Moritz 24.10.2026), so a new version unpacked over
+the old one – or a fresh install – finds everything already downloaded.
 
 Integrity: sizes are checked against the manifest (warning on change); SHA-256 values are
 recorded on first download in models/.checksums.json and compared on every later check.
@@ -25,6 +31,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 HESSISCH_PIPER = "Thorsten-Voice/Hessisch"
 HESSISCH_PIPER_MODEL = "Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx"
+QWEN_MOE = "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF"
+LLM_MODEL = "Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"
 
 
 @dataclass(frozen=True)
@@ -60,6 +68,28 @@ def _files() -> dict[str, list[RemoteFile]]:
                 f"{HESSISCH_PIPER_MODEL}.json",
                 6_856,
                 f"tts/piper/{HESSISCH_PIPER_MODEL}.json",
+            ),
+        ],
+        # sizes as listed on 2026-10-24
+        "llm": [RemoteFile(QWEN_MOE, LLM_MODEL, 13_833_048_480, f"llm/{LLM_MODEL}")],
+        "llm-fallback": [
+            RemoteFile(
+                QWEN_MOE,
+                "Qwen3-30B-A3B-Instruct-2507-Q3_K_S.gguf",
+                13_292_468_640,
+                "llm/Qwen3-30B-A3B-Instruct-2507-Q3_K_S.gguf",
+            ),
+            RemoteFile(
+                QWEN_MOE,
+                "Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
+                18_556_686_752,
+                "llm/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
+            ),
+            RemoteFile(
+                "unsloth/Qwen3-14B-GGUF",
+                "Qwen3-14B-Q4_K_M.gguf",
+                9_001_753_984,
+                "llm/Qwen3-14B-Q4_K_M.gguf",
             ),
         ],
     }
@@ -125,7 +155,9 @@ def verify(files: list[RemoteFile], root: Path = REPO_ROOT, record: bool = True)
     return problems
 
 
-def fetch(groups: list[str], root: Path = REPO_ROOT, assume_yes: bool = False) -> int:
+def fetch(
+    groups: list[str], root: Path = REPO_ROOT, assume_yes: bool = False, *, if_space: bool = False
+) -> int:
     todo = [f for f in files_for(groups) if not (models_dir(root) / f.target).is_file()]
     if not todo:
         print("Alle Modelldateien sind bereits vorhanden.")
@@ -136,6 +168,9 @@ def fetch(groups: list[str], root: Path = REPO_ROOT, assume_yes: bool = False) -
     free = shutil.disk_usage(base).free
     print(f"Zu laden: {len(todo)} Dateien, {total / 1e9:.2f} GB (frei: {free / 1e9:.1f} GB)")
     if free < total * 1.1:
+        if if_space:
+            print(f"Übersprungen: zu wenig Platz für {', '.join(groups)} (das ist kein Fehler).")
+            return 0
         print("FEHLER: zu wenig freier Speicherplatz.", file=sys.stderr)
         return 1
     # no question before the download (Moritz, 21.10.2026); ``assume_yes`` stays for old callers
@@ -182,16 +217,23 @@ def status(groups: list[str], root: Path = REPO_ROOT) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Modelle für Antons Stimme verwalten")
+    parser = argparse.ArgumentParser(description="Antons Modelle verwalten (Stimme, Sprachmodell)")
     parser.add_argument("command", choices=["status", "fetch"])
-    parser.add_argument("--groups", default="stt,piper", help="Komma-getrennt: stt,piper")
+    parser.add_argument(
+        "--groups", default="stt,piper", help="Komma-getrennt: stt,piper,llm,llm-fallback"
+    )
+    parser.add_argument(
+        "--if-space",
+        action="store_true",
+        help="fehlt der Platz, nur warnen und überspringen (für die optionalen Ersatzmodelle)",
+    )
     parser.add_argument("--root", type=Path, default=REPO_ROOT)
     parser.add_argument("--yes", action="store_true", help="(ohne Wirkung – es wird nie gefragt)")
     args = parser.parse_args(argv)
     groups = [g.strip() for g in args.groups.split(",") if g.strip()]
     if args.command == "status":
         return status(groups, args.root)
-    return fetch(groups, args.root, args.yes)
+    return fetch(groups, args.root, args.yes, if_space=args.if_space)
 
 
 if __name__ == "__main__":

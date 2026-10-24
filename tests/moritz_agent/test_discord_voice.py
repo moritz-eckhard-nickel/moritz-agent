@@ -712,3 +712,17 @@ def test_written_elsewhere_while_in_the_voice_channel_the_answer_is_spoken_too(t
         return nobody
 
     assert room_test(tmp_path, body, receiving=False) is False  # not in the channel: text only
+
+
+def test_listening_waits_for_the_encrypted_group():
+    """The DAVE fork decrypts only once the group is ready (dave_ready); plain clients are ready."""
+
+    async def scenario():
+        plain = await receive.dave_ready(SimpleNamespace(), 0.1)
+        vc = SimpleNamespace(dave_ready=False)
+        asyncio.get_running_loop().call_later(0.15, lambda: setattr(vc, "dave_ready", True))
+        later = await receive.dave_ready(vc, 2.0)
+        never = await receive.dave_ready(SimpleNamespace(dave_ready=False), 0.2)
+        return plain, later, never
+
+    assert asyncio.run(scenario()) == (True, True, False)

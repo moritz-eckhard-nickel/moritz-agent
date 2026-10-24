@@ -37,7 +37,7 @@ Unmodified copies; provenance and versions in [third_party/VENDORED.md](third_pa
 | --- | --- | --- |
 | SearXNG (commit 8252c0bf) | `third_party/searxng/` | AGPL-3.0 |
 | pjproject / PJSIP 2.17 | `third_party/pjproject/` | GPL-2.0-or-later; bundled sub-components in `third_party/pjproject/third_party/` keep their own licenses |
-| Python packages (installed from PyPI, pinned in `requirements/*.lock`) | not vendored | per package (FastAPI, Starlette, Pydantic: MIT; Uvicorn, HTTPX, Granian: BSD-3-Clause; faster-whisper, CTranslate2, ONNX Runtime: MIT; NumPy (BSD-3-Clause), PyAV (BSD-3-Clause), Piper (GPL-3.0), python-soxr (LGPL-2.1-or-later), boto3 (Apache-2.0), Flask (BSD-3-Clause), lxml (BSD-3-Clause), discord.py (MIT), davey (MIT), PyNaCl (Apache-2.0), aiohttp (Apache-2.0 AND MIT), audioop-lts (PSF-2.0), …) |
+| Python packages (installed from PyPI, pinned in `requirements/*.lock`) | not vendored | per package (FastAPI, Starlette, Pydantic: MIT; Uvicorn, HTTPX, Granian: BSD-3-Clause; faster-whisper, CTranslate2, ONNX Runtime: MIT; NumPy (BSD-3-Clause), PyAV (BSD-3-Clause), Piper (GPL-3.0), python-soxr (LGPL-2.1-or-later), boto3 (Apache-2.0), Flask (BSD-3-Clause), lxml (BSD-3-Clause), discord.py (MIT), davey (MIT), only in `runtime/discord-venv` for listening in voice channels: the forks `zacker150/discord-ext-voice-recv` and `zacker150/discord.py` (both MIT, from GitHub, commit-pinned), PyNaCl (Apache-2.0), aiohttp (Apache-2.0 AND MIT), audioop-lts (PSF-2.0), …) |
 | Silero VAD v6.2.3 | `assets/models/vad/` | MIT |
 | Own astronomy code (sun, moon, seasons), formulas after NOAA and Meeus' *Astronomical Algorithms* | `moritz_agent/skills/astro/` | MSOL 1.1 (formulas are not copyrightable) |
 | Own place lists (hand-kept seed set, approximate values) | `assets/data/geo/seed-places.tsv`, `world-cities.tsv`, `plz-bereiche.tsv` | MSOL 1.1 |
@@ -49,6 +49,7 @@ Unmodified copies; provenance and versions in [third_party/VENDORED.md](third_pa
 | Component | Purpose | License |
 | --- | --- | --- |
 | Qwen3-30B-A3B-Instruct-2507 GGUF (unsloth) | LLM | Apache-2.0 |
+| Qwen3-14B GGUF (unsloth) | LLM fallback (ADR-016, only downloaded into the cache) | Apache-2.0 |
 | OpenAI Whisper small (faster-whisper conversion by Systran) | speech-to-text | MIT |
 | Thorsten-Voice „Hessisch“ Piper model (`Thorsten-Voice/Hessisch`, `…_Piper_high-Oct2023.onnx`) | Anton's voice | CC0-1.0 (Thorsten-Voice) – verify per model card |
 | espeak-ng (system package, optional) | last-resort voice and test caller | GPL-3.0-or-later (used as a separate program) |

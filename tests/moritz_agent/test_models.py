@@ -9,7 +9,16 @@ from moritz_agent.phone.audio import models
 
 
 def test_groups_cover_voice_and_recognizer():
-    assert set(models.GROUPS) == {"stt", "piper"}
+    assert set(models.GROUPS) == {"stt", "piper", "llm", "llm-fallback"}
+
+
+def test_the_language_model_is_the_one_the_configuration_starts():
+    from moritz_agent.config.settings import Settings
+
+    (main,) = models.GROUPS["llm"]
+    assert f"models/{main.target}" == Settings().inference.model  # ADR-016
+    assert main.size == 13_833_048_480
+    assert all(f.target.startswith("llm/") for f in models.GROUPS["llm-fallback"])
 
 
 def test_piper_manifest_is_the_hessisch_voice():

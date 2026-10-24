@@ -41,6 +41,7 @@ log = get_logger("discord")
 START_DELAY_S = 1.0  # after somebody arrives: the audio stands, then the greeting (no ringing)
 CHECK_EVERY_S = 5.0
 CONNECT_TIMEOUT_S = 20.0
+DAVE_WAIT_S = 10  # the encrypted group needs a moment before audio can be decrypted
 REST_MAX_PENDING = 1
 HEARD_WINDOW_S = 35.0  # who spoke within this time counts for the next answer (> one utterance)
 VOICE_ROLES = frozenset({Role.OWNER, Role.TRUSTED})  # only they are heard (§9.2)
@@ -495,6 +496,8 @@ class VoiceManager:
         vc = await channel.connect(
             cls=receive.client_class(), timeout=CONNECT_TIMEOUT_S, reconnect=True, self_deaf=False
         )
+        if receiving and not await receive.dave_ready(vc, DAVE_WAIT_S):
+            log.warning("Discord: Verschlüsselung (DAVE) nach %d s nicht bereit", DAVE_WAIT_S)
         session = VoiceSession(self, channel, vc, origin.user_id, receiving)
         try:
             await session.start()

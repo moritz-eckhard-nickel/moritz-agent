@@ -622,6 +622,13 @@ Umsetzungen: SIP-Anruf und Discord-Sprachkanal (P1-36).
   auf Text im Sprachkanal-Chat und auf Sprachnachrichten und **antwortet gesprochen**. Zusätzlich
   optional **Bühnenkanal** (Stage, in Community-Servern; laut Discord ohne E2EE) für echtes Zuhören.
   Der Spike wird wiederholt, sobald eine Bibliothek DAVE-Empfang offiziell kann.
+- **Stand 24.10.2026:** Weg A über den Fork `zacker150/discord-ext-voice-recv`. Er kommt nicht von PyPI und
+  nicht nach `third_party/`, sondern in die eigene Umgebung `runtime/discord-venv`, weil er discord.py
+  ersetzt. Der Worker nimmt sie automatisch (ADR-036, Stand 24.10.2026).
+  - Vor dem Zuhören wartet Anton bis zu 10 s, bis die verschlüsselte Gruppe bereit ist (`dave_ready`).
+  - Ohne die Umgebung gilt Weg B.
+  - Textnachrichten von jemandem, der mit Anton im Sprachkanal sitzt, beantwortet er dort auch laut,
+    egal in welchem Kanal sie geschrieben werden.
 
 ## 10. Sprachnachrichten
 

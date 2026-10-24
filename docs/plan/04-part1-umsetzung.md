@@ -125,6 +125,8 @@ P1-03 (Konfiguration) und P1-06 (Speicher) werden nur so weit vorgezogen, wie Bl
 
 ## P1-02 – KoboldCPP-Build im LXC + Modellauswahl
 
+> Seit 24.10.2026 bare metal auf Sophie-1 statt im LXC (ADR-039). Gebaut ist das mit `scripts/setup-koboldcpp.sh`, `scripts/bench_llm.py` und `./test-3.sh` (Anhang C.8).
+
 - **Aufgaben:**
   1. `./koboldcpp.sh rebuild` im LXC ausführen (ADR-015), Dauer/Plattenbedarf messen.
   2. Modell aus ADR-016 (`Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf`) laden, SHA-256
@@ -755,8 +757,8 @@ Letzter Lauf (21.10.2026): `pytest` 2316 bestanden (6 abgewählte Tests brauchen
 | Ticket | Stand | Anmerkung |
 | --- | --- | --- |
 | P1-00, P1-00b | fertig | Repo-Grundlage, Rebranding, Fremdkomponenten |
-| P1-01 | **offen** (manuell) | Infrastruktur Sophie-1 – nicht Teil dieses Repos |
-| P1-02 | **offen** | KoboldCpp-Build und Modellwahl brauchen die GPU; der Installer kündigt die Phase nur an |
+| P1-01 | **offen** (manuell) | Sophie-1 bare metal (ADR-039): nur noch der NVIDIA-Treiber von Hand ([`docs/sophie-1-bare-metal.md`](../sophie-1-bare-metal.md)) |
+| P1-02 | gebaut, **Messung offen** | `scripts/setup-koboldcpp.sh` (Build), Modelle im Cache `/home/models`, `scripts/bench_llm.py` (`--moecpu` einmessen, 40 Telefonfragen in `tests/moritz_agent/data/phone_questions.de.jsonl`), Installer-Phasen `koboldcpp` und `llm_config`. Die Messtabelle entsteht mit `./test-3.sh run` auf Sophie-1 (`runtime/test-3/llm-bench.md`) |
 | P1-03 | gebaut | `config/validate.py`, `reload.py`; Reload atomar mit Diff |
 | P1-04 | gebaut | `ManagedProcess` (Backoff, Health), `supervisor.py` startet Telefon und Discord als Kindprozesse |
 | P1-05 … P1-09 | gebaut | Inference-Client, Speicher (SQLite), Suche (SearXNG → KoboldCpp → Wikipedia), Tools, Agent-Schleife; **nicht gegen ein echtes Modell geprüft** (siehe C.3) |
@@ -768,7 +770,7 @@ Letzter Lauf (21.10.2026): `pytest` 2316 bestanden (6 abgewählte Tests brauchen
 | P1-29 | gebaut, Messung offen | Aussprache-Liste, Whisper-`initial_prompt`, Korpus mit 803 Äußerungen (`tests/moritz_agent/data/skills.de.jsonl`, erzeugt von `scripts/build_skill_corpus.py`) – **Hörtest und Vergleich `initial_prompt` gegen `hotwords` stehen aus** |
 | P1-30 | **offen** | Abnahme: Protokoll [`docs/abnahme/sofortauskuenfte-vorlage.md`](../abnahme/sofortauskuenfte-vorlage.md) ausfüllen; das Netz-Wächter-Testset (`pytest -m network`) läuft nur mit Internet |
 | P1-31 … P1-35 | gebaut | Kanal-Kern, Worker, Text-Chat, Befehle; **nie gegen das echte Discord-Gateway gelaufen** (C.3) |
-| P1-32 | **offen** | Spike-Protokoll [`docs/abnahme/p1-32-discord-spike.md`](../abnahme/p1-32-discord-spike.md); der Code beherrscht beide Ausgänge |
+| P1-32 | gebaut, **Live-Test offen** | Empfang über den DAVE-fähigen Fork in `runtime/discord-venv` (`scripts/setup-discord-voice.sh`); ohne ihn „nur sprechen“. Protokoll: Live-Teil von `./test-3.sh run` |
 | P1-36 | gebaut | `/joinvc` als Anruf (`DiscordMedia` + `CallSession`); Empfang nur mit optionalem `discord-ext-voice-recv`, sonst „nur sprechen“ |
 | P1-37 … P1-41, P1-43 | gebaut | Sprachnachrichten, Erinnerungen und Abos, Telefon ↔ Discord, Admin, Einrichtung, Persönlichkeit |
 | P1-42 | **offen** | Abnahme: [`docs/abnahme/discord-vorlage.md`](../abnahme/discord-vorlage.md) |
@@ -936,3 +938,36 @@ Moritz: „alle Emojis entfernen und im Text gegen :) :( :3 usw. austauschen ode
   Sprachverbindung (DAVE); `discord-ext-voice-recv` auf PyPI (Stand Juni 2025) kann das nicht
   entschlüsseln. Ein Community-Fork (`zacker150/discord-ext-voice-recv` mit einem discord.py-Fork)
   soll DAVE-Empfang können – Kandidat für Part 2, nicht von PyPI und ungeprüft.
+
+### C.8 Part 1 fertig machen (24.10.2026)
+
+Moritz: „machen wir erstmal Part 1 fertig – das Modell auf /home/models … Sophie-1 bare metal … P1-32
+anschauen … Abnahmen mit Protokoll?“
+
+- **Bare metal statt LXC** (ADR-039): Anton läuft direkt auf Sophie-1. Testbetrieb mit `./test-3.sh`,
+  Dienst mit `sudo ./moritz-install.sh`. Der Installer akzeptiert jetzt Debian 13 (Proxmox VE 9) und
+  installiert zusätzlich `rsync`, `bzip2` und `git`.
+- **Modell-Cache `/home/models`** (`scripts/link-models.sh`): `models/` ist ein Link. Vorhandene Modelle
+  ziehen um, nichts wird überschrieben oder doppelt geladen, `test-clearup.sh` lässt den Cache stehen
+  (`--all` löscht ihn).
+  - neue Gruppen in `moritz_agent/phone/audio/models.py`: `llm` (Qwen3-30B-A3B UD-Q3_K_XL, 13,8 GB) und
+    `llm-fallback` (Q3_K_S, Q4_K_M, Qwen3-14B Q4_K_M, ≈ 41 GB, `--if-space`)
+- **KoboldCpp-Build** (`scripts/setup-koboldcpp.sh`): beim ersten Mal `./koboldcpp.sh rebuild` (ADR-015),
+  danach nur `make`, wenn sich der Fingerabdruck der C/C++-Quellen ändert. Ohne GPU: CPU-Bibliothek und
+  `use_cuda = false`.
+  - KoboldCpp läuft mit der Python seiner Build-Umgebung (`[inference] python`, leer = automatisch).
+  - Ist KoboldCpp nicht gebaut, meldet der Status „KoboldCpp ist nicht gebaut“ statt eines
+    Startfehlers.
+  - Installiert liegt die Engine unter `/opt/moritz-agent/koboldcpp`.
+- **Messung** (`scripts/bench_llm.py`): `--moecpu` startet beim konfigurierten Wert und geht hoch, bis
+  ≥ 600 MB VRAM frei bleiben, bzw. runter, solange mehr als 1,8 GB frei sind. Der Wert landet in der
+  Konfiguration; danach laufen die 40 Telefonfragen direkt durch die Agent-Schleife.
+- **P1-32:** Zuhören im Sprachkanal über den DAVE-fähigen Fork in `runtime/discord-venv` (ADR-036,
+  Stand 24.10.2026); `[discord] python`, leer = automatisch.
+- **Abnahme:** `./test-3.sh run` schreibt `runtime/test-3/abnahme.md`. Der automatische Teil ist
+  ausgefüllt, der Live-Teil wird abgehakt. Das ersetzt das Ausfüllen der Vorlagen in `docs/abnahme/`
+  für P1-02, P1-18, P1-30, P1-32 und P1-42.
+- **Ungeprüft hier:** Build, Messung und DAVE-Empfang brauchen Sophie-1 (GPU, Discord). In der
+  Entwicklungsumgebung laufen sie nur gegen ein nachgebautes KoboldCpp
+  (`tests/moritz_agent/fake_koboldcpp.py`).
+

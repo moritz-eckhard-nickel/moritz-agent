@@ -1,0 +1,40 @@
+{"kind": "zeit", "q": "Wie viel Uhr ist es gerade?", "tools": ["get_current_time"]}
+{"kind": "zeit", "q": "Welches Datum haben wir heute?", "tools": ["get_current_time", "calendar_info"]}
+{"kind": "zeit", "q": "Ist es schon nach Mittag?", "tools": ["get_current_time"]}
+{"kind": "zeit", "q": "Wie spät ist es jetzt in Weilburg?", "tools": ["get_current_time"]}
+{"kind": "zeit", "q": "Welcher Wochentag ist heute?", "tools": ["get_current_time", "calendar_info"]}
+{"kind": "wetter", "q": "Brauche ich morgen in Weilburg einen Regenschirm?", "tools": ["get_weather", "everyday_advice"]}
+{"kind": "wetter", "q": "Wie warm wird es heute Nachmittag?", "tools": ["get_weather"]}
+{"kind": "wetter", "q": "Wird es am Wochenende sonnig?", "tools": ["get_weather"]}
+{"kind": "wetter", "q": "Gibt es gerade Unwetterwarnungen bei uns?", "tools": ["get_warnings"]}
+{"kind": "wetter", "q": "Wie ist der Pollenflug heute?", "tools": ["get_pollen"]}
+{"kind": "rechnen", "q": "Was ist 17 mal 23?", "tools": ["calculate"]}
+{"kind": "rechnen", "q": "Wie viel sind 15 Prozent von 80 Euro?", "tools": ["calculate"]}
+{"kind": "rechnen", "q": "Wie viele Minuten hat eine Woche?", "tools": ["calculate"]}
+{"kind": "rechnen", "q": "Was ist die Wurzel aus 144?", "tools": ["calculate"]}
+{"kind": "kalender", "q": "Wann ist nächstes Jahr Ostern?", "tools": ["calendar_info"]}
+{"kind": "kalender", "q": "Ist morgen ein Feiertag in Hessen?", "tools": ["calendar_info"]}
+{"kind": "kalender", "q": "Wann sind die nächsten Schulferien in Hessen?", "tools": ["calendar_info"]}
+{"kind": "orte", "q": "Wie weit ist es von Weilburg nach Limburg?", "tools": ["place_info"]}
+{"kind": "orte", "q": "In welchem Landkreis liegt Weilburg?", "tools": ["place_info", "regional_info"]}
+{"kind": "orte", "q": "Wann geht heute die Sonne unter?", "tools": ["get_sun_moon"]}
+{"kind": "suche", "q": "Wer ist aktuell Bundeskanzler von Deutschland?", "tools": ["web_search"]}
+{"kind": "suche", "q": "Was kostet das Deutschlandticket im Moment?", "tools": ["web_search"]}
+{"kind": "suche", "q": "Wie hat Eintracht Frankfurt zuletzt gespielt?", "tools": ["web_search", "regional_info"]}
+{"kind": "suche", "q": "Was gibt es heute für Nachrichten aus Hessen?", "tools": ["web_search", "regional_info"]}
+{"kind": "suche", "q": "Wann ist die nächste Bundestagswahl?", "tools": ["web_search"]}
+{"kind": "suche", "q": "Wie hoch ist der Leitzins der EZB gerade?", "tools": ["web_search", "money_info"]}
+{"kind": "suche", "q": "Welche Filme laufen gerade neu im Kino?", "tools": ["web_search"]}
+{"kind": "suche", "q": "Wer hat dieses Jahr den Friedensnobelpreis bekommen?", "tools": ["web_search"]}
+{"kind": "wissen", "q": "Was ist die Hauptstadt von Australien?", "tools": []}
+{"kind": "wissen", "q": "Erklär mir in zwei Sätzen, was Photosynthese ist.", "tools": []}
+{"kind": "wissen", "q": "Wie viele Beine hat eine Spinne?", "tools": []}
+{"kind": "wissen", "q": "Wer hat die Relativitätstheorie entwickelt?", "tools": []}
+{"kind": "wissen", "q": "Was ist der Unterschied zwischen Wetter und Klima?", "tools": []}
+{"kind": "wissen", "q": "Wie lange muss ein Ei kochen, damit es weich ist?", "tools": []}
+{"kind": "wissen", "q": "Warum ist der Himmel blau?", "tools": []}
+{"kind": "wissen", "q": "Was bedeutet das hessische Wort Guude?", "tools": []}
+{"kind": "wissen", "q": "Nenn mir ein gutes Rezept für Grüne Soße.", "tools": []}
+{"kind": "wissen", "q": "Wie heißt der längste Fluss in Deutschland?", "tools": []}
+{"kind": "gespraech", "q": "Erzähl mir einen kurzen Witz über Computer.", "tools": []}
+{"kind": "gespraech", "q": "Kannst du mir einen Tipp gegen Müdigkeit geben?", "tools": []}

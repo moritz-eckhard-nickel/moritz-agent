@@ -18,6 +18,12 @@ Das Upstream-`requirements.txt` im Wurzelverzeichnis gehört zu KoboldCpp und bl
 ## Optional: Sprachempfang auf Discord
 
 `discord-ext-voice-recv` (Audio aus dem Sprachkanal empfangen) steht **bewusst nicht** in `discord.in`/`discord.lock`:
-Discord verschlüsselt Sprache Ende-zu-Ende (DAVE), und ob eine Fassung das entschlüsselt, klärt erst der Spike
-[P1-32](../docs/abnahme/p1-32-discord-spike.md). Wer es ausprobiert, installiert es von Hand in die Umgebung; ohne
-die Erweiterung läuft der Sprachkanal im Modus „nur sprechen“ (Plan 14 §9.5, ADR-036).
+Discord verschlüsselt Sprache Ende-zu-Ende (DAVE). Entschlüsseln kann das nur der Fork
+`zacker150/discord-ext-voice-recv`, und der ersetzt discord.py durch einen eigenen Fork (2.8.0a von GitHub).
+Deshalb bekommt er eine **eigene Umgebung** `runtime/discord-venv`, die nur der Discord-Worker benutzt
+(`scripts/setup-discord-voice.sh`, von `./test-3.sh setup` und dem Installer angelegt, P1-32, ADR-036):
+
+- Die drei Lock-Dateien werden dort wie gewohnt mit Prüfsummen installiert.
+- Nur die zwei GitHub-Pakete sind per Commit statt per Prüfsumme gepinnt, weil pip VCS-Quellen nicht hashen
+  kann (Ausnahme von ADR-019).
+- Fehlt die Umgebung, läuft der Sprachkanal im Modus „nur sprechen“ (Plan 14 §9.5).

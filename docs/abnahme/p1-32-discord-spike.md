@@ -6,7 +6,13 @@ und Sprachkanal-Verkehr – das lässt sich **nicht** in der Entwicklungsumgebun
 gesamte Code ist so gebaut, dass beide Ausgänge funktionieren (Empfang oder „nur sprechen“); dieses
 Protokoll entscheidet, welcher gilt.
 
-Stand der Entwicklung: **offen** – alle Zeilen unten sind noch auszufüllen.
+Stand der Entwicklung (24.10.2026): **Kandidat gewählt, Live-Test offen.**
+
+- Kandidat ist `zacker150/discord-ext-voice-recv` (Commit `dcf543a`) mit seinem discord.py-Fork, in der
+  eigenen Umgebung `runtime/discord-venv` (`scripts/setup-discord-voice.sh`, ADR-036 Stand 24.10.2026).
+- Auf PyPI gibt es keine Alternative. Die `libdave`-Bindung ist überflüssig: `davey` entschlüsselt selbst.
+- Die Live-Punkte stehen in `./test-3.sh run` → `runtime/test-3/abnahme.md`. Die Tabelle unten bleibt für
+  die Detailwerte.
 
 ## Vorbereitung
 

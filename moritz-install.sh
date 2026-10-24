@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-# moritz-install.sh – installer inside the LXC (or any Ubuntu/Debian machine), ticket P1-15.
-#
-# Normally started by ./install.sh from the Proxmox host (ADR-028), which creates the LXC, copies
-# the program into it and calls this script. It can also be run by hand inside a machine:
-#     sudo ./moritz-install.sh [--prefix /opt/moritz-agent]
+# moritz-install.sh – installer on any Ubuntu/Debian machine, ticket P1-15. On Sophie-1 it runs bare
+# metal, straight on the host (ADR-039):
+#     sudo ./moritz-install.sh [--prefix /opt/moritz-agent] [--models-dir /home/models]
+# ./install.sh from a Proxmox host can still create an LXC and call this script inside (ADR-028).
 #
 # Specification: docs/plan/07-installation-update.md §2 (phases, exit codes). Implemented phases:
 # everything the phone needs today (system packages, service user, program files, Python
-# environment, PJSIP, models, passwords.txt, configuration, announcements, systemd service,
-# verification). KoboldCpp/SearXNG/TLS phases follow with their tickets and are only announced.
+# environment, PJSIP, KoboldCpp, models (shared cache /home/models), passwords.txt, configuration,
+# Discord, announcements, systemd service, verification).
 #
 # Rules (docs/plan/08-sicherheit.md): never `set -x`, never pass secrets as arguments or
 # environment variables, never overwrite an existing passwords.txt or config/moritz-agent.toml.
@@ -29,6 +28,9 @@ SERVICE_USER="moritz-agent"
 NON_INTERACTIVE=0
 DRY_RUN=0
 SKIP_MODELS=0
+SKIP_KCPP=0
+ALL_MODELS=0
+MODELS_DIR="${MORITZ_MODELS_DIR:-/home/models}"
 SKIP_PACKAGES=0
 SKIP_ENV=0
 NO_SERVICE=0
@@ -41,7 +43,7 @@ LOG_DIR="${MORITZ_LOG_DIR:-/var/log/moritz-agent}"
 
 # apt packages the phone needs (python build tools for PJSIP, audio libraries, emergency voice)
 PACKAGES=(build-essential python3 python3-venv python3-dev swig pkg-config libssl-dev libsndfile1
-	espeak-ng tzdata openssl ca-certificates curl)
+	espeak-ng tzdata openssl ca-certificates curl rsync bzip2 git)
 
 PHASES=(
 	"preflight:Distribution, Python, RAM-Limit, CPU, Speicher prüfen"
@@ -50,13 +52,15 @@ PHASES=(
 	"code:Programmdateien ins Installationsverzeichnis kopieren"
 	"python_env:venv und gepinnte Python-Pakete (mit Prüfsummen)"
 	"pjsip:PJSIP + PJSUA2-Binding bauen (ADR-005)"
-	"koboldcpp:KoboldCpp bauen (kommt mit Ticket P1-02)"
+	"koboldcpp:KoboldCpp bauen (Sprachmodell, P1-02; danach nur bei geänderten Quellen)"
 	"searxng:SearXNG-Umgebung für die Websuche einrichten"
-	"models:Whisper small und Piper-Stimme Hessisch laden"
+	"models:Whisper, Piper-Stimme und Sprachmodell in den Cache /home/models laden"
 	"geodata:Postleitzahlen und Orte von GeoNames laden (optional, CC BY 4.0)"
 	"secrets:passwords.txt anlegen (vorhandene bleibt unverändert)"
 	"config:config/moritz-agent.toml anlegen (vorhandene bleibt unverändert)"
+	"llm_config:Sprachmodell in die Konfiguration eintragen (KoboldCpp, GPU, --moecpu)"
 	"discord:Discord-Bot einrichten (optional, nur auf Wunsch)"
+	"discord_voice:Zuhören im Discord-Sprachkanal (eigene Umgebung, P1-32)"
 	"prompts:Ansagen vorrendern und cachen"
 	"service:systemd-Dienst installieren und starten"
 	"verify:Dienst und SIP-Registrierung prüfen"
@@ -72,12 +76,14 @@ Usage: $(basename "$0") [options]
   --non-interactive     keine Rückfragen (Modelle werden ohne Nachfrage geladen)
   --dry-run             nur anzeigen, was getan würde
   --skip-models         Modell-Download überspringen
+  --models-dir DIR      gemeinsamer Modell-Cache (Standard: ${MODELS_DIR}; models/ wird ein Link darauf)
+  --all-models          auch die Ersatzmodelle aus ADR-016 laden (≈ 41 GB, nur wenn Platz ist)
   --skip-packages       apt überspringen (Pakete sind schon da)
   --skip-env            Python-Umgebung und PJSIP überspringen (Test)
   --no-service          keinen systemd-Dienst einrichten
   --jobs N              parallele Build-Prozesse (Standard: Anzahl CPUs)
   --phases LISTE        nur diese Phasen ausführen (Komma-getrennt, z. B. models,prompts; vom Updater genutzt)
-  --skip-koboldcpp-build  (ohne Wirkung, für spätere Versionen vorgesehen)
+  --skip-koboldcpp-build  KoboldCpp nicht bauen (Sprachmodell bleibt aus)
   -h, --help            diese Hilfe
 
 Exit-Codes: 0 ok · 1 Fehler · 2 Benutzung · 64 Voraussetzung nicht erfüllt · 75 aktiver Anruf
@@ -113,7 +119,13 @@ parse_args() {
 		--skip-packages) SKIP_PACKAGES=1; shift ;;
 		--skip-env) SKIP_ENV=1; shift ;;
 		--no-service) NO_SERVICE=1; shift ;;
-		--skip-koboldcpp-build) shift ;;
+		--skip-koboldcpp-build) SKIP_KCPP=1; shift ;;
+		--all-models) ALL_MODELS=1; shift ;;
+		--models-dir)
+			[[ $# -ge 2 && "$2" == /* ]] || die "${EXIT_USAGE}" "--models-dir braucht einen absoluten Pfad"
+			MODELS_DIR="$2"
+			shift 2
+			;;
 		-h | --help) usage; exit "${EXIT_OK}" ;;
 		*) usage >&2; die "${EXIT_USAGE}" "unbekannte Option: $1" ;;
 		esac
@@ -146,15 +158,15 @@ phase_preflight() {
 	fi
 	log "System: ${pretty:-unbekannt}"
 	case "${id}:${version}" in
-	ubuntu:24.04 | ubuntu:25.10 | ubuntu:26.04) ;;
-	*) warn "getestet ist Ubuntu 24.04/25.10/26.04 (hier: ${id:-?} ${version:-?})" ;;
+	ubuntu:24.04 | ubuntu:25.10 | ubuntu:26.04 | debian:13) ;; # debian 13 = Proxmox VE 9, bare metal
+	*) warn "getestet sind Ubuntu 24.04/25.10/26.04 und Debian 13 (hier: ${id:-?} ${version:-?})" ;;
 	esac
 	if [[ ${SKIP_PACKAGES} -eq 0 ]] && ! command -v apt-get >/dev/null 2>&1; then
 		die "${EXIT_PREFLIGHT}" "apt-get fehlt – nur Debian/Ubuntu werden unterstützt (oder --skip-packages)"
 	fi
 	if command -v python3 >/dev/null 2>&1; then
 		python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)' ||
-			die "${EXIT_PREFLIGHT}" "Python >= 3.12 nötig (gefunden: $(python3 --version 2>&1)) – Ubuntu 24.04 oder neuer verwenden"
+			die "${EXIT_PREFLIGHT}" "Python >= 3.12 nötig (gefunden: $(python3 --version 2>&1)) – Ubuntu 24.04+ oder Debian 13 (Proxmox VE 9) verwenden"
 	elif [[ ${SKIP_PACKAGES} -eq 1 ]]; then
 		die "${EXIT_PREFLIGHT}" "python3 fehlt"
 	fi
@@ -175,7 +187,9 @@ phase_preflight() {
 		die "${EXIT_PREFLIGHT}" "zu wenig freier Speicher: $((free_kb / 1024 / 1024)) GB frei, mindestens ${MIN_DISK_GB} GB nötig"
 	fi
 	if command -v nvidia-smi >/dev/null 2>&1; then
-		log "NVIDIA-GPU im Container sichtbar (wird für das Sprachmodell gebraucht, nicht für Telefon/Stimme)"
+		log "NVIDIA-GPU: $(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null | head -1)"
+	else
+		warn "keine NVIDIA-GPU sichtbar – Telefon und Stimme gehen, das Sprachmodell erst mit Treiber (docs/sophie-1-bare-metal.md)"
 	fi
 }
 
@@ -251,7 +265,38 @@ phase_pjsip() {
 	run chown -R "${SERVICE_USER}:${SERVICE_USER}" "${PREFIX}/runtime"
 }
 
-phase_koboldcpp() { log "KoboldCpp: gehört zu Ticket P1-02 und ist noch nicht Teil dieses Installers"; }
+# KoboldCpp lives in PREFIX/koboldcpp: its sources come from the unpacked program (APP_DIR), the
+# build (conda environment with the CUDA toolkit, *.so) stays there between updates.
+phase_koboldcpp() {
+	if [[ ${SKIP_ENV} -eq 1 || ${SKIP_KCPP} -eq 1 ]]; then
+		log "KoboldCpp übersprungen"
+		return 0
+	fi
+	local engine="${PREFIX}/koboldcpp"
+	if [[ ! -f "${APP_DIR}/koboldcpp.py" || ! -f "${APP_DIR}/Makefile" ]]; then
+		if [[ -f "${engine}/koboldcpp.py" ]]; then
+			log "keine neuen KoboldCpp-Quellen – ${engine} bleibt"
+		else
+			warn "KoboldCpp-Quellen fehlen in ${APP_DIR} – das Sprachmodell bleibt aus"
+		fi
+		return 0
+	fi
+	if [[ "${APP_DIR}" != "${engine}" ]]; then
+		log "KoboldCpp-Quellen → ${engine} (der Build bleibt erhalten)"
+		run mkdir -p "${engine}"
+		run rsync -a --delete --exclude='/conda/' --exclude='/bin/' --exclude='*.o' --exclude='/*.so' \
+			--exclude='/runtime/' --exclude='/models' --exclude='/data/' --exclude='.git' \
+			--exclude='/passwords.txt' --exclude='/config/moritz-agent.toml' --exclude='__pycache__' \
+			"${APP_DIR}/" "${engine}/"
+	fi
+	local rc=0
+	run "${engine}/scripts/setup-koboldcpp.sh" --jobs "${JOBS}" || rc=$?
+	case "${rc}" in
+	0) ;;
+	3) warn "kein NVIDIA-Treiber – KoboldCpp nicht gebaut; Sofortauskünfte gehen, Fragen an die KI nicht (docs/sophie-1-bare-metal.md)" ;;
+	*) warn "KoboldCpp ließ sich nicht bauen – Sofortauskünfte gehen weiter (Log: ${LOG_DIR})" ;;
+	esac
+}
 
 phase_searxng() {
 	if [[ ${SKIP_ENV} -eq 1 ]]; then return 0; fi
@@ -264,11 +309,21 @@ phase_models() {
 		log "Modell-Download übersprungen"
 		return 0
 	fi
-	local args=(fetch --groups "stt,piper" --yes)
-	log "lade Modelle von Hugging Face (Whisper small ≈ 0,5 GB, Piper-Stimme ≈ 0,1 GB) …"
+	run "${PREFIX}/scripts/link-models.sh" --cache "${MODELS_DIR}" "${PREFIX}"
+	local groups="stt,piper"
+	if [[ -f "${PREFIX}/koboldcpp/koboldcpp_cublas.so" || -f "${PREFIX}/koboldcpp/koboldcpp_default.so" ]]; then
+		groups+=",llm"
+	fi
+	log "lade fehlende Modelle von Hugging Face nach ${MODELS_DIR} (${groups}; vorhandene werden weiterbenutzt) …"
 	run env HF_HOME="${PREFIX}/runtime/hf-home" PYTHONPATH="${PREFIX}" \
-		"$(PY)" -m moritz_agent.phone.audio.models "${args[@]}"
-	run chown -R "${SERVICE_USER}:${SERVICE_USER}" "${PREFIX}/models" "${PREFIX}/runtime"
+		"$(PY)" -m moritz_agent.phone.audio.models fetch --groups "${groups}"
+	if [[ ${ALL_MODELS} -eq 1 ]]; then
+		run env HF_HOME="${PREFIX}/runtime/hf-home" PYTHONPATH="${PREFIX}" \
+			"$(PY)" -m moritz_agent.phone.audio.models fetch --groups llm-fallback --if-space ||
+			warn "Ersatzmodelle nicht (vollständig) geladen"
+	fi
+	run "${PREFIX}/scripts/link-models.sh" --cache "${MODELS_DIR}" --owner "${SERVICE_USER}:${SERVICE_USER}" "${PREFIX}"
+	run chown -R "${SERVICE_USER}:${SERVICE_USER}" "${PREFIX}/runtime"
 }
 
 phase_geodata() {
@@ -332,6 +387,46 @@ phase_config() {
 # setup CMD… – a step of the Discord setup (secrets only via stdin). Runs as root like the rest of the
 # installer: it replaces passwords.txt and the config atomically, which needs a temporary file in their
 # directories – those belong to root; owner and mode of the edited files are kept.
+# the language model in the configuration: KoboldCpp from PREFIX/koboldcpp, GPU or CPU, and the
+# --moecpu value test-3 measured in the unpacked folder (if there was a measurement)
+phase_llm_config() {
+	if [[ ${SKIP_ENV} -eq 1 || ${DRY_RUN} -eq 1 ]]; then return 0; fi
+	local engine="${PREFIX}/koboldcpp" cuda=""
+	if [[ -f "${engine}/koboldcpp_cublas.so" ]] && command -v nvidia-smi >/dev/null 2>&1; then
+		cuda=true
+	elif [[ -f "${engine}/koboldcpp_default.so" ]]; then
+		cuda=false
+	else
+		log "KoboldCpp ist nicht gebaut – Sprachmodell bleibt aus (Sofortauskünfte gehen)"
+		return 0
+	fi
+	discord_setup config-set inference koboldcpp_script koboldcpp/koboldcpp.py >/dev/null
+	discord_setup config-set inference use_cuda "${cuda}" >/dev/null
+	local measured=""
+	if [[ -f "${APP_DIR}/config/moritz-agent.toml" && "${APP_DIR}" != "${PREFIX}" ]]; then
+		measured="$(awk '/^\[/{s=$0} s=="[inference]" && /^[[:space:]]*moe_cpu_layers[[:space:]]*=/{sub(/#.*/,""); gsub(/[^0-9]/,""); print; exit}' "${APP_DIR}/config/moritz-agent.toml")"
+	fi
+	if [[ -n "${measured}" ]]; then
+		discord_setup config-set inference moe_cpu_layers "${measured}" >/dev/null
+		log "Sprachmodell: KoboldCpp ${engine}, GPU ${cuda}, --moecpu ${measured} (gemessen mit test-3)"
+	else
+		log "Sprachmodell: KoboldCpp ${engine}, GPU ${cuda} (--moecpu messen: ./test-3.sh run)"
+	fi
+}
+
+phase_discord_voice() {
+	if [[ ${SKIP_ENV} -eq 1 || ${DRY_RUN} -eq 1 ]]; then return 0; fi
+	if ! grep -Eq '^[[:space:]]*bot_token[[:space:]]*=[[:space:]]*[^[:space:]]' "${PREFIX}/passwords.txt"; then
+		log "ohne Discord kein Zuhören im Sprachkanal nötig"
+		return 0
+	fi
+	if "${PREFIX}/scripts/setup-discord-voice.sh" --venv "${PREFIX}/runtime/discord-venv"; then
+		chown -R "${SERVICE_USER}:${SERVICE_USER}" "${PREFIX}/runtime/discord-venv"
+	else
+		warn "Zuhören im Sprachkanal nicht eingerichtet – Anton spricht dort nur"
+	fi
+}
+
 discord_setup() {
 	env -C "${PREFIX}" PYTHONPATH="${PREFIX}" \
 		"$(PY)" -m moritz_agent.setup --passwords "${PREFIX}/passwords.txt" \
