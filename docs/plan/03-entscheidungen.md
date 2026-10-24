@@ -702,3 +702,16 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   Budgets aus 06 §2 gelten als Richtwert. Abschottung über den Dienstbenutzer und systemd statt über den
   Container. Die Firewall-Regeln aus 06 §5 gelten für den Host.
 - **Status:** beschlossen (Moritz, 24.10.2026).
+
+## ADR-040 – WebUI ohne Build-Schritt, Streaming über SSE (Part 2)
+
+- **Kontext:** ADR-010 hat das Frontend-Framework für Part 2 offen gelassen. Die WebUI läuft im LAN und
+  später in einer Android-WebView; auf Sophie-1 soll keine Node-Laufzeit nötig sein.
+- **Entscheidung:** Vanilla-JS als ES-Module in `frontend/app/`, Hash-Routing, kein Build, kein CDN.
+  Antworten kommen per Server-Sent Events (`POST /api/chat/stream`, `GET /api/events`). Wird die Oberfläche
+  zu groß, kommt Preact mit htm ohne Build (im Repo, ≈ 10 KB) dazu.
+- **Alternativen:** WebSocket (mehr Zustand, kein Vorteil für Einweg-Streaming); Svelte/React mit Build
+  (Node im Release oder auf dem Server nötig).
+- **Konsequenzen:** Ein eigener kleiner Markdown-Renderer ohne `innerHTML` aus Modelltext, eine strenge
+  Content-Security-Policy (`default-src 'self'`). Details: [15](15-part2-umsetzung.md).
+- **Status:** Vorschlag, wird mit P2-01 beschlossen.

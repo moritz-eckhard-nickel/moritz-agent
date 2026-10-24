@@ -90,3 +90,7 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | F-38 | Eine extra niedliche Scribbles-Pose für den Avatar zeichnen? (neue Posen nur von dir) | Scribbles weiß auf dunklem Grund |
 | F-39 | Sprachkanal bei langer Stille: still bleiben und auf „Anton“ hören oder gehen wie beim Auflegen? | still bleiben |
 | F-40 | Eigene Lieblingssprüche für die Aktivitäten? | Liste aus 14 §8.5 |
+| F-41 | Wie lange sollen Gespräche der WebUI gespeichert bleiben? (Part 2, 15 §4) | 30 Tage, einzeln löschbar |
+| F-42 | WebUI auch über VPN von außen oder nur im LAN? | nur LAN |
+| F-43 | Mehrere Benutzer in der WebUI oder nur Moritz? | nur Owner in Part 2, Rollen ab Part 3 |
+| F-44 | Modellwechsel in der WebUI, während ein Anruf läuft? | gesperrt, mit Hinweis |
