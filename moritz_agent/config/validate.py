@@ -156,8 +156,20 @@ def _check_settings(
             "inference",
             "die Modelldatei fehlt – Sofortauskünfte laufen weiter, Fragen an die KI nicht",
         )
+    elif settings.inference.enabled and not _koboldcpp_built(settings, root):
+        report.add(
+            "warning",
+            "inference",
+            "KoboldCpp ist nicht gebaut (./test-3.sh setup) – Fragen an die KI gehen noch nicht",
+        )
     if passwords is not None and passwords.sip.password.reveal() == "agent":
         report.add("warning", "passwords.txt", "das SIP-Passwort ist noch der Startwert")
+
+
+def _koboldcpp_built(settings: Settings, root: Path) -> bool:
+    from moritz_agent.inference.process import koboldcpp_built  # not at import time: no cycle
+
+    return koboldcpp_built(settings, root)
 
 
 def format_report(report: ValidationReport) -> list[str]:

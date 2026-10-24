@@ -21,12 +21,12 @@ from moritz_agent.discord.core import CoreApi, CoreForbidden, CoreUnavailable
 from moritz_agent.discord.render import Button, OutMessage, build_embed, redact
 from moritz_agent.discord.sender import Origin, Sender
 
-STATE_ICONS = {
-    "ready": "🟢",
-    "degraded": "🟡",
-    "starting": "🟠",
-    "failed": "🔴",
-    "disabled": "⚪",
+STATE_LABELS = {
+    "ready": "läuft",
+    "degraded": "eingeschränkt",
+    "starting": "startet",
+    "failed": "AUSGEFALLEN",
+    "disabled": "aus",
 }
 COMPONENT_NAMES = {
     "inference": "Sprachmodell",
@@ -86,26 +86,28 @@ def status_card(overview: dict[str, Any], local: dict[str, Any], data_root: Path
         call = "gerade im Gespräch" if phone.get("in_call") else "frei"
         fields.append(
             {
-                "name": "📞 Telefon",
+                "name": "Telefon",
                 "value": f"Registrierung: {registration}\n{call} · {phone.get('calls_total', 0)} Anrufe",
                 "inline": True,
             }
         )
     fields.append(
         {
-            "name": "💬 Discord",
+            "name": "Discord",
             "value": (
                 f"Latenz {local.get('latency_ms') or '?'} ms · {local.get('guilds', 0)} Server\n"
-                + ("🔊 Sprachsitzung läuft" if local.get("voice") else "keine Sprachsitzung")
+                + ("Sprachsitzung läuft" if local.get("voice") else "keine Sprachsitzung")
             ),
             "inline": True,
         }
     )
+    failed = False
     for key, component in (overview.get("components") or {}).items():
-        icon = STATE_ICONS.get(component.get("state", ""), "❔")
+        state = component.get("state", "")
+        failed = failed or state == "failed"
         fields.append(
             {
-                "name": f"{icon} {COMPONENT_NAMES.get(key, key)}",
+                "name": f"{COMPONENT_NAMES.get(key, key)} ({STATE_LABELS.get(state, state or '?')})",
                 "value": str(component.get("message") or component.get("state"))[:200],
                 "inline": True,
             }
@@ -114,7 +116,7 @@ def status_card(overview: dict[str, Any], local: dict[str, Any], data_root: Path
     if system:
         fields.append(
             {
-                "name": "🖥️ System",
+                "name": "System",
                 "value": f"RAM: {system[0]}"
                 + (f"\nPlatte: {system[-1]}" if len(system) > 1 else ""),
                 "inline": False,
@@ -126,11 +128,11 @@ def status_card(overview: dict[str, Any], local: dict[str, Any], data_root: Path
         "description": (
             f"Version {overview.get('version', __version__)} · läuft seit "
             f"{duration(overview.get('uptime_s', 0))}"
-            + (" · 🔧 Wartungsmodus" if overview.get("draining") else "")
-            + (f" · ⚠️ Warnstufe {warning}" if warning else "")
+            + (" · Wartungsmodus" if overview.get("draining") else "")
+            + (f" · Warnstufe {warning}" if warning else "")
         ),
         "fields": fields,
-        "color": "good" if all(f["name"][0] != "🔴" for f in fields) else "danger",
+        "color": "danger" if failed else "good",
     }
 
 
@@ -140,7 +142,7 @@ def reload_text(result: dict[str, Any], secrets: list[str]) -> str:
         why = redact("; ".join(result.get("errors") or ["unbekannter Fehler"]), secrets)
         return f"Die neue Konfiguration wurde abgelehnt, ich bleibe bei der alten: {why}"
     changed = result.get("changed") or []
-    text = "Neu geladen ✔️ " + (
+    text = "Neu geladen. " + (
         "Geändert: " + ", ".join(changed) if changed else "Es hat sich nichts geändert."
     )
     if result.get("restart_required"):
@@ -260,7 +262,7 @@ class AdminCommands:
                 )
             elif action == "restart":
                 await self.core.admin_restart(user)
-                text = "Ich starte neu – bis gleich 👋"
+                text = "Ich starte neu – bis gleich!"
             else:
                 return
         except CoreForbidden:

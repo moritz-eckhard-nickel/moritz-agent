@@ -8,7 +8,7 @@
 # test-N.sh mit „setup“ und „run“, das alles Bisherige mit testet. Es gibt keine Ja/Nein-Fragen –
 # Downloads laufen ohne Rückfrage; abgefragt werden nur Werte (Token, Kanäle).
 #
-# Aufruf: ./test-2.sh setup | run [--auto] [--no-call] [--no-discord] [--no-pytest]
+# Aufruf: ./test-2.sh setup | run [--auto] [--no-call] [--no-discord] [--no-pytest] | live
 set -Eeuo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -47,6 +47,8 @@ test-2.sh – alles testen, was Anton bis heute kann (Telefon, Stimme, Sofortaus
            Ausprobieren – Strg+C beendet
         --auto        nur 1–6, ohne Live-Teil
         --no-call     ohne Testanruf      --no-discord  ohne Discord      --no-pytest  ohne Schritt 2
+  ./test-2.sh live
+        nur Schritt 7 (Anton komplett starten, mit Checkliste)
 
 Einzelbefehle aus test-1 (speak, ask, call, discord …) gehen weiter mit ./test-1.sh.
 USAGE
@@ -216,7 +218,7 @@ data_services() {
 discord_checks() {
 	discord check || return 1
 	discord sync-commands || return 1
-	discord say "🧪 test-2 läuft – gleich bin ich ganz da. Schreib mir hier etwas oder komm in den Sprachkanal (/joinvc)."
+	discord say "test-2 läuft – gleich bin ich ganz da :) Schreib mir hier etwas oder komm in den Sprachkanal (/joinvc)."
 }
 
 live() {
@@ -309,6 +311,10 @@ main() {
 	case "${command}" in
 	setup) cmd_setup "$@" ;;
 	run) cmd_run "$@" ;;
+	live)
+		[[ -x "${VPY}" ]] || die "Die Umgebung fehlt – zuerst ./test-2.sh setup ausführen."
+		live
+		;;
 	help | -h | --help) usage ;;
 	*)
 		usage >&2

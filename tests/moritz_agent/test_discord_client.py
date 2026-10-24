@@ -638,7 +638,7 @@ def test_the_outbox_is_delivered_with_a_mention_of_the_person_only(tmp_path):
     assert first["allowed_mentions"].everyone is False and first["allowed_mentions"].users[
         0
     ].id == int(OWNER_ID)
-    assert channel.send.await_args_list[1].kwargs["embed"].title == "⚠️ Unwetter"
+    assert channel.send.await_args_list[1].kwargs["embed"].title == "Unwetter"  # emoji filtered
     assert stub.user_stub.send.await_args.kwargs["embed"].description == "Privat"
 
 

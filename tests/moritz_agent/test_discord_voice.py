@@ -694,3 +694,35 @@ def test_the_models_are_held_only_while_a_session_runs(tmp_path):
         return during, unloaded_while_active, speech.active
 
     assert room_test(tmp_path, body) == (1, False, 0)
+
+
+def test_written_elsewhere_while_in_the_voice_channel_the_answer_is_spoken_too(tmp_path):
+    """Moritz, 21.10.2026: "obwohl er im Call ist, antwortet er im Chat"."""
+
+    async def body(room: Room):
+        await room.join()
+        room.enter(OWNER_ID)
+        await room.until(
+            lambda: room.session.media.pending_ms() > 0 or room.vc.sources, "Begrüßung"
+        )
+        await room.manager.speak_answer(4242, "Mir geht es gut.", user_id=TRUSTED_ID)
+        nobody = any("geht es gut" in c for c in room.engine.calls)
+        await room.manager.speak_answer(4242, "Mir geht es gut.", user_id=OWNER_ID)
+        await room.until(lambda: any("geht es gut" in c for c in room.engine.calls), "gesprochen")
+        return nobody
+
+    assert room_test(tmp_path, body, receiving=False) is False  # not in the channel: text only
+
+
+def test_listening_waits_for_the_encrypted_group():
+    """The DAVE fork decrypts only once the group is ready (dave_ready); plain clients are ready."""
+
+    async def scenario():
+        plain = await receive.dave_ready(SimpleNamespace(), 0.1)
+        vc = SimpleNamespace(dave_ready=False)
+        asyncio.get_running_loop().call_later(0.15, lambda: setattr(vc, "dave_ready", True))
+        later = await receive.dave_ready(vc, 2.0)
+        never = await receive.dave_ready(SimpleNamespace(dave_ready=False), 0.2)
+        return plain, later, never
+
+    assert asyncio.run(scenario()) == (True, True, False)

@@ -185,7 +185,7 @@ def test_a_voice_message_is_recognised_answered_and_answered_as_audio(tmp_path):
     handled, sender, tts = wired(tmp_path, body)
     assert handled
     texts = [m.content for m in sender.sent]
-    assert texts[0] == "🎤 *Wie spät ist es*" and "19 Uhr 12" in texts[1]
+    assert texts[0] == "*Wie spät ist es*" and "19 Uhr 12" in texts[1]
     assert sender.sent[-1].file and sender.sent[-1].file[0] == "antwort.ogg"
     assert sender.sent[-1].file[1][:4] == b"OggS" and tts.texts == ["Es ist 19 Uhr 12."]
 

@@ -1,5 +1,12 @@
 # 06 – Infrastruktur: Sophie-1, Agent-LXC, Asterisk, Redemption-1
 
+> **Seit 24.10.2026 (ADR-039):** moritz-agent läuft auf Sophie-1 **direkt auf dem Host**, ohne LXC.
+> Anleitung: [`docs/sophie-1-bare-metal.md`](../sophie-1-bare-metal.md).
+> - Von diesem Kapitel gelten weiter: §1 (Inventar), §2 als Richtwert (kein 16-GB-Limit mehr), §4.1
+>   (NVIDIA-Treiber am Host) und die Firewall-Regeln (jetzt für den Host).
+> - §3 und §4.2–4.3 (LXC anlegen, GPU durchreichen) brauchst du nur, wenn du doch einen Container willst.
+> - Alle Modelle liegen in `/home/models`.
+
 > Konkrete Treiber-Befehle werden **aus den Ist-Werten** (Abschnitt 1) abgeleitet. Nichts
 > hier blind ausführen. Am Proxmox-Host ändert nur `install.sh` etwas – den neuen Container und dessen
 > GPU-Geräteeinträge, sonst nichts (INST-02, ADR-028); Treiber und Firewall bleiben Handarbeit.

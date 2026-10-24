@@ -203,7 +203,7 @@ def test_a_due_reminder_goes_to_the_outbox_once(store):
     assert result.reminders == 1
     (item,) = rig.box("reminder")
     assert item["target"] == "dm:1" and item["payload"]["text"] == "Zahnarzt"
-    assert item["payload"]["title"] == "⏰ Erinnerung"
+    assert item["payload"]["title"] == "Erinnerung"
     assert run(rig.scheduler.tick()).reminders == 0
 
 
@@ -214,7 +214,7 @@ def test_a_reminder_from_before_a_restart_is_late_but_not_too_old(store):
     run(rig.scheduler.tick())
     (item,) = rig.box("reminder")
     assert (
-        item["payload"]["title"] == "⏰ Erinnerung (verspätet)"
+        item["payload"]["title"] == "Erinnerung (verspätet)"
         and item["payload"]["text"] == "zwei Stunden her"
     )
     assert store.open_reminders() == []  # the old one is gone as well

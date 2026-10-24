@@ -37,6 +37,8 @@ tmp/
 autogen-*.md
 
 models/*
+/models
+/conda/
 models-mnt
 
 /Pipfile

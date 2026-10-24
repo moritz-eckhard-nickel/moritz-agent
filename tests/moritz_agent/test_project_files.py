@@ -257,6 +257,7 @@ def test_voice_in_versions_lock_matches_the_download_manifest():
 EXECUTABLE_SCRIPTS = (
     "test-1.sh",
     "test-2.sh",
+    "test-3.sh",
     "test-clearup.sh",
     "install.sh",
     "update.sh",
@@ -264,6 +265,9 @@ EXECUTABLE_SCRIPTS = (
     "moritz-update.sh",
     "scripts/build-pjsip.sh",
     "scripts/setup-env.sh",
+    "scripts/link-models.sh",
+    "scripts/setup-koboldcpp.sh",
+    "scripts/setup-discord-voice.sh",
 )
 LIBRARY_SCRIPTS = ("deploy/lib/common.sh", "deploy/lib/host.sh")  # sourced, not executed
 
@@ -382,3 +386,33 @@ def test_clearup_with_venv_removes_only_the_python_environments(tmp_path):
         assert not (root / gone).exists(), gone
     for kept in ("runtime/pjsip-build", "runtime/test-2", "models/stt", "data/run"):
         assert (root / kept).exists(), kept
+
+
+def test_the_models_live_in_a_shared_cache_that_clearup_keeps(tmp_path):
+    """Moritz, 24.10.2026: models in /home/models, so nothing is downloaded twice."""
+    import shutil
+
+    root = _clearup_tree(tmp_path)
+    (root / "scripts").mkdir()
+    shutil.copy(REPO_ROOT / "scripts" / "link-models.sh", root / "scripts" / "link-models.sh")
+    (root / "models" / "stt" / "model.bin").write_text("whisper")
+    cache = tmp_path / "home-models"
+    (cache / "stt").mkdir(parents=True)
+    (cache / "stt" / "model.bin").write_text("cached")  # the cache wins, nothing is overwritten
+    link = ["bash", str(root / "scripts" / "link-models.sh"), "--cache", str(cache), str(root)]
+    for _ in range(2):  # twice: the second run finds the link
+        result = subprocess.run(link, capture_output=True, text=True, check=False)
+        assert result.returncode == 0, result.stderr
+    assert (root / "models").is_symlink() and (
+        root / "models" / "stt" / "model.bin"
+    ).read_text() == "cached"
+    env = {**os.environ, "MORITZ_MODELS_DIR": str(cache)}
+    clearup = ["bash", str(root / "test-clearup.sh")]
+    assert subprocess.run(clearup, env=env, capture_output=True, check=False).returncode == 0
+    assert not (root / "models").exists() and not (root / "models").is_symlink()
+    assert (cache / "stt" / "model.bin").is_file()  # the cache stays
+    assert (
+        subprocess.run([*clearup, "--all"], env=env, capture_output=True, check=False).returncode
+        == 0
+    )
+    assert not cache.exists()

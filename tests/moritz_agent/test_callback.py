@@ -13,7 +13,7 @@ from moritz_agent.core.principal import Role
 from moritz_agent.core.surface import Surface
 from moritz_agent.core.turn import Turn
 from moritz_agent.phone.callback import GOODBYE, CallbackSession
-from moritz_agent.phone.sip import dial_uri
+from moritz_agent.phone.sip import dial_uri, outbound_outcome
 
 from .skills_util import Session
 from .system_util import OWNER_ID, TRUSTED_ID, running_system
@@ -86,7 +86,7 @@ def test_written_on_discord_the_answer_goes_to_the_phone_worker_and_nowhere_else
         return answer, order, empty, pending
 
     answer, order, empty, pending = run(_in(tmp_path, body))
-    assert answer.text == "📞 Okay, ich rufe dich an."
+    assert answer.text == "Okay, ich rufe dich an."
     assert order["extension"] == "201" and "19 Uhr 12" in order["text"]
     assert 10 <= order["ring_s"] <= 15 and order["speak_after_s"] == 1.0
     assert empty is None
@@ -218,3 +218,40 @@ def test_leg_auf_meant_as_such_hangs_up_politely(text):
 def test_leg_auf_only_mentioned_does_not_hang_up(text):
     outcome = Session().route(text)
     assert outcome.result is None or not outcome.result.hangup
+
+
+@pytest.mark.parametrize(
+    "text", ["Leg auf", "Sprich langsamer", "Lauter bitte", "Wie lange telefonieren wir schon?"]
+)
+def test_phone_things_only_in_a_call_not_in_the_text_chat(text):
+    """Moritz, 21.10.2026: "leg auf" in the Discord chat answered "ich lege auf" – only in a call."""
+    outcome = Session(surface="chat").route(text)
+    assert outcome.result is not None and not outcome.result.hangup
+    assert "lege auf" not in outcome.result.text and outcome.result.tempo is None
+    assert outcome.result.loudness_db is None
+
+
+def test_how_a_call_back_ended():
+    assert outbound_outcome(200, answered=True) == "answered"
+    assert outbound_outcome(486, answered=False) == "busy"
+    assert outbound_outcome(408, answered=False) == "no_answer"
+    assert outbound_outcome(403, answered=False) == "forbidden"  # seen live: [from-agent] said no
+
+
+def test_a_refused_call_back_is_reported_once_nobody_answering_is_not(tmp_path):
+    async def body(system):
+        runtime = system.runtime
+        runtime.scheduler.ensure_defaults(OWNER_ID)  # first contact: system notes are on
+        for reason in ("no_answer", "forbidden", "forbidden"):
+            await runtime.chat.run(
+                _turn(system, OWNER_ID, "Sag mir am Telefon wie viel Uhr es ist", role=Role.OWNER)
+            )
+            call = runtime.callbacks.take()
+            runtime.callback_done(call.id, reason)
+        return runtime.discord_store.pending(runtime.svc.now() + timedelta(days=1), limit=20)
+
+    pending = run(_in(tmp_path, body))
+    notes = [p for p in pending if p["kind"] == "system"]
+    assert not [p for p in pending if p["kind"] == "forward"]
+    assert notes and all("201" in n["payload"]["text"] for n in notes)
+    assert len({n["target"] for n in notes}) == len(notes)  # once per place and hour

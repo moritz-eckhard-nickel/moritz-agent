@@ -610,6 +610,15 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 - **Konsequenzen:** Risiko R27; DISCORD-23 ist SOLL, DISCORD-24 (Rückfall) MUSS.
 - **Stand 21.10.2026:** Der Code unterstützt beide Ausgänge (Empfang über die optionale Erweiterung, sonst „nur
   sprechen“); der Spike P1-32 ist **offen** ([Protokoll](../abnahme/p1-32-discord-spike.md)).
+- **Stand 24.10.2026 (Recherche P1-32):** Auf PyPI entschlüsselt nichts DAVE-Empfang (`discord-ext-voice-recv`
+  0.5.2a179 ist von Juni 2025; py-cord/disnake/nextcord können es nicht). Der Fork
+  `zacker150/discord-ext-voice-recv` (MIT, Alpha, ein Autor) entschlüsselt mit `davey` und bringt einen
+  discord.py-Fork (2.8.0a, Commit-gepinnt) mit. Weil er das gepinnte discord.py ersetzt, bekommt er eine
+  **eigene Umgebung** `runtime/discord-venv` nur für den Discord-Worker (`scripts/setup-discord-voice.sh`,
+  von `./test-3.sh setup` und dem Installer angelegt); die Lock-Dateien gelten dort unverändert, nur die
+  zwei GitHub-Pakete sind per Commit statt per Prüfsumme gepinnt (Ausnahme von ADR-019, pip kann
+  VCS-Quellen nicht hashen). Fehlt die Umgebung oder scheitert sie, bleibt es bei „nur sprechen“. Ob
+  Kriterien 3–9 halten, zeigt der Live-Teil von `./test-3.sh run`.
 - **Status:** vorläufig – bestätigt oder geändert durch P1-32.
 
 ## ADR-037 – Anton auf Discord: ein bisschen süß, mit schelmischen Aktivitäten
@@ -618,11 +627,12 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   Sachen haben wie ‚spielt mit deinen Daten‘ – schelmisch, funny.“
 - **Entscheidung:**
   1. **Stil** `discord.style = "cute"` (Standard): Die Kern-Antwort bleibt neutral und exakt; ein
-     Stil-Renderer im Discord-Adapter ergänzt höchstens 1–2 passende Emojis, gelegentlich ein Kaomoji
-     und herzliche Floskeln aus eigenen Textlisten (`assets/data/discord/stil.de.toml`), deterministisch
+     Stil-Renderer im Discord-Adapter ergänzt höchstens einen passenden Textsmiley (:) :( :3 ^^) – **keine
+     Emojis und keine Kaomojis** (Moritz, 21.10.2026: „alle Emojis entfernen und gegen :) :( :3 austauschen
+     oder weglassen“; ein Filter nimmt sie aus allem, was Anton sendet) – und herzliche Floskeln aus eigenen Textlisten (`assets/data/discord/stil.de.toml`), deterministisch
      je Nachricht. **Ernst-Modus** ohne Späße bei Warnungen ab Stufe 2, Katastrophen, Admin,
      Sicherheit und Fehlern mit Datenverlust. Gesprochene Antworten bleiben wie am Telefon.
-  2. **Aktivitäten:** rotierende, schelmisch-lustige Aktivitäten („Spielt mit deinen Daten 😈“, „Hört
+  2. **Aktivitäten:** rotierende, schelmisch-lustige Aktivitäten („Spielt mit deinen Daten >:)“, „Hört
      deinem Kühlschrank zu“, „Schaut Wolken über Weilburg zu“ …) aus
      `assets/data/discord/aktivitaeten.de.toml`, alle 7–15 min, keine Wiederholung unter 10; lagebezogene
      Aktivitäten haben Vorrang (Anruf, Sprachkanal, Nacht, Wetter, Sonderdaten, Wartung, Unwetter im
@@ -656,9 +666,10 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
      (`ring_min_s`/`ring_max_s`), spricht `speak_after_s` (1 s) nach dem Abheben die Antwort plus „Das war's
      von mir. Tschüss, Moritz!“ und legt auf. Eingehendes Audio wird verworfen (kein STT, kein Zuhören).
   4. **Nicht erreicht** (besetzt, keine Antwort, Fehler): dann eben nicht – keine DM, kein zweiter
-     Versuch (Moritz: „wenn's keiner abnimmt, nimmt's keiner ab“). Auf Discord heißt es nur „📞 Okay,
+     Versuch. Nur wenn die Telefonanlage den Anruf **ablehnt** (SIP 403 u. ä.), kommt höchstens einmal pro
+     Stunde ein Systemhinweis, damit klar ist, warum es nie klingelt (Moritz: „wenn's keiner abnimmt, nimmt's keiner ab“). Auf Discord heißt es nur „📞 Okay,
      ich rufe dich an.“
-  5. **„Leg auf“** im normalen Gespräch ist ein Abschied – aber nur, wenn der **ganze Satz** die Bitte
+  5. **„Leg auf“** im Gespräch (Telefon, Sprachkanal; im Text-Chat nur ein Hinweis) ist ein Abschied – aber nur, wenn der **ganze Satz** die Bitte
      ist („Leg auf“, „Leg bitte auf“, „Du kannst jetzt auflegen“, „Häng auf, danke“), nicht bei „Wie leg
      ich den Hörer auf?“, „Leg nicht auf“ oder „Soll ich auflegen?“: „Alles klar, ich lege auf. Tschüss, Moritz – bis
      bald!“ und Auflegen.
@@ -667,3 +678,27 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
 - **Konsequenzen:** PHONE-10 geändert; Phone-Worker kann `makeCall`; neuer interner Endpunkt
   `GET /internal/phone/callback` und Ereignis `callback_done`; Live-Test in `test-2.sh`.
 - **Status:** beschlossen (Moritz, 21.10.2026); gegen eine echte Telefonanlage noch ungeprüft (C.3).
+
+## ADR-039 – Sophie-1 bare metal statt LXC
+
+- **Kontext (Moritz, 24.10.2026):** „Sophie-1 ist der Host, wir machen das nicht in nem LXC, das geht bare
+  metal, so ist es am einfachsten.“ Die Testskripte laufen dort schon direkt auf dem Host.
+- **Entscheidung:**
+  1. moritz-agent läuft **direkt auf Sophie-1** (Proxmox VE 9 = Debian 13, Python 3.13): Testbetrieb mit
+     `./test-3.sh` im entpackten Ordner, Dauerbetrieb mit `sudo ./moritz-install.sh` (Dienst unter
+     `/opt/moritz-agent`, Benutzer `moritz-agent`). Kein Container, keine GPU-Durchreichung.
+  2. **Modell-Cache** `/home/models` für alle Modelle (Whisper, Piper, Qwen3 und die Ersatzmodelle aus
+     ADR-016); `models/` ist nur ein Link darauf (`scripts/link-models.sh`). Neu entpackte Versionen, der
+     Installer und die Testskripte laden nichts doppelt.
+  3. **KoboldCpp** wird auf dem Host gebaut (`scripts/setup-koboldcpp.sh` → `./koboldcpp.sh rebuild`,
+     ADR-015) – im Testordner bzw. unter `/opt/moritz-agent/koboldcpp`; neu gebaut wird nur, wenn sich
+     die C/C++-Quellen ändern. Der NVIDIA-Treiber kommt einmalig von Hand auf den Host
+     ([`docs/sophie-1-bare-metal.md`](../sophie-1-bare-metal.md)).
+  4. `--moecpu` misst `./test-3.sh run` (`scripts/bench_llm.py --tune`: mindestens 600 MB VRAM frei) und
+     schreibt den Wert in die Konfiguration; der Installer übernimmt ihn.
+- **Alternativen:** LXC mit GPU-Durchreichung (ADR-028, `install.sh` – bleibt für andere Rechner erhalten,
+  ist auf Sophie-1 aber nicht mehr der Weg); VM mit PCI-Passthrough (Host verliert die GPU).
+- **Konsequenzen:** Der Dienst teilt sich RAM und CPU mit dem Host – das 16-GB-Limit des LXC fällt weg, die
+  Budgets aus 06 §2 gelten als Richtwert. Abschottung über den Dienstbenutzer und systemd statt über den
+  Container. Die Firewall-Regeln aus 06 §5 gelten für den Host.
+- **Status:** beschlossen (Moritz, 24.10.2026).

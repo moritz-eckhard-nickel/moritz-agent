@@ -222,7 +222,7 @@ phase_stop() {
 
 # apply: program files, venv switch, then the installer phases that need the new environment.
 phase_apply() {
-	installer "${APP_DIR}" "user_dirs,code"
+	installer "${APP_DIR}" "user_dirs,code,koboldcpp"
 	if [[ ${NEW_VENV} -eq 1 && ${DRY_RUN} -eq 0 ]]; then
 		log "schalte auf die neue Python-Umgebung um (die alte bleibt als venv.prev)"
 		rm -rf "${PREFIX}/runtime/venv.prev"
@@ -233,7 +233,7 @@ phase_apply() {
 	elif [[ ${SKIP_ENV} -eq 0 && ${DRY_RUN} -eq 0 ]]; then
 		"${PREFIX}/runtime/venv/bin/python" -m compileall -q "${PREFIX}/moritz_agent"
 	fi
-	installer "${PREFIX}" "searxng,models,secrets,config,prompts"
+	installer "${PREFIX}" "searxng,models,secrets,config,llm_config,discord_voice,prompts"
 }
 
 phase_start_verify() {

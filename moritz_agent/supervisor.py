@@ -38,6 +38,7 @@ from moritz_agent.runtime import Component, Runtime
 log = get_logger("system")
 PHONE_STOP_GRACE_S = 10.0
 DISCORD_NICE = 5  # computes after the phone (docs/plan/14 §4.2)
+DISCORD_VOICE_ENV = "runtime/discord-venv"  # scripts/setup-discord-voice.sh
 MAINTENANCE_INTERVAL_S = 60.0
 BACKUPS_KEPT = 7
 ADMIN_TOKEN_FILE = "admin.token"
@@ -267,13 +268,23 @@ class Supervisor:
     def _discord_wanted(self) -> bool:
         return self.config.settings.discord.enabled and self.config.passwords.discord.enabled
 
+    def _discord_python(self) -> str:
+        """``[discord] python``, else the environment that can listen in voice channels (P1-32,
+        ``scripts/setup-discord-voice.sh``), else this Python."""
+        settings = self.config.settings
+        if settings.discord.python:
+            return str(settings.resolve(settings.discord.python, self.root))
+        voice = self.root / DISCORD_VOICE_ENV
+        ready = (voice / ".moritz-voice").is_file()  # written only after a complete, checked setup
+        return str(voice / "bin" / "python") if ready else sys.executable
+
     async def _start_discord(self) -> None:
         """The Discord worker is a child like the phone, but only if it is switched on and has a
         token – otherwise nothing runs and nothing is logged about Discord (UPD-04)."""
         if not self._discord_wanted() or (self.discord is not None and self.discord.alive):
             return  # one supervisor only – also while it waits to restart a crashed worker
         assert self.ctx is not None
-        argv = self.discord_argv or [sys.executable, "-m", "moritz_agent.discord"]
+        argv = self.discord_argv or [self._discord_python(), "-m", "moritz_agent.discord"]
         if self.discord_argv is None:
             if self.settings_file:
                 argv += ["--config", str(self.settings_file)]

@@ -135,9 +135,9 @@ def format_calls(overview: dict[str, Any], timezone: str) -> str:
     """Status and the last calls, without any content (docs/plan/14 §12)."""
     phone = overview.get("phone") or {}
     lines = [
-        "📞 Gerade läuft ein Anruf."
+        "Gerade läuft ein Anruf."
         if phone.get("in_call")
-        else f"📞 Telefon: {phone.get('registration') or 'nicht erreichbar'} – gerade frei."
+        else f"Telefon: {phone.get('registration') or 'nicht erreichbar'} – gerade frei."
     ]
     calls = overview.get("calls") or []
     if not calls:
@@ -167,30 +167,30 @@ def help_text(
     """The help page; only what really works is listed (docs/plan/14 §7)."""
     if topic == "datenschutz":
         return (
-            "**Datenschutz** 🔒\n"
+            "**Datenschutz**\n"
             "Discord speichert alle Textnachrichten auf eigenen Servern – deshalb schicke ich keine "
             "Telefon-Mitschnitte, Zugangsdaten oder Systemdetails hierher. Im Sprachkanal nehme ich "
             "nichts auf; das Audio liegt nur im Arbeitsspeicher. Keine Sorge – ich spiele nicht "
-            "wirklich mit deinen Daten 😇"
+            "wirklich mit deinen Daten ^^"
         )
     if topic == "sprache":
         if not voice:
             return "Der Sprachkanal ist bei mir gerade nicht eingerichtet."
         return (
-            "**Sprachkanal** 🔊\n"
+            "**Sprachkanal**\n"
             "Mit `/joinvc` komme ich in deinen Sprachkanal und verhalte mich wie am Telefon: du "
             "sprichst, ich antworte. Sag „Anton, …“, damit ich weiß, dass du mich meinst, und „Tschüss“, "
             "wenn wir fertig sind. Sprachnachrichten verstehe ich auch."
         )
     if topic == "admin":
         return (
-            "**Verwaltung** 🛠️ (nur Owner, nur im Direktchat)\n`/admin status` · `version` · `logs` · "
+            "**Verwaltung** (nur Owner, nur im Direktchat)\n`/admin status` · `version` · `logs` · "
             "`neu-laden` · `wartung` · `neustart`"
             if owner
             else "Die Verwaltung ist nur für den Owner."
         )
     lines = [
-        "**Das kann ich** ✨",
+        "**Das kann ich** :3",
         "Schreib mir einfach, was du wissen möchtest – oder nimm einen Befehl:",
     ]
     shown = [s for s in commands.active_specs(features) if s.name in names]
@@ -238,14 +238,14 @@ class LocalCommands:
         except CoreUnavailable as exc:
             detail = exc.detail.get("error") if isinstance(exc.detail, dict) else None
             text = (
-                "Den Ort kenne ich leider nicht 🙈"
+                "Den Ort kenne ich leider nicht :("
                 if detail == "unknown_place"
                 else self.styler.error("unavailable")
             )
             await sender.send(OutMessage(content=text, ephemeral=True))
 
-    def _nice(self, text: str, emoji: str) -> str:
-        return f"{text} {emoji}" if self.styler.cute else text
+    def _nice(self, text: str, smiley: str) -> str:
+        return f"{text} {smiley}" if self.styler.cute and smiley else text
 
     # -- /abo ---------------------------------------------------------------------------------------------
     async def _abo(self, values: dict[str, Any], origin: Origin, sender: Sender) -> None:
@@ -258,17 +258,17 @@ class LocalCommands:
         kind, label = SUBSCRIPTION_NAMES[what]
         await self.core.subscribe(origin.user_id, kind, enabled=enabled, **params)
         if not enabled:
-            text = self._nice(f"{label}: aus.", "🔕")
+            text = self._nice(f"{label}: aus.", "")
         elif what == "warnungen":
             text = self._nice(
                 f"{label} sind an – ab Stufe {params['level']} ({LEVEL_NAMES[params['level']]}).",
-                "🔔",
+                ":)",
             )
         elif what == "briefing":
             days = "Montag bis Freitag" if params["weekdays"] else "jeden Tag"
-            text = self._nice(f"{label} kommt {days} um {params['time']} Uhr.", "☀️")
+            text = self._nice(f"{label} kommt {days} um {params['time']} Uhr.", ":)")
         else:
-            text = self._nice(f"{label}: an.", "🔔")
+            text = self._nice(f"{label}: an.", ":)")
         await sender.send(OutMessage(content=text, ephemeral=True))
 
     # -- /einstellungen -------------------------------------------------------------------------------------
@@ -307,26 +307,26 @@ class LocalCommands:
         subs = ", ".join(s["kind"] for s in current.get("subscriptions", [])) or "keine"
         card = {
             "title": "Deine Einstellungen",
-            "description": (self._nice("; ".join(notes) + ".", "✅") if notes else ""),
+            "description": (self._nice("; ".join(notes) + ".", ":)") if notes else ""),
             "fields": [
                 {
-                    "name": "📍 Heimatort",
+                    "name": "Heimatort",
                     "value": _home_line(current),
                     "inline": True,
                 },
                 {
-                    "name": "🌙 Ruhezeit",
+                    "name": "Ruhezeit",
                     "value": current.get("quiet_hours") or f"{default_quiet} (Standard)",
                     "inline": True,
                 },
                 {
-                    "name": "🎤 Sprachantwort",
+                    "name": "Sprachantwort",
                     "value": current.get("voice_reply") or "spiegeln (Standard)",
                     "inline": True,
                 },
-                {"name": "🔔 Abos", "value": subs, "inline": False},
+                {"name": "Abos", "value": subs, "inline": False},
                 {
-                    "name": "⏰ Offene Erinnerungen",
+                    "name": "Offene Erinnerungen",
                     "value": str(current.get("reminders", 0)),
                     "inline": True,
                 },
@@ -341,19 +341,19 @@ class LocalCommands:
             done = await self.core.cancel_reminder(origin.user_id, int(values["loeschen"]))
             text = "Gelöscht." if done else "Die Nummer finde ich bei deinen Erinnerungen nicht."
             await sender.send(
-                OutMessage(content=self._nice(text, "🗑️" if done else "🙈"), ephemeral=True)
+                OutMessage(content=self._nice(text, "" if done else ":("), ephemeral=True)
             )
             return
         items = await self.core.reminders(origin.user_id)
         if not items:
             await sender.send(
                 OutMessage(
-                    content=self._nice("Du hast keine offenen Erinnerungen.", "✨"), ephemeral=True
+                    content=self._nice("Du hast keine offenen Erinnerungen.", ":)"), ephemeral=True
                 )
             )
             return
         timezone = self.settings().general.timezone
-        head, foot = "**Deine Erinnerungen** ⏰", "\nZum Löschen: `/erinnerungen loeschen:<Nummer>`"
+        head, foot = "**Deine Erinnerungen**", "\nZum Löschen: `/erinnerungen loeschen:<Nummer>`"
         lines: list[str] = []
         room = MESSAGE_LIMIT - len(head) - len(foot) - 40  # 40: room for "… und N weitere"
         for index, item in enumerate(items[:20]):
@@ -379,7 +379,7 @@ class LocalCommands:
         if action == "neu":
             current = await self.activity.change()
             text = f"Jetzt: {current.text}" if current else "Ich weiß gerade nichts Lustiges."
-            await sender.send(OutMessage(content=self._nice(text, "🎲"), ephemeral=True))
+            await sender.send(OutMessage(content=self._nice(text, ""), ephemeral=True))
         elif action in {"an", "aus"}:
             await self.activity.enable(action == "an")
             text = (
@@ -389,7 +389,7 @@ class LocalCommands:
             )
             await sender.send(
                 OutMessage(
-                    content=self._nice(text, "🙈" if action == "aus" else "😈"), ephemeral=True
+                    content=self._nice(text, ":(" if action == "aus" else ">:)"), ephemeral=True
                 )
             )
         else:
@@ -400,7 +400,7 @@ class LocalCommands:
             problem = problem or self.activity.suggest(kind, text)
             await sender.send(
                 OutMessage(
-                    content=problem or self._nice("Kommt in die Rotation.", "✨"), ephemeral=True
+                    content=problem or self._nice("Kommt in die Rotation.", ":3"), ephemeral=True
                 )
             )
 

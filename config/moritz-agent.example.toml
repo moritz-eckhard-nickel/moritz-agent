@@ -33,6 +33,7 @@ pjsip_log_level = 3               # > 3 kann Authorization-Header enthalten (LOG
 [inference]
 enabled = true                    # false: nur Sofortauskünfte, kein Sprachmodell starten
 koboldcpp_script = "koboldcpp.py" # Upstream-Einstieg, als Child-Prozess (ADR-003)
+python = ""                       # leer: Python aus KoboldCpps Build-Umgebung (conda/envs/linux, ./koboldcpp.sh rebuild)
 model = "models/llm/Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"   # ADR-016
 context_size = 4096               # 8192 erst nach Messung (INF-05)
 gpu_layers = 999                  # alle Schichten auf die GPU …
@@ -259,12 +260,13 @@ connect_timeout_s = 10
 
 [discord]                         # docs/plan/14-discord.md, Einrichtung: docs/discord-einrichtung.md
 enabled = false                   # true, sobald bot_token in passwords.txt steht (das Setup setzt das)
+python = ""                       # leer: runtime/discord-venv, falls vorhanden (hört im Sprachkanal zu, P1-32), sonst die Haupt-Python
 owner_user_ids = []               # Discord-Benutzer-IDs (das Setup übernimmt den Besitzer der Anwendung)
 trusted_user_ids = []
 allowed_guild_ids = []            # weitere Server (der Server des Standardkanals ist immer erlaubt)
 chat_channel_ids = []             # weitere Kanäle, in denen Anton auf jede Nachricht antwortet
 style = "cute"                    # "cute" | "normal" (ADR-037)
-startup_message = true            # „Bin wieder wach ✨“ im Standardkanal nach dem Start
+startup_message = true            # „Bin wieder wach :)“ im Standardkanal nach dem Start
 name_trigger = true               # „Anton, …“ am Satzanfang wirkt wie eine Erwähnung
 guest_mode = "off"                # "off" | "skills"
 unknown_users = "ignore"          # "ignore" | "notice"

@@ -493,3 +493,25 @@ def test_file_polling_reloads_like_sighup(tmp_path, monkeypatch):
             await sup.shutdown()
 
     assert run(scenario()) == 0
+
+
+def test_the_discord_worker_takes_the_listening_environment_once_it_is_complete(tmp_path):
+    """P1-32: runtime/discord-venv (DAVE receive fork) only when its setup finished."""
+    from types import SimpleNamespace
+
+    from moritz_agent.config.settings import Settings
+
+    fake = SimpleNamespace(config=SimpleNamespace(settings=Settings()), root=tmp_path)
+    assert Supervisor._discord_python(fake) == sys.executable
+    venv = tmp_path / "runtime" / "discord-venv"
+    (venv / "bin").mkdir(parents=True)
+    (venv / "bin" / "python").write_text("")
+    assert Supervisor._discord_python(fake) == sys.executable  # half done: not used
+    (venv / ".moritz-voice").write_text("ok")
+    assert Supervisor._discord_python(fake) == str(venv / "bin" / "python")
+    settings = Settings()
+    own = settings.model_copy(
+        update={"discord": settings.discord.model_copy(update={"python": "/usr/bin/python3"})}
+    )
+    fake.config.settings = own
+    assert Supervisor._discord_python(fake) == "/usr/bin/python3"

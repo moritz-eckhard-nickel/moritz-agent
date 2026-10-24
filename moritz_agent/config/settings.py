@@ -66,6 +66,7 @@ class Logging(_Section):
 class Inference(_Section):
     enabled: bool = True
     koboldcpp_script: str = "koboldcpp.py"
+    python: str = ""  # leer: KoboldCpps Build-Umgebung (conda/envs/linux), sonst diese Python
     model: str = "models/llm/Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"
     context_size: int = Field(4096, ge=512)
     gpu_layers: int = 999
@@ -440,6 +441,8 @@ class DiscordNotify(_Section):
 
 class Discord(_Section):
     enabled: bool = False
+    # leer: runtime/discord-venv (mit Zuhören im Sprachkanal, ./test-3.sh setup), sonst diese Python
+    python: str = ""
     owner_user_ids: IdList = []
     trusted_user_ids: IdList = []
     allowed_guild_ids: IdList = []

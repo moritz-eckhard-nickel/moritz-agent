@@ -11,7 +11,7 @@ Der vollständige Plan steht in `docs/plan/` – **vor jeder Aufgabe** das passe
 
 - Eigener Code nur in: `moritz_agent/`, `tests/moritz_agent/`, `frontend/`, `config/`,
   `assets/`, `deploy/`, `scripts/`, `requirements/`, `docs/`, sowie die Wurzeldateien
-  `moritz-agent`, `moritz-install.sh`, `moritz-update.sh`, `install.sh`, `update.sh`, `test-1.sh`, `test-2.sh` (allgemein `test-N.sh`), `test-clearup.sh`,
+  `moritz-agent`, `moritz-install.sh`, `moritz-update.sh`, `install.sh`, `update.sh`, `test-1.sh`, `test-2.sh`, `test-3.sh` (allgemein `test-N.sh`), `test-clearup.sh`,
   `pyproject.toml`, `README.md`, `CLAUDE.md`, `THIRD_PARTY_NOTICES.md`.
 - **KoboldCpp-Upstream-Dateien nicht ändern** (`koboldcpp.py`, `kcpp_*`, `ggml/`, `src/`,
   `otherarch/`, `tools/`, `vendor/`, `Makefile`, `CMakeLists.txt`, `.github/workflows/kcpp-*`,
@@ -58,7 +58,8 @@ ruff format --check moritz_agent tests/moritz_agent scripts
 pytest                                        # testpaths = tests/moritz_agent
 shellcheck -x moritz-agent install.sh update.sh moritz-install.sh moritz-update.sh test-*.sh scripts/*.sh deploy/lib/*.sh
 ./test-1.sh setup|check|speak|call|run        # Telefon + Stimme ohne Systeminstallation (läuft überall, kein LXC nötig)
-./test-2.sh setup|run                         # ALLES bis heute: Telefon, Sofortauskünfte, Wetter, Discord (Text + Sprache), Live-Test
+./test-2.sh setup|run                         # Telefon, Sofortauskünfte, Wetter, Discord (Text + Sprache), Live-Test
+./test-3.sh setup|run|live                    # ALLES bis heute (Part 1): test-2 + Sprachmodell (KoboldCpp/Qwen3) + Zuhören im Sprachkanal, Abnahmeprotokoll
 ./test-clearup.sh [--venv]                    # alles von den Testskripten entfernen (--venv: nur die Python-Umgebungen)
 sudo ./install.sh | sudo ./update.sh          # auf dem Proxmox-Host: LXC anlegen/aktualisieren (oder --remote user@host)
 python -m moritz_agent --version

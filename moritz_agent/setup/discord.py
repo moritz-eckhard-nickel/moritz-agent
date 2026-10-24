@@ -177,13 +177,13 @@ async def setup_voice_channel(
         chosen = answer
     elif not answer and len(channels) == 1:
         chosen = channels[0][2]  # only one voice channel: nothing to choose
-        print(f"Einziger Sprachkanal: {channels[0][0]} / 🔊 {channels[0][1]}", file=out)
+        print(f"Einziger Sprachkanal: {channels[0][0]} / {channels[0][1]}", file=out)
     else:
         if not channels:
             print("Auf Antons Servern gibt es keinen Sprachkanal, den er sehen darf.", file=out)
             return 1
         for number, (guild, channel, ident) in enumerate(channels, 1):
-            print(f"{number:2d}  {guild} / 🔊 {channel}  ({ident})", file=out)
+            print(f"{number:2d}  {guild} / {channel}  ({ident})", file=out)
         return 3  # the caller asks for the number
     store_voice_channel(config, chosen)
     print(f"Sprachkanal gespeichert ({chosen}).", file=out)

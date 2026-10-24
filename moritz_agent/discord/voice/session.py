@@ -25,6 +25,7 @@ import discord
 
 from moritz_agent.core.principal import Role
 from moritz_agent.discord.sender import Origin
+from moritz_agent.discord.style import plain
 from moritz_agent.discord.voice import receive
 from moritz_agent.discord.voice.pipeline import BargeInDetector, is_wake_word
 from moritz_agent.discord.voice.playback import DiscordMedia
@@ -40,6 +41,7 @@ log = get_logger("discord")
 START_DELAY_S = 1.0  # after somebody arrives: the audio stands, then the greeting (no ringing)
 CHECK_EVERY_S = 5.0
 CONNECT_TIMEOUT_S = 20.0
+DAVE_WAIT_S = 10  # the encrypted group needs a moment before audio can be decrypted
 REST_MAX_PENDING = 1
 HEARD_WINDOW_S = 35.0  # who spoke within this time counts for the next answer (> one utterance)
 VOICE_ROLES = frozenset({Role.OWNER, Role.TRUSTED})  # only they are heard (§9.2)
@@ -428,11 +430,7 @@ class VoiceManager:
         return self.session.channel.id if self.session else None
 
     def _style(self, text: str) -> str:
-        return (
-            text
-            if self.worker.dispatcher.styler.cute
-            else text.replace(" ✨", "").replace(" 👋", "")
-        )
+        return text if self.worker.dispatcher.styler.cute else plain(text)
 
     # -- /joinvc -------------------------------------------------------------------------------------------------------
     def _channel_of(self, user_id: str) -> Any | None:
@@ -467,15 +465,15 @@ class VoiceManager:
             return "Ich bin gerade dabei …"
         channel = self._resolve(origin.user_id, channel_id)
         if channel is None or not isinstance(channel, discord.VoiceChannel | discord.StageChannel):
-            return "Ich weiß nicht, in welchen Sprachkanal ich soll 🤔 Geh in einen hinein oder sag mir einen."
+            return "Ich weiß nicht, in welchen Sprachkanal ich soll :/ Geh in einen hinein oder sag mir einen."
         if not self.policy.guild_allowed(str(channel.guild.id)):
             return styler.error("forbidden")
         if isinstance(channel, discord.StageChannel) and not self.cfg.voice.stage_fallback:
             return "Bühnenkanäle sind bei mir ausgeschaltet."
         if self.session is not None:
             if self.session.channel.id == channel.id:
-                return self._style("Ich bin schon da ✨")
-            return f"Ich bin schon in 🔊 {self.session.channel.name}. Erst `/leavevc`."
+                return self._style("Ich bin schon da :)")
+            return f"Ich bin schon in {self.session.channel.name}. Erst `/leavevc`."
         me = channel.guild.me
         if me is not None:
             permissions = channel.permissions_for(me)
@@ -493,11 +491,13 @@ class VoiceManager:
     async def _connect(self, origin: Origin, channel: Any) -> str:
         speech = self.speech
         if not (speech.stt_available() or speech.tts_available()):
-            return "Meine Stimme und mein Gehör sind gerade nicht installiert 🙈"
+            return "Meine Stimme und mein Gehör sind gerade nicht installiert :("
         receiving = receive.available()
         vc = await channel.connect(
             cls=receive.client_class(), timeout=CONNECT_TIMEOUT_S, reconnect=True, self_deaf=False
         )
+        if receiving and not await receive.dave_ready(vc, DAVE_WAIT_S):
+            log.warning("Discord: Verschlüsselung (DAVE) nach %d s nicht bereit", DAVE_WAIT_S)
         session = VoiceSession(self, channel, vc, origin.user_id, receiving)
         try:
             await session.start()
@@ -534,7 +534,7 @@ class VoiceManager:
         log.info("Discord: Sprachkanal verlassen (%s)", why)
         if announce and self.worker.client is not None:
             await self.worker.say_in_default_channel(
-                self.worker.client, self._style(f"Ich bin raus aus 🔊 {name} ({why}) 👋")
+                self.worker.client, self._style(f"Ich bin raus aus {name} ({why}). Tschüss!")
             )
 
     async def shutdown(self) -> None:
@@ -564,9 +564,16 @@ class VoiceManager:
             origin = Origin(user_id=str(member.id), where="S", guild_id=str(after.channel.guild.id))
             await self.join(origin, str(after.channel.id))
 
-    async def speak_answer(self, channel_id: int, text: str) -> None:
-        """Mode "nur sprechen": the answer to a message in the voice channel's chat, aloud."""
+    async def speak_answer(self, channel_id: int, text: str, *, user_id: str = "") -> None:
+        """The answer to a written message, aloud in the voice channel: for a message in the voice
+        channel's chat, and for any message of somebody sitting in the voice channel with Anton
+        (Moritz, 21.10.2026: "obwohl er im Call ist, antwortet er im Chat")."""
         session = self.session
-        if session is not None and session.channel.id == channel_id and not session.receiving:
+        if session is None or not text.strip():
+            return
+        in_channel = user_id.isdigit() and int(user_id) in getattr(
+            session.channel, "voice_states", {}
+        )
+        if session.channel.id == channel_id or in_channel:
             with contextlib.suppress(Exception):
                 await session.say(text)

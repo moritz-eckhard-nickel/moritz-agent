@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import itertools
 import random
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -24,7 +23,7 @@ from moritz_agent.discord.access import (
     Reaction,
     strip_address,
 )
-from moritz_agent.discord.style import Styler, StyleState
+from moritz_agent.discord.style import SMILEY, Styler, StyleState, no_emoji
 
 ROOT = Path(__file__).resolve().parents[2]
 BERLIN = ZoneInfo("Europe/Berlin")
@@ -195,11 +194,11 @@ def styler() -> Styler:
 
 def test_facts_come_first_and_sugar_comes_after(styler):
     text = styler.decorate("Morgen wird es regnen.", skill_id="weather.day", serious=False, seed=1)
-    assert text.startswith("Morgen wird es regnen.") and text.endswith("☔")
+    assert text == "Morgen wird es regnen. :("
 
 
 def test_serious_answers_get_no_decoration(styler):
-    plain = "⚠️ Unwetterwarnung für Weilburg: Sturmböen."
+    plain = "Unwetterwarnung für Weilburg: Sturmböen."
     assert styler.decorate(plain, skill_id="warn.weather", serious=True, seed=5) == plain
     assert styler.decorate("Sturm.", skill_id="warn.weather", serious=True, seed=5) == "Sturm."
 
@@ -210,32 +209,39 @@ def test_the_normal_style_changes_nothing(styler):
         normal.decorate("Es ist 19 Uhr 12.", skill_id="time.now", serious=False, seed=5)
         == "Es ist 19 Uhr 12."
     )
-    assert "🙈" not in normal.error("unavailable")
+    assert normal.error("unavailable") == (
+        "Uff, an die Daten komm ich gerade nicht ran Versuch’s gleich nochmal."
+    )
+    assert normal.phrase("joined_voice", channel="Quatschecke") == "Bin unterwegs in Quatschecke"
 
 
-def test_text_with_an_emoji_already_stays_as_it_is(styler):
-    assert styler.decorate("Schön ☀️", skill_id="weather.now", serious=False, seed=5) == "Schön ☀️"
+def test_text_with_a_smiley_already_gets_no_second_one(styler):
+    assert styler.decorate("Schön :)", skill_id="weather.now", serious=False, seed=5) == "Schön :)"
 
 
-def test_a_kaomoji_about_every_fifth_message_but_never_twice_in_a_row(styler):
+def test_no_emoji_ever_and_one_smiley_at_most(styler):
+    """Moritz, 21.10.2026: no emoji – :) :( :3 and the like, or nothing."""
     state = StyleState()
-    outputs = [
-        styler.decorate(f"Antwort {i}.", skill_id="time.now", serious=False, seed=i, state=state)
-        for i in range(1, 31)
-    ]
-    kaomoji = set(styler.data["kaomoji"]["happy"])
-    marks = [any(k in o for k in kaomoji) for o in outputs]
-    assert 5 <= sum(marks) <= 8
-    assert not any(a and b for a, b in itertools.pairwise(marks))
-
-
-def test_at_most_two_emoji_like_things_per_message(styler):
-    import re
-
-    pattern = re.compile(r"[\U0001f000-\U0001faff☀-➿]")
     for seed in range(1, 60):
-        out = styler.decorate("Antwort.", skill_id="weather.now", serious=False, seed=seed)
-        assert len(pattern.findall(out)) <= 2
+        out = styler.decorate(
+            "Antwort ☀️ fertig.", skill_id="weather.now", serious=False, seed=seed, state=state
+        )
+        assert no_emoji(out) == out and out.startswith("Antwort fertig.")
+        assert len(SMILEY.findall(out)) == 1
+
+
+def test_no_emoji_takes_them_out_cleanly():
+    assert no_emoji("⏰ Erinnerung") == "Erinnerung"
+    assert no_emoji("Schön 🌤️ und warm 🐾.") == "Schön und warm."
+    assert no_emoji("Zeile 1 ✨\n🔊 Zeile 2") == "Zeile 1\nZeile 2"
+    assert no_emoji("19:30 Uhr, 3 > 2 → ok") == "19:30 Uhr, 3 > 2 → ok"
+    assert no_emoji("Toll 🐾 :) und „🎤 Text“") == "Toll :) und „Text“"
+
+
+def test_the_style_and_activity_data_have_no_emoji():
+    for name in ("stil.de.toml", "aktivitaeten.de.toml"):
+        text = (ROOT / "assets/data/discord" / name).read_text(encoding="utf-8")
+        assert no_emoji(text) == text, name
 
 
 def test_decoration_is_deterministic_per_message(styler):
@@ -246,9 +252,7 @@ def test_decoration_is_deterministic_per_message(styler):
 
 
 def test_the_phrase_lists_are_complete(styler):
-    assert (
-        styler.phrase("joined_voice", channel="Quatschecke") == "Bin unterwegs in 🔊 Quatschecke ✨"
-    )
+    assert styler.phrase("joined_voice", channel="Quatschecke") == "Bin unterwegs in Quatschecke :)"
     assert styler.phrase("startup", 1)
     for key in (
         "unavailable",
@@ -323,41 +327,47 @@ def test_due_follows_the_clock_and_the_situation(activity_data):
     assert p.due({}, p.next_change + timedelta(seconds=1))
     assert p.due({"call": True}, now + timedelta(seconds=30))  # a call begins: at once
     p.pick({"call": True}, now + timedelta(seconds=30))
-    assert p.current.text.startswith("📞") and not p.due({"call": True}, now + timedelta(minutes=1))
+    assert p.current.text.startswith("Telefoniert") and not p.due(
+        {"call": True}, now + timedelta(minutes=1)
+    )
     assert p.due({}, now + timedelta(minutes=1))  # the call is over: back to normal
 
 
 def test_situations_take_precedence_in_the_right_order(activity_data):
     p = picker(activity_data)
     night = datetime(2026, 10, 20, 2, 0, tzinfo=BERLIN)
-    assert p.pick({}, night).text.startswith("💤")
-    assert p.pick({"call": True}, night).text.startswith("📞")  # call beats night
+    assert p.pick({}, night).text.startswith(("Träumt", "Zählt"))
+    assert p.pick({"call": True}, night).text.startswith("Telefoniert")  # call beats night
     warning = p.pick({"call": True, "warning_level": 3}, night)
-    assert warning.serious and warning.text.startswith("⚠️")  # a warning beats everything
-    assert p.pick({"weather": "rain"}, noon()).text.endswith("☔")
-    assert p.pick({"services_down": True}, noon()).text.startswith("🔍")
-    assert p.pick({"startup": True}, noon()).text.startswith("✨")
-    assert p.pick({"maintenance": True, "call": True}, noon()).text.startswith("🔧")
-    assert p.pick({"voice": True}, noon()).text.startswith("🎧")
+    assert warning.serious and warning.text.startswith(
+        "Achtet auf das Unwetter"
+    )  # a warning beats everything
+    assert p.pick({"weather": "rain"}, noon()).status == "Spielt im Regen"
+    assert p.pick({"services_down": True}, noon()).text.startswith("Sucht das Internet")
+    assert p.pick({"startup": True}, noon()).text.startswith("Wacht gerade auf")
+    assert p.pick({"maintenance": True, "call": True}, noon()).text.startswith(
+        "Wird gerade frisch gemacht"
+    )
+    assert p.pick({"voice": True}, noon()).text.startswith("Quatscht mit Moritz")
 
 
 def test_special_days(activity_data):
     p = picker(activity_data, seed=3)
     christmas = {p.pick({}, noon(24, 12)).text for _ in range(12)}
-    assert "🎁 Packt Geschenke ein" in christmas
+    assert "Packt Geschenke ein" in christmas
     halloween = {p.pick({}, noon(31, 10)).text for _ in range(12)}
-    assert "👻 Spukt in deinen Kabeln" in halloween
+    assert "Spukt in deinen Kabeln" in halloween
     easter_sunday = datetime(2026, 4, 5, 12, tzinfo=BERLIN)
-    assert "🥚 Versteckt Eier im Dateisystem" in {p.pick({}, easter_sunday).text for _ in range(12)}
+    assert "Versteckt Eier im Dateisystem" in {p.pick({}, easter_sunday).text for _ in range(12)}
     carnival = datetime(2026, 2, 14, 12, tzinfo=BERLIN)
-    assert "🎭 Helau aus dem Serverraum" in {p.pick({}, carnival).text for _ in range(12)}
+    assert "Helau aus dem Serverraum" in {p.pick({}, carnival).text for _ in range(12)}
 
 
 def test_activities_can_be_switched_off(activity_data):
     p = picker(activity_data, enabled=False)
     assert not p.due({}, noon())
     quiet = picker(activity_data, situational=False)
-    assert not quiet.pick({"call": True}, noon()).text.startswith("📞")
+    assert not quiet.pick({"call": True}, noon()).text.startswith("Telefoniert")
 
 
 def test_own_sayings_join_the_rotation(tmp_path, activity_data):
@@ -577,7 +587,7 @@ def test_warning_notifications_carry_level_colors_and_instructions():
         "kind": "warning",
         "user_id": "1001",
         "payload": {
-            "title": "⚠️ Amtliche Warnung vor Sturmböen",
+            "title": "Achtung: Amtliche Warnung vor Sturmböen",
             "text": "Sturmböen bis 85 km/h",
             "level": 3,
             "instruction": "Gegenstände sichern",
@@ -603,14 +613,13 @@ def test_reminders_and_briefings_are_cards():
     item = {
         "kind": "reminder",
         "user_id": "1001",
-        "payload": {"title": "⏰ Erinnerung", "text": "an den Zahnarzt", "mention": "1001"},
+        "payload": {"title": "Erinnerung", "text": "an den Zahnarzt", "mention": "1001"},
     }
     message = render.render_notification(
         item, secrets=["geheim12345"], mention=render.mention_for(item)
     )
     assert (
-        message.embed["title"] == "⏰ Erinnerung"
-        and message.embed["description"] == "an den Zahnarzt"
+        message.embed["title"] == "Erinnerung" and message.embed["description"] == "an den Zahnarzt"
     )
     assert render.mention_for({"payload": {}, "user_id": None}) is None
     assert render.mention_for({"payload": {"mention": "abc"}, "user_id": "5"}) is None
@@ -661,10 +670,12 @@ def test_the_owner_of_the_bot_application_is_always_owner():
 def test_activities_carry_their_verb_because_discord_only_shows_the_text():
     from moritz_agent.discord.activities import Activity, load
 
-    assert Activity("playing", "im Regen ☔").status == "Spielt im Regen ☔"
-    assert Activity("listening", "Ebbelwoi-Lofi 🎶").status == "Hört Ebbelwoi-Lofi 🎶"
+    assert Activity("playing", "im Regen").status == "Spielt im Regen"
+    assert Activity("listening", "Ebbelwoi-Lofi").status == "Hört Ebbelwoi-Lofi"
     assert Activity("watching", ", ob der Toast schon fertig ist").status.startswith("Schaut, ob")
-    assert Activity("custom", "🧦 Sucht die zweite Socke").status == "🧦 Sucht die zweite Socke"
+    assert (
+        Activity("custom", "🧦 Sucht die zweite Socke").status == "Sucht die zweite Socke"
+    )  # no emoji
     from moritz_agent.config.settings import REPO_ROOT
 
     for entry in load(REPO_ROOT)["base"]:

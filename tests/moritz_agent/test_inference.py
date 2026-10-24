@@ -5,11 +5,12 @@ from __future__ import annotations
 
 import asyncio
 import itertools
+import sys
 
 import httpx
 import pytest
 
-from moritz_agent.config.settings import load_settings
+from moritz_agent.config.settings import Settings, load_settings
 from moritz_agent.inference import (
     InferenceAborted,
     InferenceClient,
@@ -362,3 +363,22 @@ def test_koboldcpp_arguments_without_gpu_or_websearch(tmp_path):
     assert "--usecuda" not in argv and "--websearch" not in argv and "--moecpu" not in argv
     assert argv[argv.index("--gpulayers") + 1] == "0"
     assert argv[argv.index("--chatcompletionsadapter") + 1] == str(tmp_path / "config/nothink.json")
+
+
+def test_koboldcpp_runs_with_its_own_build_environment_once_it_is_built(tmp_path):
+    from moritz_agent.inference.process import koboldcpp_built, koboldcpp_python
+
+    settings = Settings()
+    engine = tmp_path / "koboldcpp"
+    cfg = settings.inference.model_copy(update={"koboldcpp_script": "koboldcpp/koboldcpp.py"})
+    settings = settings.model_copy(update={"inference": cfg})
+    assert koboldcpp_python(settings, tmp_path) == sys.executable
+    assert not koboldcpp_built(settings, tmp_path)
+    conda = engine / "conda" / "envs" / "linux" / "bin"
+    conda.mkdir(parents=True)
+    (conda / "python").write_text("")
+    (engine / "koboldcpp_cublas.so").write_text("")
+    assert koboldcpp_python(settings, tmp_path) == str(conda / "python")
+    assert koboldcpp_built(settings, tmp_path)
+    cpu = settings.model_copy(update={"inference": cfg.model_copy(update={"use_cuda": False})})
+    assert not koboldcpp_built(cpu, tmp_path)  # the CPU library is a different one

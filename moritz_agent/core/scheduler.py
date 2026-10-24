@@ -146,7 +146,7 @@ class Scheduler:
             self.store.enqueue(
                 "reminder",
                 item["target"],
-                {"title": f"⏰ Erinnerung{late}", "text": item["text"], "mention": item["user_id"]},
+                {"title": f"Erinnerung{late}", "text": item["text"], "mention": item["user_id"]},
                 user_id=item["user_id"],
                 dedupe_key=f"reminder:{item['id']}",
             )
@@ -176,7 +176,7 @@ class Scheduler:
                 if quiet and w.level < 3:
                     continue  # waits for the end of the quiet hours; stays "unknown" until then
                 payload = {
-                    "title": f"⚠️ {w.headline or w.event}",
+                    "title": f"Achtung: {w.headline or w.event}",
                     "text": w.description or w.event,
                     "level": w.level,
                     "instruction": w.instruction,
@@ -229,7 +229,7 @@ class Scheduler:
                 queued = self.store.enqueue(
                     "briefing",
                     self._target(user),
-                    {"title": "☀️ Guten Morgen", "text": result.text, "mention": user},
+                    {"title": "Guten Morgen", "text": result.text, "mention": user},
                     user_id=user,
                     dedupe_key=f"briefing:{user}:{now.date().isoformat()}",
                 )
@@ -288,7 +288,7 @@ class Scheduler:
                 queued = self.store.enqueue(
                     "waste",
                     self._target(user),
-                    {"title": "🗑️ Müllabfuhr", "text": result.text, "mention": user},
+                    {"title": "Müllabfuhr", "text": result.text, "mention": user},
                     user_id=user,
                     dedupe_key=f"waste:{user}:{now.date().isoformat()}",
                 )
@@ -319,7 +319,7 @@ class Scheduler:
             queued = self.store.enqueue(
                 "system",
                 target,
-                {"title": "🔧 Hinweis", "text": text},
+                {"title": "Hinweis", "text": text},
                 user_id=user,
                 dedupe_key=f"system:{kind}:{target}:{hour}",
                 not_before=quiet_end(now, quiet) if quiet else None,
@@ -329,14 +329,14 @@ class Scheduler:
         return sent
 
     def call_event(self, summary: str) -> int:
-        """After a call: "📞 Anruf von Nebenstelle 20, 3 Minuten" for everybody who subscribed."""
+        """After a call: "Anruf von Nebenstelle 20, 3 Minuten" for everybody who subscribed."""
         sent = 0
         for sub in self.store.subscriptions("calls"):
             user = sub["user_id"]
             queued = self.store.enqueue(
                 "call",
                 self._target(user),
-                {"title": "📞 Anruf", "text": summary},
+                {"title": "Anruf", "text": summary},
                 user_id=user,
             )
             sent += 1 if queued else 0

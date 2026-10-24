@@ -204,8 +204,6 @@ class Dispatcher:
             self.skill_of[message_id] = result.skill_id or "agent"
         while len(self.skill_of) > MAX_REMEMBERED:
             self.skill_of.pop(next(iter(self.skill_of)))
-        if result.reminder is not None:
-            await sender.react("✅")
         log.info(
             "Discord: %s, %s, %s, %d ms",
             origin.place,
@@ -273,7 +271,7 @@ class Dispatcher:
             return await self._confirm(decoded, origin, sender)
         if not components.may_press(user, decoded.user_id, owner_ids(self.cfg)):
             await sender.begin()
-            await sender.send(OutMessage(content="Das ist nicht deine Frage 🙈", ephemeral=True))
+            await sender.send(OutMessage(content="Das ist nicht deine Frage ^^", ephemeral=True))
             return None
         await sender.begin()
         if not self.limiter.allow(user, role):

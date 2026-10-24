@@ -122,6 +122,19 @@ Sprachnachrichten, Sprachkanal) und den kompletten Dienst – ohne Ja/Nein-Frage
 ./test-clearup.sh          # alles Getestete wieder entfernen (--venv: nur die Python-Umgebungen)
 ```
 
+## Part 1 komplett: `./test-3.sh` (Sophie-1, bare metal)
+
+Alles aus test-2 plus das Sprachmodell (KoboldCpp + Qwen3 auf der GPU) und das Zuhören im
+Discord-Sprachkanal. Alle Modelle liegen im Cache `/home/models`, nichts wird doppelt geladen. Am Ende
+steht das Abnahmeprotokoll (Anleitung: [docs/test-3.md](docs/test-3.md), Host:
+[docs/sophie-1-bare-metal.md](docs/sophie-1-bare-metal.md)).
+
+```bash
+./test-3.sh setup          # Modell-Cache, test-2-Setup, Qwen3 laden, KoboldCpp bauen, Discord-Zuhören
+./test-3.sh run            # alles testen, --moecpu einmessen, 40 Fragen ans Modell, Protokoll, Live-Test
+sudo ./moritz-install.sh   # danach als Dienst unter /opt/moritz-agent (übernimmt Build-Werte und Cache)
+```
+
 ## Installation auf Proxmox: `install.sh` / `update.sh`
 
 Auf dem Proxmox-Host (als root bzw. mit `sudo`) – legt den LXC an, kopiert das Programm hinein und

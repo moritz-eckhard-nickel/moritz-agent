@@ -31,7 +31,7 @@ from moritz_agent.core.principal import discord_role, owner_ids
 from moritz_agent.core.scheduler import Scheduler
 from moritz_agent.core.turn import Turn, TurnResult
 from moritz_agent.inference import InferenceClient, InferenceQueue, Priority
-from moritz_agent.inference.process import InferenceService
+from moritz_agent.inference.process import InferenceService, koboldcpp_built
 from moritz_agent.logging_setup import get_logger
 from moritz_agent.phone.responder import Reply, ResponderUnavailable, TurnContext
 from moritz_agent.research.fallbacks import KoboldWebSearch, WikipediaSearch
@@ -234,6 +234,10 @@ class Runtime:
             model = settings.resolve(settings.inference.model, self.root)
             if not model.is_file():
                 self._inference_note = Component("disabled", "Modelldatei fehlt")
+            elif self.manage_processes and not koboldcpp_built(settings, self.root):
+                self._inference_note = Component(
+                    "disabled", "KoboldCpp ist nicht gebaut (./test-3.sh setup)"
+                )
             elif self.manage_processes:
                 self.inference = InferenceService(settings, self.root)
                 client = self.inference.client
@@ -538,9 +542,18 @@ class Runtime:
                 self.repo.start_call(call_id, remote, codec)
 
     def callback_done(self, callback_id: int, outcome: str) -> None:
-        """The phone worker tried to call back. Nobody picked up: then nobody picked up (Moritz)."""
-        self.callbacks.done(callback_id)
+        """The phone worker tried to call back. Nobody picked up: then nobody picked up (Moritz).
+
+        Only when the PBX refuses the call at all, the owners get a system note – otherwise they
+        would never learn why the phone stays silent."""
+        call = self.callbacks.done(callback_id)
         log.info("Rückruf %d: %s", callback_id, outcome)
+        if outcome == "forbidden" and call is not None and self.scheduler is not None:
+            self.scheduler.system_event(
+                "callback_forbidden",
+                f"Ich darf die {call.extension} nicht anrufen – die Telefonanlage lehnt ab. Im Dialplan "
+                f"[from-agent] die {call.extension} erlauben (Anleitung: docs/asterisk-konfiguration.md).",
+            )
 
     def call_ended(self, call_id: str, reason: str = "") -> None:
         conversation = self._calls.pop(call_id, None)
