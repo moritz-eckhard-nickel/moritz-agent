@@ -68,6 +68,7 @@ POSITIVE: dict[str, list[str]] = {
         "Was hammer heit fürn Datum?",
         "Welches Datum haben wir heute?",
         "Sag mir das heutige Datum",
+        "Sag mir das Datum",
         "Den Wievielten haben wir heute?",
     ],
     "date.weekday": [

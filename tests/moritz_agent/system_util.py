@@ -16,6 +16,7 @@ from moritz_agent.api.context import AppContext
 from moritz_agent.config.reload import ConfigManager
 from moritz_agent.inference import InferenceClient
 from moritz_agent.runtime import Runtime
+from moritz_agent.setup import files
 from moritz_agent.skills.clock import FixedClock
 
 from . import weather_fixtures as wf
@@ -72,6 +73,8 @@ def make_tree(
     toml = toml.replace(
         'passwords_file = "passwords.txt"', f'passwords_file = "{tmp_path}/passwords.txt"'
     )
+    # never the real model of the machine (/home/models on Sophie-1): no KoboldCpp in tests
+    toml = files.set_value(toml, "inference", "model", f'"{tmp_path}/no-model.gguf"')
     if notes:
         toml = toml.replace("[skills.notes]\nenabled = false", "[skills.notes]\nenabled = true", 1)
     if discord:

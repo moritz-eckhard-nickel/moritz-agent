@@ -64,6 +64,8 @@ def build_argv(settings: Settings, root: Path, port: int, python: str | None = N
         argv += ["--blasthreads", str(cfg.batch_threads)]
     if cfg.jinja:
         argv += ["--jinja"]
+    if cfg.flash_attention and cfg.use_cuda:
+        argv += ["--flashattention"]
     if cfg.chat_adapter:
         argv += ["--chatcompletionsadapter", str(settings.resolve(cfg.chat_adapter, root))]
     if cfg.websearch_fallback:

@@ -45,6 +45,7 @@
 {"say": "Was hammer heit fürn Datum?", "skill": "date.today"}
 {"say": "Welches Datum haben wir heute?", "skill": "date.today"}
 {"say": "Sag mir das heutige Datum", "skill": "date.today"}
+{"say": "Sag mir das Datum", "skill": "date.today"}
 {"say": "Den Wievielten haben wir heute?", "skill": "date.today"}
 {"say": "Welcher Tag ist heute?", "skill": "date.weekday"}
 {"say": "Welcher Wochentag ist heute?", "skill": "date.weekday"}

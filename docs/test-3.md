@@ -52,6 +52,12 @@ Optionen:
 | 5 | Abnahmeprotokoll | `runtime/test-3/abnahme.md`, siehe unten |
 | 6 | Live | Anton komplett **mit** Sprachmodell; Checkliste wie bei test-2 plus freie Fragen und Reden im Sprachkanal |
 
+## Mitschrift
+
+`setup` und `run` schreiben ihre ganze Ausgabe zusätzlich nach `runtime/test-3/setup.log` bzw.
+`runtime/test-3/run.log`. Beim `run` gehört der Live-Test mit allen Logs von Anton dazu. Geht etwas
+schief, schick einfach diese Datei. Zugangsdaten stehen nicht darin, weil sie nie ausgegeben werden.
+
 ## Das Abnahmeprotokoll
 
 Abnahme heißt: auf Sophie-1 einmal nachweisen, dass Part 1 wirklich funktioniert. Danach gilt ein

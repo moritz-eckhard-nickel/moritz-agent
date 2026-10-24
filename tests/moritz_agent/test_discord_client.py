@@ -998,3 +998,20 @@ def test_reconnecting_the_latency_is_infinite_and_the_status_still_works(tmp_pat
 
     first, second = wired(tmp_path, body)
     assert first["latency_ms"] is None and second["latency_ms"] is None
+
+
+def test_logging_in_for_sync_commands_needs_no_main_process(tmp_path):
+    """Seen on Sophie-1: ``discord sync-commands`` crashed in setup_hook (no core to ask)."""
+    from moritz_agent.discord.worker import DiscordWorker, WorkerOptions
+
+    from .system_util import make_tree
+
+    tree = make_tree(tmp_path, discord=True)
+    worker = DiscordWorker(
+        WorkerOptions(
+            config=tree / "config" / "moritz-agent.toml", passwords=tree / "passwords.txt"
+        )
+    )
+    client = MagicMock()
+    asyncio.run(worker.setup(client))  # no AttributeError
+    client.build_commands.assert_not_called()  # sync_once registers by itself

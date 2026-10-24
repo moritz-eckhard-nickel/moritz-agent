@@ -370,6 +370,8 @@ class DiscordWorker:
 
     # -- hooks of the client --------------------------------------------------------------------------------------------------
     async def setup(self, client: AntonClient) -> None:
+        if self.core is None:  # ``sync-commands`` (sync_once) registers by itself, without a core
+            return
         await self.sync_commands(client)
 
     async def sync_commands(self, client: AntonClient, *, force: bool = False) -> bool:
