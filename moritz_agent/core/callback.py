@@ -26,9 +26,10 @@ _PATTERNS = (
     re.compile(
         rf"^(?:bitte |kannst du |könntest du |anton,? )*{_SAY} (?:es |das )?mir (?:bitte |mal |doch )*{_PHONE}(?: mit)?,?:? (?P<what>.+)$"
     ),
-    # "ruf mich an und sag mir, wie das Wetter wird"
+    # "ruf mich an und sag mir, wie das Wetter wird" / "ruf mich mal an und erzähl einen Witz" – after
+    # "und" any task (Moritz, 24.10.2026: "ruf mich an und beleidige mich")
     re.compile(
-        rf"^(?:bitte |kannst du |könntest du |anton,? )*ruf(?:e)? mich (?:bitte |mal |doch )*(?:an|auf der \d+ an) und {_SAY} mir,?:? (?P<what>.+)$"
+        rf"^(?:bitte |kannst du |könntest du |anton,? )*ruf(?:e)? mich (?:bitte |mal |doch |kurz )*(?:an|auf der \d+ an),? und (?:{_SAY} (?:es |das )?mir,?:? )?(?P<what>.+)$"
     ),
     # "wie viel Uhr ist es? Sag's mir am Telefon" / "…, aber sag es mir am Telefon"
     re.compile(

@@ -113,6 +113,15 @@ def rss_mb(pid: int | None) -> int | None:
     return None
 
 
+def generation_speed(perf: dict[str, Any]) -> float | None:
+    """Tokens per second of the last generation. KoboldCpp reports ``last_eval_speed``; older
+    versions only ``last_eval`` – milliseconds per token, not seconds in total."""
+    speed = perf.get("last_eval_speed")
+    if not speed and perf.get("last_eval"):
+        speed = 1000.0 / float(perf["last_eval"])
+    return round(float(speed), 1) if speed else None
+
+
 def with_layers(settings: Settings, n: int) -> Settings:
     inference = settings.inference.model_copy(update={"moe_cpu_layers": n})
     return settings.model_copy(update={"inference": inference})
@@ -221,9 +230,7 @@ async def ask_all(
                     result.guard,
                     result.ms,
                 )
-            perf = await service.client.perf()
-            if perf.get("last_eval") and perf.get("last_token_count"):
-                answer.tokens_per_s = round(perf["last_token_count"] / perf["last_eval"], 1)
+            answer.tokens_per_s = generation_speed(await service.client.perf())
             mark = "✔" if answer.answered and answer.tool_ok else "✘"
             print(
                 f"  {mark} {number:2d}. {answer.question[:48]:48s} {answer.total_ms:5d} ms  {', '.join(answer.tools) or '–'}",

@@ -8,6 +8,7 @@ Credentials never live here – they are in passwords.txt (see ``secrets.py``).
 
 from __future__ import annotations
 
+import os
 import tomllib
 from pathlib import Path
 from typing import Annotated, Literal
@@ -73,6 +74,7 @@ class Inference(_Section):
     moe_cpu_layers: int = Field(24, ge=0)
     use_cuda: bool = True
     jinja: bool = True
+    flash_attention: bool = True  # --flashattention: weniger VRAM für den Kontext (ADR-016)
     chat_adapter: str = ""
     threads: int = Field(12, ge=0)
     batch_threads: int = Field(12, ge=0)
@@ -505,10 +507,14 @@ def parse_settings(text: str, source: str = LOCAL_CONFIG_NAME) -> Settings:
 
 
 def load_settings(path: Path | None = None, root: Path = REPO_ROOT) -> Settings:
-    """Load settings from ``path``; default is config/moritz-agent.toml, else the example file."""
+    """Load settings from ``path``; default is config/moritz-agent.toml, else the example file.
+
+    The test suite sets ``MORITZ_TESTS_IGNORE_LOCAL_CONFIG``: then the repository's own local file
+    (written by the test scripts on a real machine) is ignored, so the tests see the defaults."""
     if path is None:
         local = root / "config" / LOCAL_CONFIG_NAME
-        path = local if local.is_file() else root / "config" / EXAMPLE_CONFIG_NAME
+        ignore = os.environ.get("MORITZ_TESTS_IGNORE_LOCAL_CONFIG") and root == REPO_ROOT
+        path = local if local.is_file() and not ignore else root / "config" / EXAMPLE_CONFIG_NAME
     try:
         text = path.read_text(encoding="utf-8")
     except FileNotFoundError:

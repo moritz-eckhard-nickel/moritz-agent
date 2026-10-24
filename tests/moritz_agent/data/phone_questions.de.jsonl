@@ -16,7 +16,7 @@
 {"kind": "kalender", "q": "Ist morgen ein Feiertag in Hessen?", "tools": ["calendar_info"]}
 {"kind": "kalender", "q": "Wann sind die nächsten Schulferien in Hessen?", "tools": ["calendar_info"]}
 {"kind": "orte", "q": "Wie weit ist es von Weilburg nach Limburg?", "tools": ["place_info"]}
-{"kind": "orte", "q": "In welchem Landkreis liegt Weilburg?", "tools": ["place_info", "regional_info"]}
+{"kind": "orte", "q": "In welchem Landkreis liegt Weilburg?", "tools": []}
 {"kind": "orte", "q": "Wann geht heute die Sonne unter?", "tools": ["get_sun_moon"]}
 {"kind": "suche", "q": "Wer ist aktuell Bundeskanzler von Deutschland?", "tools": ["web_search"]}
 {"kind": "suche", "q": "Was kostet das Deutschlandticket im Moment?", "tools": ["web_search"]}

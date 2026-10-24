@@ -40,6 +40,7 @@ gpu_layers = 999                  # alle Schichten auf die GPU …
 moe_cpu_layers = 24               # … aber Experten der ersten N Schichten im RAM (--moecpu), ≈ halb/halb
 use_cuda = true
 jinja = true                      # Chat-Template aus GGUF verwenden
+flash_attention = true            # --flashattention: der Kontext braucht weniger VRAM, mehr Schichten passen auf die GPU
 chat_adapter = ""                 # alternativ Adapter aus kcpp_adapters/
 threads = 12                      # Generierung (E5-2673 v3, LXC max. 18 Threads)
 batch_threads = 12                # Prompt-Verarbeitung

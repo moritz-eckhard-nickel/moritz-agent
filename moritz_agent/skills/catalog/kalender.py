@@ -89,6 +89,7 @@ _HOLIDAY_ID = {
     ),
     patterns=(
         r"\bwelches datum\b",
+        r"^(?:sag mir |nenn mir )?(?:das|dem) datum(?: von heute)?$",  # "ruf mich an und sag mir das Datum"
         r"\bder wievielte\b",
         r"\bden wievielten\b",
         r"\bdatum (?:haben wir|ist heute|heute)\b",

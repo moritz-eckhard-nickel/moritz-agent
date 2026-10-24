@@ -34,6 +34,10 @@ def run(coro):
         ("Wie spät ist es?", None),
         ("Was hast du am Telefon gesagt?", None),
         ("Ruf mich an", None),  # nothing to say
+        ("ruf mich mal an und sag mir die uhrzeit", "die uhrzeit"),  # seen live, 24.10.2026
+        ("ruf mich bitte an und sag mir das datum", "das datum"),
+        ("ruf mich an und beleidige mich", "beleidige mich"),  # any task after "und"
+        ("Ruf mich kurz an und erzähl einen Witz", "erzähl einen witz"),
     ],
 )
 def test_a_call_back_is_only_asked_for_with_something_to_say(text, question):

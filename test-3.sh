@@ -54,6 +54,16 @@ USAGE
 }
 
 setup_py() { PYTHONPATH="${ROOT}" "${VPY}" -m moritz_agent.setup "$@"; }
+
+# record NAME – everything from here on also goes to runtime/test-3/NAME.log (the whole run, for
+# sending it along when something fails). Secrets never reach the terminal, so not the file either.
+record() {
+	mkdir -p "${WORK}"
+	local file="${WORK}/$1.log"
+	: >"${file}"
+	exec > >(tee -a "${file}") 2>&1
+	log "Mitschrift: ${file} ($(date '+%d.%m.%Y %H:%M'))"
+}
 models() { PYTHONPATH="${ROOT}" "${VPY}" -m moritz_agent.phone.audio.models "$@"; }
 
 # -- setup ---------------------------------------------------------------------------------------
@@ -81,6 +91,7 @@ cmd_setup() {
 		shift
 	done
 
+	record setup
 	log "── 1. Modell-Cache ${MODELS_DIR}"
 	"${ROOT}/scripts/link-models.sh" --cache "${MODELS_DIR}" "${ROOT}"
 
@@ -274,7 +285,7 @@ cmd_run() {
 		shift
 	done
 	[[ -x "${VPY}" ]] || die "Die Umgebung fehlt – zuerst ./test-3.sh setup ausführen."
-	mkdir -p "${WORK}"
+	record run
 
 	stage "Alles aus test-2" "${ROOT}/test-2.sh" run --auto "${t2[@]}"
 	stage "Sprachmodell: bereit" llm_ready

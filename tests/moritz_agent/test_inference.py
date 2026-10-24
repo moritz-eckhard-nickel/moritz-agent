@@ -345,7 +345,14 @@ def test_koboldcpp_arguments(tmp_path):
     assert (
         pairs["--moecpu"] == "24" and pairs["--threads"] == "12" and pairs["--blasthreads"] == "12"
     )
-    for flag in ("--usecuda", "--jinja", "--skiplauncher", "--quiet", "--websearch"):
+    for flag in (
+        "--usecuda",
+        "--jinja",
+        "--flashattention",
+        "--skiplauncher",
+        "--quiet",
+        "--websearch",
+    ):
         assert flag in argv
 
 
@@ -361,6 +368,7 @@ def test_koboldcpp_arguments_without_gpu_or_websearch(tmp_path):
     )
     argv = build_argv(settings.model_copy(update={"inference": cfg}), tmp_path, 5124)
     assert "--usecuda" not in argv and "--websearch" not in argv and "--moecpu" not in argv
+    assert "--flashattention" not in argv  # only with CUDA
     assert argv[argv.index("--gpulayers") + 1] == "0"
     assert argv[argv.index("--chatcompletionsadapter") + 1] == str(tmp_path / "config/nothink.json")
 

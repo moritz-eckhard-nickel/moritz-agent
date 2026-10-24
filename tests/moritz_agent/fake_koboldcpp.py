@@ -35,7 +35,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/v1/model":
             self._json({"result": "fake/qwen3"})
         elif self.path == "/api/extra/perf":
-            self._json({"last_eval": 0.5, "last_token_count": 12, "last_process": 0.1})
+            # like KoboldCpp: last_eval is milliseconds per token
+            self._json({"last_eval": 50.0, "last_token_count": 12, "last_eval_speed": 20.0})
         else:
             self.send_error(404)
 

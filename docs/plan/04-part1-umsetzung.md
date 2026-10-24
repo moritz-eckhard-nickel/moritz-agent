@@ -971,3 +971,38 @@ anschauen … Abnahmen mit Protokoll?“
   Entwicklungsumgebung laufen sie nur gegen ein nachgebautes KoboldCpp
   (`tests/moritz_agent/fake_koboldcpp.py`).
 
+### C.9 Erster Lauf von test-3 auf Sophie-1 (24.10.2026)
+
+Ergebnis: Telefon, Sofortauskünfte (806/806), Datendienste, Testanruf (erste Antwort 2–3 s) und das
+Sprachmodell liefen.
+- Qwen3 mit `--moecpu 28`: 6,9 von 8 GB VRAM belegt, 40/40 Fragen beantwortet, erste Worte nach
+  ≈ 1,8 s (Median).
+- Die DAVE-Umgebung (discord.py 2.8.0a) war da.
+
+Behoben:
+
+- **Tests hingen von der Maschine ab:** Die lokale `config/moritz-agent.toml` (gemessenes `--moecpu`) und
+  das echte Modell im Cache machten zwei Tests rot. Jetzt sehen die Tests immer die Beispielwerte:
+  `tests/moritz_agent/conftest.py` setzt `MORITZ_TESTS_IGNORE_LOCAL_CONFIG`, und Testinstallationen
+  zeigen nie auf das echte Modell.
+- **`discord sync-commands` stürzte ab:** `setup_hook` fragte den Hauptprozess, den es dort nicht gibt.
+- **Tokens/s falsch** (0,6): KoboldCpps `last_eval` ist die Zeit pro Token in ms. Jetzt wird
+  `last_eval_speed` benutzt.
+- **Keine Websuche bei aktuellen Fragen** (Kanzler, Leitzins, Kino, Nobelpreis – 20/28 richtige
+  Werkzeuge): Beide Systemanweisungen sagen jetzt ausdrücklich, dass das Wissen des Modells veraltet ist
+  und Amtsinhaber, Termine, Preise, Ergebnisse und „aktuell/gerade/zuletzt/dieses Jahr“ immer über
+  `web_search` laufen. Einfache Rechnungen gehen über `calculate`. „In welchem Landkreis liegt
+  Weilburg?“ darf aus dem Wissen kommen.
+- **„Ruf mich an und …“** nimmt nach „und“ jeden Auftrag an („… beleidige mich“, „… erzähl einen Witz“),
+  und „das Datum“ allein ist eine Sofortauskunft. Die Chat-Anweisung sagt nicht mehr „keine Anrufe“,
+  sondern erklärt die Formulierung.
+- **Flash-Attention** (`[inference] flash_attention = true`, nur mit CUDA): Der Kontext braucht weniger
+  VRAM. Das nächste `./test-3.sh run` misst `--moecpu` neu und darf weiter nach unten gehen.
+- **Mitschrift:** `runtime/test-3/setup.log` und `run.log` mit der ganzen Ausgabe inklusive Live-Test.
+
+Offen für Moritz:
+- „Public Bot“ im Developer Portal ausschalten.
+- Das SIP-Passwort `agent` in Asterisk und `passwords.txt` ändern.
+- `[web_login]` setzen, damit die Weboberfläche aus dem LAN geht.
+- Für den Rückruf die `201` in `[from-agent]` freigeben.
+

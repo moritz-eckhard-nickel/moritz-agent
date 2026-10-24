@@ -83,3 +83,10 @@ def test_the_search_goes_up_until_it_fits_and_down_while_there_is_room(monkeypat
     monkeypatch.setattr(bench, "start", fake({24: 2500, 20: 1900, 16: 300}))
     best, loads = asyncio.run(bench.tune(settings))
     assert best == 20 and [x.moe_cpu_layers for x in loads] == [24, 20, 16]
+
+
+def test_tokens_per_second_from_koboldcpps_numbers():
+    """Seen on Sophie-1: "0.6 Tokens/s" – last_eval is milliseconds per token, not seconds."""
+    assert bench.generation_speed({"last_eval_speed": 24.4, "last_eval": 41.0}) == 24.4
+    assert bench.generation_speed({"last_eval": 40.0, "last_token_count": 25}) == 25.0
+    assert bench.generation_speed({}) is None
