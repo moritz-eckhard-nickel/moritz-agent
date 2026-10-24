@@ -14,6 +14,7 @@ import math
 import os
 import signal
 import sqlite3
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -36,11 +37,11 @@ from moritz_agent.discord.presence import ActivityManager
 from moritz_agent.discord.render import OutMessage, mention_for, render_notification
 from moritz_agent.discord.setup import invite_links
 from moritz_agent.discord.speech import SpeechService
-from moritz_agent.discord.status import write_status
+from moritz_agent.discord.status import UNSTABLE_MARK, write_status
 from moritz_agent.discord.style import Styler
 from moritz_agent.discord.voice.session import VoiceManager
 from moritz_agent.discord.voice_messages import VoiceMessages
-from moritz_agent.logging_setup import get_logger, setup_logging
+from moritz_agent.logging_setup import adopt, get_logger, setup_logging
 from moritz_agent.phone.control import DRAIN_FILE, run_dir
 
 log = get_logger("discord")
@@ -49,6 +50,10 @@ OUTBOX_EVERY_S = 2.0
 HEARTBEAT_EVERY_S = 1.0
 PRESENCE_EVERY_S = 10.0
 STARTUP_STATE_S = 60.0
+# lost gateway connections within FLAP_WINDOW_S that make the worker give up the DAVE fork (P1-32)
+FLAPS = 4
+FLAP_WINDOW_S = 600.0
+EXIT_UNSTABLE = 4
 RECONNECT_BACKOFF = (2.0, 60.0)
 
 
@@ -86,6 +91,8 @@ class DiscordWorker:
         self.state = "starting"
         self.last_error = ""
         self.started_sent = False
+        self.exit_code = 0
+        self._lost: list[float] = []  # monotonic times of lost gateway connections
         self._standalone: Any = None
         self._connect_task: asyncio.Task[None] | None = None
         self._tasks: set[asyncio.Task[Any]] = set()
@@ -185,6 +192,7 @@ class DiscordWorker:
             settings.logging.max_bytes,
             settings.logging.backup_count,
         )
+        adopt("discord", "INFO")  # discord.py's own reasons for reconnects end up in our log
         if not self.config.passwords.discord.enabled:
             log.error("Discord ist nicht eingerichtet: in passwords.txt fehlt [discord] bot_token")
             return 3
@@ -206,7 +214,30 @@ class DiscordWorker:
             await self.stop_event.wait()
         finally:
             await self.shutdown()
-        return 0
+        return self.exit_code
+
+    # -- connection trouble ------------------------------------------------------------------------------------------
+    def connection_lost(self) -> None:
+        """The gateway dropped. With the DAVE fork, losing it again and again (seen on Sophie-1,
+        24.10.2026) switches the fork off: the supervisor restarts the worker with the pinned
+        discord.py, text and speaking keep working, only listening in voice channels stops."""
+        now = time.monotonic()
+        self._lost = [t for t in self._lost if now - t < FLAP_WINDOW_S] + [now]
+        log.info(
+            "Discord: Verbindung verloren (%d× in 10 min), ich verbinde mich neu", len(self._lost)
+        )
+        env = voice_environment()
+        if env is None or len(self._lost) < FLAPS:
+            return
+        log.error(
+            "Discord: %d Verbindungsabbrüche in 10 min mit dem DAVE-Fork – schalte ihn ab und starte mit "
+            "dem stabilen discord.py neu (Zuhören im Sprachkanal aus; wieder an: ./test-3.sh setup)",
+            len(self._lost),
+        )
+        with contextlib.suppress(OSError):
+            (env / UNSTABLE_MARK).write_text(time.strftime("%Y-%m-%d %H:%M:%S\n"))
+        self.exit_code = EXIT_UNSTABLE
+        self.stop_event.set()
 
     def _attach_voice(self) -> None:
         """Voice messages and the voice channel are optional parts; where Whisper or Piper are not
@@ -706,3 +737,9 @@ def nice_self() -> None:
     """A lower CPU priority than the phone (docs/plan/14 §4.2); the supervisor also sets it."""
     with contextlib.suppress(OSError):
         os.nice(5)
+
+
+def voice_environment() -> Path | None:
+    """The DAVE fork environment this worker runs in (runtime/discord-venv), else ``None``."""
+    env = Path(sys.prefix)
+    return env if (env / ".moritz-voice").is_file() else None

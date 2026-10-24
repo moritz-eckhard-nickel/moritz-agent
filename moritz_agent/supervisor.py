@@ -30,6 +30,7 @@ from moritz_agent.config.reload import ConfigError, ConfigManager, ReloadResult
 from moritz_agent.config.settings import REPO_ROOT
 from moritz_agent.config.validate import effective_host
 from moritz_agent.discord import status as discord_status
+from moritz_agent.discord.status import UNSTABLE_MARK
 from moritz_agent.logging_setup import get_logger, setup_logging
 from moritz_agent.phone.control import read_status
 from moritz_agent.process import ManagedProcess, find_free_port
@@ -276,7 +277,10 @@ class Supervisor:
             return str(settings.resolve(settings.discord.python, self.root))
         voice = self.root / DISCORD_VOICE_ENV
         ready = (voice / ".moritz-voice").is_file()  # written only after a complete, checked setup
-        return str(voice / "bin" / "python") if ready else sys.executable
+        unstable = (
+            voice / UNSTABLE_MARK
+        ).is_file()  # the worker switched it off (lost the gateway)
+        return str(voice / "bin" / "python") if ready and not unstable else sys.executable
 
     async def _start_discord(self) -> None:
         """The Discord worker is a child like the phone, but only if it is switched on and has a
@@ -284,13 +288,16 @@ class Supervisor:
         if not self._discord_wanted() or (self.discord is not None and self.discord.alive):
             return  # one supervisor only – also while it waits to restart a crashed worker
         assert self.ctx is not None
-        argv = self.discord_argv or [self._discord_python(), "-m", "moritz_agent.discord"]
-        if self.discord_argv is None:
+
+        def discord_argv() -> list[str]:
+            argv = [self._discord_python(), "-m", "moritz_agent.discord"]
             if self.settings_file:
                 argv += ["--config", str(self.settings_file)]
             if self.passwords_file:
                 argv += ["--passwords", str(self.passwords_file)]
-            argv += ["run"]
+            return [*argv, "run"]
+
+        argv = self.discord_argv or discord_argv()
         from moritz_agent.discord.core import ENV_TOKEN, ENV_URL
 
         self.discord = ManagedProcess(
@@ -307,6 +314,8 @@ class Supervisor:
             health_interval_s=10.0,
             health_failures=6,
             niceness=DISCORD_NICE,
+            # chosen again at every restart: the worker may have switched the DAVE fork off
+            argv_factory=None if self.discord_argv else discord_argv,
         )
         await self.discord.start()
 

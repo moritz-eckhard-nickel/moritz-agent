@@ -213,6 +213,14 @@
 {"say": "Super, danke", "skill": "talk.thanks"}
 {"say": "Danke schön", "skill": "talk.thanks"}
 {"say": "Merci", "skill": "talk.thanks"}
+{"say": "Du bist doof", "skill": "talk.insult"}
+{"say": "Du bist so ein Lappen", "skill": "talk.insult"}
+{"say": "Halt die Fresse", "skill": "talk.insult"}
+{"say": "Du nervst", "skill": "talk.insult"}
+{"say": "Beleidige mich", "skill": "talk.roast"}
+{"say": "Roast mich mal", "skill": "talk.roast"}
+{"say": "Mach mich fertig", "skill": "talk.roast"}
+{"say": "Sag was Gemeines über mich", "skill": "talk.roast"}
 {"say": "Wie geht's dir?", "skill": "talk.how_are_you"}
 {"say": "Wie geht es dir?", "skill": "talk.how_are_you"}
 {"say": "Alles klar bei dir?", "skill": "talk.how_are_you"}
@@ -729,8 +737,6 @@
 {"say": "Schon gut, lass es", "skill": "talk.cancel"}
 {"say": "Du bist toll", "skill": "talk.compliment"}
 {"say": "Das hast du gut gemacht", "skill": "talk.compliment"}
-{"say": "Du bist doof", "skill": "talk.insult"}
-{"say": "Du nervst", "skill": "talk.insult"}
 {"say": "Schick mir das auf Discord", "skill": "talk.discord"}
 {"say": "Schreib mir das auf Discord", "skill": "talk.discord"}
 {"say": "Was war meine letzte Frage?", "skill": "talk.last_question"}

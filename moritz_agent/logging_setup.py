@@ -27,7 +27,10 @@ class _RedactingFilter(logging.Filter):
 
     def filter(self, record: logging.LogRecord) -> bool:
         parts = record.name.split(".")
-        record.category = parts[1].capitalize() if len(parts) > 1 else "System"
+        if parts[0] != ROOT_LOGGER:  # an adopted library logger, e.g. "discord.gateway"
+            record.category = record.name
+        else:
+            record.category = parts[1].capitalize() if len(parts) > 1 else "System"
         if self.secrets:
             record.msg = redact(record.getMessage(), self.secrets)
             record.args = ()
@@ -71,3 +74,16 @@ def setup_logging(
         rotating.setFormatter(formatter)
         rotating.addFilter(_filter)
         root.addHandler(rotating)
+
+
+def adopt(name: str, level: str = "INFO") -> None:
+    """Send a library's own log (e.g. ``discord`` – why the gateway reconnects) through the same
+    handlers, filter and format as ours."""
+    root = logging.getLogger(ROOT_LOGGER)
+    library = logging.getLogger(name)
+    library.setLevel(level)
+    library.propagate = False
+    for handler in list(library.handlers):
+        library.removeHandler(handler)
+    for handler in root.handlers:
+        library.addHandler(handler)
