@@ -515,3 +515,49 @@ def test_the_discord_worker_takes_the_listening_environment_once_it_is_complete(
     )
     fake.config.settings = own
     assert Supervisor._discord_python(fake) == "/usr/bin/python3"
+
+
+def test_a_flapping_fork_is_switched_off_and_the_next_start_takes_the_pinned_discord_py(
+    tmp_path, monkeypatch
+):
+    """Seen on Sophie-1 (24.10.2026): the gateway dropped again and again with the DAVE fork."""
+    from types import SimpleNamespace
+
+    from moritz_agent.config.settings import Settings
+    from moritz_agent.discord import worker as worker_module
+
+    venv = tmp_path / "runtime" / "discord-venv"
+    (venv / "bin").mkdir(parents=True)
+    (venv / "bin" / "python").write_text("")
+    (venv / ".moritz-voice").write_text("ok")
+    fake = SimpleNamespace(config=SimpleNamespace(settings=Settings()), root=tmp_path)
+    assert Supervisor._discord_python(fake) == str(venv / "bin" / "python")
+
+    monkeypatch.setattr(worker_module.sys, "prefix", str(venv))
+    stop = asyncio.Event()
+    worker = SimpleNamespace(_lost=[], exit_code=0, stop_event=stop)
+    for _ in range(worker_module.FLAPS - 1):
+        worker_module.DiscordWorker.connection_lost(worker)
+    assert not stop.is_set() and worker.exit_code == 0  # a few drops are normal
+    worker_module.DiscordWorker.connection_lost(worker)
+    assert stop.is_set() and worker.exit_code == worker_module.EXIT_UNSTABLE
+    assert Supervisor._discord_python(fake) == sys.executable  # restarted without the fork
+
+
+def test_the_command_line_is_asked_again_before_every_restart():
+    from moritz_agent.process import ManagedProcess
+
+    calls = []
+
+    def argv():
+        calls.append(1)
+        return [sys.executable, "-c", "pass"]
+
+    async def scenario():
+        proc = ManagedProcess("x", [], argv_factory=argv, backoff=(0.01, 0.01))
+        await proc.start()
+        await until(lambda: len(calls) >= 2)
+        await proc.stop()
+
+    asyncio.run(scenario())
+    assert len(calls) >= 2

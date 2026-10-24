@@ -190,6 +190,11 @@ voice_recv() {
 		printf '  ✘ runtime/discord-venv fehlt – ./test-3.sh setup (oder bewusst --no-voice-recv)\n'
 		return 1
 	fi
+	if [[ -f "${venv}/.moritz-unstable" ]]; then
+		printf '  ✘ abgeschaltet seit %s: die Verbindung zu Discord brach mit dem Fork immer wieder ab\n' "$(cat "${venv}/.moritz-unstable")"
+		printf '    (Log: grep -E "discord.gateway|Verbindung verloren" runtime/test-3/run.log) – wieder an: ./test-3.sh setup\n'
+		return 1
+	fi
 	"${venv}/bin/python" -c 'import davey, discord, discord.ext.voice_recv; print("  ✔ discord.py", discord.__version__, "mit DAVE-Empfang (voice_recv)")'
 }
 

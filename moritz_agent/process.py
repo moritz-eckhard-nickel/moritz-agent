@@ -61,9 +61,11 @@ class ManagedProcess:
         startup_timeout_s: float = 180.0,
         niceness: int = 0,
         on_state: Callable[[ProcessStatus], None] | None = None,
+        argv_factory: Callable[[], Sequence[str]] | None = None,
     ) -> None:
         self.name = name
         self.argv = list(argv)
+        self.argv_factory = argv_factory  # asked before every (re)start, e.g. for another Python
         self.env = dict(env) if env is not None else None
         self.cwd = cwd
         self.health_check = health_check
@@ -160,6 +162,8 @@ class ManagedProcess:
             self._status.restarts += 1
 
     async def _run_once(self) -> None:
+        if self.argv_factory is not None:
+            self.argv = list(self.argv_factory())
         env = {**os.environ, **self.env} if self.env is not None else None
         self._proc = proc = await asyncio.create_subprocess_exec(
             *self.argv,

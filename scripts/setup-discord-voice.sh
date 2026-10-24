@@ -75,6 +75,11 @@ fingerprint="$({
 	printf '%s\n%s\n' "${RECV}" "${DAVEY}"
 	"${PYTHON}" --version 2>&1
 } | sha256sum | cut -d' ' -f1)"
+if [[ -f "${VENV}/.moritz-unstable" ]]; then
+	# the worker switched the fork off after repeated gateway losses – a new setup gives it another try
+	log "war abgeschaltet (Verbindungsabbrüche seit $(cat "${VENV}/.moritz-unstable")) – wieder an"
+	rm -f "${VENV}/.moritz-unstable"
+fi
 if [[ -f "${STAMP}" && "$(cat "${STAMP}")" == "${fingerprint}" ]]; then
 	log "unverändert – vorhandene Umgebung wird weiter benutzt"
 	exit 0

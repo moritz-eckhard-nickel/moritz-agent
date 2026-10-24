@@ -338,7 +338,7 @@ class AntonClient(discord.Client):
         log.info("Discord: Verbindung wieder da")
 
     async def on_disconnect(self) -> None:
-        log.info("Discord: Verbindung verloren, ich verbinde mich neu")
+        self.worker.connection_lost()
 
     async def on_guild_join(self, guild: discord.Guild) -> None:
         await self.worker.guild_joined(self, guild)

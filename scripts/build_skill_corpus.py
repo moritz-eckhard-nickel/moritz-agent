@@ -246,6 +246,13 @@ POSITIVE: dict[str, list[str]] = {
     ],
     "talk.greeting": ["Guude!", "Hallo", "Moin", "Servus", "Hallo Anton", "Guten Tag"],
     "talk.thanks": ["Danke", "Vielen Dank", "Super, danke", "Danke schön", "Merci"],
+    "talk.insult": ["Du bist doof", "Du bist so ein Lappen", "Halt die Fresse", "Du nervst"],
+    "talk.roast": [
+        "Beleidige mich",
+        "Roast mich mal",
+        "Mach mich fertig",
+        "Sag was Gemeines über mich",
+    ],
     "talk.how_are_you": ["Wie geht's dir?", "Wie geht es dir?", "Alles klar bei dir?", "Wie gehts"],
     "talk.identity": [
         "Wer bist du?",

@@ -16,6 +16,9 @@ from typing import Any
 from moritz_agent.phone.control import run_dir
 
 STATUS_FILE = "discord-status.json"
+# written into runtime/discord-venv when the worker keeps losing the gateway with the DAVE fork: the
+# supervisor then starts it with the pinned discord.py again (P1-32); setup-discord-voice.sh clears it
+UNSTABLE_MARK = ".moritz-unstable"
 STALE_AFTER_S = 15.0
 
 

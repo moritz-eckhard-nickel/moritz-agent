@@ -1006,3 +1006,25 @@ Offen für Moritz:
 - `[web_login]` setzen, damit die Weboberfläche aus dem LAN geht.
 - Für den Rückruf die `201` in `[from-agent]` freigeben.
 
+
+### C.10 Zweiter Lauf von test-3 (24.10.2026, 17:00)
+
+Moritz: „Ich kann keine philosophischen Fragen beantworten – das soll er aber … beleidigen will ich ihn und
+er mich zurück, wie ein richtiger Bro, nicht wie ein Werksklave.“ Außerdem verlor Discord immer wieder die
+Verbindung und antwortete nicht.
+
+- **Persönlichkeit:** Beide Systemanweisungen machen Anton zum Kumpel.
+  - Er beantwortet jede Frage mit eigener Meinung, auch philosophische und absurde.
+  - Er kontert Beleidigungen frech, und auf Bitte („beleidige mich“, „roast mich“) roastet er Moritz.
+  - Grenzen: nichts über Herkunft, Hautfarbe, Religion, Behinderung oder Sexualität, keine Drohungen.
+    Bei Notfällen, Unwettern und Gesundheit bleibt er ernst.
+  - Sofortauskünfte: `talk.insult` hat schlagfertige Konter (statt „Okay. Kann ich dir sonst helfen?“),
+    `talk.roast` ist neu. Beides funktioniert auch beim Rückruf („Ruf mich an und beleidige mich“).
+- **Discord-Verbindung:**
+  - Die Meldungen von discord.py selbst (`discord.gateway` …) stehen jetzt im Log, so ist der Grund für
+    einen Abbruch sichtbar.
+  - Bricht das Gateway mit dem DAVE-Fork 4× in 10 Minuten ab, schaltet der Worker den Fork ab
+    (`runtime/discord-venv/.moritz-unstable`) und beendet sich mit Code 4.
+  - Der Supervisor fragt die Python vor jedem Neustart neu ab und startet dann das gepinnte discord.py
+    2.7.1. Text und Sprechen gehen weiter, nur das Zuhören ist aus.
+  - `./test-3.sh setup` schaltet den Fork wieder ein, `./test-3.sh run` meldet den Zustand.

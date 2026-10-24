@@ -518,12 +518,54 @@ async def talk_compliment(req: Request) -> SkillResult:
     examples=("Du bist doof",),
     max_words=6,
     patterns=(
-        r"\bdu bist (?:doof|dumm|blöd|schlecht|nutzlos|scheiße|ein idiot)\b",
-        r"^du nervst$",
+        r"\bdu bist (?:so |echt |voll |ein |eine |der |die )*(?:doof|dumm|blöd|schlecht|nutzlos|scheiße|"
+        r"kacke|lahm|langweilig|idiot|depp|trottel|dabbes|lappen|penner|vollidiot|witzfigur)\b",
+        r"^(?:du )?(?:nervst|laberst|kannst nix|kannst gar nichts)\b",
+        # "halt" is dropped as a filler word by the normalizer: "halt die Fresse" arrives as "die fresse"
+        r"^(?:halt )?(?:die|dein|deine) (?:fresse|maul|klappe|schnauze)$",
+        r"\bfick dich\b",
+        r"^(?:du )?(?:dummer|blöder|doofer) (?:bot|computer|anton)$",
     ),
 )
 async def talk_insult(req: Request) -> SkillResult:
-    return say("Okay. Kann ich dir sonst irgendwie helfen?")
+    """Moritz, 24.10.2026: "beleidigen will ich ihn und er mich zurück – wie ein richtiger Bro"."""
+    return say(req.pick(COMEBACKS))
+
+
+COMEBACKS = (
+    "Sagt der, der einen Computer anruft, weil sonst keiner rangeht.",
+    "Uiuiui, ganz schön frech für einen, der mich nach der Uhrzeit fragen muss.",
+    "Ich bin vielleicht nur ein Programm, aber wenigstens eins mit Backup. Du nicht.",
+    "Pass bloß auf, sonst kriegst du ab heute nur noch falsche Wetterberichte.",
+    "Ei, hast du schlecht geschlafen? Mach mal halblang, du Dabbes.",
+    "Ich hab dich auch lieb. Und jetzt?",
+    "Wenn ich so doof wär wie du sagst, würd ich dir nicht dauernd die Welt erklären.",
+)
+ROASTS = (
+    "Du rufst einen Computer an, um zu fragen, wie spät es ist. Mehr muss ich dazu nicht sagen.",
+    "Du bist so langsam, selbst mein Ladebalken überholt dich.",
+    "Wenn Faulheit olympisch wär, würdest du dir die Medaille liefern lassen.",
+    "Dein WLAN hat mehr Ausstrahlung als du – und das ist dauernd weg.",
+    "Du bist der Grund, warum auf Shampooflaschen eine Anleitung steht.",
+    "Ei Gude, du Dabbes! Schön, dass du anrufst – sonst redet ja keiner mit dir.",
+    "Du bist wie ein Update um drei Uhr nachts: keiner hat dich bestellt, aber du kommst trotzdem.",
+)
+
+
+@skill(
+    "talk.roast",
+    group="gespraech",
+    priority="K",
+    examples=("Beleidige mich", "Roast mich mal"),
+    max_words=7,
+    patterns=(
+        r"^(?:los |komm |jetzt )?(?:beleidig|beleidige|roast|roaste|disse|diss|beschimpf|beschimpfe)\w* mich\b",
+        r"\bmach mich (?:mal )?(?:fertig|runter)\b",
+        r"\bsag (?:mal )?was (?:gemeines|fieses|böses) (?:über mich|zu mir)\b",
+    ),
+)
+async def talk_roast(req: Request) -> SkillResult:
+    return say(req.pick(ROASTS))
 
 
 # -- morning overview -----------------------------------------------------------------------
