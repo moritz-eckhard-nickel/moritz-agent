@@ -55,4 +55,6 @@ neu installieren und die alte entfernen.
 
 | Dateien | Text- und PDF-Dateien (bis 10 MB, bis zu 5 auf einmal) mit der Büroklammer anhängen oder in den Chat ziehen. Anton liest sie und beantwortet Fragen dazu, auch Folgefragen. Gescannte PDFs ohne Text gehen noch nicht. | P2-05 |
 
-Einstellungen und die Modellseite kommen mit den nächsten Tickets.
+| Modell | Zustand, Geschwindigkeit, Grafikspeicher; Kontext, KV-Cache, Smart-Cache und `--moecpu` ändern (mit Schätzung des Speichers), KoboldCpp neu starten, Geschwindigkeit messen. Während eines Anrufs gesperrt. | P2-08 |
+
+Die Einstellungen kommen mit dem nächsten Ticket.
