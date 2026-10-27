@@ -389,7 +389,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--tune", action="store_true", help="--moecpu suchen und speichern")
     parser.add_argument("--limit", type=int, default=0, help="nur die ersten N Fragen")
-    parser.add_argument("--context", type=int, default=0, help="Kontextgröße setzen (z. B. 8192)")
+    parser.add_argument("--context", type=int, default=0, help="Kontextgröße setzen (z. B. 51200)")
     parser.add_argument("--out", default=str(ROOT / "runtime" / "test-3"))
     parser.add_argument("--config", default=str(ROOT / "config" / "moritz-agent.toml"))
     parser.add_argument("--passwords", default=str(ROOT / "passwords.txt"))

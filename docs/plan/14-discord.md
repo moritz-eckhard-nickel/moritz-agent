@@ -523,7 +523,7 @@ freien Status – alle werden genutzt.
 
 ### 8.6 Kurzzeitgedächtnis
 
-- Anton merkt sich in jedem Chat die letzten **30 Wechsel** – auch Sofortauskünfte wie das Wetter, die ohne
+- Anton merkt sich in jedem Chat die letzten **100 Wechsel** (Part 2, P2-03; vorher 30) – auch Sofortauskünfte wie das Wetter, die ohne
   Sprachmodell beantwortet wurden. So geht „und morgen?“ oder „was hab ich eben gefragt?“.
 - Kommt in einem Discord-Chat **30 Minuten** keine Nachricht (`discord.memory_minutes`, 0 = nie), leert er das
   Gedächtnis und schreibt: „Ich hab mein Kurzzeitgedächtnis geleert – 30 Minuten war Ruhe. Wir fangen frisch an.“

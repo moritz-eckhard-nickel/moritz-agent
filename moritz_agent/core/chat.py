@@ -31,7 +31,7 @@ log = get_logger("system")
 
 CONVERSATION_TTL_S = 3600
 CONVERSATIONS_MAX = 200
-HISTORY_TURNS = 30  # the context builder drops the oldest turns that do not fit
+HISTORY_TURNS = 100  # the context builder drops the oldest turns that do not fit (P2-03)
 MEMORY_NOTICE = (
     "Ich hab mein Kurzzeitgedächtnis geleert – {minutes} Minuten war Ruhe. Wir fangen frisch an."
 )

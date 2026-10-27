@@ -38,7 +38,9 @@ enabled = true                    # false: nur Sofortauskünfte, kein Sprachmode
 koboldcpp_script = "koboldcpp.py" # Upstream-Einstieg, als Child-Prozess (ADR-003)
 python = ""                       # leer: Python aus KoboldCpps Build-Umgebung (conda/envs/linux, ./koboldcpp.sh rebuild)
 model = "models/llm/Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"   # ADR-016
-context_size = 8192               # gemessen (INF-05): Platz für Systemanweisung, Werkzeuge und den Gesprächsverlauf
+context_size = 51200              # ≥ 50k für lange Chats (INF-02, Part 2); Telefon nutzt davon nur agent.phone.context_tokens
+kv_cache = "q8_0"                 # --quantkv: f16 | q8_0 (halber VRAM für den Kontext) | q4_0
+smart_cache = 2                   # --smartcache: so viele Gesprächsstände im RAM, ein Anruf wirft den Chat nicht raus (0 = aus)
 gpu_layers = 999                  # alle Schichten auf die GPU …
 moe_cpu_layers = 24               # … aber Experten der ersten N Schichten im RAM (--moecpu), ≈ halb/halb
 use_cuda = true
@@ -49,7 +51,7 @@ threads = 12                      # Generierung (E5-2673 v3, LXC max. 18 Threads
 batch_threads = 12                # Prompt-Verarbeitung
 websearch_fallback = true         # KoboldCpp mit --websearch starten (Such-Fallback, ADR-020)
 startup_timeout_s = 180
-request_timeout_s = 60
+request_timeout_s = 180           # ein langer Chat liest zuerst seinen ganzen Kontext ein
 phone_preempt_wait_s = 3          # wie lange PHONE auf INTERACTIVE wartet, bevor abgebrochen wird
 
 [search]
@@ -139,6 +141,7 @@ max_answer_tokens = 160
 temperature = 0.3
 deadline_s = 15                   # ganze Antwort inklusive Werkzeugaufrufen (AGENT-04)
 max_sentences = 3                 # was vorgelesen wird (AGENT-07)
+context_tokens = 8192             # Telefon und Sprachkanal: höchstens so viel Kontext, damit Antworten schnell bleiben
 # PHONE-45: Uhrzeit, Websuche und die lesenden Sofortauskunft-Werkzeuge; keine Shell/SSH/Sandbox
 tools = [
     "get_current_time", "web_search",

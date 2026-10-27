@@ -61,7 +61,9 @@ Modell: Qwen3-30B-A3B-Instruct-2507 UD-Q3_K_XL, 13,8 GB, „halb/halb“ per `--
 | **Summe** (ohne Discord-Sprachsitzung) | **≈ 8,8–11,2 GB** | **≈ 6,8–7,6 GB** | _offen_ |
 
 Folgerung: 16 GB RAM-Limit reicht mit Reserve (auch mit Discord-Sprachsitzung: ≈ 12,7 GB im ungünstigsten Fall). VRAM ist eng → `--moecpu` so wählen, dass
-≥ 0,6 GB frei bleiben. 8.192 Kontext (+ ≈ 0,4 GB VRAM) erst nach Messung (INF-05).
+≥ 0,6 GB frei bleiben. Part 1: 8.192 Kontext. Part 2: 51.200 Kontext mit 8-Bit-KV-Cache (≈ 2,3 GB VRAM
+geschätzt), `--moecpu` misst `bench_llm.py --tune` neu; dazu bis zu zwei Gesprächsstände im RAM (`--smartcache 2`,
+je bis ≈ 2,3 GB). Plan 15 §4.
 Größere Quantisierung (Q4_K_M, 18,6 GB) bräuchte ein LXC-Limit von ≈ 20 GB – innerhalb der
 6 GB Spielraum möglich, aber erst nach Messung.
 

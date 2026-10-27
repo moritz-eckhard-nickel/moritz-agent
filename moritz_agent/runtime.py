@@ -279,8 +279,9 @@ class Runtime:
             self.agent_chat = self.agent_voice = None
             return
         size = settings.inference.context_size
+        spoken = min(size, settings.agent.phone.context_tokens)  # P2-03: calls stay quick
         self.agent_loop = AgentLoop(
-            self.queue, registry, phone_profile(settings, self.root), context_size=size
+            self.queue, registry, phone_profile(settings, self.root), context_size=spoken
         )
         self.agent_responder = AgentResponder(self.agent_loop)
         self.agent_voice = AgentResponder(
@@ -288,7 +289,7 @@ class Runtime:
                 self.queue,
                 registry,
                 phone_profile(settings, self.root),
-                context_size=size,
+                context_size=spoken,
                 priority=Priority.VOICE,
                 label="discord_voice",
             )

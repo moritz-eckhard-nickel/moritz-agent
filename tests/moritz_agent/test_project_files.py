@@ -32,7 +32,7 @@ def test_example_config_contains_plan_defaults():
     assert config["storage"]["transcript_retention_hours"] == 24
     assert "Hessisch" in config["phone"]["tts"]["piper"]["voice"]
     assert config["search"]["backends"][0] == "searxng"
-    assert config["inference"]["context_size"] == 8192
+    assert config["inference"]["context_size"] == 51200
     assert config["phone"]["greeting_text"] == (
         "Hallo Moritz, hier ist Anton. Was kann ich für dich tun?"
     )
