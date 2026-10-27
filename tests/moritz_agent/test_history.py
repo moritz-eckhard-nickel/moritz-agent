@@ -73,7 +73,7 @@ def test_fifteen_days_after_the_last_message_unless_pinned(tmp_path):
     clock[0] += 14 * DAY
     fresh = history.record("phone", "call-9", "Neu", "Ok.")
     clock[0] += 2 * DAY
-    assert history.purge(15) == 1
+    assert history.purge(15) == ["web:old"]
     ids = {i["id"] for i in history.list()}
     assert ids == {kept, fresh} and old not in ids
     assert history.list(query="Alt") == []  # the search index forgot it too
@@ -91,7 +91,7 @@ def test_rename_delete_export_and_pairs(tmp_path):
     assert "**Anton:**\n\n**4**" in text
     assert history.pairs("web:x", 10) == [("Was ist 2+2?", "**4**"), ("Und 3+3?", "6")]
     assert history.pairs("web:x", 1) == [("Und 3+3?", "6")]
-    assert history.delete(conversation) and history.get(conversation) is None
+    assert history.delete(conversation) == "web:x" and history.get(conversation) is None
     assert not history.delete(conversation) and history.list(query="Rechnen") == []
 
 

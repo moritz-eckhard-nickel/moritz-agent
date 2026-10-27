@@ -24,7 +24,11 @@ class AgentResponder:
         )
         try:
             result = await self.loop.run(
-                text, context.history, tool_ctx, on_text=context.extras.get("on_text")
+                text,
+                context.history,
+                tool_ctx,
+                on_text=context.extras.get("on_text"),
+                documents=context.extras.get("files") or [],
             )
         except InferenceError as exc:
             raise ResponderUnavailable(str(exc)) from exc

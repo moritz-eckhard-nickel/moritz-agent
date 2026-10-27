@@ -13,6 +13,7 @@ from moritz_agent.api import (
     internal,
     internal_discord,
     routes_chat,
+    routes_files,
     routes_history,
     routes_phone,
     routes_system,
@@ -73,6 +74,7 @@ def create_app(ctx: AppContext) -> FastAPI:
     app.include_router(routes_phone.router)
     app.include_router(routes_chat.router)
     app.include_router(routes_history.router)
+    app.include_router(routes_files.router)
 
     app_dir = (ctx.root / APP_DIR).resolve()
     branding_dir = ctx.root / BRANDING_DIR

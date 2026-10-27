@@ -209,6 +209,12 @@ class ChatService:
         chunks: list[str] = []
         context.extras["on_text"] = chunks.append if turn.surface is Surface.CHAT else None
         context.extras["on_event"] = on_event
+        if turn.files:
+            # the files stay in the conversation for follow-up questions; this answer skips the
+            # instant answers – a question about a file is never "the weather"
+            known = {f["id"] for f in context.extras.setdefault("files", [])}
+            context.extras["files"] += [f for f in turn.files if f["id"] not in known]
+            context.extras["force_agent"] = True
         started = time.monotonic()
         task = asyncio.ensure_future(responder.respond(turn.text, context))
         conversation.task = task
@@ -233,6 +239,7 @@ class ChatService:
             conversation.task = None
             context.extras.pop("on_text", None)
             context.extras.pop("on_event", None)
+            context.extras.pop("force_agent", None)
         if task.cancelled():
             yield {"type": "cancelled"}
             return
@@ -375,6 +382,7 @@ def remember(context: TurnContext, heard: str, reply: Reply) -> None:
 def forget(context: TurnContext) -> None:
     """The short-term memory starts fresh: no history, no follow-up state of the instant answers."""
     context.history.clear()
+    context.extras.pop("files", None)
     skills = context.extras.get("skills")
     if skills is not None:
         skills.last = None

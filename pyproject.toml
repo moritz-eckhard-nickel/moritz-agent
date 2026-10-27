@@ -15,6 +15,7 @@ license = { text = "LicenseRef-MSOL-1.1" }  # own code; see LICENSING.md for bun
 #   phone: faster-whisper, piper-tts, onnxruntime, soxr, numpy (+ pjsua2, built from source)
 dependencies = [
     "tzdata>=2024.1",  # zoneinfo data for Europe/Berlin even without system tzdata
+    "pypdf>=6",  # text of PDFs in the WebUI chat (P2-05)
 ]
 
 [project.optional-dependencies]

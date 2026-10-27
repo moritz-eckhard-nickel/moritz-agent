@@ -84,8 +84,11 @@ async def change(
 
 @router.delete("/api/conversations/{conversation}")
 async def remove(conversation: str, ctx: AppContext = Depends(require_login)) -> dict[str, bool]:
-    if not re.match(ID, conversation) or not _store(ctx).delete(conversation):
+    gone = _store(ctx).delete(conversation) if re.match(ID, conversation) else None
+    if gone is None:
         raise HTTPException(404, {"error": "unknown_conversation"})
+    if ctx.runtime.files is not None:
+        ctx.runtime.files.delete_for([gone])
     return {"deleted": True}
 
 

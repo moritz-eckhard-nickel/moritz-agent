@@ -48,6 +48,10 @@ class SkillResponder:
     async def respond(self, text: str, context: TurnContext) -> Reply:
         ctx = self.context_for(context)
         ctx.thinking_prompt = None
+        if context.extras.get("force_agent"):  # a file came with the question (P2-05)
+            reply = await self.fallback.respond(text, context)
+            ctx.last_text = reply.text or ctx.last_text
+            return reply
         surface = context.extras.get("surface", "spoken")  # "chat" for the web and Discord
         outcome: Outcome = await self.router.route(text, ctx, surface=surface)
         self._log(outcome)

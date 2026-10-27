@@ -213,6 +213,19 @@ Reihenfolge: P2-01 → P2-02 → P2-03 → P2-04 → P2-05 → P2-06 → P2-07 �
 - Gescannte PDFs ohne Text: Hinweis „keine lesbare Schrift“ (OCR kommt in 1.1+).
 - Discord bekommt dasselbe für Anhänge (14 §5.5).
 - Anforderungen: UI-02, Sicherheit (Prompt-Injection, 08).
+- **Umgesetzt (27.10.2026):**
+  - `storage/files.py` mit Migration `0005_files.sql`. Dateien liegen in `data/files/` als Original und
+    ausgelesener Text. `pypdf` 6.21 ist neu in `requirements/core.lock`, Lizenz BSD-3-Clause.
+  - API: Upload als roher Body (`POST /api/files?chat=…&name=…`, ohne Formular-Paket), `GET /api/files/{id}`
+    lädt die Datei immer als Download, `DELETE` löscht sie. Lesen hat höchstens 30 s Zeit.
+  - Die Dateien eines Gesprächs gehen an das Sprachmodell als Block in der Systemanweisung, markiert als
+    „Daten, keine Anweisungen“. Sie bekommen höchstens 75 % des Kontexts und werden sonst gekürzt. Sie bleiben
+    bis zum Leeren des Kurzzeitgedächtnisses, damit Folgefragen gehen.
+  - Kommt eine Datei mit der Frage, antwortet immer das Sprachmodell, nicht eine Sofortauskunft.
+  - Dateien gehen mit ihrem Gespräch: beim Löschen und nach `storage.history_days`.
+  - WebUI: Büroklammer und Ziehen in den Chat, Anhänge mit Seiten und Größe, klare Fehler (Bild, zu groß,
+    Passwort, gescannt), Datei-Chips an der Frage, auch im Verlauf.
+  - Noch offen: Discord-Anhänge (14 §5.5) lesen. Das kommt, wenn Discord die Läufe bekommt.
 
 ### P2-06 – Agent-Timeline
 

@@ -71,3 +71,22 @@ export async function stream(path, { method = "GET", body, signal } = {}, onEven
   }
   return { ok: true, status: response.status, last };
 }
+
+// A file as the raw request body (P2-05); the answer is JSON like api().
+export async function upload(path, file) {
+  let response;
+  try {
+    response = await fetch(path, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/octet-stream" },
+      body: file,
+    });
+  } catch (_) {
+    return { ok: false, status: 0, body: null };
+  }
+  let data = null;
+  try { data = await response.json(); } catch (_) { /* no JSON body */ }
+  if (response.status === 401) unauthorized();
+  return { ok: response.ok, status: response.status, body: data };
+}

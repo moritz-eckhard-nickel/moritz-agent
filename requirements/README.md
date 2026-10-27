@@ -6,7 +6,7 @@ sie liegen bewusst nicht im Repository.
 
 | Gruppe | Inhalt |
 | --- | --- |
-| `core` | Backend, Agent, Inference-Client |
+| `core` | Backend, Agent, Inference-Client, pypdf (PDFs im Chat) |
 | `phone` | Audio: faster-whisper, Piper, ONNX Runtime, soxr (PJSUA2 wird aus `third_party/pjproject` gebaut) |
 | `discord` | Discord-Bot: discord.py mit Sprache (PyNaCl, davey) – nur wenn Discord eingerichtet ist |
 | `searxng` | Abhängigkeiten des mitgelieferten SearXNG (`third_party/searxng`) inkl. granian |

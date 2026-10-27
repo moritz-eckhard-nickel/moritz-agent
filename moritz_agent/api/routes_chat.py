@@ -24,6 +24,7 @@ router = APIRouter()
 class ChatBody(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     conversation_id: str = Field(default="web", max_length=64, pattern=r"^[A-Za-z0-9_.-]+$")
+    files: list[str] = Field(default_factory=list, max_length=5)  # ids from POST /api/files
 
 
 def result_json(result: TurnResult, prompt_text: str = "") -> dict[str, Any]:
@@ -33,21 +34,24 @@ def result_json(result: TurnResult, prompt_text: str = "") -> dict[str, Any]:
     return data
 
 
-def web_turn(body: ChatBody) -> Turn:
+def web_turn(body: ChatBody, ctx: AppContext | None = None) -> Turn:
     principal = Principal("web:owner", Role.OWNER, "web", "Web")
+    external = f"web:{body.conversation_id}"
+    files = ctx.runtime.files if ctx is not None else None
     return Turn(
         body.message,
         principal,
         Surface.CHAT,
-        f"web:{body.conversation_id}",
+        external,
         place="web",
         reply_target="default",
+        files=files.for_chat(external, body.files) if files is not None and body.files else [],
     )
 
 
 @router.post("/api/chat")
 async def chat(body: ChatBody, ctx: AppContext = Depends(require_login)) -> dict[str, Any]:
-    turn = web_turn(body)
+    turn = web_turn(body, ctx)
     try:
         result = await ctx.runtime.chat.run(turn)
     except ResponderUnavailable:
@@ -88,7 +92,7 @@ async def chat_stream(
 ) -> StreamingResponse:
     """Start a run and follow it; the run goes on when the connection breaks."""
     try:
-        run = ctx.runtime.runs.start(web_turn(body))
+        run = ctx.runtime.runs.start(web_turn(body, ctx))
     except RunBusy:
         raise HTTPException(409, {"error": "busy"}) from None
     return _sse(ctx, ctx.runtime.runs.follow(run.id))
