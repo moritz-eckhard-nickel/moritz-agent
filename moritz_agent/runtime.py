@@ -28,6 +28,7 @@ from moritz_agent.config.settings import REPO_ROOT
 from moritz_agent.core.callback import CallbackQueue
 from moritz_agent.core.chat import MEMORY_NOTICE, ChatService, forget, remember
 from moritz_agent.core.principal import discord_role, owner_ids
+from moritz_agent.core.runs import RunManager
 from moritz_agent.core.scheduler import Scheduler
 from moritz_agent.core.turn import Turn, TurnResult
 from moritz_agent.inference import InferenceClient, InferenceQueue, Priority
@@ -147,6 +148,7 @@ class Runtime:
         )
         self.discord_store: DiscordStore | None = None
         self.chat: ChatService = ChatService(self)
+        self.runs = RunManager(self.chat)  # WebUI answers as runs (ADR-041)
         self.callbacks = CallbackQueue()  # "Sag mir am Telefon …": calls the phone worker makes
         self.scheduler: Scheduler | None = None
         self.external_components: Callable[[], dict[str, Component]] = dict

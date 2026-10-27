@@ -139,12 +139,25 @@ Reihenfolge: P2-01 → P2-02 → P2-03 → P2-04 → P2-05 → P2-06 → P2-07 �
 - `POST /api/chat/stream` startet einen Lauf (§5) und liefert seine Ereignisse als `text/event-stream`;
   `GET /api/runs/{id}/events?after=N` hängt sich wieder an. Gleicher Kern wie `/api/chat` (`ChatService`), Profil `web` (wie Discord-Chat:
   Markdown, längere Antworten, Bro-Persönlichkeit).
-- Abbrechen-Knopf → `POST /api/chat/cancel` (nutzt die Abbruchlogik der Queue, Telefon behält Vorrang).
+- Abbrechen-Knopf → `POST /api/runs/{id}/cancel` (nutzt die Abbruchlogik der Queue, Telefon behält Vorrang).
 - Markdown-Darstellung ohne `innerHTML` aus Modelltext (eigener kleiner Renderer, nur sichere Elemente),
   Code-Blöcke mit Kopieren-Knopf.
 - Sofortauskünfte (Wetter, Uhrzeit …) kommen sofort als ein `done`, mit Karten wie auf Discord.
 - Tests: Ereignisfolge, Abbruch, Telefon unterbricht Web-Chat (Priorität), XSS-Fälle im Renderer.
 - Anforderungen: UI-02, AGENT-04, AGENT-08.
+- **Umgesetzt (27.10.2026):**
+  - `core/runs.py` (`RunManager`): Läufe im Speicher, fertige 10 Minuten lang wieder abrufbar. Pro
+    Gespräch läuft höchstens ein Lauf (sonst 409). Gespeichert werden Läufe mit P2-04.
+  - Ereignisse: `run`, `status`, `token`, `text`, `tool_call`, `tool_result`, `done`, `cancelled`,
+    `error`. Werkzeug-Ereignisse kommen aus `ToolRegistry.call` über `ToolContext.on_event`, die Argumente
+    gekürzt.
+  - Werkzeuge haben jetzt `risk` (`read`) und `needs_approval` (ADR-041 Nr. 4; das Nachfragen kommt mit
+    P2-06).
+  - Der Web-Chat nutzt das Chat-Profil wie Discord (Markdown, längere Antworten); ein eigenes Profil `web`
+    braucht es noch nicht.
+  - `frontend/app/js/markdown.js` (Parser ohne DOM, mit node getestet), Streaming im Chat, Stopp-Knopf,
+    Werkzeug-Schritte live. Reißt die Verbindung ab, hängt sich der Chat bis zu dreimal neu an den Lauf.
+  - Der Vorrang des Telefons steckt in der Warteschlange und ist dort getestet (`test_inference`).
 
 ### P2-03 – Großer Kontext
 

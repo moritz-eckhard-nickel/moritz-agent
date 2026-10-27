@@ -25,6 +25,7 @@ const ICONS = {
   status: ["M3 12h4l3-7 4 14 3-7h4"],
   plus: ["M12 5v14", "M5 12h14"],
   send: ["M4 12l16-8-6 16-3-7z"],
+  stop: ["M7 7h10v10H7z"],
 };
 
 export function icon(name) {

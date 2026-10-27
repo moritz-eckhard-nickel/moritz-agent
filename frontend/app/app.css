@@ -228,6 +228,36 @@ label input { margin-top: 6px; }
 .msg.user .bubble { background: var(--surface-3); border: 1px solid var(--border); border-radius: 14px 14px 4px 14px; padding: 10px 14px; }
 .msg.anton .bubble { padding-top: 4px; }
 .msg.anton.failed .bubble { color: var(--bad); }
+.bubble .answer { white-space: normal; }
+.run-status { display: flex; align-items: center; gap: 10px; min-height: 26px; }
+.run-status .muted { font-size: 13px; }
+.note { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.note.failed { color: var(--bad); }
+.steps { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-2); }
+.step { display: flex; align-items: center; gap: 8px; }
+.step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.step.running .step-dot { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); animation: blink 1.2s infinite ease-in-out; }
+.step.ok .step-dot { background: var(--ok); }
+.step.failed .step-dot { background: var(--bad); }
+.composer .stop { padding: 10px 12px; border-color: var(--border-strong); }
+
+/* -- markdown in answers --------------------------------------------------------------- */
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md p { margin: 0 0 10px; }
+.md h3, .md h4, .md h5, .md h6 { margin: 16px 0 8px; letter-spacing: -0.02em; }
+.md ul, .md ol { margin: 0 0 10px; padding-left: 22px; }
+.md li { margin: 2px 0; }
+.md li::marker { color: var(--accent-hover); }
+.md blockquote { margin: 0 0 10px; padding: 2px 0 2px 12px; border-left: 3px solid var(--border-strong); color: var(--text-2); }
+.md hr { border: 0; border-top: 1px solid var(--border); margin: 14px 0; }
+.md code { font: 13px/1.5 var(--mono); background: var(--surface-3); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; }
+.md a { color: var(--accent-hover); }
+.codeblock { margin: 0 0 10px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: #0d0c12; }
+.codebar { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px 4px 12px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+.codeblock pre { margin: 0; padding: 12px; overflow-x: auto; }
+.codeblock code { background: none; border: 0; padding: 0; white-space: pre; }
+.small-button { padding: 3px 8px; font-size: 12px; }
 .typing { display: inline-flex; gap: 4px; padding: 10px 0; }
 .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite ease-in-out; }
 .typing i:nth-child(2) { animation-delay: 0.2s; }

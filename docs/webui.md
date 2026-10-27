@@ -47,7 +47,8 @@ neu installieren und die alte entfernen.
 
 | Ansicht | Inhalt | seit |
 | --- | --- | --- |
-| Chat | mit Anton schreiben, Sofortauskünfte als Karten, Knöpfe für Rückfragen, Quellen. „Neues Gespräch“ leert sein Kurzzeitgedächtnis. | P2-01 |
+| Chat | mit Anton schreiben, Sofortauskünfte mit aufklappbaren Detailkarten, Knöpfe für Rückfragen, Quellen. „Neues Gespräch“ leert sein Kurzzeitgedächtnis. | P2-01 |
+| Chat live | Antworten kommen Wort für Wort mit Markdown (Listen, Code mit Kopieren-Knopf, Links), Werkzeuge wie Websuche oder Wetter erscheinen als Schritte, „Stopp“ bricht ab. Tab zu oder Verbindung weg: Anton antwortet trotzdem fertig. | P2-02 |
 | Status | alle Teile von moritz-agent mit Zustand, Konfiguration neu laden | P2-01 |
 
-Streaming, Verlauf, Dateien, Einstellungen und die Modellseite kommen mit den nächsten Tickets.
+Verlauf, Dateien, Einstellungen und die Modellseite kommen mit den nächsten Tickets.
