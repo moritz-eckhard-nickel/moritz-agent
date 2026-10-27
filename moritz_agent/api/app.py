@@ -9,7 +9,14 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 
-from moritz_agent.api import internal, internal_discord, routes_chat, routes_phone, routes_system
+from moritz_agent.api import (
+    internal,
+    internal_discord,
+    routes_chat,
+    routes_history,
+    routes_phone,
+    routes_system,
+)
 from moritz_agent.api.context import AppContext
 
 APP_DIR = "frontend/app"  # the WebUI (docs/plan/15, ADR-040)
@@ -65,6 +72,7 @@ def create_app(ctx: AppContext) -> FastAPI:
     app.include_router(routes_system.router)
     app.include_router(routes_phone.router)
     app.include_router(routes_chat.router)
+    app.include_router(routes_history.router)
 
     app_dir = (ctx.root / APP_DIR).resolve()
     branding_dir = ctx.root / BRANDING_DIR

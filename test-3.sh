@@ -180,8 +180,8 @@ PY
 
 llm_bench() {
 	local args=(--out "${WORK}")
-	# 8192: room for the conversation next to the system prompt and the tools (INF-05)
-	[[ "${1:-1}" -eq 1 ]] && args+=(--tune --context 8192)
+	# 51200: long chats in the WebUI (INF-02, Part 2); calls use only agent.phone.context_tokens
+	[[ "${1:-1}" -eq 1 ]] && args+=(--tune --context 51200)
 	PYTHONPATH="${ROOT}" "${VPY}" "${ROOT}/scripts/bench_llm.py" "${args[@]}"
 }
 

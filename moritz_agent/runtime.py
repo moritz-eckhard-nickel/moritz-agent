@@ -45,6 +45,7 @@ from moritz_agent.skills.responder import SkillResponder
 from moritz_agent.skills.services import build_services
 from moritz_agent.skills.tools import skill_tools
 from moritz_agent.storage import Database, DiscordStore, Repo
+from moritz_agent.storage.history import HistoryStore
 from moritz_agent.tools.call_tool import EndCall
 from moritz_agent.tools.registry import ToolRegistry
 from moritz_agent.tools.time_tool import GetCurrentTime
@@ -132,6 +133,7 @@ class Runtime:
         self.started_at = time.monotonic()
         self.db: Database | None = None
         self.repo: Repo | None = None
+        self.history: HistoryStore | None = None
         self.svc: Any = None
         self.skill_responder: SkillResponder | None = None
         self.agent_responder: AgentResponder | None = None
@@ -148,7 +150,7 @@ class Runtime:
         )
         self.discord_store: DiscordStore | None = None
         self.chat: ChatService = ChatService(self)
-        self.runs = RunManager(self.chat)  # WebUI answers as runs (ADR-041)
+        self.runs = RunManager(self.chat, on_finish=self._save_run)  # WebUI answers (ADR-041)
         self.callbacks = CallbackQueue()  # "Sag mir am Telefon …": calls the phone worker makes
         self.scheduler: Scheduler | None = None
         self.external_components: Callable[[], dict[str, Component]] = dict
@@ -180,6 +182,7 @@ class Runtime:
             database=self.db,
         )
         self.repo = self.svc.repo
+        self.history = HistoryStore(self.db)
         self.discord_store = DiscordStore(self.db)
         self.scheduler = Scheduler(
             self.discord_store,
@@ -279,8 +282,9 @@ class Runtime:
             self.agent_chat = self.agent_voice = None
             return
         size = settings.inference.context_size
+        spoken = min(size, settings.agent.phone.context_tokens)  # P2-03: calls stay quick
         self.agent_loop = AgentLoop(
-            self.queue, registry, phone_profile(settings, self.root), context_size=size
+            self.queue, registry, phone_profile(settings, self.root), context_size=spoken
         )
         self.agent_responder = AgentResponder(self.agent_loop)
         self.agent_voice = AgentResponder(
@@ -288,7 +292,7 @@ class Runtime:
                 self.queue,
                 registry,
                 phone_profile(settings, self.root),
-                context_size=size,
+                context_size=spoken,
                 priority=Priority.VOICE,
                 label="discord_voice",
             )
@@ -465,6 +469,7 @@ class Runtime:
             self._call_topics.setdefault(call_id, []).append(reply.skill_id)
         self._forward_to_discord(call_id, reply)
         self._record_turn(call_id, context.turn, text, reply, "phone", started)
+        self._remember_in_history("phone", call_id, text, reply.text, {"skill": reply.skill_id})
         yield {"type": "reply", "reply": reply}
 
     async def turn(self, call_id: str, text: str) -> Reply:
@@ -496,6 +501,13 @@ class Runtime:
 
     def record_chat_turn(self, turn: Turn, reply: Reply, result: TurnResult) -> None:
         """Statistics of a chat turn: channel, path and time – the text only if it may be kept."""
+        channel = turn.principal.channel
+        source = "web" if channel == "web" else "voice" if turn.place == "voice" else "discord"
+        meta = {"skill": reply.skill_id, "tools": result.tools, "sources": result.sources}
+        if result.card:
+            meta["card"] = result.card
+        said = result.markdown or result.text
+        self._remember_in_history(source, turn.conversation_id, turn.text, said, meta)
         if self.repo is None:
             return
         try:
@@ -510,6 +522,26 @@ class Runtime:
             )
         except Exception:
             log.debug("Chat-Runde nicht protokolliert", exc_info=True)
+
+    def _remember_in_history(
+        self, source: str, external_id: str, heard: str, said: str, meta: dict[str, Any]
+    ) -> None:
+        """The WebUI history (P2-04): every channel, if transcripts may be kept at all."""
+        if self.history is None or not self.settings.storage.store_transcripts:
+            return
+        try:
+            self.history.record(source, external_id, heard, said, meta=meta)
+        except Exception:
+            log.debug("Verlauf nicht gespeichert", exc_info=True)
+
+    def _save_run(self, run: Any) -> None:
+        if self.history is None or not self.settings.storage.store_transcripts:
+            return
+        status = run.events[-1]["type"] if run.events else "error"
+        try:
+            self.history.save_run(run.conversation_id, run.id, status, run.started_wall, run.events)
+        except Exception:
+            log.debug("Lauf nicht gespeichert", exc_info=True)
 
     async def greeting_hint(self, call_id: str) -> str | None:
         if self.skill_responder is None:
@@ -690,7 +722,10 @@ class Runtime:
         """Retention (STORE-01): old transcripts and missed questions go."""
         if self.repo is None:
             return {}
-        return self.repo.purge(self.settings.storage.transcript_retention_hours)
+        result = self.repo.purge(self.settings.storage.transcript_retention_hours)
+        if self.history is not None:
+            result["conversations"] = self.history.purge(self.settings.storage.history_days)
+        return result
 
     # -- for the Discord worker ----------------------------------------------------------------------------
     async def situation(self) -> dict[str, Any]:

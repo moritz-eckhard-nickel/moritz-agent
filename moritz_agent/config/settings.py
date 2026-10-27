@@ -72,7 +72,9 @@ class Inference(_Section):
     koboldcpp_script: str = "koboldcpp.py"
     python: str = ""  # leer: KoboldCpps Build-Umgebung (conda/envs/linux), sonst diese Python
     model: str = "models/llm/Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf"
-    context_size: int = Field(8192, ge=512)  # INF-05: gemessen auf Sophie-1 (24.10.2026)
+    context_size: int = Field(51200, ge=512)  # INF-02: ≥ 50k ab Part 2 (Moritz, 27.10.2026)
+    kv_cache: Literal["f16", "q8_0", "q4_0"] = "q8_0"  # --quantkv: 8 bit halves the context's VRAM
+    smart_cache: int = Field(2, ge=0, le=8)  # --smartcache: conversation states kept in RAM
     gpu_layers: int = 999
     moe_cpu_layers: int = Field(24, ge=0)
     use_cuda: bool = True
@@ -83,7 +85,7 @@ class Inference(_Section):
     batch_threads: int = Field(12, ge=0)
     websearch_fallback: bool = True
     startup_timeout_s: int = Field(180, ge=1)
-    request_timeout_s: int = Field(60, ge=1)
+    request_timeout_s: int = Field(180, ge=1)  # a long chat may first read its whole context
     phone_preempt_wait_s: float = Field(3, ge=0)
 
 
@@ -210,6 +212,8 @@ class AgentPhone(_Section):
     temperature: float = Field(0.3, ge=0, le=2)
     deadline_s: float = Field(15, gt=0)
     max_sentences: int = Field(3, ge=1, le=6)
+    # phone and voice channel use at most this much of the context: short prompts, fast answers
+    context_tokens: int = Field(8192, ge=1024)
     tools: list[str] = [
         "get_current_time",
         "web_search",
@@ -236,6 +240,7 @@ class Storage(_Section):
     database: str = "data/moritz-agent.sqlite3"
     store_transcripts: bool = True
     transcript_retention_hours: int = Field(24, ge=1)
+    history_days: int = Field(15, ge=1)  # WebUI history of all channels; pinned ones stay (F-41)
 
 
 class Fastpaths(_Section):

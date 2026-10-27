@@ -66,6 +66,10 @@ def build_argv(settings: Settings, root: Path, port: int, python: str | None = N
         argv += ["--jinja"]
     if cfg.flash_attention and cfg.use_cuda:
         argv += ["--flashattention"]
+    if cfg.kv_cache != "f16":
+        argv += ["--quantkv", cfg.kv_cache]
+    if cfg.smart_cache:
+        argv += ["--smartcache", str(cfg.smart_cache)]
     if cfg.chat_adapter:
         argv += ["--chatcompletionsadapter", str(settings.resolve(cfg.chat_adapter, root))]
     if cfg.websearch_fallback:

@@ -98,3 +98,21 @@ def test_a_call_remembers_long_enough():
 async def _in(tmp_path, body):
     async with running_system(tmp_path, discord=True) as system:
         return await body(system)
+
+
+def test_calls_use_a_small_part_of_the_big_context(tmp_path):
+    """P2-03: the chat may use all 51200 tokens, phone and voice channel only 8192."""
+
+    async def body(system):
+        runtime = system.runtime
+        return (
+            runtime.agent_loop.context_size,
+            runtime.agent_voice.loop.context_size,
+            runtime.agent_chat.loop.context_size,
+        )
+
+    async def go():
+        async with running_system(tmp_path, model=True) as system:
+            return await body(system)
+
+    assert asyncio.run(go()) == (8192, 8192, 51200)

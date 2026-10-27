@@ -340,7 +340,7 @@ def test_koboldcpp_arguments(tmp_path):
     assert (
         pairs["--host"] == "127.0.0.1" and pairs["--port"] == "5123"
     )  # never reachable from the LAN
-    assert pairs["--contextsize"] == "8192" and pairs["--parallelrequests"] == "1"
+    assert pairs["--contextsize"] == "51200" and pairs["--parallelrequests"] == "1"
     assert pairs["--model"].endswith("Qwen3-30B-A3B-Instruct-2507-UD-Q3_K_XL.gguf")
     assert (
         pairs["--moecpu"] == "24" and pairs["--threads"] == "12" and pairs["--blasthreads"] == "12"
@@ -354,6 +354,16 @@ def test_koboldcpp_arguments(tmp_path):
         "--websearch",
     ):
         assert flag in argv
+    # P2-03: 8-bit context and conversation states in RAM
+    assert pairs["--quantkv"] == "q8_0" and pairs["--smartcache"] == "2"
+
+
+def test_full_precision_context_and_no_smart_cache_leave_the_flags_out(tmp_path):
+    settings = load_settings()
+    settings.inference.kv_cache = "f16"
+    settings.inference.smart_cache = 0
+    argv = build_argv(settings, tmp_path, 5123, python="/usr/bin/python3")
+    assert "--quantkv" not in argv and "--smartcache" not in argv
 
 
 def test_koboldcpp_arguments_without_gpu_or_websearch(tmp_path):

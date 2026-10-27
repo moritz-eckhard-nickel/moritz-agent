@@ -20,7 +20,7 @@ from __future__ import annotations
 import asyncio
 import secrets
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -45,6 +45,7 @@ class Run:
     id: str
     conversation_id: str
     started: float = field(default_factory=time.monotonic)
+    started_wall: float = field(default_factory=time.time)
     events: list[dict[str, Any]] = field(default_factory=list)
     finished_at: float | None = None
     task: asyncio.Task[None] | None = None
@@ -71,9 +72,16 @@ class Run:
 
 
 class RunManager:
-    def __init__(self, chat: ChatService, *, keep_s: float = KEEP_S) -> None:
+    def __init__(
+        self,
+        chat: ChatService,
+        *,
+        keep_s: float = KEEP_S,
+        on_finish: Callable[[Run], None] | None = None,
+    ) -> None:
         self.chat = chat
         self.keep_s = keep_s
+        self.on_finish = on_finish  # stores the steps with the answer (P2-04)
         self._runs: dict[str, Run] = {}
 
     def get(self, run_id: str) -> Run | None:
@@ -154,6 +162,11 @@ class RunManager:
         finally:
             if not run.finished:  # ended without a word: say so instead of hanging
                 run.add({"type": "error", "error": "no_answer"})
+            if self.on_finish is not None:
+                try:
+                    self.on_finish(run)
+                except Exception:
+                    log.exception("Lauf %s nicht gespeichert", run.id)
 
     def _expire(self) -> None:
         now = time.monotonic()

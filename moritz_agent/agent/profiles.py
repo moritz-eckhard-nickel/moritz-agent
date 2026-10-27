@@ -83,7 +83,7 @@ def chat_profile(settings: Settings, root: Path) -> Profile:
         max_tool_steps=cfg.max_tool_steps,
         max_answer_tokens=DISCORD_CHAT.max_answer_tokens,
         temperature=cfg.temperature,
-        deadline_s=max(cfg.deadline_s, 30.0),
+        deadline_s=max(cfg.deadline_s, 120.0),  # a long conversation may first be read in
         max_sentences=12,
         max_chars=1800,
         speak=False,

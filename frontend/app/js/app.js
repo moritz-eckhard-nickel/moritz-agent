@@ -4,11 +4,13 @@
 import { api, onUnauthorized } from "./api.js";
 import { h, icon } from "./dom.js";
 import { createChat } from "./views/chat.js";
+import { createHistory } from "./views/history.js";
 import { createStatus } from "./views/status.js";
 
-// Only what works is shown; Verlauf, Modell and Einstellungen come with their tickets.
+// Only what works is shown; Modell and Einstellungen come with their tickets.
 const ROUTES = [
   { id: "chat", label: "Chat", icon: "chat", create: createChat },
+  { id: "verlauf", label: "Verlauf", icon: "history", create: createHistory },
   { id: "status", label: "Status", icon: "status", create: createStatus },
 ];
 
@@ -16,9 +18,9 @@ const $ = (id) => document.getElementById(id);
 const views = new Map();
 let current = null;
 
-function routeId() {
-  const id = location.hash.replace(/^#\/?/, "").split("/")[0];
-  return ROUTES.some((r) => r.id === id) ? id : "chat";
+function route() {
+  const [id, ...args] = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent);
+  return ROUTES.some((r) => r.id === id) ? { id, args } : { id: "chat", args: [] };
 }
 
 function buildNav() {
@@ -30,7 +32,7 @@ function buildNav() {
 }
 
 function navigate() {
-  const id = routeId();
+  const { id, args } = route();
   for (const link of $("nav-links").querySelectorAll("a")) {
     if (link.dataset.route === id) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
@@ -46,7 +48,7 @@ function navigate() {
   current = { id, view };
   for (const [other, v] of views) v.el.hidden = other !== id;
   document.title = `m-agent – ${ROUTES.find((r) => r.id === id).label}`;
-  view.show();
+  view.show(args);
 }
 
 function showShell() {

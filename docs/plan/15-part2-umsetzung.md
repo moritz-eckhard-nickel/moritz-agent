@@ -165,6 +165,16 @@ Reihenfolge: P2-01 → P2-02 → P2-03 → P2-04 → P2-05 → P2-06 → P2-07 �
   `test-4.sh run` misst Tokens/s und VRAM bei 50k und schreibt `--moecpu` neu.
 - Prüfen und dokumentieren, wie lange das Neueinlesen eines vollen Kontexts dauert; Fortschritt im Chat.
 - Anforderungen: INF-02 (geändert), INF-05.
+- **Umgesetzt (27.10.2026):**
+  - `inference.context_size = 51200`, `inference.kv_cache = "q8_0"` (→ `--quantkv q8_0`).
+  - `inference.smart_cache = 2` (→ `--smartcache 2`): KoboldCpp legt Gesprächsstände im RAM ab. Nach einem
+    Anruf muss ein langer Chat nicht neu eingelesen werden.
+  - `agent.phone.context_tokens = 8192`: Telefon und Sprachkanal nehmen davon nur 8.192.
+  - Gemerkt werden bis zu 100 Wechsel (vorher 30).
+  - Chat-Frist 120 s, `request_timeout_s = 180`, damit ein voller Kontext eingelesen werden kann.
+  - `./test-3.sh run` misst jetzt mit 51.200 (`bench_llm.py --tune --context 51200`).
+  - Offen bis zum Lauf auf Sophie-1: echte Tokens/s, VRAM und Einlesezeit. Das Messen übernimmt `test-4.sh`
+    (P2-12).
 
 ### P2-04 – Verlauf über alle Kanäle
 
@@ -177,6 +187,22 @@ Reihenfolge: P2-01 → P2-02 → P2-03 → P2-04 → P2-05 → P2-06 → P2-07 �
   Kurzzeitgedächtnis. Telefon- und Discord-Gespräche sind in der WebUI nur lesbar.
 - Tests: Migration, Löschen nach 15 Tagen außer gespeicherten, Suche, Export, Verlauf nach Neustart da.
 - Anforderungen: STORE-01, STORE-02 (geändert).
+- **Umgesetzt (27.10.2026):**
+  - Migration `0004_history.sql` (`conversations`, `messages`, `messages_fts`, `runs`, `run_events`) und
+    `storage/history.py`. Den FTS5-Index pflegt der Code mit, weil die Migrationen keine Trigger können.
+  - Gespeichert werden Web, Telefon, Discord-Text und Sprachkanal, nur wenn `storage.store_transcripts`
+    an ist. Ein Discord-Chat beginnt nach 30 Minuten Ruhe ein neues Gespräch (wie das Kurzzeitgedächtnis).
+  - Zu jeder Web-Antwort werden ihre Schritte gespeichert (`tool_call`, `tool_result` …), nicht die
+    einzelnen Tokens.
+  - `storage.history_days = 15`; gespeicherte Gespräche (`pinned`) löscht die nächtliche Wartung nie.
+  - API: `GET /api/conversations` (`q`, `source`, `pinned`, `chat`), `GET/PATCH/DELETE
+    /api/conversations/{id}`, `GET /api/conversations/{id}/export.md`.
+  - WebUI: Ansicht „Verlauf“ (Suche, Filter, Gruppen Gespeichert/Heute/Gestern/Diese Woche/Älter,
+    Speichern, Umbenennen, Export, Löschen). Telefon und Discord sind nur lesbar, Web-Gespräche öffnen im
+    Chat und gehen dort weiter. Im Chat gibt es den Knopf „Speichern“, und der Chat lädt nach einem Neuladen
+    das letzte Gespräch.
+  - Nach einem Neustart bekommt ein fortgesetztes Web-Gespräch sein Kurzzeitgedächtnis aus der Datenbank
+    zurück.
 
 ### P2-05 – Dateien im Chat
 
