@@ -106,7 +106,11 @@ export function createChat() {
     clearTray();
     const question = userMessage(text, files);
     list.append(question);
-    run = { id: null, last: 0, answer: new Answer(list, ask) };
+    run = { id: null, last: 0, answer: null };
+    const current = run;
+    run.answer = new Answer(list, ask, (id, allow) =>
+      api(`/api/runs/${current.id}/approval`, { method: "POST", body: { id, allow } }),
+    );
     const answer = run.answer;
     busy(true);
     scroll(true);

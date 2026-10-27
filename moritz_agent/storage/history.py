@@ -24,7 +24,17 @@ TITLE_CHARS = 60
 SNIPPET_CHARS = 140
 _MARKUP = re.compile(r"```[\w+-]*|[*_`#>]+|\[([^\]]*)\]\([^)]*\)")
 # what the run timeline needs later; the streamed text itself is in the message already
-RUN_EVENTS = frozenset({"status", "tool_call", "tool_result", "cancelled", "error"})
+RUN_EVENTS = frozenset(
+    {
+        "status",
+        "tool_call",
+        "tool_result",
+        "approval_request",
+        "approval_response",
+        "cancelled",
+        "error",
+    }
+)
 
 
 def make_title(text: str) -> str:

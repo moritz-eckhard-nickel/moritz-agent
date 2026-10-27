@@ -78,6 +78,14 @@ class ToolRegistry:
             result = ToolResult.failure(
                 "unknown_tool", f"Das Werkzeug '{name}' gibt es hier nicht. Antworte ohne Werkzeug."
             )
+        elif getattr(tool, "needs_approval", False) and not await self._approved(
+            tool, arguments, ctx
+        ):
+            result = ToolResult.failure(
+                "denied",
+                "Moritz hat das nicht erlaubt (oder kann es hier nicht erlauben). Mach es nicht und "
+                "sag ihm kurz Bescheid.",
+            )
         else:
             result = await self._run(tool, arguments, ctx)
         result = self._limit(result)
@@ -97,6 +105,24 @@ class ToolRegistry:
             },
         )
         return result
+
+    @staticmethod
+    async def _approved(tool: Tool, arguments: Any, ctx: ToolContext) -> bool:
+        """ADR-041: a risky tool runs only when Moritz says yes – never without someone to ask."""
+        if ctx.approver is None:
+            return False
+        request = {
+            "tool": tool.name,
+            "args": _summary(arguments),
+            "risk": getattr(tool, "risk", "execute"),
+        }
+        try:
+            return bool(await ctx.approver(request))
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            log.exception("Nachfrage für %s fehlgeschlagen", tool.name)
+            return False
 
     async def _run(self, tool: Tool, arguments: Any, ctx: ToolContext) -> ToolResult:
         if isinstance(arguments, str):
