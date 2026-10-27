@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
@@ -185,8 +185,13 @@ class ChatService:
         skills.home = self.home_of(turn.principal)
         return conversation
 
-    async def events(self, turn: Turn) -> AsyncIterator[dict[str, Any]]:
-        """``thinking`` / ``partial`` while the answer is made, then ``result``."""
+    async def events(
+        self, turn: Turn, *, on_event: Callable[[dict[str, Any]], None] | None = None
+    ) -> AsyncIterator[dict[str, Any]]:
+        """``thinking`` / ``partial`` while the answer is made, then ``result``.
+
+        ``on_event`` hears the tool calls of the language model as they happen (WebUI runs).
+        """
         conversation = self._prepare(turn)
         context = conversation.context
         responder = self.runtime.skill_responder
@@ -197,6 +202,7 @@ class ChatService:
             return
         chunks: list[str] = []
         context.extras["on_text"] = chunks.append if turn.surface is Surface.CHAT else None
+        context.extras["on_event"] = on_event
         started = time.monotonic()
         task = asyncio.ensure_future(responder.respond(turn.text, context))
         conversation.task = task
@@ -220,6 +226,7 @@ class ChatService:
         finally:
             conversation.task = None
             context.extras.pop("on_text", None)
+            context.extras.pop("on_event", None)
         if task.cancelled():
             yield {"type": "cancelled"}
             return

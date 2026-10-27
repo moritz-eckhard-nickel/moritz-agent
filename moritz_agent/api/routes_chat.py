@@ -1,15 +1,19 @@
 # SPDX-License-Identifier: LicenseRef-MSOL-1.1
-"""Text test path: the same pipeline as the telephone, without audio (API-03)."""
+"""Chat of the WebUI: one answer at once (API-03) or as a run streamed with SSE (ADR-041, P2-02)."""
 
 from __future__ import annotations
 
+import json
+from collections.abc import AsyncIterator
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from moritz_agent.api.context import AppContext, require_login
 from moritz_agent.core.principal import Principal, Role
+from moritz_agent.core.runs import RunBusy
 from moritz_agent.core.surface import Surface
 from moritz_agent.core.turn import Turn, TurnResult
 from moritz_agent.phone.responder import ResponderUnavailable
@@ -29,10 +33,9 @@ def result_json(result: TurnResult, prompt_text: str = "") -> dict[str, Any]:
     return data
 
 
-@router.post("/api/chat")
-async def chat(body: ChatBody, ctx: AppContext = Depends(require_login)) -> dict[str, Any]:
+def web_turn(body: ChatBody) -> Turn:
     principal = Principal("web:owner", Role.OWNER, "web", "Web")
-    turn = Turn(
+    return Turn(
         body.message,
         principal,
         Surface.CHAT,
@@ -40,6 +43,11 @@ async def chat(body: ChatBody, ctx: AppContext = Depends(require_login)) -> dict
         place="web",
         reply_target="default",
     )
+
+
+@router.post("/api/chat")
+async def chat(body: ChatBody, ctx: AppContext = Depends(require_login)) -> dict[str, Any]:
+    turn = web_turn(body)
     try:
         result = await ctx.runtime.chat.run(turn)
     except ResponderUnavailable:
@@ -47,3 +55,59 @@ async def chat(body: ChatBody, ctx: AppContext = Depends(require_login)) -> dict
     data = result_json(result, ctx.prompt_text(result.prompt))
     data["conversation_id"] = body.conversation_id
     return data
+
+
+# -- runs (ADR-041) ---------------------------------------------------------------------------------
+def _sse(ctx: AppContext, events: AsyncIterator[dict[str, Any]]) -> StreamingResponse:
+    async def body() -> AsyncIterator[bytes]:
+        async for event in events:
+            event = _for_web(ctx, event)
+            data = json.dumps(event, ensure_ascii=False, default=str)
+            yield f"id: {event['seq']}\nevent: {event['type']}\ndata: {data}\n\n".encode()
+
+    return StreamingResponse(
+        body(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
+    )
+
+
+def _for_web(ctx: AppContext, event: dict[str, Any]) -> dict[str, Any]:
+    """Announcement ids become their text; the final result gets the web form of the answer."""
+    if event["type"] == "status" and event.get("prompt"):
+        return {**event, "text": ctx.prompt_text(event["prompt"])}
+    if event["type"] == "done":
+        result = TurnResult.from_json(event["result"])
+        return {**event, "result": result_json(result, ctx.prompt_text(result.prompt))}
+    return event
+
+
+@router.post("/api/chat/stream")
+async def chat_stream(
+    body: ChatBody, ctx: AppContext = Depends(require_login)
+) -> StreamingResponse:
+    """Start a run and follow it; the run goes on when the connection breaks."""
+    try:
+        run = ctx.runtime.runs.start(web_turn(body))
+    except RunBusy:
+        raise HTTPException(409, {"error": "busy"}) from None
+    return _sse(ctx, ctx.runtime.runs.follow(run.id))
+
+
+@router.get("/api/runs/{run_id}/events")
+async def run_events(
+    run_id: str,
+    after: int = Query(0, ge=0),
+    ctx: AppContext = Depends(require_login),
+) -> StreamingResponse:
+    """Follow a run again (after a reload, from another device) from event ``after`` on."""
+    if ctx.runtime.runs.get(run_id) is None:
+        raise HTTPException(404, {"error": "unknown_run"})
+    return _sse(ctx, ctx.runtime.runs.follow(run_id, after))
+
+
+@router.post("/api/runs/{run_id}/cancel")
+async def run_cancel(run_id: str, ctx: AppContext = Depends(require_login)) -> dict[str, bool]:
+    if ctx.runtime.runs.get(run_id) is None:
+        raise HTTPException(404, {"error": "unknown_run"})
+    return {"cancelled": ctx.runtime.runs.cancel(run_id)}

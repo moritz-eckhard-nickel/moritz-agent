@@ -8,6 +8,7 @@ unchanged, ``sources`` where the facts came from (SEARCH-02, AGENT-08).
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
@@ -67,6 +68,8 @@ class ToolContext:
     surface: str = "spoken"  # spoken | chat
     skills: SkillContext | None = None  # follow-ups of the instant answers continue from here
     turn_id: int | None = None
+    # a run of the WebUI listens here: tool_call / tool_result events (ADR-041)
+    on_event: Callable[[dict[str, Any]], None] | None = None
 
 
 class Tool(Protocol):
@@ -85,6 +88,9 @@ class BaseTool:
     description = ""
     parameters: ClassVar[dict[str, Any]] = {"type": "object", "properties": {}}
     timeout_s = 10.0
+    # ADR-041: read | write | execute; a tool that needs approval asks Moritz before it runs
+    risk = "read"
+    needs_approval = False
 
     async def run(self, args: dict[str, Any], ctx: ToolContext) -> ToolResult:
         raise NotImplementedError

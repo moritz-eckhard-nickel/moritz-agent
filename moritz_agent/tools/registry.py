@@ -72,6 +72,7 @@ class ToolRegistry:
         allowed: Collection[str],
     ) -> ToolResult:
         started = time.monotonic()
+        _emit(ctx, {"type": "tool_call", "tool": name, "args": _summary(arguments)})
         tool = self._tools.get(name)
         if tool is None or name not in allowed:
             result = ToolResult.failure(
@@ -80,7 +81,21 @@ class ToolRegistry:
         else:
             result = await self._run(tool, arguments, ctx)
         result = self._limit(result)
-        self._record(name, result, ctx, round((time.monotonic() - started) * 1000))
+        ms = round((time.monotonic() - started) * 1000)
+        self._record(name, result, ctx, ms)
+        _emit(
+            ctx,
+            {
+                "type": "tool_result",
+                "tool": name,
+                "ok": result.ok,
+                "ms": ms,
+                "error": result.error,
+                "sources": [
+                    {"name": s.get("name", ""), "url": s.get("url", "")} for s in result.sources
+                ],
+            },
+        )
         return result
 
     async def _run(self, tool: Tool, arguments: Any, ctx: ToolContext) -> ToolResult:
@@ -162,3 +177,27 @@ def _shrink(value: Any, max_string: int, max_items: int) -> Any:
     if isinstance(value, dict):
         return {key: _shrink(item, max_string, max_items) for key, item in value.items()}
     return value
+
+
+def _emit(ctx: ToolContext, event: dict[str, Any]) -> None:
+    if ctx.on_event is not None:
+        try:
+            ctx.on_event(event)
+        except Exception:  # a listener never breaks the tool call
+            log.exception("Werkzeug-Ereignis nicht zugestellt")
+
+
+def _summary(arguments: Any, limit: int = 160) -> dict[str, str]:
+    """The arguments for the timeline: short strings, nothing nested."""
+    if isinstance(arguments, str):
+        try:
+            arguments = json.loads(arguments) if arguments.strip() else {}
+        except ValueError:
+            return {}
+    if not isinstance(arguments, dict):
+        return {}
+    shown: dict[str, str] = {}
+    for key, value in list(arguments.items())[:6]:
+        text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+        shown[str(key)[:40]] = text if len(text) <= limit else text[: limit - 1] + "…"
+    return shown

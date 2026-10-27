@@ -20,6 +20,7 @@ class AgentResponder:
             call_id=context.call_id,
             surface=context.extras.get("surface", "spoken"),
             skills=context.extras.get("skills"),
+            on_event=context.extras.get("on_event"),
         )
         try:
             result = await self.loop.run(
