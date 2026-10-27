@@ -100,5 +100,5 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | F-48 | ~~Mikrofon und Vorlesen im Browser?~~ | **beantwortet:** nein |
 | F-49 | ~~Wie lange angemeldet bleiben?~~ | **beantwortet:** 10 Tage |
 | F-50 | ~~Zugangsdaten in der WebUI setzbar?~~ | **beantwortet:** ja, alles änderbar (nur schreibend) |
-| F-51 | Vorlage „layernx“ für das Design? | Fluent-2-Stil dunkel, bis eine Vorlage da ist |
+| F-51 | ~~Vorlage „layernx“ für das Design?~~ | **beantwortet:** dunkel wie layernx.de (Screenshot) |
 | F-52 | ~~Agenten in der Sandbox?~~ | **beantwortet:** ja, später wie Claude Code; Part 2 legt den Grund (ADR-041) |

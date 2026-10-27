@@ -1,0 +1,50 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: LicenseRef-MSOL-1.1 -->
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#09090c">
+  <title>m-agent – Anton</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/branding/m-agent-logo-192.png">
+  <link rel="stylesheet" href="/app/app.css">
+</head>
+<body>
+  <div id="shell" class="shell" hidden>
+    <nav class="nav" aria-label="Hauptmenü">
+      <a class="brand" href="#/chat">
+        <img src="/branding/m-agent-logo-64.png" width="32" height="32" alt="">
+        <span>m-agent</span>
+      </a>
+      <div id="nav-links" class="nav-links"></div>
+      <button id="logout" class="nav-logout" type="button">Abmelden</button>
+    </nav>
+    <main id="view" class="view" tabindex="-1"></main>
+  </div>
+
+  <section id="login" class="gate" hidden>
+    <div class="gate-backdrop" aria-hidden="true">m-agent</div>
+    <form id="login-form" class="gate-card" autocomplete="on">
+      <p class="eyebrow">moritz-agent <span class="sep">/</span> Anton</p>
+      <h1 class="headline">Willkommen<br><span class="accent">zurück.</span></h1>
+      <label>Benutzername <input name="username" autocomplete="username" required></label>
+      <label>Passwort <input name="password" type="password" autocomplete="current-password" required></label>
+      <button class="primary" type="submit">Anmelden</button>
+      <p id="login-error" class="error" role="alert"></p>
+      <p class="muted small">Du bleibst 10 Tage angemeldet.</p>
+    </form>
+  </section>
+
+  <section id="problem" class="gate" hidden>
+    <div class="gate-card center">
+      <img class="mascot" src="/branding/scribbles/scribbles-white.svg" height="120" alt="Scribbles">
+      <h1 id="problem-title" class="headline small-headline">Das hat nicht geklappt</h1>
+      <p id="problem-text" class="muted"></p>
+      <button id="problem-retry" class="secondary" type="button">Nochmal versuchen</button>
+    </div>
+  </section>
+
+  <script type="module" src="/app/js/app.js"></script>
+</body>
+</html>

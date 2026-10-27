@@ -23,7 +23,7 @@ Ticket endet mit grünem `pytest` und einem Regressionsanruf in `test-4.sh run`.
 | Sprechen im Browser | nein (kein Mikrofon, kein Vorlesen) |
 | Login | 10 Tage angemeldet bleiben, auch über Neustarts hinweg |
 | Einstellungen | **alles** in der WebUI änderbar, auch Zugangsdaten (nur schreiben, nie anzeigen) |
-| Aussehen | dunkel, im Stil von Microsoft Fluent |
+| Aussehen | dunkel, im Stil von **layernx.de** (Screenshot von Moritz, 27.10.2026) |
 | Geräte | PC, Handy, Tablet – alles gleich gut |
 | **Später: Agenten in der Sandbox** | Anton soll irgendwann wie Claude Code selbstständig in der Sandbox arbeiten (Part 3/4). Part 2 legt dafür den Grund und baut nichts, was das verbaut (§5) |
 
@@ -48,11 +48,12 @@ Ticket endet mit grünem `pytest` und einem Regressionsanruf in `test-4.sh run`.
   Android-WebView (1.1+).
 - **Streaming über SSE** (`fetch` mit `ReadableStream` für POST, `EventSource` für den Live-Status): einfacher
   als WebSocket, FastAPI kann es ohne Zusatzpaket.
-- **Kein CDN, keine fremden Schriften:** alles liegt im Repo. Schrift: Systemschrift im Fluent-Stil
-  (`"Segoe UI Variable", "Segoe UI", system-ui, sans-serif`) – unter Windows Segoe, sonst die Systemschrift.
-- **Design im Fluent-2-Stil, dunkel:** Flächen in Graustufen (Hintergrund ≈ `#1f1f1f`, Karten ≈ `#292929`),
-  Akzentfarbe aus dem m-agent-Logo, runde Ecken 4–8 px, leichte Schatten, Fokusrahmen sichtbar,
-  Abstände im 4-px-Raster. Alle Farben als CSS-Variablen, damit später ein helles Design dazukommen kann.
+- **Kein CDN, keine fremden Schriften:** alles liegt im Repo. Schrift: Systemschrift
+  (`"Helvetica Neue", Helvetica, Arial, "Segoe UI", system-ui`).
+- **Design wie layernx.de, dunkel:** fast schwarzer Grund (`#09090c`) mit dezentem violettem Schimmer, Violett
+  `#5b3bff` als Akzent mit Leuchten unter dem Hauptknopf, fette, eng gesetzte Überschriften mit einem Wort in
+  Violett, kleine graue Großbuchstaben-Labels („ANTON / CHAT“), Zweitknöpfe dunkel mit feinem Rand, beim Login
+  ein großer Umriss-Schriftzug „m-agent“ im Hintergrund. Alle Farben sind CSS-Variablen in `frontend/app/app.css`.
 - Alternativen: Preact/htm ohne Build (vendored, ≈ 10 KB) – nehmen wir, falls die Oberfläche zu groß für
   Vanilla-JS wird; Svelte/React mit Build – abgelehnt, weil Node auf dem Server oder im Release nötig wäre.
 
@@ -117,16 +118,21 @@ Reihenfolge: P2-01 → P2-02 → P2-03 → P2-04 → P2-05 → P2-06 → P2-07 �
 
 - `frontend/app/` (index.html, `app.js`, `style.css`, Module je Ansicht), ausgeliefert unter `/`; die
   Statusseite zieht als Ansicht `#/status` ein, `/status` leitet weiter.
-- Layout: Seitenleiste (PC), einklappbar (Tablet), untere Leiste (Handy); Fluent-Stil dunkel (§3), Logo und Scribbles.
+- Layout: Seitenleiste (PC), einklappbar (Tablet), untere Leiste (Handy); Design wie layernx.de (§3), Logo und Scribbles.
 - **Login 10 Tage:** `server.session_ttl_hours = 240`; Sitzungen liegen gehasht in SQLite und überstehen
   Neustarts. Abmelden beendet die Sitzung sofort; „Alle Geräte abmelden“ in den Einstellungen.
-- **Zertifikat für die IP:** eine eigene kleine Zertifizierungsstelle (`data/tls/ca.crt`) unterschreibt das
+- **Zertifikat für die IP:** eine eigene kleine Zertifizierungsstelle (`runtime/tls/ca.pem`) unterschreibt das
   Server-Zertifikat für `192.168.1.187`, alle eigenen IPs und den Hostnamen (`server.public_hosts`).
   `GET /ca.crt` liefert die CA zum Installieren; Anleitung für Windows, Android, iOS und Linux in
   `docs/webui.md`. Danach keine Zertifikatswarnung mehr.
 - Tests: Auslieferung, Content-Security-Policy (`default-src 'self'`), kein externer Request, Sitzung nach
   Neustart gültig, nach 10 Tagen ungültig, Zertifikat enthält die IP.
 - Anforderungen: UI-02, API-01, API-02, API-05.
+- **Umgesetzt (27.10.2026):** `frontend/app/` (Chat über `/api/chat`, Status), `storage/web.py` +
+  Migration `0003_web.sql`, `api/tls.py` (eigene CA, Erneuerung bei neuer Adresse oder 30 Tage vor Ablauf, eigenes
+  Zertifikat bleibt unangetastet), `POST /api/logout-everywhere`, `docs/webui.md`. Die alte Statusseite
+  `frontend/status/` ist entfernt. Der Knopf „Alle Geräte abmelden“ kommt mit der Einstellungsseite (P2-09);
+  der Endpunkt ist schon da.
 
 ### P2-02 – Chat mit Streaming (SSE)
 
@@ -238,5 +244,5 @@ Reihenfolge: P2-01 → P2-02 → P2-03 → P2-04 → P2-05 → P2-06 → P2-07 �
 | F-48 | Mikrofon und Vorlesen im Browser? | nein |
 | F-49 | Wie lange angemeldet bleiben? | 10 Tage |
 | F-50 | Zugangsdaten in der WebUI setzbar? | ja, alles änderbar |
-| F-51 | Aussehen? | dunkel, Microsoft-Fluent-Stil („layernx“ – Vorlage noch offen) |
+| F-51 | Aussehen? | dunkel wie layernx.de |
 | F-52 | Agenten in der Sandbox? | ja, später wie Claude Code; Part 2 legt den Grund (§5) |

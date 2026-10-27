@@ -18,6 +18,7 @@ from moritz_agent.inference import InferenceClient
 from moritz_agent.runtime import Runtime
 from moritz_agent.setup import files
 from moritz_agent.skills.clock import FixedClock
+from moritz_agent.storage.web import SessionStore
 
 from . import weather_fixtures as wf
 from .fake_model import FakeModel
@@ -73,6 +74,8 @@ def make_tree(
     toml = toml.replace(
         'passwords_file = "passwords.txt"', f'passwords_file = "{tmp_path}/passwords.txt"'
     )
+    # certificates and the CA live in the test folder, never in the repository's runtime/
+    toml = toml.replace('"runtime/tls/', f'"{tmp_path}/tls/')
     # never the real model of the machine (/home/models on Sophie-1): no KoboldCpp in tests
     toml = files.set_value(toml, "inference", "model", f'"{tmp_path}/no-model.gguf"')
     if notes:
@@ -176,7 +179,7 @@ async def running_system(
     ctx = AppContext(
         runtime=runtime,
         config=config,
-        auth=Authenticator(lambda: config.current, **kwargs),
+        auth=Authenticator(lambda: config.current, store=SessionStore(runtime.db), **kwargs),
         root=ROOT,
         data_root=tmp_path,
         secure_cookie=False,

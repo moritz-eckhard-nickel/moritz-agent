@@ -18,7 +18,7 @@ router = APIRouter()
 
 
 class ChatBody(BaseModel):
-    message: str = Field(min_length=1, max_length=500)
+    message: str = Field(min_length=1, max_length=4000)
     conversation_id: str = Field(default="web", max_length=64, pattern=r"^[A-Za-z0-9_.-]+$")
 
 

@@ -714,8 +714,8 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   (Node im Release oder auf dem Server nötig).
 - **Konsequenzen:** Ein eigener kleiner Markdown-Renderer ohne `innerHTML` aus Modelltext, eine strenge
   Content-Security-Policy (`default-src 'self'`). Details: [15](15-part2-umsetzung.md).
-- **Design:** dunkel im Stil von Microsoft Fluent 2, Systemschrift (Segoe UI unter Windows), Farben als
-  CSS-Variablen (Moritz, 27.10.2026).
+- **Design:** dunkel im Stil von layernx.de: fast schwarz, Violett `#5b3bff` mit Leuchten, fette eng gesetzte
+  Überschriften, Systemschrift; Farben als CSS-Variablen (Moritz, 27.10.2026).
 - **Status:** beschlossen (Moritz, 27.10.2026).
 
 ## ADR-041 – Antworten als Läufe: Grundlage für Agenten in der Sandbox

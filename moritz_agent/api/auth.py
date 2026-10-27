@@ -4,6 +4,7 @@
 The login comes from ``passwords.txt``. Only a scrypt hash of it is kept in memory and compared in
 constant time; a wrong user name costs the same time as a wrong password. A session is a random
 token held on the server; the cookie is ``HttpOnly``, ``SameSite=Strict`` and ``Secure`` with TLS.
+With a :class:`SessionStore` the sessions (their sha256, never the token) survive a restart.
 """
 
 from __future__ import annotations
@@ -16,8 +17,12 @@ import time
 from collections import defaultdict, deque
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from moritz_agent.config.reload import RuntimeConfig
+
+if TYPE_CHECKING:
+    from moritz_agent.storage.web import SessionStore
 
 COOKIE = "magent_session"
 SCRYPT = {"n": 2**14, "r": 8, "p": 1, "dklen": 32}
@@ -40,10 +45,12 @@ class Authenticator:
         self,
         config: Callable[[], RuntimeConfig],
         *,
-        clock: Callable[[], float] = time.monotonic,
+        clock: Callable[[], float] = time.time,  # wall time: stored sessions outlive the process
+        store: SessionStore | None = None,
     ) -> None:
         self._config = config
         self._clock = clock
+        self._store = store
         self._salt = os.urandom(16)
         self._known: tuple[str, str] | None = None  # (username, password) the hashes belong to
         self._user_hash = b""
@@ -60,12 +67,21 @@ class Authenticator:
     def _refresh(self) -> bool:
         login = self._config().passwords.web_login
         if not login.enabled:
+            if self._known is not None and self._store is not None:
+                self._store.clear()
             self._known = None
             self._sessions.clear()
             return False
         current = (login.username, login.password.reveal())
         if current != self._known:
-            if self._known is not None:  # the password changed: nobody stays logged in
+            first = self._known is None
+            if self._store is not None:
+                if not self._store.same_login(*current):  # changed, maybe while we were down
+                    self._store.clear()
+                    self._sessions.clear()
+                elif first:
+                    self._sessions = self._store.load(self._clock())
+            elif not first:  # the password changed: nobody stays logged in
                 self._sessions.clear()
             self._known = current
             self._user_hash = _hash(current[0], self._salt)
@@ -102,7 +118,10 @@ class Authenticator:
         self._failures.pop(ip, None)
         token = secrets.token_urlsafe(32)
         ttl = self._config().settings.server.session_ttl_hours * 3600.0
-        self._sessions[self._digest(token)] = self._clock() + ttl
+        key, expires = self._digest(token), self._clock() + ttl
+        self._sessions[key] = expires
+        if self._store is not None:
+            self._store.add(key, expires)
         self._purge()
         return LoginResult(True, token=token)
 
@@ -119,13 +138,24 @@ class Authenticator:
         if expires is None:
             return False
         if expires < self._clock():
-            del self._sessions[key]
+            self._forget(key)
             return False
         return True
 
     def logout(self, token: str | None) -> None:
         if token:
-            self._sessions.pop(self._digest(token), None)
+            self._forget(self._digest(token))
+
+    def logout_everywhere(self) -> None:
+        """End every session on every device."""
+        self._sessions.clear()
+        if self._store is not None:
+            self._store.clear()
+
+    def _forget(self, key: str) -> None:
+        self._sessions.pop(key, None)
+        if self._store is not None:
+            self._store.remove(key)
 
     def _purge(self) -> None:
         now = self._clock()

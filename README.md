@@ -57,7 +57,7 @@ moritz-agent
 ├── Tools           get_current_time · web_search · später Shell/Python/Git/SSH (nur Sandbox)
 ├── Storage         SQLite (Transkripte 24 h)
 ├── Backend API     HTTPS :3501 · /api/... · später OpenAI-kompatibel /v1/...
-└── Frontend        Statusseite (Part 1) · Chat, Agent-Timeline, Modelle (Part 2)
+└── Frontend        WebUI: Chat, Status (P2-01) · Verlauf, Agent-Timeline, Einstellungen (Part 2)
 ```
 
 Details: [Architektur](docs/plan/02-architektur.md) ·
@@ -71,7 +71,7 @@ Details: [Architektur](docs/plan/02-architektur.md) ·
 | Host | Sophie-1, Proxmox VE, 32 GB RAM, Xeon E5-2673 v3, NVIDIA RTX 3070 (8 GB VRAM) |
 | Laufzeit | unprivilegierter LXC mit **Ubuntu 26.04**, 16 GB RAM-Limit, max. 18 Threads, GPU-Gerätezugriff |
 | Telefonanlage | Asterisk `192.168.1.176`, SIP UDP 5060, Nebenstelle 999 → Konto `agent` |
-| Web-UI | `https://<LXC-IP>:3501` im LAN, mit Login |
+| Web-UI | `https://192.168.1.187:3501` (Sophie-1) im LAN, mit Login – [docs/webui.md](docs/webui.md) |
 | Sandbox (ab Part 4) | eigene VM auf Redemption-1, nur Internet + Sophie-1 erreichbar |
 
 Infrastruktur-Anleitung (inkl. NVIDIA-Treiber am Host): [docs/plan/06-infrastruktur.md](docs/plan/06-infrastruktur.md)

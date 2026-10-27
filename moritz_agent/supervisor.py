@@ -35,6 +35,7 @@ from moritz_agent.logging_setup import get_logger, setup_logging
 from moritz_agent.phone.control import read_status
 from moritz_agent.process import ManagedProcess, find_free_port
 from moritz_agent.runtime import Component, Runtime
+from moritz_agent.storage.web import SessionStore
 
 log = get_logger("system")
 PHONE_STOP_GRACE_S = 10.0
@@ -151,7 +152,10 @@ class Supervisor:
         self.ctx = AppContext(
             runtime=self.runtime,
             config=self.config,
-            auth=Authenticator(lambda: self.config.current),
+            auth=Authenticator(
+                lambda: self.config.current,
+                store=SessionStore(self.runtime.db) if self.runtime.db is not None else None,
+            ),
             root=self.root,
             data_root=self.state_root,
             secure_cookie=settings.server.tls,
@@ -215,7 +219,14 @@ class Supervisor:
         if settings.server.tls:
             cert = settings.resolve(settings.server.tls_cert, self.root)
             key = settings.resolve(settings.server.tls_key, self.root)
-            if not await asyncio.to_thread(ensure_certificate, cert, key):
+            if not await asyncio.to_thread(
+                ensure_certificate,
+                cert,
+                key,
+                ca_cert=settings.resolve(settings.server.tls_ca_cert, self.root),
+                ca_key=settings.resolve(settings.server.tls_ca_key, self.root),
+                hosts=settings.server.public_hosts,
+            ):
                 self.web_state = Component(
                     "failed", "TLS-Zertifikat fehlt und lässt sich nicht erzeugen"
                 )
