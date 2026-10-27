@@ -240,11 +240,32 @@ label input { margin-top: 6px; }
   border-left: 3px solid var(--accent);
   border-radius: var(--radius);
   background: var(--surface);
-  padding: 12px 14px;
+  padding: 10px 14px;
   white-space: normal;
 }
 .card.warn { border-left-color: var(--warn); }
-.card h3 { margin: 0 0 6px; font-size: 15px; }
+.card summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 700;
+}
+.card summary::-webkit-details-marker { display: none; }
+.card summary::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform 0.15s;
+}
+.card[open] summary::before { transform: rotate(45deg); }
+.card summary .muted { margin-left: auto; font-size: 12px; font-weight: 600; }
+.card[open] summary .muted { visibility: hidden; }
+.card .card-text { margin-top: 10px; }
 .card dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 16px; margin: 10px 0 0; }
 .card .field.wide { grid-column: 1 / -1; }
 .card dt { color: var(--muted); font-size: 12px; }

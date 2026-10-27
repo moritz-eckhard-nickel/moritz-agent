@@ -24,11 +24,12 @@ function cardView(card, said) {
     h("div", { class: f.inline && String(f.value).length <= 40 ? "field" : "field wide" }, h("dt", { text: f.name }), h("dd", { text: f.value })),
   );
   const description = card.description && card.description.trim() !== said.trim() ? card.description : null;
+  // folded by default: the answer above says the essentials, the card holds the details
   return h(
-    "div",
+    "details",
     { class: `card ${card.color === "warn" ? "warn" : ""}` },
-    card.title ? h("h3", { text: card.title }) : null,
-    description ? h("div", { text: description }) : null,
+    h("summary", {}, h("span", { text: card.title || "Details" }), h("span", { class: "muted", text: "Details" })),
+    description ? h("div", { class: "card-text", text: description }) : null,
     fields.length ? h("dl", {}, fields) : null,
     card.footer ? h("footer", { text: card.footer }) : null,
   );
