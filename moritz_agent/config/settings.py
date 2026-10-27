@@ -51,7 +51,10 @@ class Server(_Section):
     tls: bool = True
     tls_cert: str = "runtime/tls/cert.pem"
     tls_key: str = "runtime/tls/key.pem"
-    session_ttl_hours: int = Field(12, ge=1)
+    tls_ca_cert: str = "runtime/tls/ca.pem"  # own small CA that signs tls_cert (docs/webui.md)
+    tls_ca_key: str = "runtime/tls/ca-key.pem"
+    public_hosts: list[str] = []  # extra IPs/names in the certificate (own IPs come automatically)
+    session_ttl_hours: int = Field(240, ge=1)  # 10 days (F-49)
     login_max_attempts: int = Field(5, ge=1)
     login_window_minutes: int = Field(5, ge=1)
 

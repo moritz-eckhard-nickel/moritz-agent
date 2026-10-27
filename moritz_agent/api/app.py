@@ -7,12 +7,18 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 
 from moritz_agent.api import internal, internal_discord, routes_chat, routes_phone, routes_system
 from moritz_agent.api.context import AppContext
 
-STATUS_DIR = "frontend/status"
+APP_DIR = "frontend/app"  # the WebUI (docs/plan/15, ADR-040)
+_APP_TYPES = {
+    ".js": "text/javascript",
+    ".css": "text/css",
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+}
 BRANDING_DIR = "assets/branding"
 _BRANDING_FILES = {
     "m-agent-logo.svg",
@@ -50,7 +56,7 @@ def _security(app: FastAPI) -> None:
 
 
 def create_app(ctx: AppContext) -> FastAPI:
-    """The web interface on port 3501: status page, login, system and chat endpoints."""
+    """The web interface on port 3501: the WebUI, login, system and chat endpoints."""
     app = FastAPI(
         title="moritz-agent", docs_url=None, redoc_url=None, openapi_url=None, version="1"
     )
@@ -60,19 +66,41 @@ def create_app(ctx: AppContext) -> FastAPI:
     app.include_router(routes_phone.router)
     app.include_router(routes_chat.router)
 
-    status_dir = ctx.root / STATUS_DIR
+    app_dir = (ctx.root / APP_DIR).resolve()
     branding_dir = ctx.root / BRANDING_DIR
 
     @app.get("/", include_in_schema=False)
     async def index() -> FileResponse:
-        return FileResponse(status_dir / "index.html", media_type="text/html")
+        return FileResponse(app_dir / "index.html", media_type="text/html")
 
-    @app.get("/static/{name}", include_in_schema=False)
-    async def static(name: str) -> FileResponse:
-        path = (status_dir / name).resolve()
-        if path.parent != status_dir.resolve() or not path.is_file():
+    @app.get("/status", include_in_schema=False)
+    async def old_status_page() -> RedirectResponse:
+        return RedirectResponse("/#/status", status_code=308)
+
+    @app.get("/app/{name:path}", include_in_schema=False)
+    async def app_file(name: str) -> FileResponse:
+        path = (app_dir / name).resolve()
+        media = _APP_TYPES.get(path.suffix)
+        if media is None or not path.is_relative_to(app_dir) or not path.is_file():
             raise HTTPException(404)
-        return FileResponse(path)
+        return FileResponse(path, media_type=media)
+
+    @app.get("/ca.crt", include_in_schema=False)
+    async def ca_certificate() -> Response:
+        """The public certificate of the own CA, to install on a device (docs/webui.md)."""
+        settings = ctx.config.settings
+        path = settings.resolve(settings.server.tls_ca_cert, ctx.root)
+        try:
+            pem = path.read_text(encoding="ascii")
+        except (OSError, UnicodeDecodeError):
+            raise HTTPException(404) from None
+        if "BEGIN CERTIFICATE" not in pem or "PRIVATE KEY" in pem:
+            raise HTTPException(404)
+        return Response(
+            pem,
+            media_type="application/x-x509-ca-cert",
+            headers={"Content-Disposition": 'attachment; filename="m-agent-ca.crt"'},
+        )
 
     @app.get("/branding/{name:path}", include_in_schema=False)
     async def branding(name: str) -> FileResponse:

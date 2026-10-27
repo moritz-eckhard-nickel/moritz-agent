@@ -11,7 +11,7 @@ Stand: 20.10.2026 · Zielsystem: Sophie-1 (Proxmox, 32 GB RAM, Xeon E5-2673 v3, 
 | [03-entscheidungen.md](03-entscheidungen.md) | Architekturentscheidungen (ADR-001 … ADR-041) |
 | [04-part1-umsetzung.md](04-part1-umsetzung.md) | **Ticketplan Part 1** (P1-00, P1-00b … P1-18, Block S: P1-19 … P1-30, Block D: P1-31 … P1-43), Reihenfolge, DoD, Ansagenkatalog |
 | [05-roadmap.md](05-roadmap.md) | Part 2 – 9, Version 1.0, 1.1+ |
-| [15-part2-umsetzung.md](15-part2-umsetzung.md) | **Ticketplan Part 2 (WebUI):** P2-01 … P2-12, Moritz' Vorgaben, Frontend ohne Build im Fluent-Stil (ADR-040), Läufe als Grundlage für Sandbox-Agenten (ADR-041), 50k Kontext, Verlauf über alle Kanäle, Dateien, Einstellungen, Fragen F-41 … F-52 |
+| [15-part2-umsetzung.md](15-part2-umsetzung.md) | **Ticketplan Part 2 (WebUI):** P2-01 … P2-12, Moritz' Vorgaben, Frontend ohne Build im Stil von layernx.de (ADR-040), Läufe als Grundlage für Sandbox-Agenten (ADR-041), 50k Kontext, Verlauf über alle Kanäle, Dateien, Einstellungen, Fragen F-41 … F-52 |
 | [06-infrastruktur.md](06-infrastruktur.md) | Inventar, RAM/VRAM-Budget, LXC, NVIDIA-Treiber am Host, GPU-Zugriff, Firewall, Sandbox-VM |
 | [07-installation-update.md](07-installation-update.md) | Spezifikation Installer und Updater, Exit-Codes, Versions-Lock |
 | [08-sicherheit.md](08-sicherheit.md) | Bedrohungsmodell, Secret-Handling, Lizenzpflichten |

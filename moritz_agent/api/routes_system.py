@@ -82,6 +82,14 @@ async def logout(request: Request, response: Response, ctx: AppContext = Depends
     return {"ok": True}
 
 
+@router.post("/api/logout-everywhere")
+async def logout_everywhere(response: Response, ctx: AppContext = Depends(require_login)):
+    """Every device has to log in again, this one included."""
+    ctx.auth.logout_everywhere()
+    response.delete_cookie(COOKIE, path="/")
+    return {"ok": True}
+
+
 @router.get("/api/system/status")
 async def status(ctx: AppContext = Depends(require_login)) -> dict[str, Any]:
     """Every component with state and message – never a credential (UI-01)."""

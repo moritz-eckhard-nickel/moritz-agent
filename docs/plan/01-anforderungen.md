@@ -275,7 +275,7 @@ Deterministische Auskünfte **vor** dem Sprachmodell (Moritz, 18.10.2026). Plan 
 | API-04 | Spätere Endpunkte: `/api/agent`, `/api/research`, `/api/files`, `/api/models`, `/api/tools`, `/api/settings`, `/v1/...`. | — | 2–5 |
 | API-05 | Login: scrypt-Hash, Session-Cookie (`HttpOnly`, `SameSite=Strict`, `Secure` bei TLS), Rate-Limit für Login-Versuche. Ab Part 2: 10 Tage angemeldet, Sitzungen überstehen Neustarts (F-49). | MUSS | 1 |
 | UI-01 | Part 1: Statusseite mit Registrierung, Anrufzustand, STT/TTS-Bereitschaft, LLM, Suche, letzte Fehler. **Keine Passwörter**. | MUSS | 1 |
-| UI-02 | Part 2: Chat, Streaming, Verlauf über alle Kanäle (suchen, umbenennen, speichern, Markdown-Export), Dateien (Text, PDF), Agent-Timeline, Modellseite, Einstellungen (alles änderbar, Zugangsdaten nur schreibend). Dunkel im Fluent-Stil, für PC, Handy und Tablet (Android-WebView-tauglich). Gebaut für spätere Agenten-Läufe (ADR-041). Details: [15](15-part2-umsetzung.md). | MUSS | 2 |
+| UI-02 | Part 2: Chat, Streaming, Verlauf über alle Kanäle (suchen, umbenennen, speichern, Markdown-Export), Dateien (Text, PDF), Agent-Timeline, Modellseite, Einstellungen (alles änderbar, Zugangsdaten nur schreibend). Dunkel im Stil von layernx.de, für PC, Handy und Tablet (Android-WebView-tauglich). Gebaut für spätere Agenten-Läufe (ADR-041). Details: [15](15-part2-umsetzung.md). | MUSS | 2 |
 
 ## 9. Speicher & Logging (STORE / LOG)
 

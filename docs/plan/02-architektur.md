@@ -63,7 +63,7 @@ moritz-agent/                      (Repo-Wurzel = Installationsverzeichnis /opt/
 │   ├── memory/                    (Part 8)
 │   └── setup/                     Installer-/Update-Helfer (atomare Writes, TXT-Migration)
 │
-├── frontend/                      eigene WebUI (Part 1: Statusseite; Part 2: Chat)
+├── frontend/                      eigene WebUI (`app/`: Chat, Status, … – Part 2, ADR-040)
 ├── third_party/                   ── mitgelieferte Fremdkomponenten (ADR-021), unverändert ──
 │   ├── searxng/                   SearXNG, fertig gebaut (Assets + Daten), läuft direkt aus dem Repo
 │   ├── pjproject/                 PJSIP/PJSUA2 2.17 Quellcode

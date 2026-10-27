@@ -52,6 +52,12 @@ def prepare(tmp_path: Path, *, tls: bool = False, web_login: bool = True) -> tup
             'tls_cert = "runtime/tls/cert.pem"', f'tls_cert = "{tree}/tls/cert.pem"'
         )
         text = text.replace('tls_key = "runtime/tls/key.pem"', f'tls_key = "{tree}/tls/key.pem"')
+        text = text.replace(
+            'tls_ca_cert = "runtime/tls/ca.pem"', f'tls_ca_cert = "{tree}/tls/ca.pem"'
+        )
+        text = text.replace(
+            'tls_ca_key = "runtime/tls/ca-key.pem"', f'tls_ca_key = "{tree}/tls/ca-key.pem"'
+        )
     path.write_text(text, encoding="utf-8")
     return tree, port
 
@@ -222,6 +228,7 @@ def test_https_with_a_generated_certificate(tmp_path):
 
     body, message, key_mode = run(scenario())
     assert body == {"ok": True} and message.startswith("https://") and key_mode == 0o600
+    assert (tree / "tls" / "ca.pem").is_file()  # signed by the own CA (P2-01)
 
 
 def test_a_busy_port_only_disables_the_web_interface(tmp_path):

@@ -153,7 +153,7 @@ def test_session_expires(tmp_path):
     async def body(system):
         async with system.client() as client:
             await system.login(client)
-            clock[0] += 12 * 3600 + 5
+            clock[0] += 240 * 3600 + 5  # 10 days (F-49)
             return (await client.get("/api/system/status")).status_code
 
     assert scenario(tmp_path, body, auth_clock=lambda: clock[0]) == 401
@@ -310,7 +310,7 @@ def test_an_unreachable_model_gives_503(tmp_path):
 
 @pytest.mark.parametrize(
     "payload",
-    [{"message": ""}, {"message": "x" * 501}, {"message": "a", "conversation_id": "../x"}],
+    [{"message": ""}, {"message": "x" * 4001}, {"message": "a", "conversation_id": "../x"}],
 )
 def test_chat_input_is_checked(tmp_path, payload):
     async def body(system):
@@ -409,38 +409,67 @@ def test_a_foreign_origin_cannot_post(tmp_path):
     assert scenario(tmp_path, body) == (403, 200)
 
 
-def test_static_files_are_whitelisted_and_have_security_headers(tmp_path):
+def test_app_files_are_whitelisted_and_have_security_headers(tmp_path):
     async def body(system):
         async with system.client() as client:
             return {
                 "index": await client.get("/"),
-                "js": await client.get("/static/status.js"),
-                "css": await client.get("/static/style.css"),
+                "js": await client.get("/app/js/app.js"),
+                "view": await client.get("/app/js/views/chat.js"),
+                "css": await client.get("/app/app.css"),
                 "logo": await client.get("/branding/m-agent-logo-64.png"),
                 "scribbles": await client.get("/branding/scribbles/scribbles-black.svg"),
-                "traversal": await client.get("/static/..%2f..%2fpasswords.txt"),
+                "traversal": await client.get("/app/..%2f..%2fpasswords.txt"),
+                "dotdot": await client.get("/app/../../passwords.txt"),
+                "html": await client.get("/app/index.html"),
+                "readme": await client.get("/app/../README.md"),
                 "secret": await client.get("/branding/../../passwords.txt"),
                 "other": await client.get("/branding/README.md"),
+                "old": await client.get("/static/status.js"),
                 "docs": await client.get("/docs"),
                 "openapi": await client.get("/openapi.json"),
+                "status": await client.get("/status", follow_redirects=False),
             }
 
     r = scenario(tmp_path, body)
-    assert all(r[k].status_code == 200 for k in ("index", "js", "css", "logo", "scribbles"))
-    assert all(r[k].status_code == 404 for k in ("traversal", "secret", "other", "docs", "openapi"))
+    assert all(r[k].status_code == 200 for k in ("index", "js", "view", "css", "logo", "scribbles"))
+    for key in (
+        "traversal",
+        "dotdot",
+        "html",
+        "readme",
+        "secret",
+        "other",
+        "old",
+        "docs",
+        "openapi",
+    ):
+        assert r[key].status_code == 404, key
+    assert r["js"].headers["content-type"].startswith("text/javascript")
+    assert r["status"].status_code == 308 and r["status"].headers["location"] == "/#/status"
     csp = r["index"].headers["content-security-policy"]
     assert "default-src 'self'" in csp and "script-src 'self'" in csp
     assert r["index"].headers["x-content-type-options"] == "nosniff"
-    assert "Scribbles" in r["index"].text and "moritz-agent" in r["index"].text
+    assert "m-agent" in r["index"].text and 'type="module"' in r["index"].text
 
 
-def test_the_page_does_not_use_inline_script_or_style(tmp_path):
+def test_the_app_has_no_inline_code_and_no_foreign_addresses():
+    import re
     from pathlib import Path
 
-    html = (Path(__file__).resolve().parents[2] / "frontend/status/index.html").read_text(
-        encoding="utf-8"
-    )
-    assert "<script>" not in html and "style=" not in html and "onclick" not in html
+    app = Path(__file__).resolve().parents[2] / "frontend/app"
+    html = (app / "index.html").read_text(encoding="utf-8")
+    assert "<script>" not in html and "style=" not in html and " on" + "click=" not in html
+    for path in app.rglob("*"):
+        if path.suffix not in {".html", ".css", ".js"}:
+            continue
+        text = path.read_text(encoding="utf-8")
+        assert "SPDX-License-Identifier: LicenseRef-MSOL-1.1" in text, path
+        # nothing from the internet: no CDN, no fonts, no trackers (ADR-040)
+        foreign = [u for u in re.findall(r"https?://[^\s\"')]+", text) if "w3.org" not in u]
+        assert not foreign, (path, foreign)
+        if path.suffix == ".js":
+            assert "innerHTML" not in text and "eval(" not in text, path
 
 
 # -- internal API (phone worker → main process) ------------------------------------------------

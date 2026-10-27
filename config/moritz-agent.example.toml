@@ -17,9 +17,12 @@ config_poll_s = 0                 # >0: Dateien alle n Sekunden auf Änderungen 
 host = "0.0.0.0"                  # aus dem LAN erreichbar (F-04); nur mit aktivem Web-Login (API-02)
 port = 3501
 tls = true                        # HTTPS (ADR-022); false nur für lokale Tests
-tls_cert = "runtime/tls/cert.pem" # vom Installer selbst signiert erzeugt, eigenes Zertifikat möglich
+tls_cert = "runtime/tls/cert.pem" # von der eigenen CA unten unterschrieben, eigenes Zertifikat möglich (wird dann nicht angefasst)
 tls_key = "runtime/tls/key.pem"
-session_ttl_hours = 12
+tls_ca_cert = "runtime/tls/ca.pem"     # eigene kleine CA: einmal auf jedem Gerät installieren, dann keine Warnung (docs/webui.md)
+tls_ca_key = "runtime/tls/ca-key.pem"
+public_hosts = []                 # zusätzliche IPs/Namen im Zertifikat, z. B. ["192.168.1.187"]; eigene IPs kommen automatisch
+session_ttl_hours = 240           # 10 Tage angemeldet bleiben, auch über Neustarts
 login_max_attempts = 5            # pro IP und Zeitfenster
 login_window_minutes = 5
 
