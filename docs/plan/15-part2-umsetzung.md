@@ -1,13 +1,33 @@
 # 15 – Part 2 Umsetzung: WebUI (Version 0.2)
 
-Stand: 24.10.2026 · Voraussetzung: Part 1 abgenommen ([04](04-part1-umsetzung.md), Abnahme über
+Stand: 27.10.2026 · Voraussetzung: Part 1 abgenommen ([04](04-part1-umsetzung.md), Abnahme über
 `./test-3.sh run`). Ziel aus [05](05-roadmap.md): **Chat mit Streaming, Verlauf, Agent-Timeline,
-Anrufstatus live, Modellverwaltung, Einstellungen – responsiv** (UI-02, INF-06, INF-07, PRD-03).
+Anrufstatus live, Modellseite, Einstellungen – auf PC, Handy und allem dazwischen** (UI-02, INF-07, PRD-03).
 
 Grundregel wie in jedem Part: **Telefon und Discord aus Part 1 bleiben jederzeit voll nutzbar.** Jedes
 Ticket endet mit grünem `pytest` und einem Regressionsanruf in `test-4.sh run`.
 
-## 1. Was es schon gibt (Part 1)
+## 1. Moritz' Vorgaben (27.10.2026)
+
+| Thema | Entscheidung |
+| --- | --- |
+| Erreichbar | nur im LAN, über die IP: **`https://192.168.1.187:3501`** (Sophie-1) |
+| Benutzer | nur Moritz (Owner), keine Rollen in Part 2 |
+| Verlauf | **Web, Telefon und Discord** in einer Liste, je mit Symbol; alles **15 Tage**, danach gelöscht |
+| Für immer behalten | Speichern-Knopf an jedem Gespräch → wird nie automatisch gelöscht |
+| Verlauf-Funktionen | durchsuchen, umbenennen, löschen, als Markdown exportieren |
+| Kanäle | jedes Gespräch für sich – Anton weiß am Telefon nicht, was im Web stand (das kommt mit Part 8) |
+| Modell | **kein Modellwechsel**, es gibt nur Qwen3-30B-A3B; Modellseite = Status, Neustart, Kontext, Messen |
+| Kontext | **mindestens 50k Tokens** (Tempo ist zweitrangig) |
+| Dateien | Textdateien und PDFs in den Chat ziehen, Anton liest sie |
+| Sprechen im Browser | nein (kein Mikrofon, kein Vorlesen) |
+| Login | 10 Tage angemeldet bleiben, auch über Neustarts hinweg |
+| Einstellungen | **alles** in der WebUI änderbar, auch Zugangsdaten (nur schreiben, nie anzeigen) |
+| Aussehen | dunkel, im Stil von Microsoft Fluent |
+| Geräte | PC, Handy, Tablet – alles gleich gut |
+| **Später: Agenten in der Sandbox** | Anton soll irgendwann wie Claude Code selbstständig in der Sandbox arbeiten (Part 3/4). Part 2 legt dafür den Grund und baut nichts, was das verbaut (§5) |
+
+## 2. Was es schon gibt (Part 1)
 
 | Baustein | Wo | Für Part 2 |
 | --- | --- | --- |
@@ -16,113 +36,207 @@ Ticket endet mit grünem `pytest` und einem Regressionsanruf in `test-4.sh run`.
 | `/api/chat` (Text-Testpfad, ganze Antwort) | `api/routes_chat.py` | bekommt eine Streaming-Variante |
 | Ein Kern für alle Kanäle (`ChatService`, `Turn`, Kurzzeitgedächtnis 30 Wechsel) | `core/chat.py` | Web wird ein weiterer Kanal (`place="web"`) |
 | Agent mit Werkzeugen, Quellen, Schritten (`AgentResult.tools`, `.sources`, `.steps`) | `agent/loop.py` | Grundlage der Agent-Timeline |
-| KoboldCpp als Kindprozess, Argumente pro Neustart neu (`argv_factory`) | `inference/process.py`, Supervisor | Grundlage für Modellwechsel |
+| KoboldCpp als Kindprozess, Argumente pro Neustart neu (`argv_factory`) | `inference/process.py`, Supervisor | Neustart mit neuem Kontext |
 | Konfiguration mit Neuladen und „braucht Neustart“ | `config/reload.py` | Grundlage der Einstellungsseite |
+| Transkripte in SQLite, 24 h | `storage/` | werden 15 Tage, plus Discord und Web |
 | Branding, Scribbles für Leer-/Lade-/Fehlerzustände | `assets/branding/` | Pflicht in jeder Ansicht |
 
-## 2. Entscheidung Frontend (ADR-040, Vorschlag)
-
-ADR-010 hat das Framework für Part 2 offen gelassen. Vorschlag:
+## 3. Entscheidung Frontend (ADR-040)
 
 - **Kein Build-Schritt, keine Node-Laufzeit:** Vanilla-JS als ES-Module, eine Seite (`frontend/app/`) mit
-  Hash-Routing (`#/chat`, `#/status`, `#/modelle`, `#/einstellungen`). Läuft so auch in der Android-WebView (1.1+).
-- **Streaming über SSE** (`EventSource` bzw. `fetch` mit `ReadableStream` für POST): einfacher als
-  WebSocket, geht durch jeden Proxy, FastAPI kann es ohne Zusatzpaket.
-- **Kein CDN:** alles liegt im Repo, Schriften ebenfalls (LAN-Betrieb, Datenschutz).
+  Hash-Routing (`#/chat`, `#/verlauf`, `#/status`, `#/modell`, `#/einstellungen`). Läuft so auch in der
+  Android-WebView (1.1+).
+- **Streaming über SSE** (`fetch` mit `ReadableStream` für POST, `EventSource` für den Live-Status): einfacher
+  als WebSocket, FastAPI kann es ohne Zusatzpaket.
+- **Kein CDN, keine fremden Schriften:** alles liegt im Repo. Schrift: Systemschrift im Fluent-Stil
+  (`"Segoe UI Variable", "Segoe UI", system-ui, sans-serif`) – unter Windows Segoe, sonst die Systemschrift.
+- **Design im Fluent-2-Stil, dunkel:** Flächen in Graustufen (Hintergrund ≈ `#1f1f1f`, Karten ≈ `#292929`),
+  Akzentfarbe aus dem m-agent-Logo, runde Ecken 4–8 px, leichte Schatten, Fokusrahmen sichtbar,
+  Abstände im 4-px-Raster. Alle Farben als CSS-Variablen, damit später ein helles Design dazukommen kann.
 - Alternativen: Preact/htm ohne Build (vendored, ≈ 10 KB) – nehmen wir, falls die Oberfläche zu groß für
   Vanilla-JS wird; Svelte/React mit Build – abgelehnt, weil Node auf dem Server oder im Release nötig wäre.
 
-## 3. Tickets
+## 4. Großer Kontext (≥ 50k Tokens)
 
-Reihenfolge: P2-01 → P2-02 → (P2-03, P2-04 parallel) → P2-05 → P2-06 → P2-07 → P2-08 → P2-09 → P2-10.
+Geschätzt aus den Modelldaten (48 Schichten, 4 KV-Köpfe, 128 Dimensionen), gemessen wird in P2-03:
 
-### P2-01 – App-Gerüst und Navigation
+| Kontext | KV-Cache fp16 | KV-Cache 8 Bit (`--quantkv 1`) |
+| --- | --- | --- |
+| 8.192 (Part 1) | ≈ 0,8 GB | ≈ 0,4 GB |
+| 51.200 (Part 2) | ≈ 4,7 GB | ≈ 2,3 GB |
+| 65.536 | ≈ 6,0 GB | ≈ 3,0 GB |
+
+- **`context_size = 51200` mit 8-Bit-KV-Cache** (braucht Flash-Attention, ist an). Der Rest der 8 GB VRAM geht an
+  die Modellschichten, `--moecpu` misst `bench_llm.py --tune` neu. Erwartet: ≈ 18–22 statt 28 Tokens/s.
+- **Budget je Profil:** Telefon und Sprachkanal nehmen nur so viel Verlauf, wie für schnelle Antworten nötig ist
+  (`agent.phone.history_tokens`, Standard 6.000); Web- und Discord-Chat dürfen den ganzen Kontext nutzen.
+- **Ein Platz im Cache:** KoboldCpp hält ein Gespräch fertig im Speicher. Kommt ein Anruf dazwischen, muss ein
+  langer Web-Chat danach neu eingelesen werden. P2-03 prüft, ob KoboldCpp mehrere Zustände sichern kann
+  (`--smartcache`/Speicherstände); sonst zeigt die WebUI „liest das Gespräch neu ein …“ mit Fortschritt.
+
+## 5. Vorleistungen für Agenten in der Sandbox (ADR-041)
+
+Ziel ab Part 3/4: Anton bekommt einen Auftrag („bau mir ein Skript, das …“), plant, arbeitet in der
+Sandbox-VM auf Redemption-1 mit Shell, Dateien, Git und Tests, fragt vor riskanten Schritten nach und
+liefert Ergebnisse – über Minuten oder Stunden, so wie Claude Code. Damit Part 2 dafür nichts neu bauen
+muss, gilt:
+
+1. **Ein Lauf ist ein Lauf.** Jede Antwort ist ein *Lauf* (`run`) mit nummerierten Ereignissen:
+   `status`, `token`, `tool_call`, `tool_output` (gestreamt, z. B. später die Ausgabe einer Shell),
+   `tool_result`, `approval_request`, `approval_response`, `file`, `source`, `done`, `error`. Eine Web-Antwort
+   ist ein Lauf mit 0–3 Schritten, ein Sandbox-Agent später derselbe Lauf mit 200 Schritten. Dasselbe
+   Protokoll gilt für SSE, Datenbank, Timeline und Discord-Threads.
+2. **Läufe hängen nicht am Browser.** Ein Lauf läuft als Aufgabe im Server. Der Browser hängt sich nur an
+   (`GET /api/runs/{id}/events?after=N`) und kann nach Neuladen oder vom Handy aus weiterschauen. Tab zu
+   heißt nicht abbrechen; abbrechen ist ein eigener Knopf.
+3. **Läufe werden gespeichert:** Tabellen `runs` und `run_events` kommen mit P2-04. Nach einem Neustart steht
+   ein unterbrochener Lauf als „abgebrochen (Neustart)“ da; Wiederaufnahme ist Part 3.
+4. **Bestätigen ist eingebaut:** Werkzeuge haben eine Stufe `risk = read | write | execute` und
+   `needs_approval`. Bei `approval_request` zeigt die WebUI „Anton möchte … – Erlauben / Ablehnen“
+   (`POST /api/runs/{id}/approval`), Discord dasselbe als Knöpfe. In Part 2 sind alle Werkzeuge `read`; ein
+   Test-Werkzeug prüft den Ablauf. Am Telefon gibt es nie Bestätigungen für `execute` (SBX-05).
+5. **Profile sind Agent-Typen:** Ein Profil (`[agent.<name>]`) legt Werkzeuge, Schrittgrenze, Frist und
+   Vorrang fest. Part 2 bringt `web`; Part 4 fügt `coding` dazu, ohne Umbau. Agenten-Läufe nutzen die
+   Warteschlangen-Stufe `BACKGROUND`, Telefon und Sprachkanal gehen immer vor.
+6. **Dateien sind ein Arbeitsbereich:** Uploads liegen je Gespräch in `data/files/<gespräch>/` mit Tabelle
+   `files`. Später spiegelt der Agent diesen Ordner in seinen Sandbox-Arbeitsbereich, und Ergebnisse
+   (Skripte, Berichte) erscheinen in derselben Liste zum Herunterladen.
+7. **Langer Kontext und Verdichten:** 50k Kontext (§4) ist die Grundlage. `ContextBuilder` bekommt eine
+   Stelle zum Verdichten (Part 2: älteste Wechsel weglassen wie bisher; Part 4: zusammenfassen).
+8. **Modell bleibt austauschbar:** Der Inferenz-Client spricht die OpenAI-API. Reicht Qwen3 für große
+   Coding-Aufgaben nicht, kann ein Profil später ein anderes Ziel (zweites Modell, anderer Server) bekommen.
+   Part 2 wechselt kein Modell, verbaut es aber nicht.
+9. **Sicherheit bleibt:** Ausführen nur in der Sandbox-VM, nie auf Sophie-1 (SBX-01). Die Einstellungsseite
+   hat schon den Bereich `[sandbox]` mit SSH-Zugang (nur schreibend). `passwords.txt` sieht kein Werkzeug.
+
+## 6. Tickets
+
+Reihenfolge: P2-01 → P2-02 → P2-03 → P2-04 → P2-05 → P2-06 → P2-07 → P2-08 → P2-09 → P2-10 → P2-11 → P2-12.
+
+### P2-01 – App-Gerüst, Design, Login, Zertifikat
 
 - `frontend/app/` (index.html, `app.js`, `style.css`, Module je Ansicht), ausgeliefert unter `/`; die
   Statusseite zieht als Ansicht `#/status` ein, `/status` leitet weiter.
-- Layout: Seitenleiste (Desktop) bzw. untere Leiste (Handy), helles und dunkles Design, Logo und Scribbles.
-- Login-Ansicht mit Scribbles; Sitzung abgelaufen → zurück zum Login, ohne Datenverlust im Eingabefeld.
-- Tests: Auslieferung, Content-Security-Policy (`default-src 'self'`), kein externer Request.
-- Anforderungen: UI-02, API-02, API-05.
+- Layout: Seitenleiste (PC), einklappbar (Tablet), untere Leiste (Handy); Fluent-Stil dunkel (§3), Logo und Scribbles.
+- **Login 10 Tage:** `server.session_ttl_hours = 240`; Sitzungen liegen gehasht in SQLite und überstehen
+  Neustarts. Abmelden beendet die Sitzung sofort; „Alle Geräte abmelden“ in den Einstellungen.
+- **Zertifikat für die IP:** eine eigene kleine Zertifizierungsstelle (`data/tls/ca.crt`) unterschreibt das
+  Server-Zertifikat für `192.168.1.187`, alle eigenen IPs und den Hostnamen (`server.public_hosts`).
+  `GET /ca.crt` liefert die CA zum Installieren; Anleitung für Windows, Android, iOS und Linux in
+  `docs/webui.md`. Danach keine Zertifikatswarnung mehr.
+- Tests: Auslieferung, Content-Security-Policy (`default-src 'self'`), kein externer Request, Sitzung nach
+  Neustart gültig, nach 10 Tagen ungültig, Zertifikat enthält die IP.
+- Anforderungen: UI-02, API-01, API-02, API-05.
 
 ### P2-02 – Chat mit Streaming (SSE)
 
-- `POST /api/chat/stream` → `text/event-stream` mit Ereignissen `token`, `tool_start`, `tool_end`,
-  `source`, `done`, `error`. Gleicher Kern wie `/api/chat` (`ChatService`), Profil `web` (wie Discord-Chat:
-  Markdown, längere Antworten).
+- `POST /api/chat/stream` startet einen Lauf (§5) und liefert seine Ereignisse als `text/event-stream`;
+  `GET /api/runs/{id}/events?after=N` hängt sich wieder an. Gleicher Kern wie `/api/chat` (`ChatService`), Profil `web` (wie Discord-Chat:
+  Markdown, längere Antworten, Bro-Persönlichkeit).
 - Abbrechen-Knopf → `POST /api/chat/cancel` (nutzt die Abbruchlogik der Queue, Telefon behält Vorrang).
-- Markdown-Darstellung ohne `innerHTML` aus Modelltext (eigener kleiner Renderer, nur sichere Elemente).
+- Markdown-Darstellung ohne `innerHTML` aus Modelltext (eigener kleiner Renderer, nur sichere Elemente),
+  Code-Blöcke mit Kopieren-Knopf.
 - Sofortauskünfte (Wetter, Uhrzeit …) kommen sofort als ein `done`, mit Karten wie auf Discord.
 - Tests: Ereignisfolge, Abbruch, Telefon unterbricht Web-Chat (Priorität), XSS-Fälle im Renderer.
 - Anforderungen: UI-02, AGENT-04, AGENT-08.
 
-### P2-03 – Verlauf
+### P2-03 – Großer Kontext
 
-- Gespräche der WebUI in SQLite (`conversations`, `messages` – Vorgriff auf Part 3, nur Web-Kanal),
-  Liste links, umbenennen, löschen, „Neues Gespräch“ (= Kurzzeitgedächtnis leeren).
-- Aufbewahrung wie Transkripte (F-03: 24 h) **oder** länger – offene Frage F-41.
-- Tests: Migration, Löschen löscht wirklich, Verlauf geht nach Neustart nicht verloren.
-- Anforderungen: STORE-01, STORE-02.
+- §4 umsetzen: `context_size = 51200`, `inference.kv_cache_bits = 8` (→ `--quantkv 1`), Budget je Profil,
+  `test-4.sh run` misst Tokens/s und VRAM bei 50k und schreibt `--moecpu` neu.
+- Prüfen und dokumentieren, wie lange das Neueinlesen eines vollen Kontexts dauert; Fortschritt im Chat.
+- Anforderungen: INF-02 (geändert), INF-05.
 
-### P2-04 – Agent-Timeline
+### P2-04 – Verlauf über alle Kanäle
+
+- Tabellen `conversations`, `messages`, `runs`, `run_events` und `files` (Vorgriff auf Part 3, §5): Web, Telefon und Discord (Text und
+  Sprachkanal) schreiben hinein; Symbol je Kanal in der Liste.
+- **Aufbewahrung 15 Tage** (`storage.history_days = 15`, ersetzt die 24 h aus F-03), dann gelöscht.
+  **Speichern-Knopf** (`pinned`) → nie automatisch gelöscht; Knopf erneut drücken hebt es auf.
+- Durchsuchen (SQLite FTS5 über Titel und Text), umbenennen, löschen, **Export als Markdown**.
+- Titel automatisch aus der ersten Frage; ein Web-Gespräch fortsetzen lädt seinen Verlauf ins
+  Kurzzeitgedächtnis. Telefon- und Discord-Gespräche sind in der WebUI nur lesbar.
+- Tests: Migration, Löschen nach 15 Tagen außer gespeicherten, Suche, Export, Verlauf nach Neustart da.
+- Anforderungen: STORE-01, STORE-02 (geändert).
+
+### P2-05 – Dateien im Chat
+
+- Text (`.txt`, `.md`, `.csv`, `.json`, Quelltext) und **PDF** per Ziehen oder Büroklammer; Text wird
+  ausgelesen (PDF mit `pypdf`, BSD-Lizenz) und als Anhang in den Kontext gelegt.
+- Grenzen: 10 MB je Datei, Text gekürzt auf das Kontextbudget mit Hinweis; Dateien liegen beim Gespräch
+  und werden mit ihm gelöscht. Inhalte aus Dateien sind Daten, keine Anweisungen (wie Suchergebnisse).
+- Gescannte PDFs ohne Text: Hinweis „keine lesbare Schrift“ (OCR kommt in 1.1+).
+- Discord bekommt dasselbe für Anhänge (14 §5.5).
+- Anforderungen: UI-02, Sicherheit (Prompt-Injection, 08).
+
+### P2-06 – Agent-Timeline
 
 - Unter jeder Antwort aufklappbar: „✓ Websuche ‚Kanzler Deutschland‘ (3 Quellen, 1,2 s)“, „✓ Wetter
   Weilburg“, Dauer, Tokens/s, verworfene Verlaufs-Wechsel (`dropped_turns`).
-- Daten kommen aus den SSE-Ereignissen von P2-02; nichts Geheimes (Werkzeug-Argumente gefiltert).
+- Daten kommen aus den Lauf-Ereignissen (§5); nichts Geheimes (Werkzeug-Argumente gefiltert).
+- Gebaut für lange Läufe: Schritte einklappbar, gestreamte Werkzeug-Ausgabe in einer Konsolen-Ansicht,
+  Bestätigungs-Dialog (`approval_request`) mit Test-Werkzeug geprüft.
 - Anforderungen: UI-02, LOG-02 (Redaktion).
 
-### P2-05 – Anrufstatus und Discord live
+### P2-07 – Anrufstatus und Discord live
 
 - `GET /api/events` (SSE) ersetzt das Polling der Statusseite: Anruf klingelt/aktiv/beendet, Sprachkanal,
-  Komponenten (KoboldCpp, SearXNG, Discord), Warnungen.
-- Kein Gesprächsinhalt in der Live-Ansicht, nur Zustand und Dauer.
+  Komponenten (KoboldCpp, SearXNG, Discord), Warnungen, Logs der letzten Minuten.
 - Anforderungen: UI-01, DISCORD-30.
 
-### P2-06 – Modellverwaltung
+### P2-08 – Modellseite
 
-- `GET /api/models`: GGUF-Dateien unter `models/llm/` (= `/home/models`) mit Größe, Quantisierung,
-  Kontext aus dem GGUF-Kopf; das geladene Modell markiert.
-- `POST /api/models/load`: **erst entladen, dann laden** (INF-06) – KoboldCpp stoppen, Argumente neu,
-  starten; Fortschritt per SSE. Während des Wechsels sagt das Telefon die vorhandene Ansage
-  „Sprachmodell lädt“, Sofortauskünfte gehen weiter.
-- Einstellungen je Modell (Presets): Kontext, `--moecpu`, GPU-Schichten, Flash-Attention; „Messen“ startet
-  `scripts/bench_llm.py --tune` im Hintergrund.
-- Discord: `/admin modell laden|entladen|status` (14 §7, Part 2).
-- Tests: Wechsel mit dem Fake-KoboldCpp, VRAM-Prüfung, Telefon während des Wechsels.
-- Anforderungen: INF-06, PRD-03, ADR-016.
+- Kein Modellwechsel (nur Qwen3-30B-A3B). Die Seite zeigt: geladen ja/nein, Kontext, VRAM/RAM, Tokens/s der
+  letzten Antworten, `--moecpu`.
+- Knöpfe: **Neustart** von KoboldCpp, **Kontext** ändern (mit Schätzung des Speichers), **Messen**
+  (`scripts/bench_llm.py --tune` im Hintergrund, Ergebnis als Tabelle). Während eines Anrufs gesperrt.
+- Discord: `/admin modell status|neustart`.
+- Anforderungen: PRD-03, ADR-016, INF-06 (entfällt, kein Wechsel).
 
-### P2-07 – Einstellungen
+### P2-09 – Einstellungen: alles änderbar
 
-- `GET/PUT /api/settings`: nur nicht geheime Werte aus `config/moritz-agent.toml`, Schema aus den
-  pydantic-Modellen; Speichern zeilenbasiert (Kommentare bleiben), danach Neuladen; „braucht Neustart“
-  wird angezeigt.
-- **Zugangsdaten nie** in der UI und nie in einer API-Antwort; nur „gesetzt/nicht gesetzt“.
-- Discord: `/einstellungen` bekommt dieselben Felder für den Owner.
-- Anforderungen: CFG-05, CFG-08, UI-02, Sicherheitsregeln (CLAUDE.md).
+- `GET/PUT /api/settings`: **jeder** Wert aus `config/moritz-agent.toml`, gruppiert wie die Datei, Formular aus
+  dem pydantic-Schema mit den Kommentaren der Beispielkonfiguration als Hilfetext. Speichern zeilenbasiert
+  (Kommentare bleiben), danach Neuladen; „braucht Neustart“ mit Knopf.
+- **Zugangsdaten** (SIP-Passwort, Discord-Token, Web-Passwort, API-Schlüssel): Felder **nur zum
+  Schreiben**. Die API liefert nur „gesetzt/nicht gesetzt“, nie einen Wert, auch nicht gekürzt. Geschrieben
+  wird `passwords.txt` zeilenbasiert: die eine Zeile ersetzen oder anhängen, nie neu serialisieren
+  (CLAUDE.md). Das Web-Passwort wird als scrypt-Hash gespeichert und braucht das alte Passwort.
+- Jede Änderung steht im Log (welcher Schlüssel, nie der Wert).
+- Anforderungen: CFG-05, CFG-08, UI-02, Sicherheitsregeln (CLAUDE.md, 08).
 
-### P2-08 – OpenAI-kompatible API
+### P2-10 – OpenAI-kompatible API
 
-- `/v1/chat/completions`, `/v1/models` über moritz-agent mit API-Key (in `passwords.txt`), weitergereicht an
-  KoboldCpp über die Queue (Telefon hat Vorrang).
+- `/v1/chat/completions`, `/v1/models` über moritz-agent mit API-Schlüssel (in `passwords.txt`, in den
+  Einstellungen setzbar), weitergereicht an KoboldCpp über die Queue (Telefon hat Vorrang).
 - Anforderungen: INF-07.
 
-### P2-09 – Sofortauskünfte in der WebUI
+### P2-11 – Sofortauskünfte in der WebUI
 
 - Wetterkarte und Vorhersage-Diagramm, Warnungen, Notizen/Einkaufsliste, Liste nicht erkannter Fragen,
   Über-Seite mit Quellen und Lizenzen (13, 05 „Sofortauskünfte in späteren Parts“).
 
-### P2-10 – `test-4.sh` und Abnahme
+### P2-12 – `test-4.sh` und Abnahme
 
 - `test-4.sh setup|run` verwendet `test-3.sh` wieder (CLAUDE.md, Testskripte) und prüft zusätzlich:
-  App ausgeliefert, Login, Streaming-Chat, Modellwechsel mit Fake und echt, Einstellungen speichern,
-  Chat und Telefon gleichzeitig.
-- Abnahme: „Chat und Telefon parallel benutzbar, Modellwechsel entlädt zuerst“ (05).
+  App ausgeliefert, Zertifikat für die IP, Login, Streaming-Chat, 50k-Kontext, Datei-Upload, Verlauf und
+  Speichern, Einstellungen speichern, Chat und Telefon gleichzeitig.
+- Abnahme: „Chat und Telefon parallel benutzbar, langer Chat bleibt im Gedächtnis“ – Protokoll
+  `runtime/test-4/abnahme.md` wie bei test-3.
 
-## 4. Offene Fragen an Moritz
+## 7. Fragen an Moritz
 
-| ID | Frage | Vorschlag |
+| ID | Frage | Antwort |
 | --- | --- | --- |
-| F-41 | Wie lange sollen Web-Gespräche gespeichert bleiben? | 30 Tage, einzeln löschbar |
-| F-42 | Soll die WebUI auch von außen (über VPN) erreichbar sein oder nur im LAN? | nur LAN wie Part 1 |
-| F-43 | Mehrere Benutzer in der WebUI oder nur Moritz? | nur Owner in Part 2, Rollen ab Part 3 |
-| F-44 | Darf die WebUI das Modell wechseln, während ein Anruf läuft? | nein, Knopf gesperrt mit Hinweis |
+| F-41 | Wie lange sollen Gespräche gespeichert bleiben? | 15 Tage; mit Speichern-Knopf für immer |
+| F-42 | WebUI auch über VPN oder nur im LAN? | nur LAN, über die IP 192.168.1.187 |
+| F-43 | Mehrere Benutzer oder nur Moritz? | nur Moritz |
+| F-44 | Modellwechsel in der WebUI? | kein Wechsel, nur das eine Modell |
+| F-45 | Tempo gegen Kontext? | egal; mindestens 50k Kontext |
+| F-46 | Ein Gespräch über alle Kanäle? | nein, jedes für sich |
+| F-47 | Anrufe und Discord im Verlauf der WebUI? | ja |
+| F-48 | Mikrofon und Vorlesen im Browser? | nein |
+| F-49 | Wie lange angemeldet bleiben? | 10 Tage |
+| F-50 | Zugangsdaten in der WebUI setzbar? | ja, alles änderbar |
+| F-51 | Aussehen? | dunkel, Microsoft-Fluent-Stil („layernx“ – Vorlage noch offen) |
+| F-52 | Agenten in der Sandbox? | ja, später wie Claude Code; Part 2 legt den Grund (§5) |

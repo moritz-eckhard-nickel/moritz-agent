@@ -46,7 +46,7 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | --- | --- | --- | --- |
 | F-01 | Asterisk-Details | „kein Plan“ | Komplette Anleitung [`docs/asterisk-konfiguration.md`](../asterisk-konfiguration.md) |
 | F-02 | Repo öffentlich? SIP-Startwerte in der Vorlage? | öffentlich; SIP-Server nur lokal, daher egal | Vorlage behält `agent/agent`; ACL + Kontext ohne Wählrechte in Asterisk |
-| F-03 | Transkripte speichern? | Text, 24 Stunden | STORE-02, `storage.transcript_retention_hours = 24` |
+| F-03 | Transkripte speichern? | Text, 24 Stunden (ab Part 2: 15 Tage, F-47) | STORE-02, `storage.transcript_retention_hours = 24` |
 | F-04 | Web-UI im LAN? | ja, Port 3501, TLS ok | API-01, ADR-022 |
 | F-05 | Distribution | Ubuntu 26.04 oder 25.10 | NFR-06, ADR-024, 06 §3 |
 | F-06 | NVIDIA-Treiber am Host? Andere GPU-Nutzer? | Treiber nein, Gast nein | 06 §4.1 Host-Treiber-Anleitung |
@@ -90,7 +90,15 @@ Stand nach Moritz’ Antworten vom 16.10.2026.
 | F-38 | Eine extra niedliche Scribbles-Pose für den Avatar zeichnen? (neue Posen nur von dir) | Scribbles weiß auf dunklem Grund |
 | F-39 | Sprachkanal bei langer Stille: still bleiben und auf „Anton“ hören oder gehen wie beim Auflegen? | still bleiben |
 | F-40 | Eigene Lieblingssprüche für die Aktivitäten? | Liste aus 14 §8.5 |
-| F-41 | Wie lange sollen Gespräche der WebUI gespeichert bleiben? (Part 2, 15 §4) | 30 Tage, einzeln löschbar |
-| F-42 | WebUI auch über VPN von außen oder nur im LAN? | nur LAN |
-| F-43 | Mehrere Benutzer in der WebUI oder nur Moritz? | nur Owner in Part 2, Rollen ab Part 3 |
-| F-44 | Modellwechsel in der WebUI, während ein Anruf läuft? | gesperrt, mit Hinweis |
+| F-41 | ~~Wie lange sollen Gespräche gespeichert bleiben?~~ | **beantwortet:** 15 Tage, mit Speichern-Knopf für immer (15 §1) |
+| F-42 | ~~WebUI auch über VPN?~~ | **beantwortet:** nur LAN, über die IP 192.168.1.187 |
+| F-43 | ~~Mehrere Benutzer?~~ | **beantwortet:** nur Moritz |
+| F-44 | ~~Modellwechsel in der WebUI?~~ | **beantwortet:** kein Wechsel, nur das eine Modell |
+| F-45 | ~~Tempo gegen Kontext?~~ | **beantwortet:** mindestens 50k Kontext, Tempo zweitrangig |
+| F-46 | ~~Ein Gespräch über alle Kanäle?~~ | **beantwortet:** nein, jedes für sich |
+| F-47 | ~~Anrufe und Discord im Verlauf der WebUI?~~ | **beantwortet:** ja, 15 Tage (ersetzt die 24 h aus F-03) |
+| F-48 | ~~Mikrofon und Vorlesen im Browser?~~ | **beantwortet:** nein |
+| F-49 | ~~Wie lange angemeldet bleiben?~~ | **beantwortet:** 10 Tage |
+| F-50 | ~~Zugangsdaten in der WebUI setzbar?~~ | **beantwortet:** ja, alles änderbar (nur schreibend) |
+| F-51 | Vorlage „layernx“ für das Design? | Fluent-2-Stil dunkel, bis eine Vorlage da ist |
+| F-52 | ~~Agenten in der Sandbox?~~ | **beantwortet:** ja, später wie Claude Code; Part 2 legt den Grund (ADR-041) |
