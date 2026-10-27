@@ -188,11 +188,11 @@ Tickets P1-31 … P1-43 (Block D in [04](04-part1-umsetzung.md)); Entscheidungen
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
 | INF-01 | KoboldCPP läuft als isolierter Child-Prozess, nur auf `127.0.0.1` gebunden, interner Port. | MUSS | 1 |
-| INF-02 | Genau **ein** geladenes großes Sprachmodell: **Qwen3-30B-A3B-Instruct-2507 (MoE), GGUF UD-Q3_K_XL, ≈ 13,8 GB**, etwa **halb VRAM / halb RAM** (Moritz, R3; ADR-016). Kontext 8.192 (24.10.2026: Systemanweisung + Werkzeuge ≈ 3.100 Tokens, 4.096 ließ kaum Platz für den Verlauf; Plan 04 Anhang C.11). | MUSS | 1 |
+| INF-02 | Genau **ein** geladenes großes Sprachmodell: **Qwen3-30B-A3B-Instruct-2507 (MoE), GGUF UD-Q3_K_XL, ≈ 13,8 GB**, etwa **halb VRAM / halb RAM** (Moritz, R3; ADR-016). Kontext 8.192 in Part 1, **ab Part 2 mindestens 50k (51.200) mit 8-Bit-KV-Cache** (Moritz, 27.10.2026; 15 §4). Part 1 (24.10.2026: Systemanweisung + Werkzeuge ≈ 3.100 Tokens, 4.096 ließ kaum Platz für den Verlauf; Plan 04 Anhang C.11). | MUSS | 1 |
 | INF-03 | Eine Generierung gleichzeitig; Prioritäts-Warteschlange (Telefon > interaktiv > Hintergrund). | MUSS | 1 |
 | INF-04 | Kein Draft-/Zweitmodell, kein dauerhaft geladenes Embedding-Modell im Startprofil. | MUSS | 1 |
 | INF-05 | 8.192 Kontext erst nach Messung mit ausreichender Reserve. Swap ist kein Modellspeicher. | MUSS | 1 |
-| INF-06 | Modellwechsel entlädt zuerst das alte Modell. | MUSS | 2 |
+| INF-06 | ~~Modellwechsel entlädt zuerst das alte Modell.~~ Entfällt: es gibt nur ein Modell, kein Wechsel in der WebUI (F-44). | — | 2 |
 | INF-07 | OpenAI-kompatible API (`/v1/chat/completions`, `/v1/models`) bleibt nach außen erhalten (über moritz-agent, mit Auth). | SOLL | 2 |
 | INF-08 | Inference-Crash → automatischer Neustart des Workers mit Backoff; Telefon spielt währenddessen Fehleransage. | MUSS | 1 |
 
@@ -273,16 +273,16 @@ Deterministische Auskünfte **vor** dem Sprachmodell (Moritz, 18.10.2026). Plan 
 | API-02 | Bindung an Nicht-Loopback-Adresse nur bei aktivem Web-Login; sonst Start verweigern. KoboldCpp-Oberflächen (KoboldAI Lite, llama.cpp-UI, SD-/Music-UI, API-Doku) sind entfernt und nie erreichbar (F-11). | MUSS | 1 |
 | API-03 | Part-1-Endpunkte: `/api/system/health`, `/api/system/status`, `/api/phone/status`, `/api/system/reload`, `/api/system/activity`, `/api/system/drain`, `/api/chat` (Text-Testpfad). | MUSS | 1 |
 | API-04 | Spätere Endpunkte: `/api/agent`, `/api/research`, `/api/files`, `/api/models`, `/api/tools`, `/api/settings`, `/v1/...`. | — | 2–5 |
-| API-05 | Login: scrypt-Hash, Session-Cookie (`HttpOnly`, `SameSite=Strict`, `Secure` bei TLS), Rate-Limit für Login-Versuche. | MUSS | 1 |
+| API-05 | Login: scrypt-Hash, Session-Cookie (`HttpOnly`, `SameSite=Strict`, `Secure` bei TLS), Rate-Limit für Login-Versuche. Ab Part 2: 10 Tage angemeldet, Sitzungen überstehen Neustarts (F-49). | MUSS | 1 |
 | UI-01 | Part 1: Statusseite mit Registrierung, Anrufzustand, STT/TTS-Bereitschaft, LLM, Suche, letzte Fehler. **Keine Passwörter**. | MUSS | 1 |
-| UI-02 | Part 2: Chat, Streaming, Verlauf, Agent-Timeline, Modellverwaltung, Einstellungen. Responsive (Android-WebView-tauglich). | — | 2 |
+| UI-02 | Part 2: Chat, Streaming, Verlauf über alle Kanäle (suchen, umbenennen, speichern, Markdown-Export), Dateien (Text, PDF), Agent-Timeline, Modellseite, Einstellungen (alles änderbar, Zugangsdaten nur schreibend). Dunkel im Fluent-Stil, für PC, Handy und Tablet (Android-WebView-tauglich). Gebaut für spätere Agenten-Läufe (ADR-041). Details: [15](15-part2-umsetzung.md). | MUSS | 2 |
 
 ## 9. Speicher & Logging (STORE / LOG)
 
 | ID | Anforderung | Prio | Part |
 | --- | --- | --- | --- |
 | STORE-01 | SQLite (WAL) unter `data/moritz-agent.sqlite3`, versionierte Migrationen. | MUSS | 1 |
-| STORE-02 | Part 1 speichert Anruf-Metadaten, Turns, Tool-Aufrufe, Latenzen. **Transkript-Text wird 24 Stunden aufbewahrt** und dann gelöscht (F-03); Metadaten/Latenzen bleiben. Kein Audio. | MUSS | 1 |
+| STORE-02 | Part 1 speichert Anruf-Metadaten, Turns, Tool-Aufrufe, Latenzen. **Transkript-Text wird 24 Stunden aufbewahrt** und dann gelöscht (F-03); Metadaten/Latenzen bleiben. Kein Audio. **Ab Part 2: Gespräche aller Kanäle 15 Tage, gespeicherte für immer** (F-41, F-47; 15 P2-04). | MUSS | 1 |
 | LOG-01 | Strukturierte Logs mit Kategorie (`[Phone]`, `[Agent]`, `[Search]`, `[LLM]`, `[Tool]`, `[System]`) nach journald + rotierende Datei. | MUSS | 1 |
 | LOG-02 | Secret-Redaction auf Feldebene; PJSIP-Loglevel ≤ 3, SIP-Nachrichten-Logging standardmäßig aus (Authorization-Header). | MUSS | 1 |
 | LOG-03 | Pro Turn gemessen und geloggt: VAD-Ende → STT fertig, STT-Dauer, LLM-Zeit bis erster Token / gesamt, Tool-Dauer, TTS-Anlauf, Gesamtlatenz. | MUSS | 1 |

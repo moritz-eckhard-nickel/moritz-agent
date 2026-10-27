@@ -714,4 +714,23 @@ Eine geänderte Entscheidung wird nicht gelöscht, sondern als `ersetzt durch AD
   (Node im Release oder auf dem Server nötig).
 - **Konsequenzen:** Ein eigener kleiner Markdown-Renderer ohne `innerHTML` aus Modelltext, eine strenge
   Content-Security-Policy (`default-src 'self'`). Details: [15](15-part2-umsetzung.md).
-- **Status:** Vorschlag, wird mit P2-01 beschlossen.
+- **Design:** dunkel im Stil von Microsoft Fluent 2, Systemschrift (Segoe UI unter Windows), Farben als
+  CSS-Variablen (Moritz, 27.10.2026).
+- **Status:** beschlossen (Moritz, 27.10.2026).
+
+## ADR-041 – Antworten als Läufe: Grundlage für Agenten in der Sandbox
+
+- **Kontext (Moritz, 27.10.2026):** „Was mir wichtig ist: dass es irgendwann Agents gibt, die in der
+  Sandbox-Umgebung machen können, genau wie du – also lege Vorreiter dafür oder bau keine Steine in den Weg.“
+- **Entscheidung:** Ab Part 2 ist jede Antwort ein *Lauf* mit gespeicherten, nummerierten Ereignissen
+  (`tool_call`, `tool_output`, `approval_request`, `file`, `done` …). Läufe laufen im Server unabhängig vom
+  Browser, Werkzeuge haben eine Risikostufe mit Bestätigung, Profile sind Agent-Typen mit eigener
+  Warteschlangen-Stufe, Uploads bilden einen Arbeitsbereich je Gespräch. Ein Sandbox-Agent (Part 4) ist dann
+  nur ein weiteres Profil mit weiteren Werkzeugen – WebUI, Discord, Datenbank und Protokoll bleiben gleich.
+  Details: [15 §5](15-part2-umsetzung.md).
+- **Alternativen:** Chat jetzt einfach halten und für Agenten später umbauen (doppelte Arbeit, Brüche in
+  Verlauf und UI); fertiges Agent-Framework (LangGraph o. Ä.) – zu schwer für ein lokales Modell und eine
+  Warteschlange, Telefon-Vorrang wäre schwer zu garantieren.
+- **Konsequenzen:** P2-02, P2-04 und P2-06 werden etwas größer. Ausführen bleibt nur in der Sandbox-VM
+  (SBX-01 … SBX-05).
+- **Status:** beschlossen (Moritz, 27.10.2026).
