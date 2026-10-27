@@ -240,6 +240,7 @@ class Storage(_Section):
     database: str = "data/moritz-agent.sqlite3"
     store_transcripts: bool = True
     transcript_retention_hours: int = Field(24, ge=1)
+    history_days: int = Field(15, ge=1)  # WebUI history of all channels; pinned ones stay (F-41)
 
 
 class Fastpaths(_Section):

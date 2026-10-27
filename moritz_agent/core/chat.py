@@ -10,6 +10,7 @@ returns a ``TurnResult`` – plain data the channel renders as it likes.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import time
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
@@ -102,6 +103,11 @@ class ChatService:
                 timezone=self.runtime.settings.general.timezone,
                 started_at=time.monotonic(),
             )
+            history = getattr(self.runtime, "history", None)
+            if turn.principal.channel == "web" and history is not None:
+                # a web conversation continued after a restart remembers what was said (P2-04)
+                with contextlib.suppress(Exception):
+                    context.history = history.pairs(turn.conversation_id, HISTORY_TURNS)
             conversation = self._conversations[turn.conversation_id] = _Conversation(
                 context, time.monotonic()
             )

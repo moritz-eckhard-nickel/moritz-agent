@@ -187,6 +187,22 @@ Reihenfolge: P2-01 → P2-02 → P2-03 → P2-04 → P2-05 → P2-06 → P2-07 �
   Kurzzeitgedächtnis. Telefon- und Discord-Gespräche sind in der WebUI nur lesbar.
 - Tests: Migration, Löschen nach 15 Tagen außer gespeicherten, Suche, Export, Verlauf nach Neustart da.
 - Anforderungen: STORE-01, STORE-02 (geändert).
+- **Umgesetzt (27.10.2026):**
+  - Migration `0004_history.sql` (`conversations`, `messages`, `messages_fts`, `runs`, `run_events`) und
+    `storage/history.py`. Den FTS5-Index pflegt der Code mit, weil die Migrationen keine Trigger können.
+  - Gespeichert werden Web, Telefon, Discord-Text und Sprachkanal, nur wenn `storage.store_transcripts`
+    an ist. Ein Discord-Chat beginnt nach 30 Minuten Ruhe ein neues Gespräch (wie das Kurzzeitgedächtnis).
+  - Zu jeder Web-Antwort werden ihre Schritte gespeichert (`tool_call`, `tool_result` …), nicht die
+    einzelnen Tokens.
+  - `storage.history_days = 15`; gespeicherte Gespräche (`pinned`) löscht die nächtliche Wartung nie.
+  - API: `GET /api/conversations` (`q`, `source`, `pinned`, `chat`), `GET/PATCH/DELETE
+    /api/conversations/{id}`, `GET /api/conversations/{id}/export.md`.
+  - WebUI: Ansicht „Verlauf“ (Suche, Filter, Gruppen Gespeichert/Heute/Gestern/Diese Woche/Älter,
+    Speichern, Umbenennen, Export, Löschen). Telefon und Discord sind nur lesbar, Web-Gespräche öffnen im
+    Chat und gehen dort weiter. Im Chat gibt es den Knopf „Speichern“, und der Chat lädt nach einem Neuladen
+    das letzte Gespräch.
+  - Nach einem Neustart bekommt ein fortgesetztes Web-Gespräch sein Kurzzeitgedächtnis aus der Datenbank
+    zurück.
 
 ### P2-05 – Dateien im Chat
 

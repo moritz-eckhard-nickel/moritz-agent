@@ -153,7 +153,8 @@ system_prompt_file = "moritz_agent/agent/prompts/phone.de.md"
 [storage]
 database = "data/moritz-agent.sqlite3"
 store_transcripts = true          # F-03: Text ja …
-transcript_retention_hours = 24   # … aber nur 24 Stunden
+transcript_retention_hours = 24   # … aber nur 24 Stunden (Statistik der Telefonrunden)
+history_days = 15                 # Verlauf in der WebUI (Web, Telefon, Discord); gespeicherte Gespräche bleiben für immer
 
 [fastpaths]
 enabled = true                    # F-13, Katalog docs/plan/12-fast-paths.md

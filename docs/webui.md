@@ -50,5 +50,6 @@ neu installieren und die alte entfernen.
 | Chat | mit Anton schreiben, Sofortauskünfte mit aufklappbaren Detailkarten, Knöpfe für Rückfragen, Quellen. „Neues Gespräch“ leert sein Kurzzeitgedächtnis. | P2-01 |
 | Chat live | Antworten kommen Wort für Wort mit Markdown (Listen, Code mit Kopieren-Knopf, Links), Werkzeuge wie Websuche oder Wetter erscheinen als Schritte, „Stopp“ bricht ab. Tab zu oder Verbindung weg: Anton antwortet trotzdem fertig. | P2-02 |
 | Status | alle Teile von moritz-agent mit Zustand, Konfiguration neu laden | P2-01 |
+| Verlauf | alle Gespräche aus Web, Telefon, Discord und Sprachkanal: suchen, filtern, umbenennen, als Markdown speichern, löschen. Der Lesezeichen-Knopf behält ein Gespräch für immer, sonst wird es nach 15 Tagen gelöscht. Web-Gespräche gehen im Chat weiter. | P2-04 |
 
-Verlauf, Dateien, Einstellungen und die Modellseite kommen mit den nächsten Tickets.
+Dateien, Einstellungen und die Modellseite kommen mit den nächsten Tickets.
