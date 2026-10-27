@@ -12,7 +12,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import time
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
@@ -192,7 +192,11 @@ class ChatService:
         return conversation
 
     async def events(
-        self, turn: Turn, *, on_event: Callable[[dict[str, Any]], None] | None = None
+        self,
+        turn: Turn,
+        *,
+        on_event: Callable[[dict[str, Any]], None] | None = None,
+        approver: Callable[[dict[str, Any]], Awaitable[bool]] | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
         """``thinking`` / ``partial`` while the answer is made, then ``result``.
 
@@ -209,6 +213,7 @@ class ChatService:
         chunks: list[str] = []
         context.extras["on_text"] = chunks.append if turn.surface is Surface.CHAT else None
         context.extras["on_event"] = on_event
+        context.extras["approver"] = approver
         if turn.files:
             # the files stay in the conversation for follow-up questions; this answer skips the
             # instant answers – a question about a file is never "the weather"
@@ -239,6 +244,7 @@ class ChatService:
             conversation.task = None
             context.extras.pop("on_text", None)
             context.extras.pop("on_event", None)
+            context.extras.pop("approver", None)
             context.extras.pop("force_agent", None)
         if task.cancelled():
             yield {"type": "cancelled"}
@@ -328,6 +334,7 @@ class ChatService:
             hangup=reply.hangup,
             tools=list(meta.get("tools", [])),
             sources=list(meta.get("sources", [])),
+            stats=dict(meta.get("stats") or {}),
             ms=ms,
         )
 

@@ -509,6 +509,8 @@ class Runtime:
         meta = {"skill": reply.skill_id, "tools": result.tools, "sources": result.sources}
         if result.card:
             meta["card"] = result.card
+        if result.stats:
+            meta["stats"] = result.stats
         said = result.markdown or result.text
         heard_meta = {"files": [{"id": f["id"], "name": f["name"]} for f in turn.files]}
         self._remember_in_history(

@@ -11,6 +11,7 @@ Events (each with ``seq`` and ``ms`` since the start):
 * ``status`` – Anton is busy (``prompt``: the id of the announcement, e.g. a search)
 * ``token`` – more answer text (``text`` is appended); ``text`` – the whole text so far (replace)
 * ``tool_call`` / ``tool_result`` – a tool of the language model starts / ends
+* ``approval_request`` / ``approval_response`` – a risky tool asks Moritz first (``POST …/approval``)
 * ``done`` – the final answer (``result``: the TurnResult as JSON)
 * ``cancelled`` / ``error`` – the end without an answer (``error``: a machine-readable reason)
 """
@@ -32,6 +33,7 @@ from moritz_agent.phone.responder import ResponderUnavailable
 log = get_logger("agent")
 
 KEEP_S = 600.0  # a finished run can be followed for ten more minutes
+APPROVAL_TIMEOUT_S = 90.0  # no answer from Moritz: no (below the chat's deadline of 120 s)
 MAX_RUNS = 100
 FINAL = frozenset({"done", "cancelled", "error"})
 
@@ -51,6 +53,7 @@ class Run:
     task: asyncio.Task[None] | None = None
     # replaced on every event: a follower waits on the one it saw, so no wake-up is lost
     _signal: asyncio.Event = field(default_factory=asyncio.Event)
+    approvals: dict[str, asyncio.Future[bool]] = field(default_factory=dict)
 
     @property
     def finished(self) -> bool:
@@ -114,6 +117,31 @@ class RunManager:
         run.add({"type": "cancelled"})
         return True
 
+    def approve(self, run_id: str, request_id: str, allow: bool) -> bool:
+        """Moritz answers a question of the run ("Anton möchte … – Erlauben / Ablehnen")."""
+        run = self._runs.get(run_id)
+        future = run.approvals.get(request_id) if run is not None else None
+        if run is None or future is None or future.done():
+            return False
+        future.set_result(allow)
+        run.add({"type": "approval_response", "id": request_id, "allow": allow, "by": "moritz"})
+        return True
+
+    async def _ask(self, run: Run, request: dict[str, Any]) -> bool:
+        request_id = "a-" + secrets.token_hex(6)
+        future: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+        run.approvals[request_id] = future
+        run.add({"type": "approval_request", "id": request_id, **request})
+        try:
+            return await asyncio.wait_for(asyncio.shield(future), APPROVAL_TIMEOUT_S)
+        except TimeoutError:
+            run.add(
+                {"type": "approval_response", "id": request_id, "allow": False, "by": "timeout"}
+            )
+            return False
+        finally:
+            run.approvals.pop(request_id, None)
+
     async def follow(self, run_id: str, after: int = 0) -> AsyncIterator[dict[str, Any]]:
         """Every event after ``after``, then wait for more until the run has finished."""
         run = self._runs.get(run_id)
@@ -134,7 +162,9 @@ class RunManager:
     async def _drive(self, run: Run, turn: Turn) -> None:
         text = ""
         try:
-            async for event in self.chat.events(turn, on_event=run.add):
+            async for event in self.chat.events(
+                turn, on_event=run.add, approver=lambda request: self._ask(run, request)
+            ):
                 kind = event["type"]
                 if kind == "thinking":
                     run.add({"type": "status", "prompt": event["prompt"]})

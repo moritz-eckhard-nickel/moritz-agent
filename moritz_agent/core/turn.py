@@ -74,6 +74,7 @@ class TurnResult:
     hangup: bool = False
     tools: list[str] = field(default_factory=list)
     reminder: dict[str, Any] | None = None  # {"id", "due", "text"} when one was set
+    stats: dict[str, Any] = field(default_factory=dict)  # steps, ms, dropped_turns of the model
     ms: int = 0
 
     def to_json(self) -> dict[str, Any]:

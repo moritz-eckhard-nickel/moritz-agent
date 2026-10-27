@@ -64,15 +64,26 @@ function toolLabel(event) {
 }
 
 // One answer of Anton while it is made: steps, live text, then the final form.
+function seconds(ms) {
+  return `${(ms / 1000).toFixed(1).replace(".", ",")} s`;
+}
+
+const RISK = { read: "liest", write: "verändert etwas", execute: "führt etwas aus" };
+
 export class Answer {
-  constructor(list, onAsk) {
+  constructor(list, onAsk, onApprove = null) {
     this.onAsk = onAsk;
+    this.onApprove = onApprove;
     this.text = "";
-    this.steps = h("ol", { class: "steps", hidden: true });
+    this.started = Date.now();
+    this.steps = h("ol", { class: "steps" });
+    this.summary = h("summary", {}, h("span", { text: "Schritte" }));
+    this.timeline = h("details", { class: "timeline", open: true, hidden: true }, this.summary, this.steps);
+    this.approvals = new Map();
     this.status = h("div", { class: "run-status" }, h("span", { class: "typing", "aria-label": "Anton schreibt" }, h("i"), h("i"), h("i")));
     this.body = h("div", { class: "answer" });
     this.extras = h("div", { class: "answer-extras" });
-    this.bubble = h("div", { class: "bubble" }, this.steps, this.body, this.status, this.extras);
+    this.bubble = h("div", { class: "bubble" }, this.timeline, this.body, this.status, this.extras);
     this.row = h("div", { class: "msg anton" }, h("img", { class: "avatar", src: "/branding/m-agent-logo-64.png", alt: "Anton" }), this.bubble);
     this.pending = new Map();
     this.frame = 0;
@@ -87,17 +98,43 @@ export class Answer {
         break;
       case "tool_call": {
         const item = h("li", { class: "step running" }, h("span", { class: "step-dot" }), h("span", { text: toolLabel(event) }));
-        this.steps.hidden = false;
+        this.timeline.hidden = false;
         this.steps.append(item);
         this.pending.set(event.tool, item);
+        break;
+      }
+      case "tool_output": {
+        // a tool that streams (later: a shell in the sandbox) – shown like a console
+        const item = this.pending.get(event.tool);
+        if (!item) break;
+        let consoleView = item.querySelector("pre.console");
+        if (!consoleView) {
+          consoleView = h("pre", { class: "console" });
+          item.append(consoleView);
+        }
+        consoleView.textContent += event.text;
+        consoleView.scrollTop = consoleView.scrollHeight;
         break;
       }
       case "tool_result": {
         const item = this.pending.get(event.tool);
         if (item) {
-          item.className = `step ${event.ok ? "ok" : "failed"}`;
-          item.append(h("span", { class: "muted", text: ` ${(event.ms / 1000).toFixed(1).replace(".", ",")} s` }));
+          item.classList.remove("running");
+          item.classList.add(event.ok ? "ok" : "failed");
+          item.insertBefore(h("span", { class: "muted", text: ` ${seconds(event.ms)}${event.error === "denied" ? " · nicht erlaubt" : ""}` }), item.querySelector("pre.console"));
           this.pending.delete(event.tool);
+        }
+        break;
+      }
+      case "approval_request":
+        this.ask(event);
+        break;
+      case "approval_response": {
+        const box = this.approvals.get(event.id);
+        if (box) {
+          const text = event.allow ? "Erlaubt." : event.by === "timeout" ? "Keine Antwort – nicht gemacht." : "Abgelehnt.";
+          box.querySelector(".approval-actions").replaceChildren(h("span", { class: `note ${event.allow ? "" : "failed"}`, text }));
+          box.classList.add("answered");
         }
         break;
       }
@@ -121,6 +158,30 @@ export class Answer {
       default:
         break;
     }
+  }
+
+  // "Anton möchte … – Erlauben / Ablehnen" (ADR-041 Nr. 4)
+  ask(event) {
+    const args = Object.entries(event.args || {}).map(([key, value]) => h("div", {}, h("span", { class: "muted", text: `${key}: ` }), h("code", { text: value })));
+    const decide = (allow) => async () => {
+      for (const button of box.querySelectorAll("button")) button.disabled = true;
+      if (this.onApprove) await this.onApprove(event.id, allow);
+    };
+    const actions = this.onApprove
+      ? h("div", { class: "approval-actions" }, h("button", { type: "button", class: "primary", text: "Erlauben", onclick: decide(true) }), h("button", { type: "button", class: "secondary", text: "Ablehnen", onclick: decide(false) }))
+      : h("div", { class: "approval-actions" });
+    const box = h(
+      "li",
+      { class: "approval" },
+      h("strong", { text: `Anton möchte ${TOOL_NAMES[event.tool] || event.tool} benutzen` }),
+      h("span", { class: "muted small", text: ` – ${RISK[event.risk] || RISK.execute}` }),
+      args.length ? h("div", { class: "approval-args" }, args) : null,
+      actions,
+    );
+    this.approvals.set(event.id, box);
+    this.timeline.hidden = false;
+    this.timeline.open = true;
+    this.steps.append(box);
   }
 
   statusText(text) {
@@ -149,7 +210,7 @@ export class Answer {
         sourcesView(result.sources),
       ].filter(Boolean),
     );
-    this.finish();
+    this.finish(result.stats);
   }
 
   end(message, kind) {
@@ -165,9 +226,17 @@ export class Answer {
     this.frame = 0;
   }
 
-  finish() {
+  finish(stats = null) {
     this.over = true;
     this.status.remove();
+    const count = this.steps.querySelectorAll(".step").length;
+    if (this.steps.childElementCount) {
+      const ms = (stats && stats.ms) || Date.now() - this.started;
+      const dropped = stats && stats.dropped_turns ? ` · ${stats.dropped_turns} ältere Wechsel nicht mehr im Kontext` : "";
+      const asked = this.approvals.size ? ` · ${this.approvals.size} Nachfrage${this.approvals.size === 1 ? "" : "n"}` : "";
+      this.summary.replaceChildren(h("span", { text: `${count} ${count === 1 ? "Schritt" : "Schritte"}${asked} · ${seconds(ms)}${dropped}` }));
+      this.timeline.open = false;
+    }
     for (const item of this.pending.values()) item.className = "step failed";
     this.pending.clear();
   }
@@ -195,9 +264,9 @@ export function storedMessage(list, message, onAsk) {
   }
   const answer = new Answer(list, onAsk);
   for (const step of message.steps || []) {
-    if (step.type === "tool_call" || step.type === "tool_result") answer.event(step);
+    if (["tool_call", "tool_result", "approval_request", "approval_response"].includes(step.type)) answer.event(step);
   }
   const meta = message.meta || {};
-  answer.done({ markdown: message.text, text: message.text, card: meta.card, sources: meta.sources || [] });
+  answer.done({ markdown: message.text, text: message.text, card: meta.card, sources: meta.sources || [], stats: meta.stats });
   return answer.row;
 }

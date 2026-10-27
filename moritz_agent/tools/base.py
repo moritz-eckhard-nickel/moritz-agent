@@ -8,7 +8,7 @@ unchanged, ``sources`` where the facts came from (SEARCH-02, AGENT-08).
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
@@ -70,6 +70,8 @@ class ToolContext:
     turn_id: int | None = None
     # a run of the WebUI listens here: tool_call / tool_result events (ADR-041)
     on_event: Callable[[dict[str, Any]], None] | None = None
+    # asks Moritz before a tool with needs_approval runs; None (phone, Discord voice): never allowed
+    approver: Callable[[dict[str, Any]], Awaitable[bool]] | None = None
 
 
 class Tool(Protocol):

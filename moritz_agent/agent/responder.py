@@ -21,6 +21,7 @@ class AgentResponder:
             surface=context.extras.get("surface", "spoken"),
             skills=context.extras.get("skills"),
             on_event=context.extras.get("on_event"),
+            approver=context.extras.get("approver"),
         )
         try:
             result = await self.loop.run(
@@ -35,5 +36,13 @@ class AgentResponder:
         return Reply(
             text=result.text,
             hangup=result.hangup,
-            meta={"tools": result.tools, "sources": result.sources},
+            meta={
+                "tools": result.tools,
+                "sources": result.sources,
+                "stats": {
+                    "steps": result.steps,
+                    "ms": result.ms,
+                    "dropped_turns": result.dropped_turns,
+                },
+            },
         )

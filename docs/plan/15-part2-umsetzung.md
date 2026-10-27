@@ -235,6 +235,19 @@ Reihenfolge: P2-01 → P2-02 → P2-03 → P2-04 → P2-05 → P2-06 → P2-07 �
 - Gebaut für lange Läufe: Schritte einklappbar, gestreamte Werkzeug-Ausgabe in einer Konsolen-Ansicht,
   Bestätigungs-Dialog (`approval_request`) mit Test-Werkzeug geprüft.
 - Anforderungen: UI-02, LOG-02 (Redaktion).
+- **Umgesetzt (27.10.2026):**
+  - Nachfragen (ADR-041 Nr. 4): Hat ein Werkzeug `needs_approval`, fragt `ToolRegistry.call` über
+    `ToolContext.approver` nach. Der Lauf zeigt `approval_request` mit Werkzeug, Stufe und Argumenten, Moritz
+    antwortet über `POST /api/runs/{id}/approval`. Ohne Antwort in 90 s, bei „Ablehnen“ oder ohne jemanden zum
+    Fragen (Telefon, Sprachkanal) läuft das Werkzeug nie (`error: denied`).
+  - In Part 2 braucht kein ausgeliefertes Werkzeug eine Nachfrage. Den Ablauf prüft ein Test-Werkzeug in
+    `test_runs.py`.
+  - WebUI: Schritte als aufklappbare Zeitleiste. Während der Antwort ist sie offen, danach zugeklappt mit
+    „N Schritte · Nachfragen · Dauer · verworfene Wechsel“. Die Nachfrage-Karte hat „Erlauben / Ablehnen“.
+    `tool_output` erscheint als Konsole unter dem Schritt (für die Sandbox-Werkzeuge ab Part 4).
+  - `TurnResult.stats` (Schritte, ms, verworfene Wechsel) steht im Verlauf. Tokens/s kommt mit der
+    Modellseite (P2-08).
+  - Discord bekommt die Nachfrage als Knöpfe, sobald dort Werkzeuge mit Nachfrage auftauchen (Part 4).
 
 ### P2-07 – Anrufstatus und Discord live
 

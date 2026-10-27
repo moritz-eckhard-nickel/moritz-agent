@@ -115,3 +115,20 @@ async def run_cancel(run_id: str, ctx: AppContext = Depends(require_login)) -> d
     if ctx.runtime.runs.get(run_id) is None:
         raise HTTPException(404, {"error": "unknown_run"})
     return {"cancelled": ctx.runtime.runs.cancel(run_id)}
+
+
+class ApprovalBody(BaseModel):
+    id: str = Field(min_length=1, max_length=40, pattern=r"^a-[0-9a-f]+$")
+    allow: bool
+
+
+@router.post("/api/runs/{run_id}/approval")
+async def run_approval(
+    run_id: str, body: ApprovalBody, ctx: AppContext = Depends(require_login)
+) -> dict[str, bool]:
+    """Moritz says yes or no to a step of the run (ADR-041 Nr. 4)."""
+    if ctx.runtime.runs.get(run_id) is None:
+        raise HTTPException(404, {"error": "unknown_run"})
+    if not ctx.runtime.runs.approve(run_id, body.id, body.allow):
+        raise HTTPException(409, {"error": "not_waiting"})
+    return {"ok": True}
