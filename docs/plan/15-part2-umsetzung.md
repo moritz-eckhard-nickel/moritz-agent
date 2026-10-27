@@ -271,6 +271,21 @@ Reihenfolge: P2-01 → P2-02 → P2-03 → P2-04 → P2-05 → P2-06 → P2-07 �
   (`scripts/bench_llm.py --tune` im Hintergrund, Ergebnis als Tabelle). Während eines Anrufs gesperrt.
 - Discord: `/admin modell status|neustart`.
 - Anforderungen: PRD-03, ADR-016, INF-06 (entfällt, kein Wechsel).
+- **Umgesetzt (27.10.2026):**
+  - `GET /api/model` liefert Zustand, Datei, Einstellungen, geschätzten KV-Speicher, Tokens/s der letzten
+    Antwort (`/api/extra/perf`) und GPU-Speicher (`nvidia-smi`).
+  - `PUT /api/model/settings` (Kontext, KV-Cache, Smart-Cache, `--moecpu`) schreibt
+    `config/moritz-agent.toml` zeilenweise (`config/editing.py`, Kommentare bleiben) und lädt neu. Ist der
+    neue Stand ungültig, kommt der alte zurück.
+  - `POST /api/model/restart`: `InferenceService.restart` entlädt und lädt mit den neuen Werten auf
+    demselben Port.
+  - `POST /api/model/measure`: eine kurze Antwort mit der niedrigsten Priorität, liefert erstes Wort,
+    Gesamtzeit und Tokens/s.
+  - Neustart und Messen sind während eines Anrufs gesperrt (409). Die volle `--moecpu`-Suche bleibt in
+    `test-3.sh`/`test-4.sh`, weil sie mehrere KoboldCpp-Starts braucht.
+  - WebUI: Ansicht „Modell“ mit vier Kacheln, Formular mit Live-Schätzung des Grafikspeichers, Knöpfen für
+    Neustart und Messen.
+  - Noch offen: `/admin modell status|neustart` auf Discord.
 
 ### P2-09 – Einstellungen: alles änderbar
 

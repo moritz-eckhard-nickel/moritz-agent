@@ -88,17 +88,28 @@ class InferenceService:
         self.client = InferenceClient(
             self.url, request_timeout_s=settings.inference.request_timeout_s
         )
-        self.process = ManagedProcess(
+        self.process = self._process()
+
+    def _process(self) -> ManagedProcess:
+        return ManagedProcess(
             "koboldcpp",
-            build_argv(settings, root, self.port),
-            cwd=root,
+            build_argv(self.settings, self.root, self.port),
+            cwd=self.root,
             health_check=self.client.health,
             category="inference",
-            startup_timeout_s=settings.inference.startup_timeout_s,
+            startup_timeout_s=self.settings.inference.startup_timeout_s,
             health_interval_s=5.0,
         )
 
     async def start(self) -> None:
+        await self.process.start()
+
+    async def restart(self, settings: Settings) -> None:
+        """Unload, then load with the current settings (context, KV cache, --moecpu …) on the
+        same port – the client and the queue keep working with it (P2-08)."""
+        await self.process.stop(10)
+        self.settings = settings
+        self.process = self._process()
         await self.process.start()
 
     async def stop(self) -> None:

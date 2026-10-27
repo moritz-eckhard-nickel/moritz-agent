@@ -185,11 +185,18 @@ class ConfigManager:
             except OSError:
                 return 0.0
 
-        settings = self.settings_file or settings_path(self.root)
-        passwords = self.passwords_file or self.root / (
+        return mtime(self.toml_path), mtime(self.passwords_path)
+
+    @property
+    def toml_path(self) -> Path:
+        """``config/moritz-agent.toml`` of this installation."""
+        return self.settings_file or settings_path(self.root)
+
+    @property
+    def passwords_path(self) -> Path:
+        return self.passwords_file or self.root / (
             self._current.settings.general.passwords_file if self._current else "passwords.txt"
         )
-        return mtime(settings), mtime(passwords)
 
     def changed(self) -> bool:
         """A file changed since the last (successful or rejected) reload."""

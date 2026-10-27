@@ -5,12 +5,14 @@ import { api, onUnauthorized } from "./api.js";
 import { h, icon } from "./dom.js";
 import { createChat } from "./views/chat.js";
 import { createHistory } from "./views/history.js";
+import { createModel } from "./views/model.js";
 import { createStatus } from "./views/status.js";
 
-// Only what works is shown; Modell and Einstellungen come with their tickets.
+// Only what works is shown; Einstellungen comes with its ticket.
 const ROUTES = [
   { id: "chat", label: "Chat", icon: "chat", create: createChat },
   { id: "verlauf", label: "Verlauf", icon: "history", create: createHistory },
+  { id: "modell", label: "Modell", icon: "chip", create: createModel },
   { id: "status", label: "Status", icon: "status", create: createStatus },
 ];
 

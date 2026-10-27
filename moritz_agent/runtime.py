@@ -153,6 +153,7 @@ class Runtime:
         self.discord_store: DiscordStore | None = None
         self.chat: ChatService = ChatService(self)
         self.runs = RunManager(self.chat, on_finish=self._save_run)  # WebUI answers (ADR-041)
+        self._background: set[asyncio.Task[Any]] = set()
         self.callbacks = CallbackQueue()  # "Sag mir am Telefon …": calls the phone worker makes
         self.scheduler: Scheduler | None = None
         self.external_components: Callable[[], dict[str, Component]] = dict
@@ -530,6 +531,11 @@ class Runtime:
             )
         except Exception:
             log.debug("Chat-Runde nicht protokolliert", exc_info=True)
+
+    def background(self, task: asyncio.Task[Any]) -> None:
+        """Keep a fire-and-forget task alive until it is done (restart of KoboldCpp …)."""
+        self._background.add(task)
+        task.add_done_callback(self._background.discard)
 
     def _remember_in_history(
         self,
