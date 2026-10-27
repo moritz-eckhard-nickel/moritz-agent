@@ -395,3 +395,32 @@ label input { margin-top: 6px; }
   .history-actions { opacity: 1; }
   .history-actions .icon-button { width: 28px; }
 }
+
+/* -- files (P2-05) --------------------------------------------------------------------- */
+.composer .clip { padding: 10px; color: var(--text-2); }
+.attachments { max-width: 820px; margin: 0 auto 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 4px 4px 4px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+  text-decoration: none;
+}
+.file-chip svg { width: 16px; height: 16px; flex: none; color: var(--accent-hover); }
+.file-chip .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 240px; }
+.file-chip.uploading { opacity: 0.7; }
+.file-chip.error { border-color: var(--bad); }
+.file-chip.error .muted { color: var(--bad); }
+.file-chip .icon-button { width: 24px; height: 24px; }
+.file-chip .icon-button svg { width: 14px; height: 14px; color: var(--text-2); }
+.bubble-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; max-width: min(680px, 88%); }
+.bubble-stack .bubble { max-width: 100%; }
+.file-chips { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.file-chips .file-chip { padding-right: 10px; }
+.chat.dropping .messages { outline: 2px dashed var(--accent); outline-offset: -12px; background: var(--accent-soft); }

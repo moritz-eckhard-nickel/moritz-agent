@@ -34,6 +34,9 @@ const ICONS = {
   edit: ["M4 20h4L19 9l-4-4L4 16z", "M13 7l4 4"],
   download: ["M12 4v11", "M7 10l5 5 5-5", "M5 20h14"],
   trash: ["M4 7h16", "M9 7V4h6v3", "M6 7l1 13h10l1-13"],
+  clip: ["M20 12l-7.5 7.5a5 5 0 0 1-7-7L13 5a3.3 3.3 0 0 1 4.7 4.7l-7.6 7.6a1.7 1.7 0 0 1-2.4-2.4L14.5 8"],
+  file: ["M6 3h8l4 4v14H6z", "M14 3v4h4"],
+  close: ["M6 6l12 12", "M18 6L6 18"],
 };
 
 export function icon(name) {

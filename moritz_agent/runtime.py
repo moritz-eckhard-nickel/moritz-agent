@@ -45,6 +45,7 @@ from moritz_agent.skills.responder import SkillResponder
 from moritz_agent.skills.services import build_services
 from moritz_agent.skills.tools import skill_tools
 from moritz_agent.storage import Database, DiscordStore, Repo
+from moritz_agent.storage.files import FileStore
 from moritz_agent.storage.history import HistoryStore
 from moritz_agent.tools.call_tool import EndCall
 from moritz_agent.tools.registry import ToolRegistry
@@ -134,6 +135,7 @@ class Runtime:
         self.db: Database | None = None
         self.repo: Repo | None = None
         self.history: HistoryStore | None = None
+        self.files: FileStore | None = None
         self.svc: Any = None
         self.skill_responder: SkillResponder | None = None
         self.agent_responder: AgentResponder | None = None
@@ -183,6 +185,7 @@ class Runtime:
         )
         self.repo = self.svc.repo
         self.history = HistoryStore(self.db)
+        self.files = FileStore(self.db, self.db.path.parent / "files")
         self.discord_store = DiscordStore(self.db)
         self.scheduler = Scheduler(
             self.discord_store,
@@ -507,7 +510,10 @@ class Runtime:
         if result.card:
             meta["card"] = result.card
         said = result.markdown or result.text
-        self._remember_in_history(source, turn.conversation_id, turn.text, said, meta)
+        heard_meta = {"files": [{"id": f["id"], "name": f["name"]} for f in turn.files]}
+        self._remember_in_history(
+            source, turn.conversation_id, turn.text, said, meta, heard_meta if turn.files else None
+        )
         if self.repo is None:
             return
         try:
@@ -524,13 +530,19 @@ class Runtime:
             log.debug("Chat-Runde nicht protokolliert", exc_info=True)
 
     def _remember_in_history(
-        self, source: str, external_id: str, heard: str, said: str, meta: dict[str, Any]
+        self,
+        source: str,
+        external_id: str,
+        heard: str,
+        said: str,
+        meta: dict[str, Any],
+        heard_meta: dict[str, Any] | None = None,
     ) -> None:
         """The WebUI history (P2-04): every channel, if transcripts may be kept at all."""
         if self.history is None or not self.settings.storage.store_transcripts:
             return
         try:
-            self.history.record(source, external_id, heard, said, meta=meta)
+            self.history.record(source, external_id, heard, said, meta=meta, heard_meta=heard_meta)
         except Exception:
             log.debug("Verlauf nicht gespeichert", exc_info=True)
 
@@ -724,7 +736,10 @@ class Runtime:
             return {}
         result = self.repo.purge(self.settings.storage.transcript_retention_hours)
         if self.history is not None:
-            result["conversations"] = self.history.purge(self.settings.storage.history_days)
+            gone = self.history.purge(self.settings.storage.history_days)
+            result["conversations"] = len(gone)
+            if self.files is not None:
+                result["files"] = self.files.delete_for(gone)
         return result
 
     # -- for the Discord worker ----------------------------------------------------------------------------

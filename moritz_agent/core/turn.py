@@ -55,6 +55,8 @@ class Turn:
     place: str = "dm"  # dm | guild | thread | voice | web | phone
     foreign_guild: bool = False  # a server that is not ours (user app)
     reply_target: str = "default"  # where a reminder goes: "default" | "dm:<id>" | "channel:<id>"
+    # files dropped into this message (WebUI, P2-05): [{"id", "name", "text", …}]
+    files: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass

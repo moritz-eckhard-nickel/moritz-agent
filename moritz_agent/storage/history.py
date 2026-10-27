@@ -62,6 +62,7 @@ class HistoryStore:
         said: str,
         *,
         meta: dict[str, Any] | None = None,
+        heard_meta: dict[str, Any] | None = None,
     ) -> str:
         """One exchange; returns the id of the conversation it went into."""
         now = self.clock()
@@ -86,7 +87,10 @@ class HistoryStore:
                     "VALUES (?, ?, ?, ?, ?, ?)",
                     (conversation, source, external_id, make_title(heard), now, now),
                 )
-            for role, text, extra in (("user", heard, {}), ("assistant", said, meta or {})):
+            for role, text, extra in (
+                ("user", heard, heard_meta or {}),
+                ("assistant", said, meta or {}),
+            ):
                 if not text:
                     continue
                 cursor = conn.execute(
@@ -158,27 +162,32 @@ class HistoryStore:
         )
         return cursor.rowcount > 0
 
-    def delete(self, conversation: str) -> bool:
+    def delete(self, conversation: str) -> str | None:
+        """Delete one conversation; returns its external id (its files go too) or None."""
         with self.db.transaction() as conn:
+            row = conn.execute(
+                "SELECT external_id FROM conversations WHERE id = ?", (conversation,)
+            ).fetchone()
+            if row is None:
+                return None
             conn.execute("DELETE FROM messages_fts WHERE conversation_id = ?", (conversation,))
-            return (
-                conn.execute("DELETE FROM conversations WHERE id = ?", (conversation,)).rowcount > 0
-            )
+            conn.execute("DELETE FROM conversations WHERE id = ?", (conversation,))
+        return row["external_id"]
 
-    def purge(self, days: int) -> int:
-        """Delete what was not touched for ``days`` days – pinned conversations stay."""
+    def purge(self, days: int) -> list[str]:
+        """Delete what was not touched for ``days`` days – pinned conversations stay.
+
+        Returns the external ids of the deleted conversations (their files go too)."""
         cutoff = self.clock() - days * 86400
         with self.db.transaction() as conn:
-            old = [
-                row["id"]
-                for row in conn.execute(
-                    "SELECT id FROM conversations WHERE pinned = 0 AND updated_at < ?", (cutoff,)
-                )
-            ]
-            for conversation in old:
-                conn.execute("DELETE FROM messages_fts WHERE conversation_id = ?", (conversation,))
-                conn.execute("DELETE FROM conversations WHERE id = ?", (conversation,))
-        return len(old)
+            old = conn.execute(
+                "SELECT id, external_id FROM conversations WHERE pinned = 0 AND updated_at < ?",
+                (cutoff,),
+            ).fetchall()
+            for row in old:
+                conn.execute("DELETE FROM messages_fts WHERE conversation_id = ?", (row["id"],))
+                conn.execute("DELETE FROM conversations WHERE id = ?", (row["id"],))
+        return [row["external_id"] for row in old]
 
     # -- reading --------------------------------------------------------------------------------------
     def exists(self, conversation: str) -> bool:

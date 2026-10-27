@@ -93,6 +93,7 @@ class AgentLoop:
         ctx: ToolContext,
         *,
         on_text: TextSink | None = None,
+        documents: list[dict[str, Any]] | None = None,
     ) -> AgentResult:
         started = time.monotonic()
         definitions = self.tools.definitions(self.profile.tools)
@@ -103,7 +104,7 @@ class AgentLoop:
             tools=definitions,
             counter=self.queue.client.token_count,
         )
-        built = await builder.build(history, user_text)
+        built = await builder.build(history, user_text, documents=documents or [])
         turn = _Turn(user_text, ctx, built.messages)
         try:
             async with asyncio.timeout(self.profile.deadline_s):

@@ -52,4 +52,6 @@ neu installieren und die alte entfernen.
 | Status | alle Teile von moritz-agent mit Zustand, Konfiguration neu laden | P2-01 |
 | Verlauf | alle Gespräche aus Web, Telefon, Discord und Sprachkanal: suchen, filtern, umbenennen, als Markdown speichern, löschen. Der Lesezeichen-Knopf behält ein Gespräch für immer, sonst wird es nach 15 Tagen gelöscht. Web-Gespräche gehen im Chat weiter. | P2-04 |
 
-Dateien, Einstellungen und die Modellseite kommen mit den nächsten Tickets.
+| Dateien | Text- und PDF-Dateien (bis 10 MB, bis zu 5 auf einmal) mit der Büroklammer anhängen oder in den Chat ziehen. Anton liest sie und beantwortet Fragen dazu, auch Folgefragen. Gescannte PDFs ohne Text gehen noch nicht. | P2-05 |
+
+Einstellungen und die Modellseite kommen mit den nächsten Tickets.

@@ -2,9 +2,9 @@
 // Chat with Anton: every answer is a run streamed live (ADR-041, P2-02). Text arrives word by word as
 // Markdown, tool steps show up while they run, "Stopp" cancels, a broken connection follows the run again.
 
-import { api, stream } from "../api.js";
+import { api, stream, upload } from "../api.js";
 import { h, icon, store } from "../dom.js";
-import { Answer, storedMessage } from "../messages.js";
+import { Answer, storedMessage, userMessage } from "../messages.js";
 
 const MAX_CHARS = 4000;
 const CONVERSATION_KEY = "m-agent.conversation";
@@ -15,6 +15,15 @@ const SUGGESTIONS = [
   "Was ist der Sinn des Lebens?",
 ];
 const RETRIES = 3;
+const MAX_FILES = 5;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const ACCEPT = ".pdf,.txt,.md,.csv,.tsv,.json,.jsonl,.log,.xml,.yaml,.yml,.toml,.ini,.cfg,.conf,.py,.js,.ts,.html,.css,.sh,.c,.h,.cpp,.java,.go,.rs,.sql,.tex,.srt";
+
+function size(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1).replace(".", ",")} MB`;
+}
 
 function newConversationId() {
   const bytes = new Uint8Array(8);
@@ -27,13 +36,17 @@ export function createChat() {
   let run = null; // {id, answer, last}
   let saved = { id: null, pinned: false }; // this chat in the history (P2-04)
   let loading = null;
+  let attached = []; // files of the next message: {file, id, state, note, el}
 
   const list = h("div", { class: "messages-inner", "aria-live": "polite" });
   const messages = h("div", { class: "messages" }, list);
   const input = h("textarea", { rows: 1, maxlength: MAX_CHARS, placeholder: "Frag Anton …", "aria-label": "Nachricht an Anton" });
   const send = h("button", { class: "primary", type: "submit", "aria-label": "Senden" }, icon("send"));
   const stop = h("button", { class: "secondary stop", type: "button", "aria-label": "Antwort stoppen", hidden: true, onclick: cancel }, icon("stop"));
-  const form = h("form", {}, input, stop, send);
+  const picker = h("input", { type: "file", multiple: true, accept: ACCEPT, hidden: true });
+  const clip = h("button", { class: "ghost clip", type: "button", title: "Datei anhängen (Text, PDF)", "aria-label": "Datei anhängen", onclick: () => picker.click() }, icon("clip"));
+  const tray = h("div", { class: "attachments", hidden: true });
+  const form = h("form", {}, clip, input, stop, send, picker);
   const pin = h("button", { class: "ghost pin", type: "button", disabled: true, title: "Gespräch für immer behalten", onclick: togglePin }, icon("pin"), h("span", { class: "label", text: "Speichern" }));
   const el = h(
     "section",
@@ -45,7 +58,7 @@ export function createChat() {
       h("div", { class: "chat-actions" }, pin, h("button", { class: "ghost", type: "button", onclick: reset }, icon("plus"), h("span", { class: "label", text: "Neues Gespräch" }))),
     ),
     messages,
-    h("div", { class: "composer" }, form, h("p", { class: "hint", text: "Enter sendet, Shift+Enter macht eine neue Zeile." })),
+    h("div", { class: "composer" }, tray, form, h("p", { class: "hint", text: "Enter sendet, Shift+Enter macht eine neue Zeile. Text und PDF hierher ziehen." })),
   );
 
   function empty() {
@@ -89,13 +102,18 @@ export function createChat() {
     if (!text || run) return;
     const placeholder = list.querySelector(".empty");
     if (placeholder) placeholder.remove();
-    const question = h("div", { class: "msg user" }, h("div", { class: "bubble", text }));
+    const files = attached.filter((a) => a.state === "ready").map((a) => ({ id: a.id, name: a.file.name }));
+    clearTray();
+    const question = userMessage(text, files);
     list.append(question);
     run = { id: null, last: 0, answer: new Answer(list, ask) };
     const answer = run.answer;
     busy(true);
     scroll(true);
-    let result = await follow("/api/chat/stream", { method: "POST", body: { message: text, conversation_id: conversation } });
+    let result = await follow("/api/chat/stream", {
+      method: "POST",
+      body: { message: text, conversation_id: conversation, files: files.map((f) => f.id) },
+    });
     // the connection broke while the run goes on in the server: follow it again
     for (let attempt = 0; !answer.over && result.broken && run.id && attempt < RETRIES; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
@@ -172,14 +190,80 @@ export function createChat() {
     store.set(CONVERSATION_KEY, conversation);
     saved = { id: null, pinned: false };
     showPin();
+    clearTray();
     empty();
     if (location.hash.startsWith("#/chat/")) history.replaceState(null, "", "#/chat");
     input.focus();
   }
 
+  // -- files (P2-05) ---------------------------------------------------------------------------------
+  function drawTray() {
+    tray.hidden = !attached.length;
+    tray.replaceChildren(
+      ...attached.map((item) => {
+        const remove = h("button", { type: "button", class: "icon-button", "aria-label": `${item.file.name} entfernen`, onclick: () => detach(item) }, icon("close"));
+        const note = item.state === "uploading" ? "lädt …" : item.state === "error" ? item.note : item.note || size(item.file.size);
+        return h("div", { class: `file-chip ${item.state}` }, icon("file"), h("span", { class: "file-name", text: item.file.name }), h("span", { class: "muted small", text: note }), remove);
+      }),
+    );
+  }
+
+  function clearTray() {
+    attached = [];
+    drawTray();
+  }
+
+  async function attach(files) {
+    for (const file of files) {
+      if (attached.length >= MAX_FILES) break;
+      const item = { file, id: null, state: "uploading", note: "" };
+      attached.push(item);
+      if (file.size > MAX_FILE_BYTES) {
+        Object.assign(item, { state: "error", note: "größer als 10 MB" });
+        continue;
+      }
+      drawTray();
+      const result = await upload(`/api/files?chat=${encodeURIComponent(conversation)}&name=${encodeURIComponent(file.name)}`, file);
+      if (!attached.includes(item)) continue; // removed meanwhile
+      if (result.ok) {
+        const info = result.body;
+        const pages = info.pages ? `${info.pages} S., ` : "";
+        Object.assign(item, { id: info.id, state: "ready", note: `${pages}${size(info.size)}${info.truncated ? ", gekürzt" : ""}` });
+      } else {
+        const detail = (result.body && result.body.detail) || {};
+        Object.assign(item, { state: "error", note: detail.message || "geht nicht" });
+      }
+    }
+    drawTray();
+  }
+
+  function detach(item) {
+    attached = attached.filter((a) => a !== item);
+    if (item.id) api(`/api/files/${item.id}`, { method: "DELETE" });
+    drawTray();
+  }
+
+  picker.addEventListener("change", () => {
+    attach([...picker.files]);
+    picker.value = "";
+  });
+  el.addEventListener("dragover", (event) => {
+    if (![...event.dataTransfer.types].includes("Files")) return;
+    event.preventDefault();
+    el.classList.add("dropping");
+  });
+  el.addEventListener("dragleave", (event) => {
+    if (!el.contains(event.relatedTarget)) el.classList.remove("dropping");
+  });
+  el.addEventListener("drop", (event) => {
+    event.preventDefault();
+    el.classList.remove("dropping");
+    if (event.dataTransfer.files.length) attach([...event.dataTransfer.files]);
+  });
+
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    if (run) return;
+    if (run || attached.some((a) => a.state === "uploading")) return;
     const text = input.value;
     input.value = "";
     autosize();

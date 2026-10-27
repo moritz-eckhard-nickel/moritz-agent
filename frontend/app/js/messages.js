@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-MSOL-1.1
 // How Anton's answers look – live while a run streams (ADR-041) and later in the history (P2-04).
 
-import { h, safeUrl } from "./dom.js";
+import { h, icon, safeUrl } from "./dom.js";
 import { markdown } from "./markdown.js";
 
 const TOOL_NAMES = {
@@ -178,10 +178,18 @@ export class Answer {
   }
 }
 
+// Moritz' message, with the files that came with it.
+export function userMessage(text, files = []) {
+  const chips = files.length
+    ? h("div", { class: "file-chips" }, files.map((f) => h("a", { class: "file-chip", href: `/api/files/${f.id}`, download: "" }, icon("file"), h("span", { text: f.name }))))
+    : null;
+  return h("div", { class: "msg user" }, h("div", { class: "bubble-stack" }, chips, h("div", { class: "bubble", text })));
+}
+
 // A message from the history: the question as a bubble, an answer with its steps, card and sources.
 export function storedMessage(list, message, onAsk) {
   if (message.role === "user") {
-    const row = h("div", { class: "msg user" }, h("div", { class: "bubble", text: message.text }));
+    const row = userMessage(message.text, (message.meta && message.meta.files) || []);
     list.append(row);
     return row;
   }
