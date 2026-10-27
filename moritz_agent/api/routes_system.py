@@ -90,14 +90,20 @@ async def logout_everywhere(response: Response, ctx: AppContext = Depends(requir
     return {"ok": True}
 
 
-@router.get("/api/system/status")
-async def status(ctx: AppContext = Depends(require_login)) -> dict[str, Any]:
+def status_snapshot(ctx: AppContext) -> dict[str, Any]:
     """Every component with state and message – never a credential (UI-01)."""
     data = ctx.runtime.status()
     data["phone"] = _phone_component(ctx)
     data["draining"] = ctx.draining()
+    data["active_calls"] = ctx.runtime.active_calls
+    data["generating"] = ctx.runtime.generating
     data.update(ctx.extra_status())
     return data
+
+
+@router.get("/api/system/status")
+async def status(ctx: AppContext = Depends(require_login)) -> dict[str, Any]:
+    return status_snapshot(ctx)
 
 
 def _phone_component(ctx: AppContext) -> dict[str, Any]:

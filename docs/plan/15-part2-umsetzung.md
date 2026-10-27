@@ -254,6 +254,14 @@ Reihenfolge: P2-01 → P2-02 → P2-03 → P2-04 → P2-05 → P2-06 → P2-07 �
 - `GET /api/events` (SSE) ersetzt das Polling der Statusseite: Anruf klingelt/aktiv/beendet, Sprachkanal,
   Komponenten (KoboldCpp, SearXNG, Discord), Warnungen, Logs der letzten Minuten.
 - Anforderungen: UI-01, DISCORD-30.
+- **Umgesetzt (27.10.2026):**
+  - `GET /api/events` (SSE) schickt den ganzen Status, sobald sich etwas ändert: Anruf, Sprachkanal,
+    Komponenten, „das Sprachmodell schreibt“, Wartungsmodus. Die Laufzeit allein löst nichts aus. Alle 20 s
+    kommt ein Ping. Gesprächsinhalte stehen nie darin.
+  - `GET /api/system/logs?lines=&category=` liest nur das Dateiende (512 KB), nicht die ganze Logdatei.
+  - WebUI: Status kommt live, ohne Abfragen (Abzeichen „LIVE“, bei Abbruch „verbindet neu“). Ein laufender
+    Anruf ist grün markiert („Anton telefoniert gerade“). Unten gibt es einen aufklappbaren Log-Bereich mit
+    Filter nach Kategorie, alle 4 s neu, solange er offen ist.
 
 ### P2-08 – Modellseite
 

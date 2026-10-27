@@ -478,3 +478,13 @@ label input { margin-top: 6px; }
 .approval-actions { display: flex; gap: 8px; margin-top: 10px; }
 .approval-actions button { padding: 7px 14px; }
 .approval-actions .note { margin: 0; }
+
+/* -- live status (P2-07) ------------------------------------------------------------------ */
+.live-badge { display: inline-flex; align-items: center; gap: 6px; color: var(--ok); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.live-badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.18); }
+.live-dot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--ok); animation: blink 1.2s infinite ease-in-out; }
+.tile.live { border-color: var(--ok); }
+.log-panel { margin-top: 24px; }
+.log-panel > summary { cursor: pointer; font-weight: 700; margin-bottom: 10px; }
+.log-panel .filters { margin-bottom: 10px; }
+.log-view { max-height: 420px; font-size: 11.5px; }
